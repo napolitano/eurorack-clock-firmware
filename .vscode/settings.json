@@ -1,0 +1,47 @@
+{
+  "workbench.iconTheme": "material-icon-theme",
+  "peacock.color": "#003CCC",
+  "editor.formatOnSave": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "[c]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  },
+  "[cpp]": {
+    "editor.defaultFormatter": "llvm-vs-code-extensions.vscode-clangd"
+  },
+  "material-icon-theme.folders.associations": {
+    "app": "app",
+    "domain": "class",
+    "engine": "core",
+    "hal": "tools",
+    "services": "services",
+    "ui": "views"
+  },
+  "workbench.colorCustomizations": {
+    "activityBar.activeBackground": "#004bff",
+    "activityBar.background": "#004bff",
+    "activityBar.foreground": "#e7e7e7",
+    "activityBar.inactiveForeground": "#e7e7e799",
+    "activityBarBadge.background": "#ff608e",
+    "activityBarBadge.foreground": "#15202b",
+    "activityBarTop.activeBackground": "#004bff",
+    "activityBarTop.background": "#004bff",
+    "activityBarTop.foreground": "#e7e7e7",
+    "activityBarTop.inactiveForeground": "#e7e7e799",
+    "commandCenter.border": "#e7e7e799",
+    "commandCenter.foreground": "#e7e7e7",
+    "sash.hoverBorder": "#004bff",
+    "statusBar.background": "#003ccc",
+    "statusBar.debuggingBackground": "#003ccc",
+    "statusBar.debuggingForeground": "#e7e7e7",
+    "statusBar.foreground": "#e7e7e7",
+    "statusBarItem.hoverBackground": "#004bff",
+    "statusBarItem.remoteBackground": "#400013",
+    "statusBarItem.remoteForeground": "#e7e7e7",
+    "titleBar.activeBackground": "#003ccc",
+    "titleBar.activeForeground": "#e7e7e7",
+    "titleBar.inactiveBackground": "#003ccc99",
+    "titleBar.inactiveForeground": "#e7e7e799"
+  }
+}

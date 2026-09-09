@@ -1,0 +1,162 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "CLOCK: Build I2C firmware",
+      "type": "shell",
+      "command": "pio run -e blackpill_f401cc",
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Build SPI firmware (SSD1315)",
+      "type": "shell",
+      "command": "pio run -e blackpill_f401cc_spi_ssd1315",
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Build SPI firmware (SSD1306)",
+      "type": "shell",
+      "command": "pio run -e blackpill_f401cc_spi_ssd1306",
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Upload SPI firmware (SSD1306, DFU)",
+      "type": "shell",
+      "command": "pio run -e blackpill_f401cc_spi_ssd1306 -t upload",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Upload I2C firmware (DFU)",
+      "type": "shell",
+      "command": "pio run -e blackpill_f401cc -t upload",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Upload SPI firmware (SSD1315, DFU)",
+      "type": "shell",
+      "command": "pio run -e blackpill_f401cc_spi_ssd1315 -t upload",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Clean + upload SPI firmware (SSD1306, DFU)",
+      "type": "shell",
+      "command": "pio run -e blackpill_f401cc_spi_ssd1306 -t clean && pio run -e blackpill_f401cc_spi_ssd1306 -t upload",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Native core tests",
+      "type": "shell",
+      "command": "pio test -e native",
+      "group": "test",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Architecture policy",
+      "type": "shell",
+      "command": "python scripts/check_architecture.py",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "CLOCK: Python tooling tests",
+      "type": "shell",
+      "command": "python -m unittest discover -s scripts/tests -p 'test_*.py' -v",
+      "group": "test",
+      "problemMatcher": []
+    },
+    {
+      "label": "CLOCK: Full host coverage",
+      "type": "shell",
+      "command": "python scripts/run_host_tests.py --skip-sanitizers",
+      "group": "test",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Host sanitizers",
+      "type": "shell",
+      "command": "python scripts/run_host_tests.py --sanitizers-only",
+      "group": "test",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Configure native simulator",
+      "type": "shell",
+      "command": "cmake --preset simulator",
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Build native simulator",
+      "type": "shell",
+      "command": "cmake --build --preset simulator",
+      "group": "build",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Run native simulator",
+      "type": "shell",
+      "command": "python scripts/run_simulator.py",
+      "problemMatcher": []
+    },
+    {
+      "label": "CLOCK: Headless simulator tests",
+      "type": "shell",
+      "command": "python scripts/run_simulator_tests.py",
+      "group": "test",
+      "problemMatcher": [
+        "$gcc"
+      ]
+    },
+    {
+      "label": "CLOCK: Generate manual screenshots",
+      "type": "shell",
+      "command": "python scripts/generate_manual_screenshots.py",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "CLOCK: Prepare release manual",
+      "type": "shell",
+      "command": "python scripts/prepare_release_manual.py",
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "CLOCK: Build release manual",
+      "type": "shell",
+      "command": "python scripts/build_user_manual.py",
+      "group": "build",
+      "problemMatcher": []
+    }
+  ]
+}

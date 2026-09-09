@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1160 500" role="img" aria-labelledby="title desc">
+  <title id="title">CLOCK simulator power, sync and reset model</title>
+  <desc id="desc">Diagram showing virtual power cycling and ideal square, sine or triangle sources reduced by ideal comparators before entering the real CLOCK synchronization and global reset firmware paths.</desc>
+  <style>
+    .h{font:700 27px Ubuntu,Arial,sans-serif;fill:#111}.t{font:20px Ubuntu,Arial,sans-serif;fill:#222}.s{font:16px Ubuntu,Arial,sans-serif;fill:#555}.box{fill:#fff;stroke:#555;stroke-width:3}.host{fill:#eef6ff;stroke:#3973ac;stroke-width:3}.fw{fill:#ecf8ef;stroke:#2e8b57;stroke-width:3}.bound{fill:#fff4e6;stroke:#d97706;stroke-width:3;stroke-dasharray:9 6}.arrow{stroke:#555;stroke-width:3;fill:none;marker-end:url(#a)}
+  </style>
+  <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#555"/></marker></defs>
+  <text x="580" y="40" text-anchor="middle" class="h">Native simulator — POWER and conditioned input boundaries</text>
+  <g transform="translate(45 90)"><rect width="240" height="110" rx="12" class="host"/><text x="120" y="40" text-anchor="middle" class="t">POWER toggle</text><text x="120" y="70" text-anchor="middle" class="s">destroy / reconstruct volatile MCU state</text><text x="120" y="94" text-anchor="middle" class="s">durable Flash mirror retained</text></g>
+  <g transform="translate(355 90)"><rect width="330" height="110" rx="12" class="fw"/><text x="165" y="40" text-anchor="middle" class="t">ClockApplication lifecycle</text><text x="165" y="70" text-anchor="middle" class="s">timed boot → optional Easter egg → RUNNING</text><text x="165" y="94" text-anchor="middle" class="s">arcade: /OE disabled; drummer: deliberate gates</text></g>
+  <path d="M285 145 H355" class="arrow"/>
+
+  <g transform="translate(45 285)"><rect width="240" height="120" rx="12" class="host"/><text x="120" y="38" text-anchor="middle" class="t">Virtual source</text><text x="120" y="68" text-anchor="middle" class="s">SQUARE / SINE / TRIANGLE</text><text x="120" y="94" text-anchor="middle" class="s">SYNC BPM/PPQN or RST period</text></g>
+  <g transform="translate(355 285)"><rect width="220" height="120" rx="12" class="bound"/><text x="110" y="38" text-anchor="middle" class="t">Ideal comparator</text><text x="110" y="68" text-anchor="middle" class="s">normalized threshold</text><text x="110" y="94" text-anchor="middle" class="s">firmware sees HI / LO only</text></g>
+  <path d="M285 345 H355" class="arrow"/>
+  <g transform="translate(645 260)"><rect width="220" height="90" rx="12" class="fw"/><text x="110" y="36" text-anchor="middle" class="t">SYNC path</text><text x="110" y="64" text-anchor="middle" class="s">tempo / PPQN / lock / phase</text></g>
+  <g transform="translate(645 370)"><rect width="220" height="90" rx="12" class="fw"/><text x="110" y="36" text-anchor="middle" class="t">RST path</text><text x="110" y="64" text-anchor="middle" class="s">global phase reset; transport unchanged</text></g>
+  <path d="M575 330 H610 V305 H645" class="arrow"/><path d="M575 360 H610 V415 H645" class="arrow"/>
+  <g transform="translate(925 315)"><rect width="190" height="110" rx="12" class="fw"/><text x="95" y="40" text-anchor="middle" class="t">ClockEngine</text><text x="95" y="70" text-anchor="middle" class="s">real production logic</text><text x="95" y="94" text-anchor="middle" class="s">no duplicate scheduler</text></g>
+  <path d="M865 305 H900 V350 H925" class="arrow"/><path d="M865 415 H925" class="arrow"/>
+</svg>

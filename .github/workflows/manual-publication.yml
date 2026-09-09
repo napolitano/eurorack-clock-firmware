@@ -1,0 +1,70 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+
+name: Manual publication smoke test
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - "docs/manual/**"
+      - "scripts/prepare_release_manual.py"
+      - "scripts/build_user_manual.py"
+      - "scripts/check_user_manual.py"
+      - ".github/workflows/manual-publication.yml"
+      - "src/version.h"
+
+jobs:
+  manual:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Install publication toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libreoffice-writer poppler-utils fonts-ubuntu-classic
+          python -m pip install --upgrade pip
+          python -m pip install pillow
+
+      - name: Stamp current manual version
+        run: |
+          VERSION="$(python scripts/version.py)"
+          python scripts/prepare_release_manual.py \
+            --version "${VERSION}" \
+            --source docs/manual/clock-user-manual.odt \
+            --output "/tmp/clock-user-manual.${VERSION}.odt"
+
+      - name: Build ODT and PDF publication artifacts
+        run: |
+          VERSION="$(python scripts/version.py)"
+          python scripts/build_user_manual.py \
+            --version "${VERSION}" \
+            --source "/tmp/clock-user-manual.${VERSION}.odt" \
+            --output-dir dist \
+            --require-ubuntu-fonts
+
+      - name: Validate publication artifacts
+        run: |
+          VERSION="$(python scripts/version.py)"
+          python scripts/check_user_manual.py \
+            "dist/clock-user-manual.${VERSION}.pdf" \
+            --source "dist/clock-user-manual.${VERSION}.odt" \
+            --version "${VERSION}" \
+            --require-ubuntu-fonts
+
+      - name: Upload manual artifacts
+        uses: actions/upload-artifact@v7
+        with:
+          name: clock-user-manual-${{ github.sha }}
+          path: |
+            dist/clock-user-manual.*.odt
+            dist/clock-user-manual.*.pdf
+          if-no-files-found: error
+          retention-days: 14

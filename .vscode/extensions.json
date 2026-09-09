@@ -1,0 +1,17 @@
+{
+    // See http://go.microsoft.com/fwlink/?LinkId=827846
+    // for the documentation about the extensions.json format
+    "recommendations": [
+        "EditorConfig.EditorConfig",
+        "LordImmaculate.platformio-ide",
+        "PKief.material-icon-theme",
+        "johnpapa.vscode-peacock",
+        "llvm-vs-code-extensions.vscode-clangd",
+        "ms-vscode.cmake-tools",
+        "platformio.platformio-ide",
+        "streetsidesoftware.code-spell-checker"
+    ],
+    "unwantedRecommendations": [
+        "ms-vscode.cpptools-extension-pack"
+    ]
+}

@@ -1,0 +1,158 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  host-tests:
+    name: Host tests and coverage
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-pio-
+
+      - name: Install host toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential doxygen
+          python -m pip install --upgrade pip
+          python -m pip install "platformio==6.1.19" pillow
+
+      - name: Enforce architecture policy
+        run: python scripts/check_architecture.py
+
+      - name: Validate repository documentation
+        run: python scripts/check_documentation.py
+
+      - name: Build Doxygen API documentation
+        run: doxygen Doxyfile
+
+      - name: Run release-tooling tests
+        run: python -m unittest discover -s scripts/tests -p 'test_*.py' -v
+
+      - name: Run native production-core tests
+        run: pio test -e native
+
+      - name: Run complete host firmware tests and coverage gate
+        run: python scripts/run_host_tests.py --skip-sanitizers
+
+      - name: Run ASan and UBSan matrix
+        run: python scripts/run_host_tests.py --sanitizers-only
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v7
+        with:
+          name: full-firmware-coverage-${{ github.sha }}
+          path: coverage/
+          if-no-files-found: error
+          retention-days: 14
+
+  native-simulator:
+    name: Native simulator (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Configure headless simulator
+        run: cmake -S . -B build/simulator-headless -DCLOCK_SIMULATOR_WITH_SDL=OFF -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build headless simulator
+        run: cmake --build build/simulator-headless --config Debug
+
+      - name: Run simulator integration tests
+        run: ctest --test-dir build/simulator-headless -C Debug --output-on-failure
+
+  simulator-sdl-build:
+    name: SDL3 simulator frontend build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Install native build prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential doxygen cmake git
+
+      - name: Configure simulator with pinned SDL3
+        run: >-
+          cmake -S . -B build/simulator
+          -DCLOCK_SIMULATOR_WITH_SDL=ON
+          -DCLOCK_SIMULATOR_FETCH_SDL=ON
+          -DSDL_UNIX_CONSOLE_BUILD=ON
+          -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build SDL3 simulator frontend
+        run: cmake --build build/simulator --target clock-simulator --config Debug -j2
+
+      - name: Exercise windowless screenshot path
+        run: ctest --test-dir build/simulator -C Debug --output-on-failure -R simulator_headless_screenshot
+
+  firmware-build:
+    name: STM32F401 firmware build
+    runs-on: ubuntu-latest
+    needs: [host-tests, native-simulator, simulator-sdl-build]
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-pio-
+
+      - name: Install PlatformIO
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install "platformio==6.1.19" pillow
+
+      - name: Build I2C prototype firmware
+        run: pio run -e blackpill_f401cc
+
+      - name: Compile-check SPI display variant
+        run: pio run -e blackpill_f401cc_spi_ssd1315
+
+      - name: Confirm binary artifacts are not distributed
+        run: |
+          echo "I2C and SPI firmware compiled successfully."
+          echo "BIN/ELF upload is intentionally disabled pending LGPL static-link compliance."

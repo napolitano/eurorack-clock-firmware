@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use South Signal Lab CLOCK, please cite the software using these metadata."
+title: "South Signal Lab CLOCK"
+type: software
+version: 0.19.0-alpha.61
+date-released: 2026-09-09
+authors:
+  - given-names: Axel
+    family-names: Napolitano
+license: PolyForm-Noncommercial-1.0.0
+abstract: >-
+  South Signal Lab CLOCK is an eight-output Eurorack precision clock, Euclidean
+  rhythm, gate-sequencer, and divider firmware for the STM32F401CCU6 platform,
+  with deterministic timing, external synchronization, persistent presets, and
+  a native desktop simulator.
+keywords:
+  - eurorack
+  - modular synthesizer
+  - clock generator
+  - trigger sequencer
+  - gate sequencer
+  - euclidean rhythm
+  - rhythm generator
+  - STM32F401
+  - embedded firmware
+  - PlatformIO
+  - music technology

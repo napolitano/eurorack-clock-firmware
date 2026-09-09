@@ -1,0 +1,6 @@
+Required Notice: Copyright © 2026 Axel Napolitano.
+
+South Signal Lab CLOCK — 8-Channel Eurorack Clock
+Licensed under the PolyForm Noncommercial License 1.0.0.
+Commercial use is not licensed under these terms.
+See LICENSE.md for the complete license terms.

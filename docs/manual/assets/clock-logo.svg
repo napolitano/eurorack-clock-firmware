@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 128 41"
+     role="img"
+     aria-labelledby="title desc">
+  <title id="title">CLOCK logo</title>
+  <desc id="desc">Minimal CLOCK monoline vector wordmark with corrected spacing between O and C and a balanced K.</desc>
+  <g fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M28 12 C25 10 22 9 18 9 C11 10 8 15 8 20 C8 25 11 30 18 31 C22 31 25 30 28 28" />
+    <path d="M38 10 L38 31 L49 31" />
+    <path d="M60 9 C65 9 70 14 70 20 C70 26 65 31 60 31 C55 31 50 26 50 20 C50 14 55 9 60 9 Z" />
+    <path d="M96 12 C93 10 90 9 86 9 C79 10 76 15 76 20 C76 25 79 30 86 31 C90 31 93 30 96 28" />
+    <path d="M104 10 L104 31 M104 20 L118 10 M104 20 L118 31" />
+  </g>
+</svg>

@@ -1,0 +1,59 @@
+{
+  "@context": "https://w3id.org/codemeta/3.0",
+  "@type": "SoftwareSourceCode",
+  "name": "South Signal Lab CLOCK",
+  "softwareVersion": "0.19.0-alpha.61",
+  "datePublished": "2026-09-09",
+  "dateModified": "2026-09-09",
+  "description": "Eight-output Eurorack precision clock, Euclidean rhythm, gate-sequencer, and divider firmware for STM32F401CCU6 with deterministic timing, external synchronization, persistent presets, and a native desktop simulator.",
+  "applicationCategory": "Embedded music technology",
+  "developmentStatus": "active; alpha",
+  "author": {
+    "@type": "Person",
+    "givenName": "Axel",
+    "familyName": "Napolitano",
+    "name": "Axel Napolitano"
+  },
+  "maintainer": {
+    "@type": "Person",
+    "givenName": "Axel",
+    "familyName": "Napolitano",
+    "name": "Axel Napolitano"
+  },
+  "copyrightHolder": {
+    "@type": "Person",
+    "name": "Axel Napolitano"
+  },
+  "copyrightYear": 2026,
+  "publisher": {
+    "@type": "Organization",
+    "name": "South Signal Lab"
+  },
+  "producer": {
+    "@type": "Organization",
+    "name": "South Signal Lab"
+  },
+  "license": "https://spdx.org/licenses/PolyForm-Noncommercial-1.0.0.html",
+  "programmingLanguage": [
+    "C++17",
+    "Python"
+  ],
+  "runtimePlatform": [
+    "STM32F401CCU6 / ARM Cortex-M4",
+    "Linux / macOS / Windows native simulator"
+  ],
+  "processorRequirements": "STM32F401CCU6 (ARM Cortex-M4) for the embedded target",
+  "keywords": [
+    "eurorack",
+    "modular synthesizer",
+    "clock generator",
+    "trigger sequencer",
+    "gate sequencer",
+    "euclidean rhythm",
+    "rhythm generator",
+    "STM32F401",
+    "embedded firmware",
+    "PlatformIO",
+    "music technology"
+  ]
+}

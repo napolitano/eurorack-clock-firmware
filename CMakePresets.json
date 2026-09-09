@@ -1,0 +1,52 @@
+{
+  "version": 6,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 20,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "simulator",
+      "displayName": "Native simulator (SDL3)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/simulator",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CLOCK_BUILD_SIMULATOR": "ON",
+        "CLOCK_SIMULATOR_WITH_SDL": "ON",
+        "CLOCK_SIMULATOR_FETCH_SDL": "ON"
+      }
+    },
+    {
+      "name": "simulator-headless",
+      "displayName": "Native simulator (headless)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/simulator-headless",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "CLOCK_BUILD_SIMULATOR": "ON",
+        "CLOCK_SIMULATOR_WITH_SDL": "OFF"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "simulator",
+      "configurePreset": "simulator"
+    },
+    {
+      "name": "simulator-headless",
+      "configurePreset": "simulator-headless"
+    }
+  ],
+  "testPresets": [
+    {
+      "name": "simulator-headless",
+      "configurePreset": "simulator-headless",
+      "output": {
+        "outputOnFailure": true
+      }
+    }
+  ]
+}

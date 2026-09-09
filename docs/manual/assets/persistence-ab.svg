@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1050 500" role="img" aria-labelledby="title desc">
+<title id="title">CLOCK A/B Flash persistence</title><desc id="desc">Power-loss-tolerant two-slot Flash commit process.</desc>
+<style>.h{font:700 28px Ubuntu,Arial,sans-serif;fill:#111}.t{font:20px Ubuntu,Arial,sans-serif;fill:#222}.s{font:16px Ubuntu,Arial,sans-serif;fill:#555}.good{fill:#ecf8ef;stroke:#2e8b57;stroke-width:3}.write{fill:#eaf4ff;stroke:#007fff;stroke-width:3}.arrow{stroke:#555;stroke-width:3;fill:none;marker-end:url(#a)}.step{fill:#fafafa;stroke:#bbb;stroke-width:2}</style>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#555"/></marker></defs>
+<text x="525" y="42" text-anchor="middle" class="h">Internal Flash A/B persistence</text>
+<g transform="translate(55 95)"><rect width="300" height="160" rx="14" class="good"/><text x="150" y="38" text-anchor="middle" class="t">Slot A — generation N</text><text x="150" y="72" text-anchor="middle" class="s">16 KiB sector</text><text x="150" y="100" text-anchor="middle" class="s">valid image + CRC + COMMIT</text><text x="150" y="132" text-anchor="middle" class="t">KEEP VALID</text></g>
+<g transform="translate(695 95)"><rect width="300" height="160" rx="14" class="write"/><text x="150" y="38" text-anchor="middle" class="t">Slot B — generation N+1</text><text x="150" y="72" text-anchor="middle" class="s">erase inactive sector</text><text x="150" y="100" text-anchor="middle" class="s">write image + CRC</text><text x="150" y="132" text-anchor="middle" class="t">COMMIT LAST</text></g>
+<g transform="translate(410 110)"><rect width="230" height="55" rx="10" class="step"/><text x="115" y="34" text-anchor="middle" class="s">1. write inactive slot</text><rect y="75" width="230" height="55" rx="10" class="step"/><text x="115" y="109" text-anchor="middle" class="s">2. verify generation N+1</text><rect y="150" width="230" height="55" rx="10" class="step"/><text x="115" y="184" text-anchor="middle" class="s">3. next save swaps roles</text></g>
+<path d="M355 175 H410 M640 175 H695" class="arrow"/>
+<text x="525" y="350" text-anchor="middle" class="t">Power loss before COMMIT?</text><text x="525" y="385" text-anchor="middle" class="s">Slot B is ignored; Slot A remains the last complete generation.</text>
+<text x="525" y="445" text-anchor="middle" class="s">Current logical image: 8 KiB · hard ceiling: 12 KiB · physical slot: 16 KiB</text>
+</svg>

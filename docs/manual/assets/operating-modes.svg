@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1080 500" role="img" aria-labelledby="title desc">
+  <title id="title">CLOCK operating modes</title><desc id="desc">Independent, One Clock and Divider Bank topologies feeding eight physical outputs.</desc>
+  <style>.h{font:700 28px Ubuntu,Arial,sans-serif;fill:#111}.t{font:20px Ubuntu,Arial,sans-serif;fill:#222}.s{font:16px Ubuntu,Arial,sans-serif;fill:#444}.box{fill:#fafafa;stroke:#555;stroke-width:3}.line{stroke:#444;stroke-width:3;fill:none}.accent{fill:#eaf4ff;stroke:#007fff;stroke-width:3}.out{fill:#fff;stroke:#777;stroke-width:2}</style>
+  <text x="540" y="42" text-anchor="middle" class="h">CLOCK — three output topologies</text>
+  <g transform="translate(40 80)">
+    <rect width="300" height="360" rx="16" class="box"/><text x="150" y="42" text-anchor="middle" class="h">Independent</text><text x="150" y="72" text-anchor="middle" class="s">Each output owns its mode and rate.</text>
+    <g class="t"><text x="35" y="120">1  CLOCK</text><text x="35" y="150">2  CLOCK</text><text x="35" y="180">3  EUCLID</text><text x="35" y="210">4  SEQ</text><text x="35" y="240">5  OFF</text><text x="35" y="270">6  EUCLID</text><text x="35" y="300">7  SEQ</text><text x="35" y="330">8  CLOCK</text></g>
+  </g>
+  <g transform="translate(390 80)">
+    <rect width="300" height="360" rx="16" class="accent"/><text x="150" y="42" text-anchor="middle" class="h">One Clock</text><text x="150" y="72" text-anchor="middle" class="s">One shared clock → eight outputs.</text>
+    <circle cx="150" cy="145" r="54" fill="#fff" stroke="#007fff" stroke-width="3"/><text x="150" y="153" text-anchor="middle" class="t">CLOCK</text>
+    <path d="M150 199 V235 M150 235 H55 M150 235 H245" class="line"/><path d="M55 235 V285 M82 235 V285 M109 235 V285 M136 235 V285 M164 235 V285 M191 235 V285 M218 235 V285 M245 235 V285" class="line"/>
+    <g><circle cx="55" cy="305" r="16" class="out"/><circle cx="82" cy="305" r="16" class="out"/><circle cx="109" cy="305" r="16" class="out"/><circle cx="136" cy="305" r="16" class="out"/><circle cx="164" cy="305" r="16" class="out"/><circle cx="191" cy="305" r="16" class="out"/><circle cx="218" cy="305" r="16" class="out"/><circle cx="245" cy="305" r="16" class="out"/></g>
+    <text x="150" y="350" text-anchor="middle" class="s">Humanize is available only here.</text>
+  </g>
+  <g transform="translate(740 80)">
+    <rect width="300" height="360" rx="16" class="box"/><text x="150" y="42" text-anchor="middle" class="h">Divider Bank</text><text x="150" y="72" text-anchor="middle" class="s">One source, fixed divider family.</text>
+    <text x="150" y="130" text-anchor="middle" class="t">MASTER</text><path d="M150 145 V175" class="line"/>
+    <g class="t"><text x="65" y="215">÷1</text><text x="65" y="245">÷2</text><text x="65" y="275">÷4</text><text x="65" y="305">÷8</text><text x="190" y="215">÷16</text><text x="190" y="245">÷32</text><text x="190" y="275">÷64</text><text x="190" y="305">÷128</text></g>
+    <text x="150" y="350" text-anchor="middle" class="s">Families: powers / integers / primes.</text>
+  </g>
+</svg>

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 430" role="img" aria-labelledby="title desc">
+<title id="title">CLOCK external synchronization flow</title><desc id="desc">Planned physical input capture and implemented engine synchronization layers.</desc>
+<style>.h{font:700 28px Ubuntu,Arial,sans-serif;fill:#111}.t{font:20px Ubuntu,Arial,sans-serif;fill:#222}.s{font:16px Ubuntu,Arial,sans-serif;fill:#555}.box{fill:#fff;stroke:#555;stroke-width:3}.todo{fill:#fff4e6;stroke:#d97706;stroke-width:3;stroke-dasharray:9 6}.done{fill:#ecf8ef;stroke:#2e8b57;stroke-width:3}.arrow{stroke:#555;stroke-width:3;fill:none;marker-end:url(#a)}</style>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#555"/></marker></defs>
+<text x="550" y="40" text-anchor="middle" class="h">External Sync — physical capture vs. implemented timing model</text>
+<g transform="translate(40 110)"><rect width="180" height="90" rx="12" class="box"/><text x="90" y="42" text-anchor="middle" class="t">Eurorack clock</text><text x="90" y="68" text-anchor="middle" class="s">SYNC IN</text></g>
+<g transform="translate(270 95)"><rect width="210" height="120" rx="12" class="todo"/><text x="105" y="38" text-anchor="middle" class="t">Comparator</text><text x="105" y="66" text-anchor="middle" class="t">+ TIM Input Capture</text><text x="105" y="95" text-anchor="middle" class="s">PENDING HIL / hardware</text></g>
+<g transform="translate(535 95)"><rect width="210" height="120" rx="12" class="done"/><text x="105" y="38" text-anchor="middle" class="t">Sync tracker</text><text x="105" y="66" text-anchor="middle" class="s">PPQN / lock / loss / tempo</text><text x="105" y="92" text-anchor="middle" class="s">engine model implemented</text></g>
+<g transform="translate(800 95)"><rect width="250" height="120" rx="12" class="done"/><text x="125" y="38" text-anchor="middle" class="t">ClockEngine</text><text x="125" y="66" text-anchor="middle" class="s">monotonic timeline</text><text x="125" y="92" text-anchor="middle" class="s">separate musical phase alignment</text></g>
+<path d="M220 155 H270 M480 155 H535 M745 155 H800" class="arrow"/>
+<g transform="translate(330 285)"><rect width="440" height="90" rx="12" class="done"/><text x="220" y="38" text-anchor="middle" class="t">Native simulator pulse source</text><text x="220" y="65" text-anchor="middle" class="s">injects conditioned pulses into the implemented engine path</text></g>
+<path d="M550 285 V230 H640 V215" class="arrow"/>
+</svg>

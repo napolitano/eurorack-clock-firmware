@@ -1,0 +1,140 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    name: Test, build and release
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Cache PlatformIO
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/pip
+            ~/.platformio/.cache
+          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-pio-
+
+      - name: Install host toolchain
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential doxygen libreoffice-writer poppler-utils fonts-ubuntu-classic
+          python -m pip install --upgrade pip
+          python -m pip install "platformio==6.1.19" pillow
+
+      - name: Enforce architecture policy
+        run: python scripts/check_architecture.py
+
+      - name: Validate repository documentation
+        run: python scripts/check_documentation.py
+
+      - name: Build Doxygen API documentation
+        run: doxygen Doxyfile
+
+      - name: Validate release tag
+        if: github.ref_type == 'tag'
+        run: python scripts/version.py --check-tag "${GITHUB_REF_NAME}"
+
+      - name: Run release-tooling tests
+        run: python -m unittest discover -s scripts/tests -p 'test_*.py' -v
+
+      - name: Run native tests
+        run: pio test -e native
+
+      - name: Run complete host firmware tests and coverage gate
+        run: python scripts/run_host_tests.py --skip-sanitizers
+
+      - name: Run ASan and UBSan matrix
+        run: python scripts/run_host_tests.py --sanitizers-only
+
+      - name: Configure headless simulator
+        run: cmake -S . -B build/simulator-headless -DCLOCK_SIMULATOR_WITH_SDL=OFF -DCMAKE_BUILD_TYPE=Debug
+
+      - name: Build headless simulator
+        run: cmake --build build/simulator-headless --config Debug
+
+      - name: Run simulator integration tests
+        run: ctest --test-dir build/simulator-headless -C Debug --output-on-failure
+
+      - name: Build firmware
+        run: pio run -e blackpill_f401cc
+
+      - name: Compile-check SPI display variant
+        run: pio run -e blackpill_f401cc_spi_ssd1315
+
+      - name: Build versioned user manual artifacts
+        run: |
+          VERSION="$(python scripts/version.py)"
+          MANUAL_SOURCE="docs/manual/releases/${VERSION}/clock-user-manual.${VERSION}.odt"
+          test -f "${MANUAL_SOURCE}" || {
+            echo "Missing frozen release manual: ${MANUAL_SOURCE}" >&2
+            echo "Run: python scripts/prepare_release_manual.py" >&2
+            exit 1
+          }
+          python scripts/check_user_manual.py "${MANUAL_SOURCE}" --version "${VERSION}"
+          python scripts/build_user_manual.py \
+            --version "${VERSION}" \
+            --source "${MANUAL_SOURCE}" \
+            --output-dir dist \
+            --require-ubuntu-fonts
+          python scripts/check_user_manual.py \
+            "dist/clock-user-manual.${VERSION}.pdf" \
+            --source "dist/clock-user-manual.${VERSION}.odt" \
+            --version "${VERSION}" \
+            --require-ubuntu-fonts
+
+      - name: Create release notes from changelog
+        run: |
+          VERSION="$(python scripts/version.py)"
+          python scripts/release_notes.py "$VERSION"
+          {
+            echo
+            echo "### Documentation artifacts"
+            echo
+            echo "- \`clock-user-manual.${VERSION}.odt\` - editable, version-frozen user manual source"
+            echo "- \`clock-user-manual.${VERSION}.pdf\` - release PDF generated from that ODT"
+          } >> dist/RELEASE_NOTES.md
+
+      - name: Publish GitHub Release
+        if: github.ref_type == 'tag'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          EXTRA_FLAGS=""
+          if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
+            EXTRA_FLAGS="--prerelease"
+          fi
+          VERSION="$(python scripts/version.py)"
+          # GitHub automatically exposes source archives for the tag. Firmware
+          # BIN/ELF assets remain deliberately unattached while STM32duino LGPL
+          # static-link compliance has not been separately reviewed. The manual
+          # ODT/PDF are documentation artifacts and are published explicitly.
+          gh release create "${GITHUB_REF_NAME}" \
+            "dist/clock-user-manual.${VERSION}.odt" \
+            "dist/clock-user-manual.${VERSION}.pdf" \
+            --title "CLOCK ${GITHUB_REF_NAME}" \
+            --notes-file dist/RELEASE_NOTES.md \
+            --verify-tag \
+            ${EXTRA_FLAGS}
