@@ -90,12 +90,24 @@ def page_images(content_xml: str, archive: zipfile.ZipFile) -> tuple[str, str]:
     return unique[0], unique[-1]
 
 
+def release_stage_label(version: str) -> str:
+    """Return the publication label used on the manual cover for one SemVer stage."""
+    lowered = version.lower()
+    if "-alpha" in lowered:
+        return "Prototype"
+    if "-beta" in lowered:
+        return "Beta"
+    if "-rc" in lowered:
+        return "Release candidate"
+    return "Release"
+
+
 def stamp_cover(image_bytes: bytes, version: str, font_path: str) -> bytes:
     image = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
     draw = ImageDraw.Draw(image)
     draw.rectangle((45, 1905, 780, 1965), fill=BLUE)
     font = ImageFont.truetype(font_path, 33)
-    draw.text((58, 1909), f"Prototype · firmware {version}", font=font, fill=WHITE)
+    draw.text((58, 1909), f"{release_stage_label(version)} · firmware {version}", font=font, fill=WHITE)
     metadata = PngImagePlugin.PngInfo()
     metadata.add_text(PNG_VERSION_KEY, version)
     out = io.BytesIO()
@@ -108,7 +120,7 @@ def stamp_back(image_bytes: bytes, version: str, font_path: str) -> bytes:
     draw = ImageDraw.Draw(image)
     draw.rectangle((45, 1406, 720, 1468), fill=BLUE)
     font = ImageFont.truetype(font_path, 38)
-    draw.text((58, 1409), f"{version} (prototype)", font=font, fill=WHITE)
+    draw.text((58, 1409), f"{version} ({release_stage_label(version).lower()})", font=font, fill=WHITE)
     metadata = PngImagePlugin.PngInfo()
     metadata.add_text(PNG_VERSION_KEY, version)
     out = io.BytesIO()

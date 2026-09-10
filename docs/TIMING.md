@@ -29,7 +29,7 @@ Encoder ISR work is intentionally limited to Gray-code decoding and accumulation
 
 SYNC/RST ISR work is limited to timestamping/queuing conditioned levels. The 20 kHz scheduler consumes those queues. RST has precedence over SYNC when both are pending at the same scheduler service boundary.
 
-For final hardware, SYNC should preferably be routed to a timer Input Capture capable pin. GPIO EXTI timestamping remains a functional fallback, but Input Capture removes software IRQ-entry latency from the period measurement itself.
+The V1 baseline timestamps conditioned SYNC edges through GPIO EXTI. Final hardware qualification must measure the resulting capture and output jitter under representative worst-case load. Routing to a timer Input Capture capable pin remains a useful design option because hardware capture removes software IRQ-entry latency from the period measurement, but adopting it is required only if the measured EXTI path fails the V1 timing target.
 
 ## Display transports
 

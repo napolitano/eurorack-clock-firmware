@@ -13,6 +13,7 @@
 #include <cstdint>
 
 #include "domain/clock_types.h"
+#include "hal/persistent_layout.h"
 #include "hal/persistent_storage.h"
 
 namespace clockfw::services {
@@ -36,6 +37,33 @@ public:
 
     /** Maximum number of user-visible characters in one preset name. */
     static constexpr std::size_t kPresetNameLength = 16U;
+
+    /** Serialized v6 payload bytes for one complete V1 ClockState. */
+    static constexpr std::size_t kCurrentStatePayloadBytes = 252U;
+
+    /** Durable CURRENT record bytes: header + V1 state payload + CRC-32. */
+    static constexpr std::size_t kCurrentRecordBytes = 264U;
+
+    /** Durable named-preset record bytes: header + name + V1 state payload + CRC-32. */
+    static constexpr std::size_t kPresetRecordBytes = 280U;
+
+    /** Bytes occupied by CURRENT plus all eight V1 named presets. */
+    static constexpr std::size_t kSettingsPresetFootprintBytes =
+        kCurrentRecordBytes + static_cast<std::size_t>(kUserPresetSlotCount) * kPresetRecordBytes;
+
+    /** Free bytes before the historical score-compatibility region begins. */
+    static constexpr std::size_t kBytesBeforeLegacyScoreRegion =
+        hal::persistent_layout::kLegacyScoreRegionOffset - kSettingsPresetFootprintBytes;
+
+    /**
+     * Maximum payload growth that can be repeated in CURRENT plus eight presets
+     * without redesigning the V1 persistence layout.
+     *
+     * One added serialized state byte consumes nine bytes in the logical image:
+     * one in CURRENT and one in each of the eight named preset records.
+     */
+    static constexpr std::size_t kMaximumInPlaceStatePayloadGrowthBytes =
+        kBytesBeforeLegacyScoreRegion / (static_cast<std::size_t>(kUserPresetSlotCount) + 1U);
 
     /**
      * @brief Constructs the service around the non-volatile storage HAL.
@@ -139,13 +167,13 @@ public:
 
 private:
     /** Serialized field count for one complete ClockState payload. */
-    static constexpr std::size_t kStatePayloadSize = 252U;
+    static constexpr std::size_t kStatePayloadSize = kCurrentStatePayloadBytes;
 
     /** CURRENT record size: header + state payload + CRC-32. */
-    static constexpr std::size_t kCurrentRecordSize = 264U;
+    static constexpr std::size_t kCurrentRecordSize = kCurrentRecordBytes;
 
     /** Preset record size: header + 16-byte name + state payload + CRC-32. */
-    static constexpr std::size_t kPresetRecordSize = 280U;
+    static constexpr std::size_t kPresetRecordSize = kPresetRecordBytes;
 
     /** Stable CURRENT record schema version. */
     static constexpr std::uint8_t kSchemaVersion = 6U;
@@ -306,8 +334,11 @@ private:
 };
 
 static_assert(
-    263U + PersistentStateService::kUserPresetSlotCount * 279U <=
-        hal::PersistentStorage::kCapacityBytes,
-    "Persistent storage capacity is too small for CURRENT plus all user presets.");
+    PersistentStateService::kSettingsPresetFootprintBytes <=
+        hal::persistent_layout::kLegacyScoreRegionOffset,
+    "CURRENT plus named presets overlap the legacy score region.");
+static_assert(
+    PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes == 63U,
+    "V1 persistence headroom changed; update the forward-compatibility analysis.");
 
 }  // namespace clockfw::services

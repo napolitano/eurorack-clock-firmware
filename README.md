@@ -17,7 +17,7 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `0.19.0-alpha.63`.** The firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests are implemented. Final comparator/PCB validation, timer Input Capture for maximum external-SYNC precision, compare-event scheduling, and physical HIL timing sign-off remain prerelease milestones.
+> **Current status: `0.19.0-beta.1`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain prerelease milestones.
 
 ## Why another Eurorack Clock?
 
@@ -34,13 +34,21 @@ CLOCK exists because we wanted a module with a specific balance that we did not 
 
 This is an independent South Signal Lab development. It is not a firmware port for another clock module and not a clone of a commercial product.
 
+### Why no general CV modulation?
+
+CLOCK deliberately stays in the **digital timing, gate, and trigger** domain. Hardware Rev 1 has SYNC and RST inputs, but no general parameter-CV inputs, analog modulation outputs, or CV modulation matrix. This is a product boundary, not a missing 1.0 feature.
+
+A quality eight-channel analog modulation-output stage would move the module into a different cost and assembly class. Our quality target would require an eight-channel **16-bit DAC-class solution** plus two quad output-op-amp stages; a 12-bit MCP-class compromise is not considered good enough for this direction. The current project estimate is roughly **EUR 30-40 additional BOM cost**, before the wider impact of fine-pitch SMD assembly, PCB complexity, calibration, testing, and documentation. General CV parameter inputs would add their own analog front ends, routing, jacks, and validation scope.
+
+Rather than dilute DIY buildability to chase feature parity with modulation-centric clocks, CLOCK spends its complexity budget on precise digital timing and rhythm. Post-1.0 cross-channel interaction can still become sophisticated, but the first direction is internal event logic - clocks, gates, resets, fills, probability, and rhythm relationships - without changing the analog hardware.
+
 ## What CLOCK does
 
 | Area | Current implementation |
 | --- | --- |
 | Format | Eurorack, 3U, 10 HP reference panel |
 | Outputs | 8 gate/clock outputs, target 0/+5 V, individual activity LEDs |
-| Inputs | Separate SYNC and RST inputs through the planned LM393 conditioning stage |
+| Inputs | Separate SYNC and RST inputs through the planned LM393 conditioning stage; no general parameter-CV inputs by design |
 | MCU | STM32F401CCU6 Black Pill, 84 MHz Cortex-M4 |
 | Display | 128×64 SSD1306/SSD1315; SPI reference path, bounded deferred I2C alternative |
 | Controls | Push encoder + PLAY/PAUSE + TAP + STOP/BACK |
@@ -125,7 +133,7 @@ The firmware-side synchronization model supports:
 SYNC/RST edges are captured by GPIO interrupts and consumed in the deterministic scheduler. External tempo estimation is period-based and includes smoothing, continuity handling, adaptive timeout and timestamp-wrap-safe arithmetic.
 
 > [!CAUTION]
-> Host tests prove the software semantics, not the analog input stage. Comparator thresholds, signal integrity, final timer-capture routing and resulting output jitter must still pass the real-hardware HIL plan before beta. See [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).
+> Host tests prove the software semantics, not the analog input stage. Comparator thresholds, signal integrity, final timer-capture routing and resulting output jitter must still pass the real-hardware HIL plan before a 1.0 release candidate. See [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).
 
 ## Controls and UI
 
@@ -165,7 +173,7 @@ SPI remains the preferred/reference display transport. I2C is also supported for
 - stale UI frames may be discarded - latest frame wins;
 - NACKs are retried without pretending the physical display was updated.
 
-A slower I2C frame rate is acceptable. Additional gate jitter, missed edges, SYNC/RST faults or encoder loss are not. SPI-vs-I2C HIL under maximum display activity is therefore a mandatory pre-beta test.
+A slower I2C frame rate is acceptable. Additional gate jitter, missed edges, SYNC/RST faults or encoder loss are not. SPI-vs-I2C HIL under maximum display activity is therefore a mandatory V1 qualification test before a 1.0 release candidate.
 
 ## Native simulator
 
@@ -199,7 +207,7 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **89 named test cases** across Clock Core, Realtime/SYNC/RST and full Host Firmware/UI/HAL suites. Those cases execute more than **218,000 assertions** in the default host configuration; exhaustive clock-core matrices account for most of them.
+Current inventory: **90 named test cases** across Clock Core, Realtime/SYNC/RST and full Host Firmware/UI/HAL suites. Those cases execute more than **218,000 assertions** in the default host configuration; exhaustive clock-core matrices account for most of them.
 
 The broader host matrix additionally recompiles display variants, runs sanitizer configurations and produces aggregate coverage:
 
@@ -227,7 +235,9 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | [Architecture](docs/ARCHITECTURE.md) | Firmware boundaries and responsibilities |
 | [Configuration](docs/CONFIGURATION.md) | Build-time and runtime configuration |
 | [Simulator](docs/SIMULATOR.md) | Desktop simulator and headless usage |
-| [HIL Test Plan](docs/HIL_TEST_PLAN.md) | Mandatory physical validation before beta |
+| [HIL Test Plan](docs/HIL_TEST_PLAN.md) | Mandatory physical validation before a 1.0 release candidate |
+| [Roadmap](docs/ROADMAP.md) | V1 freeze, 1.0 qualification path, post-1.0 musical roadmap and VCV track |
+| [V1 Forward-Compatibility Audit](docs/V1_FORWARD_COMPATIBILITY.md) | Persistence/event-architecture constraints that protect later 1.x migration |
 | [Development](docs/DEVELOPMENT.md) | Developer workflow and quality gates |
 | [Doxygen](Doxyfile) | Source-level API documentation |
 

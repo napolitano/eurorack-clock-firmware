@@ -12,9 +12,9 @@ This is the developer-facing native test entry point and intentionally runs all 
 
 - 44 deterministic clock-core cases, including exhaustive ratio, accumulator, swing, probability, gate-width, Euclidean and sequencer invariants;
 - 24 focused real-time/SYNC/RST integration and stress cases;
-- 21 complete host-firmware/UI/HAL scenarios against deterministic Arduino/display/storage fakes.
+- 22 complete host-firmware/UI/HAL scenarios against deterministic Arduino/display/storage fakes.
 
-That is **89 named native test cases**. In the current default host configuration they execute more than **218,000 assertions** (the clock-core invariant matrix alone executes about 215,000). The case count therefore describes independently reported scenarios, not the amount of boundary/input coverage. The separate `run_host_tests.py` matrix remains authoritative for display variants, sanitizers and aggregate coverage.
+That is **90 named native test cases**. In the current default host configuration they execute more than **218,000 assertions** (the clock-core invariant matrix alone executes about 215,000). The case count therefore describes independently reported scenarios, not the amount of boundary/input coverage. The separate `run_host_tests.py` matrix remains authoritative for display variants, sanitizers and aggregate coverage.
 
 ## Complete firmware host suite
 

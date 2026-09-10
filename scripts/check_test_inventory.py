@@ -14,7 +14,7 @@ SUITES = {
     "realtime": ROOT / "test" / "realtime" / "test_main.cpp",
     "host_firmware": ROOT / "test" / "host_firmware" / "test_main.cpp",
 }
-MIN_CASES = 80
+MIN_CASES = 90
 
 
 def main() -> int:

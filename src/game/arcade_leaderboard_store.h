@@ -11,6 +11,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hal/persistent_layout.h"
 #include "hal/persistent_storage.h"
 
 namespace clockfw::game {
@@ -40,7 +41,7 @@ public:
     std::int16_t insertAndSave(std::uint32_t score, const std::array<char, 4U>& initials);
 
 private:
-    static constexpr std::size_t kStorageBaseOffset = 4096U;
+    static constexpr std::size_t kStorageBaseOffset = hal::persistent_layout::kLeaderboardRegionOffset;
     static constexpr std::size_t kHeaderBytes = 8U;
     static constexpr std::size_t kEntryBytes = 8U;
     static constexpr std::size_t kCrcBytes = 4U;
@@ -64,7 +65,9 @@ private:
 };
 
 static_assert(
-    4096U + (8U + 100U * 8U + 4U) * 4U <= hal::PersistentStorage::kCapacityBytes,
+    hal::persistent_layout::kLeaderboardRegionOffset +
+            (8U + 100U * 8U + 4U) * 4U <=
+        hal::PersistentStorage::kCapacityBytes,
     "Persistent storage is too small for four Top-100 leaderboards.");
 
 }  // namespace clockfw::game

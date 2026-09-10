@@ -84,6 +84,14 @@ Factory mode is **ONE CLOCK**. The UI palette order is **ONE CLOCK, DIVIDER, CLO
 
 The current hardware target is **0 V LOW / nominal +5 V HIGH** at OUT 1–8. The planned 74HCT244 translates the MCU logic domain to the 5 V output domain and provides the shared output-enable safety function. +10 V is intentionally not a supported output level in this architecture; adding it would require a separate higher-voltage driver/level-shifter stage plus a renewed protection and load-current review.
 
+## Analog/CV product boundary
+
+Hardware Rev 1 deliberately stops at digital timing I/O: eight 0/+5 V gate/trigger outputs plus dedicated conditioned SYNC and RST inputs. It does **not** add general parameter-CV inputs, analog CV/modulation outputs, or a general modulation matrix.
+
+For analog modulation outputs, the project quality target would require an eight-channel 16-bit DAC-class path and two quad output-op-amp stages. A 12-bit MCP-class DAC is not accepted as a quality shortcut for this use. The current project estimate is roughly EUR 30-40 extra BOM cost before the additional fine-pitch SMD assembly, PCB routing, calibration, and validation effort. General CV inputs would add separate analog input-conditioning/routing and panel-I/O costs.
+
+This boundary is intentional for the first hardware generation. Firmware-side cross-channel interaction may be expanded later using internal digital events without changing the analog BOM. See [`ROADMAP.md`](ROADMAP.md) and [`V1_FORWARD_COMPATIBILITY.md`](V1_FORWARD_COMPATIBILITY.md).
+
 ## `src/pin_map.h`
 
 Use this file when hardware wiring changes. Names intentionally describe the connected circuit/front-panel function rather than the MCU peripheral.

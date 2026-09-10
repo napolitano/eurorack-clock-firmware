@@ -8,6 +8,32 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.1] - 2026-09-10
+
+### V1 feature freeze
+
+- Declared the implemented alpha.63 musical feature set as the V1 release-qualification baseline. From beta.1 to 1.0, new musical features are deferred; changes are limited to defects, physical qualification, reproducibility/documentation work, and compatibility work needed to preserve later 1.x upgrades.
+- Added `docs/ROADMAP.md` with the explicit V1 qualification path and the post-1.0 plan for Swing/Groove 2.0, Sequencer 2.0, Euclid Auto-Fill/conditions, Ratchets, structured random, channel interaction, scenes/phase work, later experiments, and a separate VCV Rack track.
+- Documented the deliberate Hardware Rev 1 product boundary: CLOCK remains a digital timing/gate/trigger instrument with SYNC/RST, not a general CV/modulation platform. README, User Guide, architecture, configuration, identity, and publication manual now explain the quality/buildability rationale rather than presenting missing CV as an unresolved feature gap.
+
+### Forward compatibility
+
+- Added `docs/V1_FORWARD_COMPATIBILITY.md` and made the V1 Flash map an explicit architecture contract.
+- Centralized logical persistence-region boundaries in `src/hal/persistent_layout.h` and replaced duplicated score/leaderboard offsets with those constants.
+- Exposed and tested the exact schema-v6 state budget: 252-byte state payload, 264-byte CURRENT record, 280-byte preset record, 2,504 bytes for CURRENT + eight presets, 568 bytes before the legacy-score region, and only 63 additional state-payload bytes available for naive in-place schema growth.
+- Recorded the resulting 1.x rule: storage-heavy per-step data must use a schema-v7-or-later layout/migration strategy rather than simply expanding `ChannelConfig`/schema v6. Any logical-image increase beyond 8 KiB also requires a real STM32 target memory measurement because the persistence staging image is static BSS.
+- Kept the V1 real-time engine behavior unchanged. The audit explicitly reserves a later event-pipeline refactor for the first post-1.0 features rather than destabilizing the beta baseline.
+
+### Documentation and release tooling
+
+- Updated prerelease wording so physical HIL is a beta/RC qualification gate rather than incorrectly described as a prerequisite to entering beta.
+- Made manual cover/back stamping phase-aware: alpha builds render as Prototype, beta builds as Beta, release candidates as Release candidate, and stable versions as Release.
+- Added documentation/tooling regressions that keep the no-general-CV scope decision, roadmap, forward-compatibility analysis, persistence budget, and beta publication labels from silently drifting.
+
+### Compatibility
+
+- No new musical behavior is introduced by beta.1. Existing alpha.63 user configuration semantics and persistence schema v6 remain the V1 compatibility baseline.
+
 ## [0.19.0-alpha.63] - 2026-09-10
 
 ### Documentation

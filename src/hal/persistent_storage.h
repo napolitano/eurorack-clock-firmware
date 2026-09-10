@@ -12,6 +12,8 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "hal/persistent_layout.h"
+
 namespace clockfw::hal {
 
 /**
@@ -25,10 +27,10 @@ namespace clockfw::hal {
 class PersistentStorage final {
 public:
     /** Current logical image size. Kept deliberately small to avoid needless RAM use. */
-    static constexpr std::size_t kCapacityBytes = 8192U;
+    static constexpr std::size_t kCapacityBytes = persistent_layout::kV1ImageBytes;
 
     /** Hard architectural ceiling for future persistent images inside one 16-KiB slot. */
-    static constexpr std::size_t kMaximumImageBytes = 12U * 1024U;
+    static constexpr std::size_t kMaximumImageBytes = persistent_layout::kMaximumImageBytes;
 
     /** Physical size of each independently erasable STM32F401 slot sector. */
     static constexpr std::size_t kPhysicalSlotBytes = 16U * 1024U;

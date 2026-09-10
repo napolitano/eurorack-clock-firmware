@@ -2,9 +2,9 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Prototype documentation — v0.19.0-alpha.63**
+> **Beta documentation — v0.19.0-beta.1 · V1 feature freeze**
 >
-> CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation, timer Input Capture for maximum external-SYNC precision, compare-event scheduling, and physical HIL timing sign-off remain open.
+> CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation and physical HIL timing sign-off remain open. Timer Input Capture or compare-event scheduling are implementation options only if measured V1 timing requires them.
 
 This guide is the GitHub-readable operating reference for CLOCK. OLED screenshots are generated from the **production renderer and the real 128×64 framebuffer**, then enlarged with nearest-neighbor scaling. They are not hand-drawn UI mockups.
 
@@ -36,7 +36,17 @@ For a first patch:
 > [!TIP]
 > Start with One Clock until the transport and navigation feel natural. Independent mode is where CLOCK becomes an eight-channel rhythm tool; Divider Bank is the fastest way to obtain conventional clock divisions.
 
-## 3. Front panel
+## 3. Product boundary: timing rather than analog CV
+
+CLOCK is intentionally an eight-channel **digital timing, gate, and trigger instrument**. Hardware Rev 1 provides dedicated SYNC and RST inputs, but it does not provide general parameter-CV inputs, analog CV/modulation outputs, or a modulation matrix.
+
+That boundary protects both signal quality and DIY buildability. A quality eight-channel analog modulation-output path would require an eight-channel 16-bit DAC-class solution plus two quad output-op-amp stages; a 12-bit MCP-class implementation is not considered an acceptable quality compromise for this product direction. The project currently estimates roughly EUR 30-40 of additional BOM cost before the added fine-pitch SMD assembly, PCB, calibration, validation, and documentation burden. General parameter-CV inputs would also require additional analog front ends, routing, and panel I/O.
+
+This is therefore **not a missing V1 feature**. CLOCK concentrates on what eight digital event outputs can do well: coherent clocks, Euclidean rhythms, gate sequences, ratios, phase, probability, reset semantics, and robust synchronization. Later firmware may add deeper internal event relationships without requiring an analog modulation subsystem.
+
+For the frozen V1/post-1.0 boundary, see [`ROADMAP.md`](ROADMAP.md).
+
+## 4. Front panel
 
 ![Numbered CLOCK front-panel illustration showing the OLED at the upper left, encoder at the upper right, PLAY/TAP/STOP buttons below them, SYNC and RST inputs in the middle, and eight output jacks with red activity LEDs in a 4×2 matrix.](manual/assets/front-panel-anatomy.svg)
 
@@ -54,7 +64,7 @@ For a first patch:
 
 The panel layout in this illustration is generated from [`sim/panel_layout.ini`](../sim/panel_layout.ini), the same geometry used by the desktop simulator. The drawing is an explanatory manual asset, not a drill or manufacturing template.
 
-## 4. Boot and output safety
+## 5. Boot and output safety
 
 CLOCK always powers up in **STOP**. Stored configuration is restored, but a previously saved PLAY state is never allowed to start outputs automatically.
 
@@ -62,9 +72,9 @@ The boot sequence keeps the external gate buffer disabled, initializes the sched
 
 ![Boot screen halfway through its one-second progress sequence, showing the CLOCK wordmark and the two-pixel progress bar at the bottom.](manual/assets/boot-500.png)
 
-The normal boot screen lasts about one second. Holding the encoder push continuously through the complete boot sequence enters the compile-time selected Easter egg; see [Section 18](#18-hidden-boot-easter-eggs).
+The normal boot screen lasts about one second. Holding the encoder push continuously through the complete boot sequence enters the compile-time selected Easter egg; see [Section 20](#20-hidden-boot-easter-eggs).
 
-## 5. Performance screen
+## 6. Performance screen
 
 The Performance screen is deliberately sparse. It keeps the information required while playing visible and moves configuration detail into contextual pages.
 
@@ -101,7 +111,7 @@ For lengths above 16 steps, the lowest display rows show the active 16-step bloc
 
 With factory display preferences, STOP-mode inactivity starts the configured screensaver after 2 minutes, dims the OLED after 5 minutes, and powers the OLED panel off after 10 minutes. Any front-panel interaction wakes it immediately.
 
-## 6. Navigation and editing
+## 7. Navigation and editing
 
 The standard editing grammar is intentionally consistent:
 
@@ -123,7 +133,7 @@ Only the value currently being edited is inverted. Whole-row inversion is avoide
 | TAP short | Tap Tempo | Modifier | Sequencer: previous 16-step page |
 | STOP/BACK | Stop + global reset | Back / cancel | Back / cancel |
 
-## 7. Channel and global overview
+## 8. Channel and global overview
 
 In Independent topology, a short encoder push opens the eight-channel overview. All channels remain visible in a 2×4 grid; each tile contains only its number and mode pictogram. The selected tile is fully inverted.
 
@@ -142,7 +152,7 @@ One Clock and Divider Bank are global topologies, so their overview deliberately
 
 Short press returns from a global overview. Long press opens that topology's settings.
 
-## 8. Changing function or topology
+## 9. Changing function or topology
 
 Hold **TAP** and turn the encoder. CLOCK opens a 2×3 graphical palette in this order:
 
@@ -169,7 +179,7 @@ Releasing TAP does not silently mutate the running setup. If the highlighted fun
 
 After confirmation CLOCK opens the most useful destination: Euclid goes to algorithm settings, Sequencer to its editor, One Clock to shared settings, Divider Bank to divider-family settings, while Clock and Off return to Performance.
 
-## 9. Independent Clock
+## 10. Independent Clock
 
 Clock produces a regular derived trigger/clock on one output. Its channel owns:
 
@@ -187,7 +197,7 @@ Integer and rational rates use fixed/integer timing with remainder retention. CL
 
 `GLOBAL` means a global reset re-anchors the channel. `FREE` allows its local cycle position to survive that global reset.
 
-## 10. One Clock
+## 11. One Clock
 
 One Clock is the factory topology and the quickest way to use CLOCK as an eight-way master clock multiple.
 
@@ -209,7 +219,7 @@ OFF / 250 / 500 / 1000 / 2000 µs
 
 It applies small deterministic per-output timing displacement while keeping the common restart/downbeat exact. It is intended to remove perfect simultaneity between eight copies without turning the outputs into unrelated clocks.
 
-## 11. Divider Bank
+## 12. Divider Bank
 
 Divider Bank is intentionally simple: choose one divider family and one shared gate length, then patch the eight outputs.
 
@@ -223,7 +233,7 @@ Divider Bank is intentionally simple: choose one divider family and one shared g
 
 There are no fake per-channel settings in this topology because the outputs are intentionally derived from one shared divider source.
 
-## 12. Euclid
+## 13. Euclid
 
 A Euclid channel distributes a selected number of hits as evenly as possible across a cycle.
 
@@ -237,7 +247,7 @@ At `×1`, Euclid advances on a **sixteenth-note grid**. In 4/4, 16 steps therefo
 
 A simple 16-step / 4-hit pattern gives four evenly distributed hits. Rotation moves the pattern against the shared timeline without changing the hit count.
 
-## 13. Gate Sequencer
+## 14. Gate Sequencer
 
 Each Sequencer channel stores a binary gate pattern of up to 64 steps. The active sequence length is 1–64 steps.
 
@@ -259,7 +269,7 @@ Inside the editor:
 
 Sequencer tools include **Length, Rotate, Invert, Clear, Fill Alternate, Copy, and Paste**. As with Euclid, `×1` is a sixteenth-note grid, so a 16-step sequence occupies one 4/4 bar.
 
-## 14. Swing, Probability, Phase, gates, and reset
+## 15. Swing, Probability, Phase, gates, and reset
 
 These parameters are shared by Independent Clock/Euclid/Sequencer channels unless stated otherwise.
 
@@ -275,7 +285,7 @@ These parameters are shared by Independent Clock/Euclid/Sequencer channels unles
 
 ![Timing reference diagram comparing the ideal grid with Swing and Phase offsets and showing One Clock Humanize as small per-output displacement around the common reference.](manual/assets/timing-swing-phase.svg)
 
-## 15. Transport and Tap Tempo
+## 16. Transport and Tap Tempo
 
 Transport has three states: **PLAY, PAUSE, STOP**.
 
@@ -285,7 +295,7 @@ Transport has three states: **PLAY, PAUSE, STOP**.
 
 CLOCK persists the working configuration but never restores PLAY on power-up. Flash commits are also deferred while transport is PLAYING so erase/program work cannot block the live gate path.
 
-## 16. External SYNC and RST
+## 17. External SYNC and RST
 
 Open `SETTINGS → GENERAL SETTINGS → SYNC` to configure external timing.
 
@@ -314,9 +324,9 @@ SYNC/RST transitions are captured by GPIO interrupts and consumed at the determi
 </table>
 
 > [!CAUTION]
-> Host tests verify the firmware semantics above, not the final analog input hardware. Comparator thresholds/hysteresis, physical signal integrity, final pin routing, timer Input Capture precision, and jack-level jitter remain HIL requirements before beta.
+> Host tests verify the firmware semantics above, not the final analog input hardware. Comparator thresholds/hysteresis, physical signal integrity, final pin routing, external-SYNC capture latency/jitter, and jack-level output jitter remain HIL requirements before a 1.0 release candidate. Timer Input Capture is required only if the measured EXTI path cannot meet the V1 timing target.
 
-## 17. Presets, CURRENT, and templates
+## 18. Presets, CURRENT, and templates
 
 `SETTINGS → PRESETS` contains three different concepts:
 
@@ -335,7 +345,7 @@ Preset names can contain up to 16 characters. Saving over an occupied slot requi
 
 Factory templates currently include `ALL MASTER`, `CLOCK TREE`, `DIVIDERS`, `POLYRHYTHM`, `EUCLID KIT`, and `HYBRID`. Loading a template changes CURRENT; it does not silently create or overwrite a named user preset.
 
-## 18. Screensaver and display protection
+## 19. Screensaver and display protection
 
 Display protection is active only while transport is STOP. The factory timing is:
 
@@ -370,7 +380,7 @@ The configured order is constrained to `START <= DIM <= OFF`. Any front-panel ac
 </tr>
 </table>
 
-## 19. Hidden boot Easter eggs
+## 20. Hidden boot Easter eggs
 
 Hold the encoder push continuously from power-up until the boot screen finishes to enter the compile-time selected Easter egg. `CLOCK_EASTER_EGG` selects one of five implementations.
 
@@ -405,7 +415,7 @@ The four ranked games — **Pixel Raid, Formula 1, Breakout, and Egg Journey** �
 
 Pixel Raid, Formula 1, Breakout, and Egg Journey keep the external gate-output stage disabled. BEATKNECHT is the deliberate exception: it enables the stage only after its intro has been explicitly started, drives the rhythm gates, and returns all channels LOW before disabling the stage on exit. Normal firmware resumes in STOP.
 
-## 20. INFO, version, and updates
+## 21. INFO, version, and updates
 
 `SETTINGS → INFO` is read-only and separates identity from maintenance information:
 
@@ -423,15 +433,15 @@ Pixel Raid, Formula 1, Breakout, and Egg Journey keep the external gate-output s
 </tr>
 </table>
 
-## 21. Current technical limits
+## 22. Current technical limits
 
 The current firmware uses a deterministic **20 kHz scheduler**, giving a 50 µs service quantum. UI rendering and I/O transport do not decide musical gate timing. SPI remains the preferred/reference display path; I2C uses deferred, bounded foreground transactions so display work is deliberately subordinate to musical timing.
 
 Persistence uses internal STM32 Flash A/B records. Large persistence staging buffers are static rather than runtime-stack allocations, embedded production code is guarded against dynamic heap allocation, and the build includes a production stack-frame gate.
 
-These software safeguards do not replace physical validation. Before beta, representative hardware still needs oscilloscope/logic-analyzer proof for gate jitter and pulse widths, boot/reset behavior, SYNC/RST comparator behavior, final timer capture, and SPI/I2C display stress. See [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).
+These software safeguards do not replace physical validation. Before a 1.0 release candidate, representative hardware still needs oscilloscope/logic-analyzer proof for gate jitter and pulse widths, boot/reset behavior, SYNC/RST comparator behavior, final timer capture, and SPI/I2C display stress. See [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).
 
-## 22. License
+## 23. License
 
 Firmware source is licensed under the **PolyForm Noncommercial License 1.0.0**. The Required Notice is `Required Notice: Copyright © 2026 Axel Napolitano.` See [`../LICENSE.md`](../LICENSE.md), [`../NOTICE.txt`](../NOTICE.txt), and [`LICENSING.md`](LICENSING.md). The publication manual and documentation artwork use the documentation license described in [`manual/LICENSE.md`](manual/LICENSE.md). Third-party components retain their upstream licenses and notices.
 

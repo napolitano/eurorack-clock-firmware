@@ -124,7 +124,7 @@ class ProjectMetadataTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
-        self.assertIn("total=89", result.stdout)
+        self.assertIn("total=90", result.stdout)
 
 
 
@@ -443,6 +443,17 @@ class RepositoryPolicyTests(unittest.TestCase):
             check=False,
         )
         self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_v1_scope_and_forward_compatibility_contracts_are_published(self) -> None:
+        readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        roadmap = (ROOT / "docs" / "ROADMAP.md").read_text(encoding="utf-8")
+        audit = (ROOT / "docs" / "V1_FORWARD_COMPATIBILITY.md").read_text(encoding="utf-8")
+        self.assertIn("Why no general CV modulation?", readme)
+        self.assertIn("digital timing, gate, and trigger", roadmap)
+        self.assertIn("0.19.0-beta.1", roadmap)
+        self.assertIn("2,504 bytes", audit)
+        self.assertIn("63 bytes", audit)
+        self.assertIn("schema v7", audit)
 
     def test_polyform_license_is_present_and_identified(self) -> None:
         license_text = (ROOT / "LICENSE.md").read_text(encoding="utf-8")

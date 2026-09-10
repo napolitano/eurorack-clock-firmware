@@ -57,7 +57,7 @@ CLOCK documentation follows a few explicit rules:
 9. Every README-style document ends with the same project footer.
 
 > [!IMPORTANT]
-> Documentation must not turn planned hardware into an implemented feature. The interrupt-driven digital SYNC/RST firmware boundary exists; final comparator circuitry, PCB pin routing, timer Input Capture precision, and electrical HIL remain open until measured on representative hardware.
+> Documentation must not turn planned hardware into an implemented feature. The interrupt-driven digital SYNC/RST firmware boundary exists; final comparator circuitry, PCB pin routing, external-SYNC capture latency/jitter, and electrical HIL remain open until measured on representative hardware. Timer Input Capture is an escalation path, not a prerelease requirement by itself.
 
 ## Manual assets
 
@@ -69,5 +69,9 @@ The SVGs in [`manual/assets/`](manual/assets/) are deliberately source-controlle
 - [`external-sync-flow.svg`](manual/assets/external-sync-flow.svg)
 - [`persistence-ab.svg`](manual/assets/persistence-ab.svg)
 - [`simulator-scope.svg`](manual/assets/simulator-scope.svg)
+
+
+- [`ROADMAP.md`](ROADMAP.md) - V1 feature freeze and post-1.0 plan.
+- [`V1_FORWARD_COMPATIBILITY.md`](V1_FORWARD_COMPATIBILITY.md) - V1 migration constraints.
 
 <h6 align="center">From Munich with &#9829;</h6>

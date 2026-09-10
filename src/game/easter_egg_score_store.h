@@ -10,6 +10,7 @@
 #include <array>
 #include <cstdint>
 
+#include "hal/persistent_layout.h"
 #include "hal/persistent_storage.h"
 
 namespace clockfw::game {
@@ -38,7 +39,7 @@ public:
     bool save(const HighScoreEntry& entry);
 
 private:
-    static constexpr std::size_t kStorageBaseOffset = 3072U;
+    static constexpr std::size_t kStorageBaseOffset = hal::persistent_layout::kLegacyScoreRegionOffset;
     static constexpr std::size_t kRecordSize = 16U;
     static constexpr std::size_t kSlotCount = 4U;
 
@@ -54,7 +55,8 @@ private:
 };
 
 static_assert(
-    3072U + 16U * 4U <= hal::PersistentStorage::kCapacityBytes,
-    "Persistent storage is too small for Easter-egg high scores.");
+    hal::persistent_layout::kLegacyScoreRegionOffset + 16U * 4U <=
+        hal::persistent_layout::kLeaderboardRegionOffset,
+    "Legacy score records overlap the leaderboard region.");
 
 }  // namespace clockfw::game

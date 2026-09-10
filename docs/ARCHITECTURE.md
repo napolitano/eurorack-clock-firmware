@@ -18,6 +18,12 @@ flowchart LR
     CLOCK --> Flash[Internal A/B Flash persistence]
 ```
 
+## Product-level I/O boundary
+
+CLOCK Hardware Rev 1 is architected as a digital event instrument, not as a mixed-signal modulation generator. The eight output channels are gate/trigger outputs; the only analog-conditioned inputs in scope are SYNC and RST. General parameter-CV inputs, analog modulation outputs, and an analog modulation matrix are intentionally outside the V1 hardware contract.
+
+This matters architecturally: the timing core should not acquire dependencies on a future DAC/ADC subsystem simply to mirror feature sets from modulation-centric clock products. Internal cross-channel behavior can evolve post-1.0 as deterministic event processing while the HAL boundary remains digital. The product rationale and cost/buildability trade-off are recorded in [`ROADMAP.md`](ROADMAP.md).
+
 ## Layer model
 
 ```mermaid
@@ -253,7 +259,7 @@ The engine-side sync/global-reset semantics and the interrupt-driven digital cap
 flowchart LR
     SyncJack[SYNC IN] --> SyncAnalog[Protection + LM393 comparator]
     ResetJack[RST IN] --> ResetAnalog[Protection + LM393 comparator]
-    SyncAnalog -. final PCB .-> SyncCapture[GPIO IRQ fallback / preferred TIM Input Capture]
+    SyncAnalog -. final PCB .-> SyncCapture[GPIO IRQ / optional TIM Input Capture]
     ResetAnalog -. final PCB .-> ResetCapture[GPIO IRQ]
     SyncCapture -. timestamp .-> Tracker[Sync tracker]
     ResetCapture -. edge .-> Reset[Global phase reset]
@@ -263,7 +269,7 @@ flowchart LR
     Reset --> Engine
 ```
 
-The current firmware fallback timestamps conditioned SYNC/RST levels from GPIO interrupts and queues them for deterministic scheduler-side consumption; foreground polling is not used. For maximum SYNC precision the final PCB should route SYNC to timer Input Capture so period timestamps are captured in hardware. RST does not require the same period-measurement precision and remains naturally edge/level interrupt driven. The simulator's SQUARE/SINE/TRIANGLE generators do not emulate LM393 electrical characteristics.
+The current firmware timestamps conditioned SYNC/RST levels from GPIO interrupts and queues them for deterministic scheduler-side consumption; foreground polling is not used. This EXTI path is the V1 baseline and must be measured on representative hardware. Timer Input Capture is an optional escalation if those measurements do not meet the V1 timing requirement; it is not assumed to be necessary before the data exists. RST does not require period-measurement precision and remains naturally edge/level interrupt driven. The simulator's SQUARE/SINE/TRIANGLE generators do not emulate LM393 electrical characteristics.
 
 ## Native simulator architecture
 

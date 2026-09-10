@@ -1,8 +1,8 @@
 <!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
-# South Signal Lab CLOCK Test Coverage — v0.19.0-alpha.63
+# South Signal Lab CLOCK Test Coverage — v0.19.0-beta.1
 
-The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 89 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 90 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -14,7 +14,7 @@ The following are mandatory:
 
 The prerelease gates remain stringent without requiring synthetic tests for every defensive/error path. The coverage report still lists every uncovered production function and source decision so regressions remain visible during review.
 
-Current repository-wide validated baseline (alpha.63):
+Current repository-wide validated baseline (`0.19.0-beta.1`):
 
 ```text
 Executable lines:   6248/6507 (96.02%)
@@ -56,7 +56,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - complete deterministic timing/pattern core invariants
 - sixteenth-note base-rate semantics for Euclid/Sequencer (`x1`: 16 steps per 4/4 bar)
 - complete CURRENT-state persistence plus CRC/schema validation and 8 named user preset slots, including screensaver mode/start/dim/off preferences
-- schema-v3/v4 to schema-v5 CURRENT/preset migration, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
+- schema-v3/v4/v5 to schema-v6 CURRENT/preset migration, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
 - external-sync regression cases for 20/120/999 BPM, 1/2/4/24 PPQN, jitter, adaptive lock timeout, queue overflow/reacquisition, timestamp wraparound, effective-tempo gate release, monotonic scheduler time, phase alignment, ISR-safe pulse entry, and PPQN interpretation
 - ISR-safe external reset with configurable rising-edge TRIGGER or level-sensitive GATE semantics, startup-HIGH handling, queue saturation, deterministic RST-over-SYNC priority, and PLAY-transport preservation
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release
@@ -107,7 +107,7 @@ Host execution cannot establish real-world timing quality. Planned HIL/electrica
 - HCT244 output-enable behavior
 - encoder/button electrical bounce characteristics
 - SYNC/RST comparator thresholds, hysteresis, slow-crossing chatter and glitch rejection
-- final hardware SYNC Input Capture latency/jitter and comparator behavior
+- external-SYNC capture latency/jitter and comparator behavior; move to timer Input Capture only if the measured EXTI path misses the V1 requirement
 - External Reset capture/IRQ timing and GLOBAL/FREE phase behavior at the physical jacks
 - I2C/SPI signal integrity and display-stress timing on the final PCB
 

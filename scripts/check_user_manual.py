@@ -22,7 +22,10 @@ except ImportError as exc:
 PNG_VERSION_KEY = "clock_firmware_version"
 ODT_MIMETYPE = b"application/vnd.oasis.opendocument.text"
 VERSION_TEXT_RE = re.compile(r"\b[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\b")
-ALPHA_VERSION_RE = re.compile(r"\b[0-9]+\.[0-9]+\.[0-9]+-alpha\.[0-9]+\b", re.IGNORECASE)
+PRERELEASE_VERSION_RE = re.compile(
+    r"\b[0-9]+\.[0-9]+\.[0-9]+-(?:alpha|beta|rc)\.[0-9]+\b",
+    re.IGNORECASE,
+)
 
 
 def run_text(command: list[str]) -> str:
@@ -57,10 +60,15 @@ def validate_odt(path: Path, version: str) -> None:
             raise RuntimeError(f"Manual body does not identify firmware {version}")
         if version not in meta_xml:
             raise RuntimeError(f"Manual metadata does not identify firmware {version}")
-        embedded_versions = {match.group(0).lower() for match in ALPHA_VERSION_RE.finditer(content_xml + meta_xml)}
-        if embedded_versions != {version.lower()}:
+        prerelease_versions = {
+            match.group(0).lower()
+            for match in PRERELEASE_VERSION_RE.finditer(content_xml + meta_xml)
+        }
+        expected_prerelease_versions = {version.lower()} if "-" in version else set()
+        if prerelease_versions != expected_prerelease_versions:
             raise RuntimeError(
-                f"Manual contains stale or mixed firmware versions: {sorted(embedded_versions)!r}"
+                "Manual contains stale or mixed firmware prerelease versions: "
+                f"{sorted(prerelease_versions)!r}"
             )
 
         ns = {
@@ -140,9 +148,15 @@ def validate_pdf(path: Path, version: str, *, require_ubuntu_fonts: bool) -> Non
     text = run_text(["pdftotext", str(path), "-"])
     if version not in text:
         raise RuntimeError(f"PDF body does not contain firmware version {version}")
-    pdf_versions = {match.group(0).lower() for match in ALPHA_VERSION_RE.finditer(text)}
-    if pdf_versions != {version.lower()}:
-        raise RuntimeError(f"PDF contains stale or mixed firmware versions: {sorted(pdf_versions)!r}")
+    pdf_versions = {
+        match.group(0).lower()
+        for match in PRERELEASE_VERSION_RE.finditer(text)
+    }
+    expected_pdf_versions = {version.lower()} if "-" in version else set()
+    if pdf_versions != expected_pdf_versions:
+        raise RuntimeError(
+            f"PDF contains stale or mixed firmware prerelease versions: {sorted(pdf_versions)!r}"
+        )
     if require_ubuntu_fonts:
         validate_ubuntu_pdf_fonts(run_text(["pdffonts", str(path)]))
 

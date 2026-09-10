@@ -60,6 +60,12 @@ class ManualToolingTests(unittest.TestCase):
         self.assertEqual(PREPARE.default_output(self.version), expected)
         self.assertEqual(BUILD.default_source(self.version), expected)
 
+    def test_release_stage_labels_follow_semver_prerelease_phase(self) -> None:
+        self.assertEqual(PREPARE.release_stage_label("0.19.0-alpha.63"), "Prototype")
+        self.assertEqual(PREPARE.release_stage_label("0.19.0-beta.1"), "Beta")
+        self.assertEqual(PREPARE.release_stage_label("1.0.0-rc.2"), "Release candidate")
+        self.assertEqual(PREPARE.release_stage_label("1.0.0"), "Release")
+
     def test_stamping_rewrites_manual_version_contract(self) -> None:
         with tempfile.TemporaryDirectory() as directory:
             target_version = "0.19.0-alpha.99"

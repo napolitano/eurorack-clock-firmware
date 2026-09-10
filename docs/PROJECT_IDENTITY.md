@@ -19,6 +19,12 @@ CLOCK is intentionally a short product-facing name. Because the word “clock”
 
 The product name shown on the front panel and boot identity remains CLOCK. `South Signal Lab CLOCK` is used where ambiguity matters: search engines, software catalogs, citations, repository descriptions, release archives, and persistent identifiers.
 
+## Product scope boundary
+
+The canonical product identity includes a deliberate functional boundary: **South Signal Lab CLOCK is a digital timing, gate, and trigger instrument.** Hardware Rev 1 is not positioned as a general CV/modulation generator. It has dedicated SYNC/RST inputs and eight digital outputs, but no general parameter-CV inputs or analog CV/modulation output subsystem.
+
+This distinction should remain explicit in README, manual, release notes, and comparisons. Missing analog modulation is not a prerelease defect; it is a DIY cost/buildability and signal-quality decision. See [`ROADMAP.md`](ROADMAP.md) for the product rationale and the separate post-1.0 feature path.
+
 ## Machine-readable metadata
 
 Two root-level files are authoritative companions to `src/version.h`:

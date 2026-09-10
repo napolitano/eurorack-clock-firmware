@@ -153,6 +153,25 @@ def check_version_identity(errors: list[str]) -> None:
         errors.append('Doxyfile: PROJECT_NAME must use canonical South Signal Lab CLOCK identity')
 
 
+def check_v1_scope_contract(errors: list[str]) -> None:
+    """Keep the deliberate no-general-CV V1 boundary and migration audit visible."""
+    required = {
+        ROOT / 'README.md': ('Why no general CV modulation?', 'no general parameter-CV inputs'),
+        ROOT / 'docs/USER_GUIDE.md': ('Product boundary: timing rather than analog CV', 'not a missing V1 feature'),
+        ROOT / 'docs/CONFIGURATION.md': ('Analog/CV product boundary', '16-bit DAC-class'),
+        ROOT / 'docs/ROADMAP.md': ('V1 feature freeze', 'digital timing, gate, and trigger'),
+        ROOT / 'docs/V1_FORWARD_COMPATIBILITY.md': ('2,504 bytes', '63 bytes', 'schema v7'),
+    }
+    for path, needles in required.items():
+        if not path.is_file():
+            errors.append(f'{path.relative_to(ROOT)}: required V1 scope document is missing')
+            continue
+        text = path.read_text(encoding='utf-8')
+        for needle in needles:
+            if needle not in text:
+                errors.append(f'{path.relative_to(ROOT)}: missing V1 scope contract text {needle!r}')
+
+
 def check_project_metadata(errors: list[str]) -> None:
     """Require citation/discovery metadata to match the canonical project identity and version."""
     version_header = (ROOT / 'src' / 'version.h').read_text(encoding='utf-8')
@@ -230,6 +249,7 @@ def main() -> int:
     check_manual_svgs(errors)
     check_generated_front_panel(errors)
     check_version_identity(errors)
+    check_v1_scope_contract(errors)
     check_project_metadata(errors)
     if errors:
         print('Documentation check failed:', file=sys.stderr)

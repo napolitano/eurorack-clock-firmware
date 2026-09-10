@@ -43,6 +43,7 @@
 #include "hal/interrupt_lock.h"
 #include "hal/oled_display.h"
 #include "hal/periodic_timer.h"
+#include "hal/persistent_layout.h"
 #include "hal/persistent_storage.h"
 #include "hal/system_clock.h"
 #include "pin_map.h"
@@ -464,6 +465,19 @@ void testDefaultsTemplatesAndServices() {
     CHECK_EQ(tap.registerTap(1060U, 20U, 999U), 999U);    // 60 ms ~= 1000 BPM, user max clamps to 999
 }
 
+
+void testPersistentLayoutV1ForwardCompatibilityContract() {
+    CHECK_EQ(hal::persistent_layout::kV1ImageBytes, 8192U);
+    CHECK_EQ(hal::persistent_layout::kMaximumImageBytes, 12288U);
+    CHECK_EQ(hal::persistent_layout::kLegacyScoreRegionOffset, 3072U);
+    CHECK_EQ(hal::persistent_layout::kLeaderboardRegionOffset, 4096U);
+    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 252U);
+    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 264U);
+    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 280U);
+    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2504U);
+    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 568U);
+    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 63U);
+}
 
 void testPersistentStorageTransactionalUpdate() {
     hal::PersistentStorage::resetForTest();
@@ -3900,6 +3914,7 @@ int main() {
     UNITY_BEGIN();
     RUN_TEST(testLocalizationAndFont);
     RUN_TEST(testDefaultsTemplatesAndServices);
+    RUN_TEST(testPersistentLayoutV1ForwardCompatibilityContract);
     RUN_TEST(testPersistentStorageTransactionalUpdate);
     RUN_TEST(testPersistentStorageAndStateService);
     RUN_TEST(testPersistentV3Migration);
