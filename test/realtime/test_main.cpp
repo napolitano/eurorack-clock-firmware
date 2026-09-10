@@ -150,8 +150,12 @@ void testRepresentativeExternalTemposAndPpqn() {
         fixture.inputs.injectSyncEdgeForTest(first + item.periodUs, true);
         fixture.sync.processSchedulerTick(first + item.periodUs);
 
+        const std::uint64_t rawExpected =
+            60000000000ULL / (static_cast<std::uint64_t>(item.periodUs) * item.ppqn);
         const std::uint32_t expected = static_cast<std::uint32_t>(
-            60000000000ULL / (static_cast<std::uint64_t>(item.periodUs) * item.ppqn));
+            rawExpected > static_cast<std::uint64_t>(config::kSupportedMaximumBpm) * 1000ULL
+                ? static_cast<std::uint64_t>(config::kSupportedMaximumBpm) * 1000ULL
+                : rawExpected);
         const auto snapshot = fixture.engine.snapshot();
         CHECK(snapshot.externalLocked);
         CHECK_EQ(snapshot.externalBpmMilli, expected);
@@ -321,6 +325,41 @@ void testResetTriggerIsEdgeTriggered() {
     CHECK_EQ(fixture.engine.snapshot().masterBeatPhaseQ32, 0U);
 }
 
+void testResetBurstIsCoalescedPerSchedulerQuantum() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Internal;
+    fixture.state.externalSync.resetMode = ExternalResetMode::Trigger;
+    fixture.begin();
+    const std::uint32_t before = fixture.engine.resetRuntimeCountForTest();
+
+    // A noisy comparator can queue several transitions before the 20-kHz scheduler
+    // gets CPU time. They are indistinguishable inside one 50-us quantum and must
+    // not trigger repeated full eight-channel schedule rebuilds.
+    for (std::uint32_t index = 0U; index < 6U; ++index) {
+        fixture.inputs.injectResetEdgeForTest(1000U + index * 2U, true);
+        fixture.inputs.injectResetEdgeForTest(1001U + index * 2U, false);
+    }
+    fixture.sync.processSchedulerTick(1050U);
+    CHECK_EQ(fixture.engine.resetRuntimeCountForTest(), before + 1U);
+    fixture.sync.processSchedulerTick(1100U);
+    CHECK_EQ(fixture.engine.resetRuntimeCountForTest(), before + 1U);
+}
+
+void testResetOverflowStillCoalescesToOneReset() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Internal;
+    fixture.state.externalSync.resetMode = ExternalResetMode::Trigger;
+    fixture.begin();
+    const std::uint32_t before = fixture.engine.resetRuntimeCountForTest();
+
+    for (std::uint32_t index = 0U; index < 24U; ++index) {
+        fixture.inputs.injectResetEdgeForTest(2000U + index, (index & 1U) == 0U);
+    }
+    CHECK(fixture.inputs.collapsedResetEdges() > 0U);
+    fixture.sync.processSchedulerTick(2100U);
+    CHECK_EQ(fixture.engine.resetRuntimeCountForTest(), before + 1U);
+}
+
 void testResetGateHoldsAndReleasesScheduler() {
     Fixture fixture;
     fixture.state.source = ClockSource::Internal;
@@ -415,7 +454,7 @@ void testPhysicalComparatorIrqPathWhenPinsAreAssigned() {
     CHECK(!fixture.engine.snapshot().externalResetHeld);
 }
 
-void testInputQueuesPreserveNewestStateOnOverflow() {
+void testInputQueuesPublishStableContinuityBoundaryOnOverflow() {
     hal::ExternalInputCapture inputs;
     for (std::uint32_t index = 0U; index < 24U; ++index) {
         inputs.injectSyncEdgeForTest(1000U + index, (index & 1U) != 0U);
@@ -429,7 +468,7 @@ void testInputQueuesPreserveNewestStateOnOverflow() {
         ++popped;
     }
     CHECK_EQ(popped, 16U);
-    CHECK_EQ(last.timestampUs, 1023U);
+    CHECK_EQ(last.timestampUs, 1015U);
     CHECK(last.high);
     CHECK(last.continuityLost);
 
@@ -445,9 +484,78 @@ void testInputQueuesPreserveNewestStateOnOverflow() {
         ++popped;
     }
     CHECK_EQ(popped, 16U);
-    CHECK_EQ(last.timestampUs, 2023U);
-    CHECK(!last.high);
+    CHECK_EQ(last.timestampUs, 2015U);
+    CHECK(last.high);
     CHECK(last.continuityLost);
+}
+
+void testOverflowMarkerCannotCreateCrossGapTempo() {
+    Fixture fixture;
+    fixture.state.externalSync.edge = SyncEdge::Rising;
+    fixture.state.externalSync.glitchFilterUs = 1U;
+    fixture.begin();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    fixture.inputs.injectSyncEdgeForTest(501000U, true);
+    fixture.sync.processSchedulerTick(501000U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
+
+    // Fill the CHANGE queue with unselected falling transitions. The first dropped
+    // transition is also falling, so continuity loss must be honored before edge
+    // polarity is filtered. Later transitions remain dropped until the marker is
+    // consumed; they must never appear ahead of the loss boundary.
+    for (std::uint32_t index = 0U; index < 24U; ++index) {
+        fixture.inputs.injectSyncEdgeForTest(600000U + index, false);
+    }
+    CHECK(fixture.inputs.droppedSyncEdges() > 0U);
+    fixture.sync.processSchedulerTick(700000U);
+
+    // First real edge after loss only re-anchors. It cannot be combined with the
+    // pre-overflow 501000-us pulse into a bogus slow tempo estimate.
+    fixture.inputs.injectSyncEdgeForTest(5001000U, true);
+    fixture.sync.processSchedulerTick(5001000U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
+    fixture.inputs.injectSyncEdgeForTest(5501000U, true);
+    fixture.sync.processSchedulerTick(5501000U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
+}
+
+void testTechnicalMaximumRejectsImpossibleSyncRate() {
+    Fixture fixture;
+    fixture.state.externalSync.pulsesPerQuarterNote = 24U;
+    fixture.state.externalSync.glitchFilterUs = 0U;
+    fixture.begin();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    // 100 us at 24 PPQN would imply 25,000 BPM. Ignore it as an impossible
+    // acquisition sample; this also protects the Q32 master increment arithmetic.
+    fixture.inputs.injectSyncEdgeForTest(1100U, true);
+    fixture.sync.processSchedulerTick(1100U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
+
+    // The first physically supported interval is accepted and hard-capped at the
+    // documented 999-BPM technical ceiling rather than overflowing downstream math.
+    fixture.inputs.injectSyncEdgeForTest(1000U + 2502U, true);
+    fixture.sync.processSchedulerTick(1000U + 2502U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 999000U);
+}
+
+void testUnchangedSyncConfigurationDoesNotMaskInterrupts() {
+    Fixture fixture;
+    fixture.begin();
+    fakefw::noInterruptCalls = 0U;
+    fakefw::interruptCalls = 0U;
+    fixture.sync.updateConfiguration(fixture.state);
+    CHECK_EQ(fakefw::noInterruptCalls, 0U);
+    CHECK_EQ(fakefw::interruptCalls, 0U);
+
+    fixture.state.externalSync.timeoutMs = static_cast<std::uint16_t>(
+        fixture.state.externalSync.timeoutMs + 100U);
+    fixture.sync.updateConfiguration(fixture.state);
+    CHECK_EQ(fakefw::noInterruptCalls, 1U);
+    CHECK_EQ(fakefw::interruptCalls, 1U);
 }
 
 void testExplicitExternalLockClearAndReacquire() {
@@ -515,11 +623,16 @@ int main() {
     testSlowExternalClockDoesNotTimeoutBeforeSecondPulse();
     testTimestampWraparound();
     testResetTriggerIsEdgeTriggered();
+    testResetBurstIsCoalescedPerSchedulerQuantum();
+    testResetOverflowStillCoalescesToOneReset();
     testResetGateHoldsAndReleasesScheduler();
     testGateModeHonorsAlreadyHighInputAndRuntimeModeChange();
     testResetWinsWhenSyncArrivesOnSameSchedulerBoundary();
     testPhysicalComparatorIrqPathWhenPinsAreAssigned();
-    testInputQueuesPreserveNewestStateOnOverflow();
+    testInputQueuesPublishStableContinuityBoundaryOnOverflow();
+    testOverflowMarkerCannotCreateCrossGapTempo();
+    testTechnicalMaximumRejectsImpossibleSyncRate();
+    testUnchangedSyncConfigurationDoesNotMaskInterrupts();
     testExplicitExternalLockClearAndReacquire();
     testSyncQueueOverflowDoesNotMasqueradeAsTempoDrop();
 

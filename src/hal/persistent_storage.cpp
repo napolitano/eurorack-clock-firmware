@@ -263,44 +263,83 @@ bool PersistentStorage::readBytes(
     return true;
 }
 
-bool PersistentStorage::writeBytes(
+bool PersistentStorage::beginUpdate() {
+#ifdef CLOCK_HOST_TEST
+    if (gFailNextRead) {
+        gFailNextRead = false;
+        return false;
+    }
+#endif
+    SlotHeader activeHeader{};
+    const int activeSlot = newestValidSlot(&activeHeader);
+    stagingImage_.fill(kErasedByte);
+    if (activeSlot >= 0) {
+        const std::size_t previousSize = std::min<std::size_t>(
+            stagingImage_.size(), static_cast<std::size_t>(activeHeader.payloadSize));
+        std::memcpy(
+            stagingImage_.data(),
+            slotBase(static_cast<std::size_t>(activeSlot)) + kPayloadOffset,
+            previousSize);
+        stagedGeneration_ = activeHeader.generation;
+    } else {
+        stagedGeneration_ = 0U;
+    }
+    stagedActiveSlot_ = static_cast<std::int8_t>(activeSlot);
+    updateOpen_ = true;
+    updateDirty_ = false;
+    return true;
+}
+bool PersistentStorage::stageBytes(
     const std::size_t offset,
     const std::uint8_t* const source,
     const std::size_t size) {
-    if (source == nullptr || !isRangeValid(offset, size)) {
+    if (!updateOpen_ || source == nullptr || !isRangeValid(offset, size)) {
+        return false;
+    }
+    auto destination = stagingImage_.begin() + static_cast<std::ptrdiff_t>(offset);
+    if (!std::equal(source, source + size, destination)) {
+        std::copy_n(source, size, destination);
+        updateDirty_ = true;
+    }
+    return true;
+}
+bool PersistentStorage::stageFill(
+    const std::size_t offset,
+    const std::size_t size,
+    const std::uint8_t value) {
+    if (!updateOpen_ || !isRangeValid(offset, size)) {
+        return false;
+    }
+    auto first = stagingImage_.begin() + static_cast<std::ptrdiff_t>(offset);
+    auto last = first + static_cast<std::ptrdiff_t>(size);
+    if (!std::all_of(first, last, [value](const std::uint8_t byte) { return byte == value; })) {
+        std::fill(first, last, value);
+        updateDirty_ = true;
+    }
+    return true;
+}
+bool PersistentStorage::commitUpdate() {
+    if (!updateOpen_) {
         return false;
     }
 #ifdef CLOCK_HOST_TEST
     if (gFailNextWrite) {
         gFailNextWrite = false;
+        cancelUpdate();
         return false;
     }
 #endif
-
-    std::array<std::uint8_t, kCapacityBytes> image{};
-    SlotHeader activeHeader{};
-    const int activeSlot = newestValidSlot(&activeHeader);
-    if (activeSlot < 0) {
-        image.fill(kErasedByte);
-    } else {
-        image.fill(kErasedByte);
-        const std::size_t previousSize = std::min<std::size_t>(
-            image.size(), static_cast<std::size_t>(activeHeader.payloadSize));
-        std::memcpy(
-            image.data(),
-            slotBase(static_cast<std::size_t>(activeSlot)) + kPayloadOffset,
-            previousSize);
-    }
-
-    if (std::equal(source, source + size, image.begin() + static_cast<std::ptrdiff_t>(offset))) {
+    if (!updateDirty_) {
+        cancelUpdate();
         return true;
     }
-    std::copy_n(source, size, image.begin() + static_cast<std::ptrdiff_t>(offset));
-
-    const std::size_t targetSlot = activeSlot == 0 ? 1U : 0U;
-    const std::uint32_t generation =
-        activeSlot < 0 ? 1U : activeHeader.generation + 1U;
-    if (!commitImage(targetSlot, generation, image)) {
+    const std::size_t targetSlot = stagedActiveSlot_ == 0 ? 1U : 0U;
+    const std::uint32_t generation = stagedActiveSlot_ < 0
+        ? 1U
+        : stagedGeneration_ + 1U;
+    const bool committed = commitImage(targetSlot, generation, stagingImage_);
+    cancelUpdate();
+    if (!committed) {
         return false;
     }
 #ifdef CLOCK_HOST_TEST
@@ -308,7 +347,28 @@ bool PersistentStorage::writeBytes(
 #endif
     return true;
 }
-
+void PersistentStorage::cancelUpdate() {
+    updateOpen_ = false;
+    updateDirty_ = false;
+    stagedActiveSlot_ = -1;
+    stagedGeneration_ = 0U;
+}
+bool PersistentStorage::writeBytes(
+    const std::size_t offset,
+    const std::uint8_t* const source,
+    const std::size_t size) {
+    if (source == nullptr || !isRangeValid(offset, size)) {
+        return false;
+    }
+    if (!beginUpdate()) {
+        return false;
+    }
+    if (!stageBytes(offset, source, size)) {
+        cancelUpdate();
+        return false;
+    }
+    return commitUpdate();
+}
 #ifdef CLOCK_HOST_TEST
 void PersistentStorage::resetForTest() {
     for (auto& slot : gHostSlots) {

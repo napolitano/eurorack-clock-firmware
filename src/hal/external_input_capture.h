@@ -83,7 +83,7 @@ private:
     /** @brief Pushes one edge into a single-producer/single-consumer ISR queue. */
     static void pushFromIsr(EdgeQueue& queue, ExternalInputEdge edge);
 
-    /** @brief Pops one edge, including the latest collapsed overflow state when necessary. */
+    /** @brief Pops one edge, including a continuity-loss marker for the first dropped edge. */
     static bool pop(EdgeQueue& queue, ExternalInputEdge& edge);
 
     static ExternalInputCapture* activeInstance_;

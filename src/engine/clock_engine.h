@@ -59,6 +59,15 @@ public:
     void updateConfiguration(const ClockState& state, bool rescheduleChannels);
 
     /**
+     * @brief Updates only the internal master tempo with a minimal critical section.
+     * @param bpm New internal/manual tempo in BPM.
+     *
+     * This hot-path update avoids resolving and copying all eight channels for every
+     * performance-screen encoder detent. External-sync tempo remains independent.
+     */
+    void updateMasterTempo(std::uint16_t bpm);
+
+    /**
      * @brief Updates one channel without disturbing the other seven channels.
      * @param channelIndex Zero-based channel index.
      * @param channelConfiguration New channel configuration.
@@ -133,6 +142,11 @@ public:
 
     /** @brief Returns interrupt-safe snapshot of the timing state used by the UI. */
     EngineSnapshot snapshot() const;
+
+#ifdef CLOCK_HOST_TEST
+    /** @brief Returns how many full runtime resets were executed in deterministic host tests. */
+    std::uint32_t resetRuntimeCountForTest() const;
+#endif
 
 private:
     /** @brief Real-time copy of configuration values needed inside the ISR. */
@@ -251,6 +265,9 @@ private:
     ChannelRuntime channelRuntime_[kChannelCount]{};
     volatile std::uint32_t schedulerTickCounter_ = 0U;
     volatile std::uint64_t masterRemainder_ = 0U;
+#ifdef CLOCK_HOST_TEST
+    std::uint32_t resetRuntimeCountForTest_ = 0U;
+#endif
 };
 
 }  // namespace clockfw::engine

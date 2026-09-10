@@ -23,11 +23,14 @@ SettingsEditor::SettingsEditor(ClockState& state, engine::ClockEngine& engine)
     : state_(state), engine_(engine) {}
 
 void SettingsEditor::changeMasterTempo(const std::int8_t delta) {
+    const std::uint16_t previousBpm = state_.bpm;
     state_.bpm = static_cast<std::uint16_t>(clampInt(
         static_cast<int>(state_.bpm) + delta,
         state_.tempoRange.minimumBpm,
         state_.tempoRange.maximumBpm));
-    engine_.updateConfiguration(state_, false);
+    if (state_.bpm != previousBpm) {
+        engine_.updateMasterTempo(state_.bpm);
+    }
 }
 
 void SettingsEditor::adjust(
@@ -139,8 +142,8 @@ void SettingsEditor::adjustMaster(const std::uint8_t rowIndex, const std::int8_t
             static_cast<int>(state_.tempoRange.maximumBpm)));
         if (state_.bpm < state_.tempoRange.minimumBpm) {
             state_.bpm = state_.tempoRange.minimumBpm;
+            engine_.updateMasterTempo(state_.bpm);
         }
-        engine_.updateConfiguration(state_, false);
     } else if (rowIndex == 2U) {
         state_.tempoRange.maximumBpm = static_cast<std::uint16_t>(clampInt(
             static_cast<int>(state_.tempoRange.maximumBpm) + delta,
@@ -148,8 +151,8 @@ void SettingsEditor::adjustMaster(const std::uint8_t rowIndex, const std::int8_t
             config::kSupportedMaximumBpm));
         if (state_.bpm > state_.tempoRange.maximumBpm) {
             state_.bpm = state_.tempoRange.maximumBpm;
+            engine_.updateMasterTempo(state_.bpm);
         }
-        engine_.updateConfiguration(state_, false);
     } else if (rowIndex == 3U) {
         state_.masterMeter.beats = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(state_.masterMeter.beats) + delta, 1, 16));

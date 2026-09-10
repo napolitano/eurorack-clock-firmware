@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 
@@ -51,6 +52,26 @@ public:
      */
     bool writeBytes(std::size_t offset, const std::uint8_t* source, std::size_t size);
 
+    /**
+     * @brief Starts one whole-image update in bounded static storage.
+     *
+     * The staging image lives inside PersistentStorage rather than on the call stack.
+     * This is used when several logical records must share one physical Flash commit.
+     */
+    bool beginUpdate();
+
+    /** @brief Applies one byte range to the currently staged image. */
+    bool stageBytes(std::size_t offset, const std::uint8_t* source, std::size_t size);
+
+    /** @brief Fills one byte range in the currently staged image. */
+    bool stageFill(std::size_t offset, std::size_t size, std::uint8_t value);
+
+    /** @brief Commits the staged image atomically to the inactive A/B Flash slot. */
+    bool commitUpdate();
+
+    /** @brief Discards a staged image without touching Flash. */
+    void cancelUpdate();
+
 #ifdef CLOCK_HOST_TEST
     /** @brief Resets both simulated Flash sectors to the erased value 0xFF. */
     static void resetForTest();
@@ -80,6 +101,14 @@ public:
 private:
     /** @brief Returns whether one byte range fits completely inside the logical image. */
     static bool isRangeValid(std::size_t offset, std::size_t size);
+
+    // Deliberately permanent scratch storage: an 8-KiB BSS allocation is predictable
+    // and leaves substantially more worst-case stack headroom than nested 8-KiB frames.
+    std::array<std::uint8_t, kCapacityBytes> stagingImage_{};
+    std::uint32_t stagedGeneration_ = 0U;
+    std::int8_t stagedActiveSlot_ = -1;
+    bool updateOpen_ = false;
+    bool updateDirty_ = false;
 };
 
 }  // namespace clockfw::hal

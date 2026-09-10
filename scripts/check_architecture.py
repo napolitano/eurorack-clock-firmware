@@ -79,6 +79,22 @@ EXECUTABLE_INLINE_PATTERN = re.compile(
 )
 
 
+CPP_COMMENT_OR_LITERAL_PATTERN = re.compile(
+    r'//.*?$|/\*.*?\*/|"(?:\\.|[^"\\])*"|\'(?:\\.|[^\'\\])*\'',
+    re.MULTILINE | re.DOTALL,
+)
+
+HEAP_ALLOCATION_PATTERNS = (
+    (re.compile(r"\bmalloc\s*\("), "malloc"),
+    (re.compile(r"\bcalloc\s*\("), "calloc"),
+    (re.compile(r"\brealloc\s*\("), "realloc"),
+    (re.compile(r"\bfree\s*\("), "free"),
+    (re.compile(r"\bnew\s+(?:[A-Za-z_:]|\[)"), "operator new"),
+    (re.compile(r"\bdelete\s*(?:\[\s*\])?\s*[A-Za-z_]"), "operator delete"),
+    (re.compile(r"\bstd::(?:vector|string|map|unordered_map|function|shared_ptr|unique_ptr|make_shared|make_unique)\b"), "dynamic STL facility"),
+)
+
+
 def repository_relative(path: Path) -> Path:
     """Return a stable repository-relative path for diagnostics and policy checks."""
     return path.resolve().relative_to(ROOT.resolve())
@@ -305,6 +321,24 @@ def count_lines(path: Path) -> int:
     return len(path.read_text(encoding="utf-8").splitlines())
 
 
+def check_heap_free_firmware(errors: list[str]) -> None:
+    """Reject dynamic allocation primitives from embedded production code."""
+    production_files = sorted(
+        list((ROOT / "src").rglob("*.h")) +
+        list((ROOT / "src").rglob("*.cpp")) +
+        list((ROOT / "lib").rglob("*.h")) +
+        list((ROOT / "lib").rglob("*.cpp"))
+    )
+    for path in production_files:
+        text = path.read_text(encoding="utf-8")
+        code = CPP_COMMENT_OR_LITERAL_PATTERN.sub(" ", text)
+        for pattern, label in HEAP_ALLOCATION_PATTERNS:
+            if pattern.search(code):
+                errors.append(
+                    f"{repository_relative(path)}: embedded firmware must remain heap-free; found {label}"
+                )
+
+
 def check_source_sizes(errors: list[str]) -> None:
     """Guard against future monolithic entry points and implementation files."""
     main_path = ROOT / "src/main.cpp"
@@ -333,6 +367,7 @@ def main() -> int:
     check_ui_text_centralization(errors)
     check_external_library_policy(errors)
     check_header_executable_logic(errors)
+    check_heap_free_firmware(errors)
     check_source_sizes(errors)
 
     if errors:
@@ -346,6 +381,7 @@ def main() -> int:
     print("  Hardware APIs: HAL/pin_map only; Arduino entry declaration allowed in src/main.cpp")
     print("  Static UI text: centralized in src/ui_text.h")
     print("  Third-party PlatformIO libraries: none")
+    print("  Embedded heap allocation: prohibited in src/ and lib/")
     print("  Headers: explicit @file/@brief metadata and production API briefs; colocated implementations; executable header-only logic prohibited")
     return 0
 

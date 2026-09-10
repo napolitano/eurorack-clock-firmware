@@ -439,6 +439,10 @@ void testDefaultsTemplatesAndServices() {
 
     services::TapTempo tap;
     tap.reset();
+    CHECK_EQ(tap.registerTap(0U, 20U, 300U), 0U);
+    CHECK_EQ(tap.registerTap(500U, 20U, 300U), 120U); // timestamp zero is a valid first tap
+    tap.reset();
+    CHECK_EQ(tap.registerTap(1000U, 300U, 20U), 0U); // invalid clamp range cannot reach std::clamp UB
     CHECK_EQ(tap.registerTap(1000U, 20U, 300U), 0U);
     CHECK_EQ(tap.registerTap(1500U, 20U, 300U), 120U);
     CHECK_EQ(tap.registerTap(2000U, 20U, 300U), 120U);
@@ -455,6 +459,67 @@ void testDefaultsTemplatesAndServices() {
     tap.reset();
     CHECK_EQ(tap.registerTap(1000U, 20U, 999U), 0U);
     CHECK_EQ(tap.registerTap(1060U, 20U, 999U), 999U);    // 60 ms ~= 1000 BPM, user max clamps to 999
+}
+
+
+void testPersistentStorageTransactionalUpdate() {
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    const std::uint8_t first = 0x11U;
+    const std::uint8_t second = 0x22U;
+    std::uint8_t readback = 0U;
+
+    // Transaction API must reject use outside an open update and malformed ranges.
+    CHECK(!storage.stageBytes(0U, &first, 1U));
+    CHECK(!storage.stageFill(0U, 1U, 0xFFU));
+    CHECK(!storage.commitUpdate());
+
+    hal::PersistentStorage::failNextReadForTest();
+    CHECK(!storage.beginUpdate());
+
+    CHECK(storage.beginUpdate());
+    CHECK(!storage.stageBytes(0U, nullptr, 1U));
+    CHECK(!storage.stageBytes(hal::PersistentStorage::kCapacityBytes, &first, 1U));
+    CHECK(!storage.stageFill(hal::PersistentStorage::kCapacityBytes, 1U, 0x00U));
+
+    // Staging erased bytes over erased storage is a no-op and must not wear Flash.
+    CHECK(storage.stageFill(0U, 4U, 0xFFU));
+    CHECK(storage.commitUpdate());
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 0U);
+
+    // A dirty transaction commits exactly once and preserves staged writes/fills together.
+    CHECK(storage.beginUpdate());
+    CHECK(storage.stageBytes(0U, &first, 1U));
+    CHECK(storage.stageFill(1U, 2U, second));
+    CHECK(storage.commitUpdate());
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 1U);
+    CHECK(storage.readBytes(0U, &readback, 1U));
+    CHECK_EQ(readback, first);
+    CHECK(storage.readBytes(2U, &readback, 1U));
+    CHECK_EQ(readback, second);
+
+    // Re-staging identical data remains clean; explicit cancellation discards staged changes.
+    CHECK(storage.beginUpdate());
+    CHECK(storage.stageBytes(0U, &first, 1U));
+    CHECK(storage.stageFill(1U, 2U, second));
+    CHECK(storage.commitUpdate());
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 1U);
+
+    CHECK(storage.beginUpdate());
+    CHECK(storage.stageBytes(0U, &second, 1U));
+    storage.cancelUpdate();
+    CHECK(!storage.commitUpdate());
+    CHECK(storage.readBytes(0U, &readback, 1U));
+    CHECK_EQ(readback, first);
+
+    // Failed physical commit closes the transaction and leaves the previous slot authoritative.
+    CHECK(storage.beginUpdate());
+    CHECK(storage.stageBytes(0U, &second, 1U));
+    hal::PersistentStorage::failNextWriteForTest();
+    CHECK(!storage.commitUpdate());
+    CHECK(!storage.commitUpdate());
+    CHECK(storage.readBytes(0U, &readback, 1U));
+    CHECK_EQ(readback, first);
 }
 
 
@@ -1389,7 +1454,18 @@ void testEngineAndSettingsEditor() {
     ui::SettingsEditor editor(state,engine);
     CHECK(!editor.executeSequencerCommand(0U,7U)); // paste before any copy
     state.bpm = 290U;
-    state.tempoRange = {20U, 300U}; editor.changeMasterTempo(127); CHECK_EQ(state.bpm,300U);
+    engine.updateMasterTempo(state.bpm);
+    state.tempoRange = {20U, 300U};
+    fakefw::noInterruptCalls = 0U;
+    fakefw::interruptCalls = 0U;
+    editor.changeMasterTempo(127); CHECK_EQ(state.bpm,300U);
+    CHECK_EQ(fakefw::noInterruptCalls, 1U);
+    CHECK_EQ(fakefw::interruptCalls, 1U);
+    fakefw::noInterruptCalls = 0U;
+    fakefw::interruptCalls = 0U;
+    editor.changeMasterTempo(127); CHECK_EQ(state.bpm,300U);
+    CHECK_EQ(fakefw::noInterruptCalls, 0U);
+    CHECK_EQ(fakefw::interruptCalls, 0U);
     editor.changeMasterTempo(-128); CHECK_EQ(state.bpm,172U);
     // Exercise every editable row and both directions.
     const ui::SettingsPage pages[]={ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Channel,ui::SettingsPage::Rate,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer};
@@ -2321,7 +2397,11 @@ void testControlPanel() {
     { hal::ControlPanel lowAtBegin; lowAtBegin.begin(); }
     resetFakes();
     hal::ControlPanel controls; controls.begin();
+    fakefw::noInterruptCalls = 0U;
+    fakefw::interruptCalls = 0U;
     auto sample=controls.sample(0U); CHECK_EQ(sample.encoderDelta,0);
+    CHECK_EQ(fakefw::noInterruptCalls, 0U);
+    CHECK_EQ(fakefw::interruptCalls, 0U);
     // Debounced press and release for all four buttons.
     const std::uint32_t pins[]={pinmap::kEncoderPushButtonPin,pinmap::kPlayPauseButtonPin,pinmap::kTapTempoButtonPin,pinmap::kResetBackButtonPin};
     for(auto pin:pins) fakefw::setPin(pin,LOW);
@@ -3816,6 +3896,7 @@ void testApplicationAndEntryPoints() {
 int main() {
     testLocalizationAndFont();
     testDefaultsTemplatesAndServices();
+    testPersistentStorageTransactionalUpdate();
     testPersistentStorageAndStateService();
     testPersistentV3Migration();
     testPersistentStateValidationBoundaries();

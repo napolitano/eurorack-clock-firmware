@@ -52,6 +52,14 @@ void ClockEngine::updateConfiguration(const ClockState& state, const bool resche
     }
 }
 
+void ClockEngine::updateMasterTempo(const std::uint16_t bpm) {
+    if (configuration_.bpm == bpm) {
+        return;
+    }
+    hal::InterruptLock interruptLock;
+    configuration_.bpm = bpm;
+}
+
 void ClockEngine::updateChannel(
     const std::size_t channelIndex,
     const ChannelConfig& channelConfiguration,
@@ -188,6 +196,12 @@ EngineSnapshot ClockEngine::snapshot() const {
     }
     return result;
 }
+
+#ifdef CLOCK_HOST_TEST
+std::uint32_t ClockEngine::resetRuntimeCountForTest() const {
+    return resetRuntimeCountForTest_;
+}
+#endif
 
 void ClockEngine::setGateState(const std::size_t channelIndex, const bool high) {
     ChannelRuntime& runtime = channelRuntime_[channelIndex];
@@ -330,6 +344,9 @@ void ClockEngine::scheduleChannelFromCurrentPosition(
 }
 
 void ClockEngine::resetRuntime() {
+#ifdef CLOCK_HOST_TEST
+    ++resetRuntimeCountForTest_;
+#endif
     restartPending_ = true;
     globalScheduleEpochQ32_ = masterPositionQ32_;
     masterBeatPhaseQ32_ = 0U;

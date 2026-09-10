@@ -10,12 +10,24 @@
 
 #include <cstdint>
 
+#include "config.h"
 #include "hal/interrupt_lock.h"
 
 namespace clockfw::services {
 namespace {
 
 constexpr std::uint64_t kMicrosPerMinuteMilliBpm = 60000000000ULL;
+
+bool settingsEqual(
+    const ExternalSyncSettings& first,
+    const ExternalSyncSettings& second) {
+    return first.pulsesPerQuarterNote == second.pulsesPerQuarterNote &&
+        first.edge == second.edge &&
+        first.lossMode == second.lossMode &&
+        first.resetMode == second.resetMode &&
+        first.glitchFilterUs == second.glitchFilterUs &&
+        first.timeoutMs == second.timeoutMs;
+}
 
 }  // namespace
 
@@ -25,9 +37,14 @@ ExternalSyncController::ExternalSyncController(
     : inputCapture_(inputCapture), engine_(engine) {}
 
 void ExternalSyncController::begin(const ClockState& state) {
-    settings_ = state.externalSync;
-    fallbackBpmMilli_ = static_cast<std::uint32_t>(state.bpm) * 1000U;
-    minimumBpm_ = state.tempoRange.minimumBpm != 0U ? state.tempoRange.minimumBpm : 1U;
+    foregroundSettings_ = state.externalSync;
+    foregroundFallbackBpmMilli_ = static_cast<std::uint32_t>(state.bpm) * 1000U;
+    foregroundMinimumBpm_ = state.tempoRange.minimumBpm != 0U
+        ? state.tempoRange.minimumBpm
+        : 1U;
+    settings_ = foregroundSettings_;
+    fallbackBpmMilli_ = foregroundFallbackBpmMilli_;
+    minimumBpm_ = foregroundMinimumBpm_;
     configurationDirty_ = true;
     resetGateApplied_ = false;
     haveAcceptedPulse_ = false;
@@ -38,11 +55,26 @@ void ExternalSyncController::begin(const ClockState& state) {
 }
 
 void ExternalSyncController::updateConfiguration(const ClockState& state) {
+    const std::uint32_t requestedFallbackBpmMilli =
+        static_cast<std::uint32_t>(state.bpm) * 1000U;
+    const std::uint16_t requestedMinimumBpm = state.tempoRange.minimumBpm != 0U
+        ? state.tempoRange.minimumBpm
+        : 1U;
+    if (settingsEqual(state.externalSync, foregroundSettings_) &&
+        requestedFallbackBpmMilli == foregroundFallbackBpmMilli_ &&
+        requestedMinimumBpm == foregroundMinimumBpm_) {
+        return;
+    }
+
+    foregroundSettings_ = state.externalSync;
+    foregroundFallbackBpmMilli_ = requestedFallbackBpmMilli;
+    foregroundMinimumBpm_ = requestedMinimumBpm;
+
     hal::InterruptLock interruptLock;
-    const bool resetModeChanged = state.externalSync.resetMode != settings_.resetMode;
-    settings_ = state.externalSync;
-    fallbackBpmMilli_ = static_cast<std::uint32_t>(state.bpm) * 1000U;
-    minimumBpm_ = state.tempoRange.minimumBpm != 0U ? state.tempoRange.minimumBpm : 1U;
+    const bool resetModeChanged = foregroundSettings_.resetMode != settings_.resetMode;
+    settings_ = foregroundSettings_;
+    fallbackBpmMilli_ = foregroundFallbackBpmMilli_;
+    minimumBpm_ = foregroundMinimumBpm_;
     configurationDirty_ = configurationDirty_ || resetModeChanged;
 }
 
@@ -79,32 +111,56 @@ std::uint32_t ExternalSyncController::filteredBpmMilli() const {
 
 void ExternalSyncController::processResetEdges() {
     hal::ExternalInputEdge edge{};
+    bool sawEdge = false;
+    bool triggerRequested = false;
     while (inputCapture_.popResetEdge(edge)) {
+        sawEdge = true;
         if (settings_.resetMode == ExternalResetMode::Trigger) {
-            if (edge.high) {
-                engine_.resetGlobalPhaseFromIsr();
-            }
-            continue;
+            // Several comparator transitions may accumulate while TIM3 is delayed.
+            // They are not musically distinguishable inside one 50-us scheduler
+            // quantum, so collapse them to at most one expensive engine reset.
+            // Continuity loss is handled conservatively: a rising edge may have
+            // been among the dropped transitions, therefore perform one reset.
+            triggerRequested = triggerRequested || edge.high || edge.continuityLost;
         }
-        resetGateApplied_ = edge.high;
-        engine_.setExternalResetGateFromIsr(edge.high);
+    }
+
+    if (settings_.resetMode == ExternalResetMode::Trigger) {
+        if (triggerRequested) {
+            engine_.resetGlobalPhaseFromIsr();
+        }
+        return;
+    }
+
+    if (!sawEdge) {
+        return;
+    }
+    // Gate reset is level-sensitive. The separately captured current comparator
+    // level is authoritative even if the edge queue overflowed and collapsed
+    // intermediate transitions.
+    const bool high = inputCapture_.resetLevelHigh();
+    if (high != resetGateApplied_) {
+        resetGateApplied_ = high;
+        engine_.setExternalResetGateFromIsr(high);
     }
 }
 
 void ExternalSyncController::processSyncEdges() {
     hal::ExternalInputEdge edge{};
     while (inputCapture_.popSyncEdge(edge)) {
-        if (!selectedSyncEdge(edge.high)) {
+        if (edge.continuityLost) {
+            // A loss marker describes a boundary, not a trustworthy pulse. It may
+            // also have the opposite polarity from the selected edge because the
+            // queue captures CHANGE transitions. Reset acquisition and wait for the
+            // next real selected edge instead of manufacturing a long period across
+            // transitions that were dropped while the queue was saturated.
+            haveAcceptedPulse_ = false;
+            filteredPeriodQ8_ = 0U;
             continue;
         }
 
-        if (edge.continuityLost) {
-            // We know that at least one selected edge may have been skipped. Never
-            // interpret the resulting multi-period gap as a real tempo change. Keep
-            // the last trustworthy tempo, re-anchor phase, and reacquire period on
-            // the following clean edge.
-            haveAcceptedPulse_ = false;
-            filteredPeriodQ8_ = 0U;
+        if (!selectedSyncEdge(edge.high)) {
+            continue;
         }
 
         if (!haveAcceptedPulse_) {
@@ -121,11 +177,37 @@ void ExternalSyncController::processSyncEdges() {
         }
 
         const std::uint32_t periodUs = edge.timestampUs - lastAcceptedPulseUs_;
-        if (periodUs == 0U || periodUs < settings_.glitchFilterUs) {
+        const std::uint32_t ppqn = settings_.pulsesPerQuarterNote != 0U
+            ? settings_.pulsesPerQuarterNote
+            : 1U;
+        const std::uint32_t minimumSupportedPeriodUs = static_cast<std::uint32_t>(
+            60000000ULL /
+            (static_cast<std::uint64_t>(config::kSupportedMaximumBpm) * ppqn));
+        const std::uint32_t effectiveGlitchFloorUs =
+            settings_.glitchFilterUs > minimumSupportedPeriodUs
+                ? settings_.glitchFilterUs
+                : minimumSupportedPeriodUs;
+        if (periodUs == 0U || periodUs < effectiveGlitchFloorUs) {
             continue;
         }
-        lastAcceptedPulseUs_ = edge.timestampUs;
 
+        const std::uint64_t maximumSupportedPeriodUs = 60000000ULL /
+            (static_cast<std::uint64_t>(config::kSupportedMinimumBpm) * ppqn);
+        if (static_cast<std::uint64_t>(periodUs) > maximumSupportedPeriodUs) {
+            // Treat an out-of-range slow gap as a fresh acquisition boundary,
+            // never as a valid ultra-low tempo. This also keeps the arithmetic
+            // contract aligned with the documented 1..999 BPM technical range.
+            haveAcceptedPulse_ = true;
+            filteredPeriodQ8_ = 0U;
+            lastAcceptedPulseUs_ = edge.timestampUs;
+            filteredBpmMilli_ = fallbackBpmMilli_;
+            engine_.acceptExternalPulseFromIsr(
+                filteredBpmMilli_,
+                settings_.pulsesPerQuarterNote);
+            continue;
+        }
+
+        lastAcceptedPulseUs_ = edge.timestampUs;
         const std::uint64_t periodQ8 = static_cast<std::uint64_t>(periodUs) << 8U;
         if (filteredPeriodQ8_ == 0U) {
             filteredPeriodQ8_ = periodQ8;
@@ -171,7 +253,10 @@ std::uint32_t ExternalSyncController::calculateBpmMilli(const std::uint32_t peri
         : 1U;
     const std::uint64_t denominator = static_cast<std::uint64_t>(periodUs) * ppqn;
     const std::uint64_t value = kMicrosPerMinuteMilliBpm / denominator;
-    return value > 0xFFFFFFFFULL ? 0xFFFFFFFFU : static_cast<std::uint32_t>(value);
+    const std::uint64_t maximumSupportedMilliBpm =
+        static_cast<std::uint64_t>(config::kSupportedMaximumBpm) * 1000ULL;
+    return static_cast<std::uint32_t>(
+        value > maximumSupportedMilliBpm ? maximumSupportedMilliBpm : value);
 }
 
 std::uint32_t ExternalSyncController::effectiveTimeoutUs() const {

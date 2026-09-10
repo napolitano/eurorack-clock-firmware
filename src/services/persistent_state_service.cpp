@@ -24,11 +24,6 @@ void PersistentStateService::begin() {
     pendingPresetName_.fill('\0');
 
     bool migrationNeeded = false;
-    std::array<bool, kUserPresetSlotCount> migratedPresetLoaded{};
-    std::array<ClockState, kUserPresetSlotCount> migratedPresetStates{};
-    std::array<std::array<char, kPresetNameLength + 1U>, kUserPresetSlotCount>
-        migratedPresetNames{};
-
     std::array<std::uint8_t, kCurrentRecordSize> currentRecord{};
     ClockState loadedCurrent{};
     hasStoredCurrentState_ = storage_.readBytes(
@@ -87,10 +82,25 @@ void PersistentStateService::begin() {
     }
     writePending_ = false;
 
+    // Build a canonical v6 records area in PersistentStorage's bounded staging
+    // buffer while records are being inspected. If no old schema is found the
+    // transaction is simply discarded. This avoids keeping migrated copies of all
+    // eight ClockState objects or an 8-KiB storage image on the call stack.
+    constexpr std::size_t kRecordsEnd =
+        kCurrentRecordSize + kUserPresetSlotCount * kPresetRecordSize;
+    bool migrationStagingReady = storage_.beginUpdate() &&
+        storage_.stageFill(0U, kRecordsEnd, static_cast<std::uint8_t>(0xFFU));
+    if (migrationStagingReady && hasStoredCurrentState_) {
+        const auto migrated = serializeCurrentRecord(storedCurrentState_);
+        migrationStagingReady = storage_.stageBytes(
+            kCurrentRecordOffset, migrated.data(), migrated.size());
+    }
+
     for (std::uint8_t slotIndex = 0U; slotIndex < kUserPresetSlotCount; ++slotIndex) {
         std::array<std::uint8_t, kPresetRecordSize> record{};
         ClockState loadedPreset{};
         char name[kPresetNameLength + 1U]{};
+        bool loadedPriorSchema = false;
         presetValid_[slotIndex] = storage_.readBytes(
             presetOffset(slotIndex),
             record.data(),
@@ -103,10 +113,7 @@ void PersistentStateService::begin() {
                 v5Record.data(),
                 v5Record.size()) &&
                 deserializeV5PresetRecord(v5Record, name, loadedPreset);
-            if (presetValid_[slotIndex]) {
-                migrationNeeded = true;
-                migratedPresetLoaded[slotIndex] = true;
-            }
+            loadedPriorSchema = presetValid_[slotIndex];
         }
 
         if (!presetValid_[slotIndex]) {
@@ -116,10 +123,7 @@ void PersistentStateService::begin() {
                 previousRecord.data(),
                 previousRecord.size()) &&
                 deserializePreviousPresetRecord(previousRecord, name, loadedPreset);
-            if (presetValid_[slotIndex]) {
-                migrationNeeded = true;
-                migratedPresetLoaded[slotIndex] = true;
-            }
+            loadedPriorSchema = presetValid_[slotIndex];
         }
 
         if (!presetValid_[slotIndex]) {
@@ -129,52 +133,29 @@ void PersistentStateService::begin() {
                 legacyRecord.data(),
                 legacyRecord.size()) &&
                 deserializeLegacyPresetRecord(legacyRecord, name, loadedPreset);
-            if (presetValid_[slotIndex]) {
-                migrationNeeded = true;
-                migratedPresetLoaded[slotIndex] = true;
-            }
+            loadedPriorSchema = presetValid_[slotIndex];
         }
 
+        migrationNeeded = migrationNeeded || loadedPriorSchema;
         presetNames_[slotIndex].fill('\0');
-        if (presetValid_[slotIndex]) {
-            std::copy_n(name, kPresetNameLength, presetNames_[slotIndex].begin());
-            presetNames_[slotIndex][kPresetNameLength] = '\0';
-            migratedPresetLoaded[slotIndex] = true;
-            migratedPresetStates[slotIndex] = loadedPreset;
-            std::copy_n(name, kPresetNameLength + 1U, migratedPresetNames[slotIndex].begin());
-        }
-    }
-
-    if (!migrationNeeded) {
-        return;
-    }
-
-    // Rewrite every recoverable prior-schema record at v6 offsets in one logical
-    // storage-image commit. Bytes outside CURRENT/presets (notably Pixel Raid score)
-    // remain untouched.
-    std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> storageImage{};
-    if (!storage_.readBytes(0U, storageImage.data(), storageImage.size())) {
-        return;
-    }
-    constexpr std::size_t kRecordsEnd =
-        kCurrentRecordSize + kUserPresetSlotCount * kPresetRecordSize;
-    std::fill_n(storageImage.begin(), kRecordsEnd, static_cast<std::uint8_t>(0xFFU));
-    if (hasStoredCurrentState_) {
-        const auto migrated = serializeCurrentRecord(storedCurrentState_);
-        std::copy(migrated.begin(), migrated.end(), storageImage.begin());
-    }
-    for (std::uint8_t slotIndex = 0U; slotIndex < kUserPresetSlotCount; ++slotIndex) {
-        if (!migratedPresetLoaded[slotIndex]) {
+        if (!presetValid_[slotIndex]) {
             continue;
         }
-        const auto migrated = serializePresetRecord(
-            migratedPresetNames[slotIndex].data(), migratedPresetStates[slotIndex]);
-        std::copy(
-            migrated.begin(),
-            migrated.end(),
-            storageImage.begin() + static_cast<std::ptrdiff_t>(presetOffset(slotIndex)));
+
+        std::copy_n(name, kPresetNameLength, presetNames_[slotIndex].begin());
+        presetNames_[slotIndex][kPresetNameLength] = '\0';
+        if (migrationStagingReady) {
+            const auto migrated = serializePresetRecord(name, loadedPreset);
+            migrationStagingReady = storage_.stageBytes(
+                presetOffset(slotIndex), migrated.data(), migrated.size());
+        }
     }
-    (void)storage_.writeBytes(0U, storageImage.data(), storageImage.size());
+
+    if (migrationNeeded && migrationStagingReady) {
+        (void)storage_.commitUpdate();
+    } else {
+        storage_.cancelUpdate();
+    }
 }
 
 bool PersistentStateService::restoreCurrentState(ClockState& state) const {
@@ -244,27 +225,26 @@ void PersistentStateService::service(
         return;
     }
 
-    std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> storageImage{};
-    if (!storage_.readBytes(0U, storageImage.data(), storageImage.size())) {
+    if (!storage_.beginUpdate()) {
         return;
     }
 
+    bool staged = true;
     if (currentRecordReady) {
         const std::array<std::uint8_t, kCurrentRecordSize> currentRecord =
             serializeCurrentRecord(pendingCurrentState_);
-        std::copy(
-            currentRecord.begin(),
-            currentRecord.end(),
-            storageImage.begin() + static_cast<std::ptrdiff_t>(kCurrentRecordOffset));
+        staged = storage_.stageBytes(
+            kCurrentRecordOffset, currentRecord.data(), currentRecord.size());
     }
-    if (pendingPresetWrite_) {
-        std::copy(
-            pendingPresetRecord_.begin(),
-            pendingPresetRecord_.end(),
-            storageImage.begin() + static_cast<std::ptrdiff_t>(presetOffset(pendingPresetSlot_)));
+    if (staged && pendingPresetWrite_) {
+        staged = storage_.stageBytes(
+            presetOffset(pendingPresetSlot_),
+            pendingPresetRecord_.data(),
+            pendingPresetRecord_.size());
     }
 
-    if (!storage_.writeBytes(0U, storageImage.data(), storageImage.size())) {
+    if (!staged || !storage_.commitUpdate()) {
+        storage_.cancelUpdate();
         return;
     }
 

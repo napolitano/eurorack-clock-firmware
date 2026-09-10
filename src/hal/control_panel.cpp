@@ -93,6 +93,13 @@ ControlSample ControlPanel::sample(const std::uint32_t nowMs) {
 }
 
 std::int8_t ControlPanel::sampleEncoder() {
+    // A 16-bit aligned load is atomic on Cortex-M4. Avoid globally masking IRQs
+    // on the overwhelmingly common idle path; if an ISR adds a detent just after
+    // this zero check it remains pending for the next foreground iteration.
+    if (pendingEncoderDetents_ == 0) {
+        return 0;
+    }
+
     InterruptLock interruptLock;
     constexpr std::int16_t kMaximumReportedDelta = 127;
     constexpr std::int16_t kMinimumReportedDelta = -127;

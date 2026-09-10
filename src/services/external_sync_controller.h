@@ -65,6 +65,12 @@ private:
 
     hal::ExternalInputCapture& inputCapture_;
     engine::ClockEngine& engine_;
+    // Foreground-only publication shadow. It lets the hot runOnce() path reject
+    // unchanged settings without entering a global interrupt critical section.
+    ExternalSyncSettings foregroundSettings_{};
+    std::uint32_t foregroundFallbackBpmMilli_ = 120000U;
+    std::uint16_t foregroundMinimumBpm_ = 20U;
+
     ExternalSyncSettings settings_{};
     std::uint32_t fallbackBpmMilli_ = 120000U;
     std::uint16_t minimumBpm_ = 20U;

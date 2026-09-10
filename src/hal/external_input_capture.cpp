@@ -81,12 +81,28 @@ void ExternalInputCapture::captureResetFromIsr() {
 }
 
 void ExternalInputCapture::pushFromIsr(EdgeQueue& queue, const ExternalInputEdge edge) {
+    // Once continuity has been lost, do not enqueue newer edges behind the
+    // unpublished loss boundary. Otherwise the consumer could observe newer
+    // timestamps first and the older continuity marker afterwards. Drop until
+    // TIM3 has drained the queue and consumed the marker; the next physical edge
+    // then starts a clean acquisition epoch. RST gate mode still has the separate
+    // resetLevelHigh_ level latch, so its authoritative level is not lost here.
+    if (queue.overflowPending) {
+        ++queue.overflowCount;
+        return;
+    }
+
     const std::uint8_t next = static_cast<std::uint8_t>((queue.head + 1U) % kQueueCapacity);
     if (next == queue.tail) {
-        queue.overflowPending = true;
+        ++queue.overflowCount;
+        // TIM3 intentionally has higher priority than EXTI and may preempt this
+        // producer. Publish the overflow marker only after its multi-field payload
+        // is complete. Retaining the first dropped edge is enough to declare the
+        // exact boundary after which the queued transition stream is no longer
+        // continuous.
         queue.overflowTimestampUs = edge.timestampUs;
         queue.overflowLevelHigh = edge.high;
-        ++queue.overflowCount;
+        queue.overflowPending = true;
         return;
     }
     queue.edges[queue.head] = edge;

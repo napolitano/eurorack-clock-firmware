@@ -67,6 +67,28 @@ def production_sources() -> list[Path]:
     return sources
 
 
+def audit_production_stack_frames() -> None:
+    """Compile each production unit and fail on stack frames above 4 KiB."""
+    build_dir = BUILD_ROOT / "stack_frames"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    compiler = os.environ.get("CXX", "g++")
+    for index, source in enumerate(production_sources()):
+        object_path = build_dir / f"{index:03d}_{source.stem}.o"
+        run([
+            compiler,
+            "-std=c++17",
+            "-O1",
+            *WARNING_FLAGS,
+            "-Wframe-larger-than=4096",
+            "-DCLOCK_HOST_TEST=1",
+            "-I", str(ROOT / "src"),
+            "-I", str(ROOT / "lib" / "clock_core" / "src"),
+            "-I", str(FAKE_INCLUDE),
+            "-c", str(source),
+            "-o", str(object_path),
+        ])
+
+
 def compile_host_firmware_variant(name: str, defines: list[str]) -> Path:
     """Compile the complete firmware against deterministic fake framework headers."""
     build_dir = BUILD_ROOT / name
@@ -469,6 +491,7 @@ def main() -> int:
 
     if BUILD_ROOT.exists():
         shutil.rmtree(BUILD_ROOT)
+    audit_production_stack_frames()
     if args.sanitizers_only:
         run_sanitizer_matrix()
         return 0

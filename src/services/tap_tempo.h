@@ -33,6 +33,7 @@ public:
 
 private:
     std::uint32_t previousTapAtMs_ = 0U;
+    bool havePreviousTap_ = false;
     std::array<std::uint32_t, 4U> intervalsMs_{};
     std::uint8_t intervalCount_ = 0U;
 };
