@@ -18,13 +18,19 @@ General CV parameter inputs would likewise add analog front ends, routing, jacks
 | --- | --- | --- | --- |
 | Current baseline | `0.19.0-alpha.63` | Implemented V1 feature set before freeze | Superseded by beta freeze |
 | **V1 feature freeze** | **`0.19.0-beta.1`** | No new musical features. Freeze product scope; audit persistence and event architecture for later 1.x migration; align docs and release semantics. | Existing behavior unchanged; forward-compatibility risks documented and guarded by tests |
-| **V1 qualification** | **`0.19.0-beta.2+`** | Objective HIL acceptance contract, reproducible capture analysis, PCB bring-up, electrical measurements, SYNC/RST comparator validation, SPI/I2C stress, timing HIL, defect correction, build/manual refinement | Physical qualification ledger complete; no known V1 blockers |
-| Release candidate | `1.0.0-rc.x` | Externally buildable release candidate; release blockers only | Independent build/use feedback and all mandatory gates pass |
-| Stable | **`1.0.0`** | First fully supported CLOCK DIY release | Hardware, firmware, tests, build docs, and user manual agree and are supportable |
+| **V1 qualification** | **`0.19.0-beta.2+`** | Objective HIL acceptance contract, reproducible capture analysis, PCB bring-up, electrical measurements, SYNC/RST comparator validation, SPI/I2C stress, timing HIL, defect correction, build/manual refinement | Qualification evidence accumulated; HIL remains advisory to automated releases through 1.4.x |
+| Release candidate | `1.0.0-rc.x` | Externally buildable release candidate; release blockers only | Software/documentation/release gates pass; HIL status is disclosed but not build-blocking before 1.5.0 |
+| Stable | **`1.0.0`** | First supported CLOCK DIY release | Firmware, release tooling, build docs and manual agree; physical HIL status remains explicitly disclosed |
 
 ### V1 feature freeze rule
 
 From `0.19.0-beta.1` until `1.0.0`, a change is accepted only when it fixes a defect, closes a qualification/documentation gap, improves reproducibility, or is required to preserve a safe migration path. Swing/Groove expansion, Sequencer expansion, Euclid Auto-Fill, Ratchets, structured random, channel logic, scenes, and other new musical behavior are intentionally deferred.
+
+## HIL enforcement policy
+
+Physical HIL remains tracked from the V1 beta onward, but it is deliberately **non-blocking for automated release builds through 1.4.x**. CI still validates the qualification ledger itself: every normative test must be represented, status values must be valid, and any claimed `PASS` must point to real repository evidence.
+
+The hard all-PASS HIL gate starts with **1.5.0**. Release candidates and stable releases at or beyond that version require every normative HIL item to be `PASS`; alpha and beta development builds remain advisory. This staged policy lets early stable firmware ship without pretending unfinished bench work is complete, while making physical qualification a formal release guarantee from 1.5 onward.
 
 ## Post-1.0 musical roadmap
 

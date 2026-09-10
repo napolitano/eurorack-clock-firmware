@@ -8,6 +8,20 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.3] - 2026-09-10
+
+### HIL release-gate staging
+
+- Changed physical HIL qualification from a hard `1.0.0-rc.*`/`1.0.0` release-build gate to an advisory qualification signal through firmware `1.4.x`. Open `PENDING`/`BLOCKED` bench items remain visible but no longer prevent current or early 1.x release builds.
+- Scheduled the hard all-PASS HIL release guarantee for `1.5.0`: release candidates and stable releases at or beyond `1.5.0` require every normative HIL item to be `PASS` with repository evidence. Alpha/beta development builds remain advisory so bench work cannot block development snapshots.
+- Replaced the old `--require-pass-if-rc` workflow contract with `--require-pass-from 1.5.0` and added SemVer-aware enforcement tests across pre-1.5 stable/RC versions, 1.5+ release candidates/stable versions, and alpha/beta prereleases.
+- Kept structural HIL validation active in every build. Missing normative tests, invalid statuses, fabricated PASS states, or missing PASS evidence still fail CI; only incomplete physical qualification is temporarily non-blocking.
+- Updated README, roadmap, HIL plan, qualification contract and user documentation to distinguish visible/advisory HIL evidence from the future hard release gate.
+
+### Compatibility
+
+- No production clock-engine, persistence-schema, UI or musical-behavior changes in beta.3.
+
 ## [0.19.0-beta.2] - 2026-09-10
 
 ### V1 qualification infrastructure

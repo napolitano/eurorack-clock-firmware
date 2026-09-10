@@ -283,7 +283,7 @@ Run all eight channels simultaneously with mixed OFF/CLK/EUC/SEQ configurations 
 For ordinary gate/period/skew tests, record at least 100 complete events. Display-stress comparisons use at least 1,000 complete events. Every PASS entry in the V1 qualification ledger must reference at least one evidence artifact. Timing evidence should include normalized CSV plus analyzer JSON where practical. Hardware-dependent criteria that cannot yet be stated from the frozen schematic/component specification remain BLOCKED rather than receiving guessed tolerances.
 
 
-A stable release must not be declared from host coverage alone. The release checklist should record, at minimum:
+HIL remains the preferred physical-quality evidence and the release checklist should record, at minimum, the following results. Through firmware 1.4.x these results are advisory to automated release builds; from 1.5.0 release candidates/stable releases the all-PASS ledger is enforced:
 
 - host coverage gate: PASS
 - ASan: PASS

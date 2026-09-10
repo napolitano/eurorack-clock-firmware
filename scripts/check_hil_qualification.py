@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the CLOCK V1 HIL qualification ledger and RC release gate.
+"""Validate the CLOCK HIL qualification ledger and optional release gate.
 
 Author: Axel Napolitano
 License: PolyForm-Noncommercial-1.0.0
@@ -18,7 +18,12 @@ LEDGER = ROOT / "docs/qualification/v1_qualification.json"
 VERSION = ROOT / "src/version.h"
 ID_RE = re.compile(r"^###\s+(HIL-[A-Z]+-\d{3})\s+—", re.MULTILINE)
 VERSION_RE = re.compile(r'^#define\s+CLOCK_FIRMWARE_VERSION\s+"([^"]+)"\s*$', re.MULTILINE)
+SEMVER_RE = re.compile(
+    r"^(?P<major>0|[1-9]\d*)\.(?P<minor>0|[1-9]\d*)\.(?P<patch>0|[1-9]\d*)"
+    r"(?:-(?P<prerelease>[0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$"
+)
 ALLOWED_STATUSES = {"PENDING", "BLOCKED", "PASS", "FAIL"}
+DEFAULT_ENFORCE_FROM = "1.5.0"
 
 
 def current_version() -> str:
@@ -27,6 +32,34 @@ def current_version() -> str:
     if match is None:
         raise ValueError("src/version.h does not define CLOCK_FIRMWARE_VERSION")
     return match.group(1)
+
+
+def parse_semver(version: str) -> tuple[tuple[int, int, int], str | None]:
+    """Return SemVer core and prerelease string, rejecting malformed versions."""
+    match = SEMVER_RE.fullmatch(version)
+    if match is None:
+        raise ValueError(f"invalid semantic version: {version!r}")
+    core = (int(match.group("major")), int(match.group("minor")), int(match.group("patch")))
+    return core, match.group("prerelease")
+
+
+def should_require_pass(version: str, enforce_from: str = DEFAULT_ENFORCE_FROM) -> bool:
+    """Enforce HIL evidence for stable/RC releases at or beyond the threshold.
+
+    Alpha and beta builds remain advisory even after the threshold so development
+    snapshots are never blocked by unfinished bench work. Release candidates and
+    stable releases at/after the threshold require a complete PASS ledger.
+    """
+    core, prerelease = parse_semver(version)
+    threshold_core, threshold_prerelease = parse_semver(enforce_from)
+    if threshold_prerelease is not None:
+        raise ValueError("HIL enforcement threshold must be a stable SemVer core")
+    if core < threshold_core:
+        return False
+    if prerelease is None:
+        return True
+    first_identifier = prerelease.split(".", 1)[0].lower()
+    return first_identifier == "rc"
 
 
 def plan_ids() -> list[str]:
@@ -84,7 +117,7 @@ def validate(require_pass: bool) -> list[str]:
                     if not resolved.is_file():
                         errors.append(f"{test_id}: PASS evidence does not exist: {evidence_path}")
         if require_pass and status != "PASS":
-            errors.append(f"{test_id}: RC/1.0 gate requires PASS, found {status}")
+            errors.append(f"{test_id}: enforced HIL gate requires PASS, found {status}")
 
     if actual_ids != expected_ids:
         errors.append(
@@ -95,20 +128,22 @@ def validate(require_pass: bool) -> list[str]:
 
 
 def main() -> int:
-    """Validate ledger structure and optionally enforce the RC/1.0 all-PASS gate."""
+    """Validate ledger structure and conditionally enforce the all-PASS gate."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--require-pass", action="store_true", help="require every HIL test to be PASS")
     parser.add_argument(
-        "--require-pass-if-rc",
-        action="store_true",
-        help="require all PASS automatically for 1.0.0-rc.* and stable 1.0.0",
+        "--require-pass-from",
+        default=None,
+        metavar="VERSION",
+        help=(
+            "automatically require all PASS for release candidates and stable releases "
+            "at or beyond VERSION; alpha/beta builds remain advisory"
+        ),
     )
     args = parser.parse_args()
     version = current_version()
-    auto_gate = args.require_pass_if_rc and (
-        version.startswith("1.0.0-rc.") or version == "1.0.0"
-    )
     try:
+        auto_gate = bool(args.require_pass_from) and should_require_pass(version, args.require_pass_from)
         errors = validate(args.require_pass or auto_gate)
     except (OSError, ValueError, json.JSONDecodeError) as exc:
         print(f"HIL qualification validation failed: {exc}", file=sys.stderr)
@@ -122,7 +157,12 @@ def main() -> int:
     for entry in data.get("tests", []):
         if isinstance(entry, dict) and entry.get("status") in counts:
             counts[entry["status"]] += 1
-    status = "RC gate PASS" if args.require_pass or auto_gate else "ledger structure PASS"
+    if args.require_pass or auto_gate:
+        status = "enforced gate PASS"
+    elif args.require_pass_from:
+        status = f"advisory ledger PASS (hard gate starts at {args.require_pass_from})"
+    else:
+        status = "ledger structure PASS"
     print(f"HIL qualification: {status} ({version})")
     print("  " + ", ".join(f"{name}={counts[name]}" for name in ("PASS", "PENDING", "BLOCKED", "FAIL")))
     return 0

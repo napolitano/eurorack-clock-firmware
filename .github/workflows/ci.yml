@@ -49,8 +49,8 @@ jobs:
       - name: Validate repository documentation
         run: python scripts/check_documentation.py
 
-      - name: Validate V1 HIL qualification ledger
-        run: python scripts/check_hil_qualification.py --require-pass-if-rc
+      - name: Validate HIL qualification ledger
+        run: python scripts/check_hil_qualification.py --require-pass-from 1.5.0
 
       - name: Build Doxygen API documentation
         run: doxygen Doxyfile

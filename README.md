@@ -17,9 +17,9 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `0.19.0-beta.2`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain prerelease milestones.
+> **Current status: `0.19.0-beta.3`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
 
-**Beta.2 qualification status:** the physical HIL ledger is intentionally not green yet: 20 tests are `PENDING`, 4 are `BLOCKED` on final hardware-dependent limits, and 0 are falsely reported as passed. Timing captures now use a vendor-neutral CSV format and machine-checkable analysis. See [`docs/qualification/`](docs/qualification/README.md).
+**Beta.3 HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
 
 ## Why another Eurorack Clock?
 
@@ -135,7 +135,7 @@ The firmware-side synchronization model supports:
 SYNC/RST edges are captured by GPIO interrupts and consumed in the deterministic scheduler. External tempo estimation is period-based and includes smoothing, continuity handling, adaptive timeout and timestamp-wrap-safe arithmetic.
 
 > [!CAUTION]
-> Host tests prove the software semantics, not the analog input stage. Comparator thresholds, signal integrity, final timer-capture routing and resulting output jitter must still pass the real-hardware HIL plan before a 1.0 release candidate. See [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).
+> Host tests prove the software semantics, not the analog input stage. Comparator thresholds, signal integrity, final timer-capture routing and resulting output jitter remain real-hardware HIL qualification items. They are reported, but do not block automated releases before 1.5.0. See [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).
 
 ## Controls and UI
 
@@ -175,7 +175,7 @@ SPI remains the preferred/reference display transport. I2C is also supported for
 - stale UI frames may be discarded - latest frame wins;
 - NACKs are retried without pretending the physical display was updated.
 
-A slower I2C frame rate is acceptable. Additional gate jitter, missed edges, SYNC/RST faults or encoder loss are not. SPI-vs-I2C HIL under maximum display activity is therefore a mandatory V1 qualification test before a 1.0 release candidate.
+A slower I2C frame rate is acceptable. Additional gate jitter, missed edges, SYNC/RST faults or encoder loss are not. SPI-vs-I2C HIL under maximum display activity therefore remains an important qualification test. Its result is advisory to release automation through 1.4.x and becomes a hard gate from 1.5.0.
 
 ## Native simulator
 
@@ -237,7 +237,7 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | [Architecture](docs/ARCHITECTURE.md) | Firmware boundaries and responsibilities |
 | [Configuration](docs/CONFIGURATION.md) | Build-time and runtime configuration |
 | [Simulator](docs/SIMULATOR.md) | Desktop simulator and headless usage |
-| [HIL Test Plan](docs/HIL_TEST_PLAN.md) | Mandatory physical validation before a 1.0 release candidate |
+| [HIL Test Plan](docs/HIL_TEST_PLAN.md) | Physical qualification evidence; advisory to release automation through 1.4.x, enforced from 1.5.0 |
 | [Roadmap](docs/ROADMAP.md) | V1 freeze, 1.0 qualification path, post-1.0 musical roadmap and VCV track |
 | [V1 Forward-Compatibility Audit](docs/V1_FORWARD_COMPATIBILITY.md) | Persistence/event-architecture constraints that protect later 1.x migration |
 | [Development](docs/DEVELOPMENT.md) | Developer workflow and quality gates |

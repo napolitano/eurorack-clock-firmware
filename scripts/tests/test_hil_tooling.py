@@ -175,10 +175,28 @@ class HilQualificationLedgerTests(unittest.TestCase):
                 QUAL.LEDGER = original
         self.assertTrue(any("PASS requires" in error for error in errors))
 
-    def test_rc_gate_rejects_pending_physical_tests(self) -> None:
-        """The current beta ledger must intentionally fail an all-PASS release-candidate gate."""
+    def test_explicit_all_pass_gate_rejects_pending_physical_tests(self) -> None:
+        """An explicitly requested all-PASS gate still rejects incomplete HIL evidence."""
         errors = QUAL.validate(require_pass=True)
         self.assertTrue(any("requires PASS" in error for error in errors))
+
+    def test_hil_hard_gate_is_advisory_before_1_5(self) -> None:
+        """Stable and RC releases below 1.5 must not be blocked by incomplete HIL."""
+        for version in ("1.0.0-rc.1", "1.0.0", "1.4.9-rc.3", "1.4.9"):
+            with self.subTest(version=version):
+                self.assertFalse(QUAL.should_require_pass(version, "1.5.0"))
+
+    def test_hil_hard_gate_starts_with_1_5_release_candidates(self) -> None:
+        """From 1.5, release candidates and stable releases require all-PASS HIL."""
+        for version in ("1.5.0-rc.1", "1.5.0", "1.6.0-rc.2", "2.0.0"):
+            with self.subTest(version=version):
+                self.assertTrue(QUAL.should_require_pass(version, "1.5.0"))
+
+    def test_alpha_and_beta_remain_advisory_after_threshold(self) -> None:
+        """Development prereleases remain usable while bench qualification is incomplete."""
+        for version in ("1.5.0-alpha.1", "1.5.0-beta.4", "2.0.0-beta.1"):
+            with self.subTest(version=version):
+                self.assertFalse(QUAL.should_require_pass(version, "1.5.0"))
 
     def test_pass_with_missing_evidence_file_is_rejected(self) -> None:
         """PASS evidence must resolve to a real repository file rather than a decorative path."""

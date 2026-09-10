@@ -455,16 +455,18 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("63 bytes", audit)
         self.assertIn("schema v7", audit)
 
-    def test_hil_qualification_contract_is_release_gated(self) -> None:
+    def test_hil_qualification_contract_is_staged_from_1_5(self) -> None:
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
         release = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         acceptance = (ROOT / "docs" / "qualification" / "V1_ACCEPTANCE.md").read_text(encoding="utf-8")
         bench = (ROOT / "docs" / "qualification" / "V1_BENCH_MATRIX.md").read_text(encoding="utf-8")
         ledger = (ROOT / "docs" / "qualification" / "v1_qualification.json").read_text(encoding="utf-8")
-        gate = "python scripts/check_hil_qualification.py --require-pass-if-rc"
+        gate = "python scripts/check_hil_qualification.py --require-pass-from 1.5.0"
         self.assertIn(gate, ci)
         self.assertIn(gate, release)
         self.assertIn("50 µs", acceptance)
+        self.assertIn("advisory through 1.4.x", acceptance)
+        self.assertIn("1.5.0", acceptance)
         self.assertIn("1,000 events", acceptance)
         self.assertIn("QP-07", bench)
         self.assertIn('"overall_status": "IN_PROGRESS"', ledger)

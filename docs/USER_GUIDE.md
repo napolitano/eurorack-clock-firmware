@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Beta documentation — v0.19.0-beta.2 · V1 feature freeze**
+> **Beta documentation — v0.19.0-beta.3 · V1 feature freeze**
 >
 > CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation and physical HIL timing sign-off remain open. Timer Input Capture or compare-event scheduling are implementation options only if measured V1 timing requires them.
 
@@ -324,7 +324,7 @@ SYNC/RST transitions are captured by GPIO interrupts and consumed at the determi
 </table>
 
 > [!CAUTION]
-> Host tests verify the firmware semantics above, not the final analog input hardware. Comparator thresholds/hysteresis, physical signal integrity, final pin routing, external-SYNC capture latency/jitter, and jack-level output jitter remain HIL requirements before a 1.0 release candidate. Timer Input Capture is required only if the measured EXTI path cannot meet the V1 timing target.
+> Host tests verify the firmware semantics above, not the final analog input hardware. Comparator thresholds/hysteresis, physical signal integrity, final pin routing, external-SYNC capture latency/jitter, and jack-level output jitter remain HIL qualification items. Their status is visible but advisory to automated release builds through 1.4.x; the hard all-PASS gate starts with 1.5.0 release candidates/stable releases. Timer Input Capture is required only if the measured EXTI path cannot meet the V1 timing target.
 
 ## 18. Presets, CURRENT, and templates
 
@@ -439,7 +439,7 @@ The current firmware uses a deterministic **20 kHz scheduler**, giving a 50 µs 
 
 Persistence uses internal STM32 Flash A/B records. Large persistence staging buffers are static rather than runtime-stack allocations, embedded production code is guarded against dynamic heap allocation, and the build includes a production stack-frame gate.
 
-These software safeguards do not replace physical validation. Before a 1.0 release candidate, representative hardware still needs oscilloscope/logic-analyzer proof for gate jitter and pulse widths, boot/reset behavior, SYNC/RST comparator behavior, final timer capture, and SPI/I2C display stress. See [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).
+These software safeguards do not replace physical validation. Representative hardware still needs oscilloscope/logic-analyzer proof for gate jitter and pulse widths, boot/reset behavior, SYNC/RST comparator behavior, final timer capture, and SPI/I2C display stress. Until 1.5.0 this evidence is tracked but does not block the automated release build. See [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).
 
 ## 23. License
 
