@@ -2,7 +2,7 @@
 
 # CLOCK Manual Workspace
 
-This directory contains the maintained, publication-layout CLOCK end-user manual together with its reusable diagrams and deterministic UI screenshots. The repository User Guide remains the canonical GitHub-readable operating reference while the project is in alpha; the ODT is the editable source for the typeset release manual.
+This directory contains the maintained, publication-layout CLOCK end-user manual together with its reusable diagrams and deterministic UI screenshots. The repository User Guide remains the canonical GitHub-readable operating reference while the project is in prerelease development; the ODT is the editable source for the typeset release manual.
 
 
 ## Maintained user manual source

@@ -17,9 +17,9 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `0.19.0-beta.3`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
+> **Current status: `0.19.0-beta.4`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
 
-**Beta.3 HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
+**Beta.4 HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
 
 ## Why another Eurorack Clock?
 
@@ -234,7 +234,16 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **90 named test cases** across Clock Core, Realtime/SYNC/RST and full Host Firmware/UI/HAL suites. Those cases execute more than **218,000 assertions** in the default host configuration; exhaustive clock-core matrices account for most of them.
+Current inventory: **164 explicitly named Native test cases**. PlatformIO is configured to expose all four suites rather than only the 44-case mathematical core:
+
+| Native suite | Cases | Primary purpose |
+| --- | ---: | --- |
+| `test_clock_core` | 44 | deterministic rate, Q32, swing, probability, Euclid and sequencer mathematics |
+| `test_realtime` | 24 | scheduler, physical gate driver, SYNC/RST integration and queue stress |
+| `test_sync_behavior` | 74 | atomic external-SYNC behavior, jitter/glitch/loss boundaries, PPQN/edge changes, and a nominal LM393-front-end voltage model |
+| `test_host_firmware` | 22 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
+
+The default Native run executes more than **221,000 assertions**. The large assertion count is deliberate, but it is no longer used to hide broad behavior inside a small visible case count. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
 
 The broader host matrix additionally recompiles display variants, runs sanitizer configurations and produces aggregate coverage:
 
@@ -245,9 +254,9 @@ python scripts/run_host_tests.py
 Current validated aggregate baseline:
 
 ```text
-Executable lines     6248 / 6507   96.02 %
+Executable lines     6258 / 6517   96.03 %
 Functions              533 / 542    98.34 %
-Decision branches     3710 / 4115   90.16 %
+Decision branches     3719 / 4122   90.22 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).

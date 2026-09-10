@@ -49,6 +49,8 @@ This makes the simulator useful for UI work, timing regression checks, persisten
 
 The virtual input sources model the **conditioned digital boundary** the firmware will see after the analogue frontend. SQUARE, SINE, and TRIANGLE are sampled against an ideal normalized threshold and reduced to `HI` / `LO`. This is useful for checking edge semantics and firmware behavior, but it is deliberately **not** an electrical LM393 model. Real threshold voltages, common-mode limits, open-collector pull-up behavior, hysteresis, noise/glitch susceptibility, propagation delay, protection circuitry, and final STM32 capture timing remain HIL concerns.
 
+The separate Native `test_sync_behavior` suite adds a nominal host-only model of the documented LM393 resistor/hysteresis network and uses it to exercise 2.5 V, 3 V and 4 V input clocks. The interactive simulator intentionally remains at the conditioned-digital boundary; neither path is a substitute for physical comparator HIL.
+
 ## Current simulation boundaries
 
 The simulator intentionally distinguishes firmware behavior from electrical/HIL behavior:

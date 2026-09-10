@@ -105,7 +105,7 @@ def compile_host_firmware_variant(name: str, defines: list[str]) -> Path:
         "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         *[str(path) for path in production_sources()],
-        str(ROOT / "test" / "host_firmware" / "test_main.cpp"),
+        str(ROOT / "test" / "test_host_firmware" / "test_main.cpp"),
         "-o", str(executable),
     ]
     run(command)
@@ -169,7 +169,7 @@ def compile_realtime_suite(
         "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         *[str(path) for path in realtime_sources()],
-        str(ROOT / "test" / "realtime" / "test_main.cpp"),
+        str(ROOT / "test" / "test_realtime" / "test_main.cpp"),
         "-o", str(executable),
     ])
     run([str(executable)], cwd=build_dir)
@@ -194,11 +194,55 @@ def compile_sanitized_realtime_suite(
         "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         *[str(path) for path in realtime_sources()],
-        str(ROOT / "test" / "realtime" / "test_main.cpp"),
+        str(ROOT / "test" / "test_realtime" / "test_main.cpp"),
         "-o", str(executable),
     ])
     run_sanitized_executable(executable, build_dir)
 
+
+
+
+def compile_sync_behavior_suite(name: str = "sync_behavior") -> Path:
+    """Compile atomic SYNC/input-model behavioral tests against production timing code."""
+    build_dir = BUILD_ROOT / name
+    build_dir.mkdir(parents=True, exist_ok=True)
+    executable = build_dir / "tests"
+    run([
+        os.environ.get("CXX", "g++"),
+        *COVERAGE_FLAGS,
+        "-DCLOCK_HOST_TEST=1",
+        "-I", str(ROOT / "src"),
+        "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(ROOT / "test" / "support"),
+        "-I", str(FAKE_UNITY_INCLUDE),
+        "-I", str(FAKE_INCLUDE),
+        *[str(path) for path in realtime_sources()],
+        str(ROOT / "test" / "test_sync_behavior" / "test_main.cpp"),
+        "-o", str(executable),
+    ])
+    run([str(executable)], cwd=build_dir)
+    return build_dir
+
+
+def compile_sanitized_sync_behavior_suite() -> None:
+    """Run the atomic SYNC/input-model behavioral suite under ASan and UBSan."""
+    build_dir = BUILD_ROOT / "sanitizer_sync_behavior"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    executable = build_dir / "tests"
+    run([
+        os.environ.get("CXX", "g++"),
+        *SANITIZER_FLAGS,
+        "-DCLOCK_HOST_TEST=1",
+        "-I", str(ROOT / "src"),
+        "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(ROOT / "test" / "support"),
+        "-I", str(FAKE_UNITY_INCLUDE),
+        "-I", str(FAKE_INCLUDE),
+        *[str(path) for path in realtime_sources()],
+        str(ROOT / "test" / "test_sync_behavior" / "test_main.cpp"),
+        "-o", str(executable),
+    ])
+    run_sanitized_executable(executable, build_dir)
 
 def compile_native_smoke() -> Path:
     """Execute the PlatformIO native-build entry point under coverage as test-support code."""
@@ -250,7 +294,7 @@ def compile_sanitized_firmware_variant(name: str, defines: list[str]) -> None:
         "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         *[str(path) for path in production_sources()],
-        str(ROOT / "test" / "host_firmware" / "test_main.cpp"),
+        str(ROOT / "test" / "test_host_firmware" / "test_main.cpp"),
         "-o", str(executable),
     ])
     run_sanitized_executable(executable, build_dir)
@@ -272,6 +316,7 @@ def run_sanitizer_matrix() -> None:
         "realtime_external_gpio",
         ["-DCLOCK_EXTERNAL_SYNC_PIN=PB3", "-DCLOCK_EXTERNAL_RESET_PIN=PB4"],
     )
+    compile_sanitized_sync_behavior_suite()
     compile_sanitized_firmware_variant("firmware_i2c", [])
     compile_sanitized_firmware_variant(
         "firmware_spi_ssd1306", ["-DCLOCK_DISPLAY_USE_SPI=1", "-DCLOCK_DISPLAY_CONTROLLER=1306"])
@@ -509,6 +554,7 @@ def main() -> int:
             "realtime_external_gpio",
             ["-DCLOCK_EXTERNAL_SYNC_PIN=PB3", "-DCLOCK_EXTERNAL_RESET_PIN=PB4"],
         ),
+        compile_sync_behavior_suite(),
         compile_host_firmware_variant("firmware_i2c", []),
         compile_host_firmware_variant(
             "firmware_spi_ssd1306",

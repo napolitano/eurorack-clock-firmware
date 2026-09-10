@@ -4,7 +4,10 @@
 
 This document defines the electrical and timing checks that cannot be proven by host-side code coverage.
 
-### SPI OLED electrical bring-up
+#
+> **Native pre-check vs. physical evidence:** beta.4 includes a nominal host-only model of the documented LM393 resistor/hysteresis network. It verifies the intended switching logic and exercises modeled 2.5 V, 3 V and 4 V clock amplitudes through the production SYNC estimator. These tests do not satisfy comparator HIL: component tolerance, actual threshold voltages, common-mode behavior, propagation delay, noise/glitch susceptibility and PCB effects must still be measured on hardware.
+
+## SPI OLED electrical bring-up
 
 For the current SPI prototype, verify the physical pins before functional UI testing:
 

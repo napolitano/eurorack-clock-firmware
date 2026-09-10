@@ -8,13 +8,31 @@
 pio test -e native
 ```
 
-This is the developer-facing native test entry point and intentionally runs all native suites, not only the extracted core:
+This is the developer-facing Native entry point. Beta.4 deliberately makes the test inventory visible instead of presenting only the 44-case mathematical core. PlatformIO executes four conventionally named suites:
 
-- 44 deterministic clock-core cases, including exhaustive ratio, accumulator, swing, probability, gate-width, Euclidean and sequencer invariants;
-- 24 focused real-time/SYNC/RST integration and stress cases;
-- 22 complete host-firmware/UI/HAL scenarios against deterministic Arduino/display/storage fakes.
+| Suite | Named cases | What it proves |
+| --- | ---: | --- |
+| `test_clock_core` | 44 | hardware-independent clock mathematics and exhaustive invariants |
+| `test_realtime` | 24 | deterministic scheduler/GPIO/SYNC/RST integration and stress behavior |
+| `test_sync_behavior` | 74 | atomic external-clock edge cases, strongly varying input timing, glitch/loss behavior, runtime PPQN/edge changes, and nominal analogue-front-end behavior |
+| `test_host_firmware` | 22 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
+| **Total** | **164** | public Native inventory |
 
-That is **90 named native test cases**. In the current default host configuration they execute more than **218,000 assertions** (the clock-core invariant matrix alone executes about 215,000). The case count therefore describes independently reported scenarios, not the amount of boundary/input coverage. The separate `run_host_tests.py` matrix remains authoritative for display variants, sanitizers and aggregate coverage.
+The default Native configuration executes more than **221,000 assertions**. The core suite still contains exhaustive matrices, but beta.4 adds independently reported behavioral cases so that important contracts are reviewable by name in PlatformIO output. `scripts/check_test_inventory.py` now rejects both a total regression below 150 cases and a regression below the minimum assigned to any individual suite.
+
+### External-SYNC behavior suite
+
+`test_sync_behavior` intentionally targets the failure modes most likely to matter musically:
+
+- exact 1, 20, 30, 60, 120, 240, 300, 600, 900 and 999 BPM boundaries;
+- 1/2/4/24 PPQN interpretation and rising/falling-edge selection;
+- duplicate timestamps, sub-filter glitches, glitch storms and opposite-polarity noise;
+- deterministic jitter from +/-50 us through +/-20%, alternating 400/600 ms and 250/750 ms periods, chaotic-but-valid periods, and abrupt 60<->180 BPM changes;
+- adaptive timeout boundaries and STOP/FREEWHEEL/INTERNAL/AUTO loss behavior;
+- timestamp wrap, queue-overflow continuity and explicit lock reacquisition;
+- runtime PPQN and selected-edge changes, including the beta.4 regression that previously allowed an old period filter to contaminate a newly interpreted clock.
+
+The suite also contains a **host-only nominal electrical model** of the documented Rev-1 LM393 input resistor network. It calculates the nominal ~1.79 V rising and ~1.46 V falling thresholds and drives the production digital SYNC estimator from modelled 2.5 V, 3 V and 4 V inputs at 20, 120 and 999 BPM. This validates the intended nominal design behavior and hysteresis logic; resistor tolerance, clamp-diode behavior, LM393 common-mode/propagation effects, noise, PCB parasitics and actual switching thresholds remain physical HIL requirements.
 
 ## Complete firmware host suite
 

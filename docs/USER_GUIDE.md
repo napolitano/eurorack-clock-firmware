@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Beta documentation — v0.19.0-beta.3 · V1 feature freeze**
+> **Beta documentation — v0.19.0-beta.4 · V1 feature freeze**
 >
 > CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation and physical HIL timing sign-off remain open. Timer Input Capture or compare-event scheduling are implementation options only if measured V1 timing requires them.
 

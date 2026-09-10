@@ -66,6 +66,10 @@ void ExternalSyncController::updateConfiguration(const ClockState& state) {
         return;
     }
 
+    const bool timingInterpretationChanged =
+        state.externalSync.pulsesPerQuarterNote != foregroundSettings_.pulsesPerQuarterNote ||
+        state.externalSync.edge != foregroundSettings_.edge;
+
     foregroundSettings_ = state.externalSync;
     foregroundFallbackBpmMilli_ = requestedFallbackBpmMilli;
     foregroundMinimumBpm_ = requestedMinimumBpm;
@@ -76,6 +80,19 @@ void ExternalSyncController::updateConfiguration(const ClockState& state) {
     fallbackBpmMilli_ = foregroundFallbackBpmMilli_;
     minimumBpm_ = foregroundMinimumBpm_;
     configurationDirty_ = configurationDirty_ || resetModeChanged;
+
+    // PPQN and selected-edge changes alter the meaning of captured periods.
+    // Never smooth samples from two incompatible interpretations together.
+    // Other runtime settings (timeout, loss policy, glitch floor) preserve a
+    // valid lock because they do not redefine the period itself.
+    if (timingInterpretationChanged) {
+        haveAcceptedPulse_ = false;
+        externalLocked_ = false;
+        lastAcceptedPulseUs_ = 0U;
+        filteredPeriodQ8_ = 0U;
+        filteredBpmMilli_ = fallbackBpmMilli_;
+        engine_.setExternalLockFromIsr(false, filteredBpmMilli_);
+    }
 }
 
 void ExternalSyncController::processSchedulerTick(const std::uint32_t nowUs) {

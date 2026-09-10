@@ -108,26 +108,26 @@ pio run -e blackpill_f401cc_spi_ssd1315
 
 The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly builds its C++ sources as GNU C++17.
 
-## Native production-core tests
+## Native behavior and production-code tests
 
 ```bash
 pio test -e native
 ```
 
-The native suite runs production code from `lib/clock_core` and currently contains **44 named test cases**, with additional exhaustive loops inside the invariant tests.
+The Native entry point contains **164 named test cases** in four separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 74 `test_sync_behavior`, and 22 `test_host_firmware`. The core still uses exhaustive loops for mathematical invariants; important engine and SYNC behaviors are also represented as atomic named cases so a green summary is not dominated by a single broad test function.
 
 Covered areas include:
 
-- rate normalization and local-meter conversion
-- Q32 rational remainder accumulation and master timeline accumulation
-- swing invariants and clamping
-- phase math
-- deterministic RNG and probability boundaries
-- gate-length conversion / edge protection
-- sequencer step wrapping and 64-bit pattern helpers
-- exhaustive Euclidean hit-count invariants for 1–64 steps
-- sequencer rotation and step 64
-- GLOBAL/FREE reset policy
+- rate normalization, meter conversion, Q32 accumulation, swing, phase, probability and gate-width mathematics;
+- Euclidean and sequencer invariants across their supported lengths;
+- scheduler/GPIO timing, gate release, reset priority, queue overflow and timestamp wrap;
+- exact and strongly varying external clocks across 1..999 BPM and 1/2/4/24 PPQN;
+- glitch storms, duplicate timestamps, edge polarity, adaptive timeout and all external-loss policies;
+- runtime PPQN/edge changes with explicit estimator reacquisition;
+- nominal LM393-front-end hysteresis and 2.5/3/4 V input behavior through a host-only electrical model;
+- complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes.
+
+The nominal electrical model is a design-level check, not a substitute for bench measurements. Physical threshold tolerance, noise susceptibility, propagation delay and actual STM32 capture timing remain HIL.
 
 ## Python tooling tests
 
@@ -222,8 +222,8 @@ The STM32 firmware build only runs after host coverage and both native-simulator
 A release tag must exactly match `src/version.h`:
 
 ```text
-firmware: 0.19.0-beta.3
-Git tag:   v0.19.0-beta.3
+firmware: 0.19.0-beta.4
+Git tag:   v0.19.0-beta.4
 ```
 
 A mismatch fails before publication.

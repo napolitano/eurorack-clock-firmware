@@ -17,7 +17,8 @@ HARDWARE_ALLOWED_PATHS = (
     Path("src/hal"),
     Path("src/pin_map.h"),
     Path("test/support/fake_framework"),
-    Path("test/host_firmware"),
+    Path("test/test_host_firmware"),
+    Path("test/test_sync_behavior"),
     Path("sim/framework"),
     Path("sim/simulator_runtime.cpp"),
 )

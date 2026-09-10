@@ -11,10 +11,17 @@ ROOT = Path(__file__).resolve().parents[1]
 PIO = ROOT / "platformio.ini"
 SUITES = {
     "test_clock_core": ROOT / "test" / "test_clock_core" / "test_main.cpp",
-    "realtime": ROOT / "test" / "realtime" / "test_main.cpp",
-    "host_firmware": ROOT / "test" / "host_firmware" / "test_main.cpp",
+    "test_realtime": ROOT / "test" / "test_realtime" / "test_main.cpp",
+    "test_sync_behavior": ROOT / "test" / "test_sync_behavior" / "test_main.cpp",
+    "test_host_firmware": ROOT / "test" / "test_host_firmware" / "test_main.cpp",
 }
-MIN_CASES = 90
+MIN_CASES = 150
+MIN_SUITE_CASES = {
+    "test_clock_core": 40,
+    "test_realtime": 20,
+    "test_sync_behavior": 60,
+    "test_host_firmware": 20,
+}
 
 
 def main() -> int:
@@ -37,6 +44,11 @@ def main() -> int:
         if len(names) != len(set(names)):
             raise RuntimeError(f"duplicate RUN_TEST registration in {suite}")
         counts[suite] = len(names)
+        minimum = MIN_SUITE_CASES[suite]
+        if len(names) < minimum:
+            raise RuntimeError(
+                f"native suite {suite} regressed to {len(names)} cases; minimum is {minimum}"
+            )
         total += len(names)
 
     if total < MIN_CASES:
