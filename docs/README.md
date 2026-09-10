@@ -20,6 +20,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 | audit dependencies | [`DEPENDENCIES.md`](DEPENDENCIES.md) |
 | understand release/licensing constraints | [`LICENSING.md`](LICENSING.md) |
 | understand citation, DOI, and project identity | [`PROJECT_IDENTITY.md`](PROJECT_IDENTITY.md) |
+| review the release and feature plan | [`ROADMAP.md`](ROADMAP.md) |
 | maintain or publish the end-user manual | [`manual/README.md`](manual/README.md) |
 | write or review repository documentation | [`DOCUMENTATION_STYLE.md`](DOCUMENTATION_STYLE.md) |
 | contribute to CLOCK | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |
@@ -72,7 +73,8 @@ The SVGs in [`manual/assets/`](manual/assets/) are deliberately source-controlle
 - [`simulator-scope.svg`](manual/assets/simulator-scope.svg)
 
 
-- [`ROADMAP.md`](ROADMAP.md) - V1 feature freeze and post-1.0 plan.
+Additional engineering references:
+
 - [`V1_FORWARD_COMPATIBILITY.md`](V1_FORWARD_COMPATIBILITY.md) - V1 migration constraints.
 - [`qualification/V1_ACCEPTANCE.md`](qualification/V1_ACCEPTANCE.md) - objective physical timing acceptance criteria.
 - [`qualification/V1_BENCH_MATRIX.md`](qualification/V1_BENCH_MATRIX.md) - repeatable V1 bench configurations.

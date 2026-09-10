@@ -44,6 +44,31 @@ A quality eight-channel analog modulation-output stage would move the module int
 
 Rather than dilute DIY buildability to chase feature parity with modulation-centric clocks, CLOCK spends its complexity budget on precise digital timing and rhythm. Post-1.0 cross-channel interaction can still become sophisticated, but the first direction is internal event logic - clocks, gates, resets, fills, probability, and rhythm relationships - without changing the analog hardware.
 
+## Roadmap at a glance
+
+CLOCK reaches **1.0** by stabilizing and qualifying the product that already exists, not by delaying the first stable release until every future rhythm idea is implemented. Musical expansion begins after 1.0 and stays focused on what eight precise gate/trigger outputs can do well.
+
+```mermaid
+flowchart LR
+    B["NOW<br/>0.19.0-beta.x<br/>V1 qualification"] --> V1["1.0.0<br/>Stable V1"]
+    V1 --> G["1.1<br/>Swing 2.0<br/>Grooves"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
+    V1 -. separate track .-> VCV["VCV Rack<br/>Reference port"]
+
+    classDef current fill:#0B4FC0,color:#ffffff,stroke:#062F75,stroke-width:2px;
+    classDef stable fill:#197A5A,color:#ffffff,stroke:#0B513A,stroke-width:2px;
+    classDef planned fill:#EAF0FF,color:#12213A,stroke:#0B4FC0,stroke-width:1.5px;
+    classDef gate fill:#F4E8C1,color:#2A2416,stroke:#9D771B,stroke-width:1.5px;
+    classDef virtual fill:#EEE7F7,color:#221832,stroke:#74509A,stroke-width:1.5px;
+
+    class B current;
+    class V1 stable;
+    class G,S,E,R,I,P planned;
+    class N gate;
+    class VCV virtual;
+```
+
+The hard physical-HIL release gate deliberately starts at **1.5.0**; before then HIL remains visible and evidence-checked but advisory to release automation. The detailed roadmap documents scope, dependencies, constraints and exit criteria for each milestone: **[`docs/ROADMAP.md`](docs/ROADMAP.md)**.
+
 ## What CLOCK does
 
 | Area | Current implementation |
