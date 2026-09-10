@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Documentation Style
 
-This file defines the repository documentation conventions. It exists to keep the User Guide, developer documentation, future manual, code comments, and GitHub landing page consistent as the project grows.
+This file defines the repository documentation conventions. It exists to keep the User Guide, developer documentation, maintained typeset manual, code comments, and GitHub landing page consistent as the project grows.
 
 ## Language and tone
 

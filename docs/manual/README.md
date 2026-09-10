@@ -2,7 +2,7 @@
 
 # CLOCK Manual Workspace
 
-This directory prepares reusable source material for the future CLOCK end-user manual. The repository User Guide remains authoritative while the hardware and firmware are in alpha; the eventual typeset manual should consume, not duplicate, these sources.
+This directory contains the maintained, publication-layout CLOCK end-user manual together with its reusable diagrams and deterministic UI screenshots. The repository User Guide remains the canonical GitHub-readable operating reference while the project is in alpha; the ODT is the editable source for the typeset release manual.
 
 
 ## Maintained user manual source
@@ -83,9 +83,9 @@ The catalog currently covers:
 
 The catalog is intentionally finite and representative. It covers every distinct user-visible operating/UI state rather than attempting the meaningless Cartesian product of every parameter value.
 
-## Future manual structure
+## Manual structure
 
-A sensible publication structure is already implied by the working documentation:
+The maintained manual follows this user-oriented publication structure:
 
 1. Safety and installation
 2. Front-panel tour
@@ -104,7 +104,7 @@ A sensible publication structure is already implied by the working documentation
 15. Firmware update / recovery
 16. Technical appendix
 
-The actual manual should not be frozen until final External Sync comparator/Input-Capture HIL, SPI/I2C timing HIL, and the final scheduler implementation are validated.
+The editable manual follows development continuously. A release-frozen manual must not be treated as final hardware documentation until External Sync comparator/Input-Capture HIL, SPI/I2C timing HIL, and the final scheduler implementation are validated.
 
 
 

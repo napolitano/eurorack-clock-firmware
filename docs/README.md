@@ -50,7 +50,7 @@ CLOCK documentation follows a few explicit rules:
 2. User-visible behavior is described from the actual production implementation, not from intended behavior.
 3. Prototype limitations are called out with GitHub admonitions rather than hidden in prose.
 4. GitHub-native Mermaid is preferred for architecture and software-flow diagrams.
-5. Reusable manual artwork is kept as SVG in [`manual/assets/`](manual/assets/) so it can be reused in Markdown, PDF, or future layout sources without raster degradation.
+5. The maintained typeset manual lives in [`manual/clock-user-manual.odt`](manual/clock-user-manual.odt); reusable artwork stays as SVG in [`manual/assets/`](manual/assets/) so it can be reused without raster degradation.
 6. OLED screenshots must come from the production renderer/framebuffer and use nearest-neighbor enlargement.
 7. Mechanical drawings must distinguish **conceptual/manual artwork** from manufacturing drawings.
 8. Source API documentation is Doxygen-compatible; public declarations carry a concise `@brief` plus parameters/return semantics where relevant.

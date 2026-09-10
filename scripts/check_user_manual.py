@@ -50,6 +50,9 @@ def validate_odt(path: Path, version: str) -> None:
             raise RuntimeError("ODT mimetype is invalid")
         content_xml = archive.read("content.xml").decode("utf-8")
         meta_xml = archive.read("meta.xml").decode("utf-8")
+        styles_xml = archive.read("styles.xml").decode("utf-8")
+        if "Ubuntu Light" not in styles_xml or "Ubuntu" not in styles_xml:
+            raise RuntimeError("Manual style contract must request Ubuntu and Ubuntu Light")
         if version not in content_xml:
             raise RuntimeError(f"Manual body does not identify firmware {version}")
         if version not in meta_xml:
@@ -85,6 +88,48 @@ def validate_odt(path: Path, version: str) -> None:
                 )
 
 
+def validate_ubuntu_font_environment() -> None:
+    """Require the exact Ubuntu family faces used by the release manual."""
+    for style in ("Regular", "Light", "Bold"):
+        result = subprocess.run(
+            ["fc-match", "-f", "%{family}\n%{style}\n%{file}\n", f"Ubuntu:style={style}"],
+            text=True,
+            capture_output=True,
+            check=True,
+        )
+        lines = [line.strip() for line in result.stdout.splitlines() if line.strip()]
+        if len(lines) < 3:
+            raise RuntimeError(f"Unable to resolve Ubuntu {style} with fontconfig")
+        family, resolved_style, font_file = lines[0], lines[1], lines[2]
+        if "Ubuntu" not in family or style.lower() not in resolved_style.lower():
+            raise RuntimeError(
+                f"Ubuntu {style} required for release PDF; fontconfig resolved "
+                f"{family!r} / {resolved_style!r} ({font_file})"
+            )
+
+
+def validate_ubuntu_pdf_fonts(fonts: str) -> None:
+    """Validate that the PDF contains an embedded Ubuntu-family Unicode subset.
+
+    Poppler reports PDF BaseFont names, which do not reliably preserve the
+    source face/style name.  In particular, LibreOffice may emit an Ubuntu
+    Light face as a subset named simply ``AAAAAA+Ubuntu``.  Exact style
+    availability is therefore checked with fontconfig before conversion; the
+    PDF check only verifies that the Ubuntu family made it into the artifact
+    and is embedded.
+    """
+    ubuntu_rows = [
+        line for line in fonts.splitlines()
+        if re.search(r"\bUbuntu\b", line, re.IGNORECASE)
+    ]
+    if not ubuntu_rows:
+        raise RuntimeError("Release PDF does not contain Ubuntu-family fonts")
+    if not any(re.search(r"\byes\s+yes\s+yes\s+", line, re.IGNORECASE) for line in ubuntu_rows):
+        raise RuntimeError(
+            "Release PDF contains Ubuntu-family font references but no embedded/subset Unicode face"
+        )
+
+
 def validate_pdf(path: Path, version: str, *, require_ubuntu_fonts: bool) -> None:
     if path.name != f"clock-user-manual.{version}.pdf":
         raise RuntimeError(f"Unexpected manual PDF filename: {path.name}")
@@ -99,11 +144,7 @@ def validate_pdf(path: Path, version: str, *, require_ubuntu_fonts: bool) -> Non
     if pdf_versions != {version.lower()}:
         raise RuntimeError(f"PDF contains stale or mixed firmware versions: {sorted(pdf_versions)!r}")
     if require_ubuntu_fonts:
-        fonts = run_text(["pdffonts", str(path)])
-        if "Ubuntu" not in fonts:
-            raise RuntimeError("Release PDF does not contain embedded Ubuntu-family fonts")
-        if not re.search(r"Ubuntu(?:[-_ ]?Light|Light)", fonts, re.IGNORECASE):
-            raise RuntimeError("Release PDF must contain an embedded Ubuntu Light face")
+        validate_ubuntu_pdf_fonts(run_text(["pdffonts", str(path)]))
 
 
 def main() -> int:

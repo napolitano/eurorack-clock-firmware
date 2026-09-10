@@ -39,6 +39,8 @@ def libreoffice_binary() -> str:
 
 def build(source: Path, output_dir: Path, version: str, *, require_ubuntu_fonts: bool) -> tuple[Path, Path]:
     check_user_manual.validate_odt(source, version)
+    if require_ubuntu_fonts:
+        check_user_manual.validate_ubuntu_font_environment()
     output_dir.mkdir(parents=True, exist_ok=True)
     odt_out = output_dir / f"clock-user-manual.{version}.odt"
     pdf_out = output_dir / f"clock-user-manual.{version}.pdf"

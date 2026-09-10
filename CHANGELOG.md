@@ -12,6 +12,9 @@ This project is still in active development. Until the first stable release, ver
 
 ### Fixed
 
+- Reworked the publication-layout end-user manual into a complete user-oriented flow while preserving the existing visual design. The maintained ODT now matches the alpha.62 UI and behavior, including One Clock as the factory topology, the current encoder short/long-press grammar, RESET input Trigger/Gate modes, presets, screensavers, Easter eggs, and the SPI/I2C timing/HIL status.
+- Fixed release-manual font validation so CI verifies the required Ubuntu Regular/Light/Bold faces with fontconfig before LibreOffice conversion, then verifies embedded/subset Ubuntu-family Unicode fonts in the generated PDF instead of depending on Poppler exposing the source face name as `Ubuntu-Light`.
+- Updated the root documentation index and manual workspace documentation so the typeset manual is described as a maintained artifact rather than a future placeholder.
 - Fixed Windows/MSVC `/W4 /WX` simulator builds by removing implicit narrowing through `std::pair` converting constructors in Formula 1 and screensaver geometry. Small coordinate tables now use explicitly typed aggregate point structures.
 - Fixed the persistence migration erase-fill value so `std::fill_n` receives `std::uint8_t` directly instead of instantiating an `unsigned int` to `uint8_t` conversion.
 - Removed an unused Moon Buggy geometry constant and an unused stored timer-instance field exposed by an additional Clang `-Werror` portability pass.

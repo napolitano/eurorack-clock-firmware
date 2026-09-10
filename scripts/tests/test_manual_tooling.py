@@ -72,6 +72,30 @@ class ManualToolingTests(unittest.TestCase):
             )
             CHECK.validate_odt(output, target_version)
 
+    def test_pdf_font_check_accepts_libreoffice_subset_without_light_suffix(self) -> None:
+        fonts = (
+            "name                                 type              encoding         emb sub uni object ID\n"
+            "------------------------------------ ----------------- ---------------- --- --- --- ---------\n"
+            "ABCDEE+Ubuntu                        TrueType          WinAnsi          yes yes yes     12  0\n"
+        )
+        CHECK.validate_ubuntu_pdf_fonts(fonts)
+
+    def test_pdf_font_check_rejects_missing_ubuntu_family(self) -> None:
+        fonts = (
+            "name                                 type              encoding         emb sub uni object ID\n"
+            "ABCDEE+NotoSans                      TrueType          WinAnsi          yes yes yes     12  0\n"
+        )
+        with self.assertRaisesRegex(RuntimeError, "Ubuntu-family"):
+            CHECK.validate_ubuntu_pdf_fonts(fonts)
+
+    def test_pdf_font_check_rejects_unembedded_ubuntu(self) -> None:
+        fonts = (
+            "name                                 type              encoding         emb sub uni object ID\n"
+            "Ubuntu                               TrueType          WinAnsi           no  no yes     12  0\n"
+        )
+        with self.assertRaisesRegex(RuntimeError, "embedded/subset"):
+            CHECK.validate_ubuntu_pdf_fonts(fonts)
+
     def test_release_workflow_publishes_odt_and_pdf(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         self.assertIn("scripts/build_user_manual.py", workflow)

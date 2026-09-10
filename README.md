@@ -384,7 +384,7 @@ The documentation is organized by audience rather than by file type:
 | Understand tests | [Test Coverage](docs/TEST_COVERAGE.md) |
 | Qualify hardware | [HIL Test Plan](docs/HIL_TEST_PLAN.md) |
 | Review dependencies / licences | [Dependencies](docs/DEPENDENCIES.md) / [Licensing](docs/LICENSING.md) |
-| Prepare the future manual | [Manual Workspace](docs/manual/README.md) |
+| Read / maintain the typeset manual | [Manual Workspace](docs/manual/README.md) |
 | Follow documentation conventions | [Documentation Style](docs/DOCUMENTATION_STYLE.md) |
 | Contribute code or documentation | [Contributing](CONTRIBUTING.md) |
 | Review vulnerability reporting | [Security Policy](.github/SECURITY.md) |
@@ -414,7 +414,7 @@ Still deliberately open:
 - final lock/jitter estimator on real input hardware;
 - final compare-event scheduler replacing the 20 kHz service ISR;
 - final PCB-level SPI **and I2C** OLED signal-integrity/timing validation;
-- final end-user manual sign-off and hardware photography.
+- final publication sign-off and hardware photography after the remaining HIL milestones.
 
 ## Citation and persistent identity
 
