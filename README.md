@@ -17,7 +17,9 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `0.19.0-beta.1`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain prerelease milestones.
+> **Current status: `0.19.0-beta.2`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain prerelease milestones.
+
+**Beta.2 qualification status:** the physical HIL ledger is intentionally not green yet: 20 tests are `PENDING`, 4 are `BLOCKED` on final hardware-dependent limits, and 0 are falsely reported as passed. Timing captures now use a vendor-neutral CSV format and machine-checkable analysis. See [`docs/qualification/`](docs/qualification/README.md).
 
 ## Why another Eurorack Clock?
 

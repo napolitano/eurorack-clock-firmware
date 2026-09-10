@@ -172,6 +172,33 @@ def check_v1_scope_contract(errors: list[str]) -> None:
                 errors.append(f'{path.relative_to(ROOT)}: missing V1 scope contract text {needle!r}')
 
 
+
+def check_hil_qualification_contract(errors: list[str]) -> None:
+    """Require the V1 qualification documents and validate the machine-readable ledger."""
+    required = (
+        ROOT / 'docs/qualification/README.md',
+        ROOT / 'docs/qualification/V1_ACCEPTANCE.md',
+        ROOT / 'docs/qualification/HIL_CAPTURE_FORMAT.md',
+        ROOT / 'docs/qualification/V1_BENCH_MATRIX.md',
+        ROOT / 'docs/qualification/v1_qualification.json',
+        ROOT / 'scripts/analyze_hil_capture.py',
+        ROOT / 'scripts/check_hil_qualification.py',
+    )
+    for path in required:
+        if not path.is_file():
+            errors.append(f'{path.relative_to(ROOT)}: required V1 qualification artifact is missing')
+    if any(not path.is_file() for path in required):
+        return
+    result = subprocess.run(
+        [sys.executable, str(ROOT / 'scripts/check_hil_qualification.py')],
+        cwd=ROOT,
+        text=True,
+        capture_output=True,
+    )
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        errors.append(f'docs/qualification/v1_qualification.json: invalid HIL ledger ({detail})')
+
 def check_project_metadata(errors: list[str]) -> None:
     """Require citation/discovery metadata to match the canonical project identity and version."""
     version_header = (ROOT / 'src' / 'version.h').read_text(encoding='utf-8')
@@ -250,6 +277,7 @@ def main() -> int:
     check_generated_front_panel(errors)
     check_version_identity(errors)
     check_v1_scope_contract(errors)
+    check_hil_qualification_contract(errors)
     check_project_metadata(errors)
     if errors:
         print('Documentation check failed:', file=sys.stderr)

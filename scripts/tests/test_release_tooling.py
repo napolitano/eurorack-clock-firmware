@@ -455,6 +455,20 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("63 bytes", audit)
         self.assertIn("schema v7", audit)
 
+    def test_hil_qualification_contract_is_release_gated(self) -> None:
+        ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")
+        release = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+        acceptance = (ROOT / "docs" / "qualification" / "V1_ACCEPTANCE.md").read_text(encoding="utf-8")
+        bench = (ROOT / "docs" / "qualification" / "V1_BENCH_MATRIX.md").read_text(encoding="utf-8")
+        ledger = (ROOT / "docs" / "qualification" / "v1_qualification.json").read_text(encoding="utf-8")
+        gate = "python scripts/check_hil_qualification.py --require-pass-if-rc"
+        self.assertIn(gate, ci)
+        self.assertIn(gate, release)
+        self.assertIn("50 µs", acceptance)
+        self.assertIn("1,000 events", acceptance)
+        self.assertIn("QP-07", bench)
+        self.assertIn('"overall_status": "IN_PROGRESS"', ledger)
+
     def test_polyform_license_is_present_and_identified(self) -> None:
         license_text = (ROOT / "LICENSE.md").read_text(encoding="utf-8")
         readme = (ROOT / "README.md").read_text(encoding="utf-8")

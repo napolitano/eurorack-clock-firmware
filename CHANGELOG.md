@@ -8,6 +8,23 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.2] - 2026-09-10
+
+### V1 qualification infrastructure
+
+- Converted the physical V1 HIL phase from a prose-only checklist into a machine-auditable qualification workflow. `docs/qualification/v1_qualification.json` now tracks every normative HIL test from `docs/HIL_TEST_PLAN.md` as PASS/PENDING/BLOCKED/FAIL and refuses PASS without repository evidence.
+- Added `docs/qualification/V1_ACCEPTANCE.md`. Scheduler-derived V1 timing limits are now explicit instead of using undefined phrases such as "within release tolerance": ordinary gate-width error, simultaneous eight-output skew, phase error, and display-correlated added period deviation are each bounded to one 20-kHz scheduler quantum (50 us) where that limit follows from the firmware architecture.
+- Kept genuinely hardware-dependent limits unresolved rather than inventing numbers. Absolute oscillator ppm, final comparator threshold tolerance/amplitude envelope, representative output load, and the measured EXTI capture-latency distribution remain BLOCKED/PENDING until the relevant hardware premise exists.
+- Added `docs/qualification/V1_BENCH_MATRIX.md` with repeatable configurations for simultaneous-output skew, all seven gate widths, integer/rational rates, Swing, phase, mixed-mode endurance, display stress, External Sync, RST and persisted-transport boot safety.
+- Added a vendor-neutral HIL edge-capture exchange format (`time_us,signal,level`) and `scripts/analyze_hil_capture.py` for pulse-width, period, eight-channel skew and idle-vs-display-stress checks. The analyzer uses worst observed error/deviation rather than allowing mean values to hide isolated excursions.
+- Added an evidence-record template and minimum evidence counts: at least 100 complete events for ordinary timing checks and at least 1,000 for display-stress comparison.
+
+### Release gating
+
+- Added `scripts/check_hil_qualification.py` and integrated it into CI and release workflows. Beta builds validate ledger completeness and evidence semantics; `1.0.0-rc.*` and stable `1.0.0` automatically require every normative HIL item to be PASS.
+- Added regression tests for malformed captures, objective pulse-width pass/fail, eight-output skew matching, display-stress event loss, added timing excursions, missing PASS evidence, and the intentional failure of the current incomplete ledger under the future RC gate.
+- No musical behavior, persistence schema or V1 UI contract changes in beta.2. This release prepares real-hardware qualification rather than adding features.
+
 ## [0.19.0-beta.1] - 2026-09-10
 
 ### V1 feature freeze

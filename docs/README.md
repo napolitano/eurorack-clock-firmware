@@ -16,7 +16,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 | understand the day-to-day development workflow | [`DEVELOPMENT.md`](DEVELOPMENT.md) |
 | change compile-time or factory settings | [`CONFIGURATION.md`](CONFIGURATION.md) |
 | understand automated test coverage | [`TEST_COVERAGE.md`](TEST_COVERAGE.md) |
-| validate real hardware | [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md) |
+| validate real hardware | [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md) and [`qualification/`](qualification/README.md) |
 | audit dependencies | [`DEPENDENCIES.md`](DEPENDENCIES.md) |
 | understand release/licensing constraints | [`LICENSING.md`](LICENSING.md) |
 | understand citation, DOI, and project identity | [`PROJECT_IDENTITY.md`](PROJECT_IDENTITY.md) |
@@ -38,6 +38,7 @@ flowchart LR
     Arch --> Config[CONFIGURATION.md]
     Arch --> Timing[TIMING.md]
     Timing --> HIL[HIL_TEST_PLAN.md]
+    HIL --> Qual[qualification/<br/>acceptance + captures + ledger]
     Arch --> Deps[DEPENDENCIES.md / LICENSING.md]
     Root --> Identity[PROJECT_IDENTITY.md\ncitation / persistent identity]
 ```
@@ -73,5 +74,9 @@ The SVGs in [`manual/assets/`](manual/assets/) are deliberately source-controlle
 
 - [`ROADMAP.md`](ROADMAP.md) - V1 feature freeze and post-1.0 plan.
 - [`V1_FORWARD_COMPATIBILITY.md`](V1_FORWARD_COMPATIBILITY.md) - V1 migration constraints.
+- [`qualification/V1_ACCEPTANCE.md`](qualification/V1_ACCEPTANCE.md) - objective physical timing acceptance criteria.
+- [`qualification/V1_BENCH_MATRIX.md`](qualification/V1_BENCH_MATRIX.md) - repeatable V1 bench configurations.
+- [`qualification/HIL_CAPTURE_FORMAT.md`](qualification/HIL_CAPTURE_FORMAT.md) - normalized edge-capture format and analyzer workflow.
+- [`qualification/v1_qualification.json`](qualification/v1_qualification.json) - machine-readable physical qualification ledger.
 
 <h6 align="center">From Munich with &#9829;</h6>

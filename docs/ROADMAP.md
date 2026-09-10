@@ -18,7 +18,7 @@ General CV parameter inputs would likewise add analog front ends, routing, jacks
 | --- | --- | --- | --- |
 | Current baseline | `0.19.0-alpha.63` | Implemented V1 feature set before freeze | Superseded by beta freeze |
 | **V1 feature freeze** | **`0.19.0-beta.1`** | No new musical features. Freeze product scope; audit persistence and event architecture for later 1.x migration; align docs and release semantics. | Existing behavior unchanged; forward-compatibility risks documented and guarded by tests |
-| V1 qualification | `0.19.0-beta.x` | PCB bring-up, electrical measurements, SYNC/RST comparator validation, SPI/I2C stress, timing HIL, defect correction, build/manual refinement | Physical qualification plan complete; no known V1 blockers |
+| **V1 qualification** | **`0.19.0-beta.2+`** | Objective HIL acceptance contract, reproducible capture analysis, PCB bring-up, electrical measurements, SYNC/RST comparator validation, SPI/I2C stress, timing HIL, defect correction, build/manual refinement | Physical qualification ledger complete; no known V1 blockers |
 | Release candidate | `1.0.0-rc.x` | Externally buildable release candidate; release blockers only | Independent build/use feedback and all mandatory gates pass |
 | Stable | **`1.0.0`** | First fully supported CLOCK DIY release | Hardware, firmware, tests, build docs, and user manual agree and are supportable |
 

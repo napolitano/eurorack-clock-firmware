@@ -22,7 +22,7 @@ On every firmware boot, PA4 must be driven HIGH before PB15 is pulsed high -> lo
 
 Host verification currently executes every project-owned production function, executable line, and non-throw decision branch. That proves software-path execution, but it cannot prove analog thresholds, electrical output levels, physical jitter, bus integrity, or boot behavior at the Eurorack jacks.
 
-HIL therefore complements host coverage rather than replacing it.
+HIL therefore complements host coverage rather than replacing it. The machine-readable qualification status lives in [`qualification/v1_qualification.json`](qualification/v1_qualification.json), and objective timing limits are defined in [`qualification/V1_ACCEPTANCE.md`](qualification/V1_ACCEPTANCE.md). Raw timing captures should be normalized to the repository CSV format in [`qualification/HIL_CAPTURE_FORMAT.md`](qualification/HIL_CAPTURE_FORMAT.md).
 
 ## 2. Required test equipment
 
@@ -77,8 +77,9 @@ For the complete configured set **1, 2, 5, 10, 20, 50, and 100 ms**, measure act
 
 **Pass criteria**
 
-- measured width remains within the release tolerance
+- for widths that are not intentionally shortened to protect the next edge, jack-level absolute error is **<= 50 us** (one V1 scheduler quantum)
 - pulses never swallow the next scheduled rising edge; at high event rates the scheduler may shorten the requested width to fit the effective interval
+- capture at least 100 complete pulses per tested width; use `scripts/analyze_hil_capture.py pulse-width` for reviewable evidence
 
 ### HIL-GATE-003 — Inter-channel skew
 
@@ -86,7 +87,8 @@ Configure all channels to `CLK x1`, zero phase and zero swing.
 
 **Pass criteria**
 
-- channel-to-channel rising-edge skew remains within the release timing budget
+- maximum channel-to-channel rising-edge skew across OUT1...OUT8 is **<= 50 us** (one V1 scheduler quantum)
+- capture at least 100 complete simultaneous edge groups; use `scripts/analyze_hil_capture.py skew`
 
 ### HIL-GATE-004 — Divider/multiplier accuracy
 
@@ -113,7 +115,7 @@ Measure phase offsets on two otherwise identical channels.
 
 **Pass criteria**
 
-- measured offset agrees with configured phase within the scheduler/hardware tolerance
+- measured offset agrees with the expected scheduler-quantized phase within **<= 50 us**
 
 ## 6. External SYNC / RST inputs
 
@@ -223,7 +225,7 @@ Build an SSD1306 or SSD1315 I2C profile at the configured 400 kHz rate. Exercise
 
 - no visible persistent corruption; stale UI frames may be skipped under load
 - no missed gate edge, SYNC edge, RST event, or encoder detent attributable to OLED traffic
-- musical edge timing shows no additional display-correlated excursion beyond the scheduler/hardware timing budget
+- musical edge timing shows no additional display-correlated maximum period deviation greater than **50 us** versus the equivalent idle-display capture
 - logic-analyzer inspection confirms that runtime framebuffer traffic is split into bounded I2C transactions rather than one monolithic 1 KiB transfer
 
 ### HIL-DISP-002 — SPI reference stress
@@ -243,8 +245,8 @@ Capture the same output channel simultaneously with a display-bus trace or displ
 **Pass criteria**
 
 - SPI and I2C produce the same musical event count and sequence
-- any measured timing distribution difference remains inside the release timing tolerance
-- if I2C exceeds the tolerance, the release is blocked and the next implementation step is interrupt/DMA display transport rather than relaxing the musical timing requirement
+- same musical event count and order are mandatory; added maximum period deviation versus the equivalent idle baseline must remain **<= 50 us**
+- if I2C exceeds the 50-us V1 timing budget, the release is blocked and the next implementation step is interrupt/DMA display transport rather than relaxing the musical timing requirement
 
 ### HIL-DISP-004 — Faulted I2C bus
 
@@ -276,7 +278,10 @@ Run all eight channels simultaneously with mixed OFF/CLK/EUC/SEQ configurations 
 
 - no stalls, spurious gates, counter failures, or UI/timing coupling
 
-## 10. Release policy
+## 10. Evidence and release policy
+
+For ordinary gate/period/skew tests, record at least 100 complete events. Display-stress comparisons use at least 1,000 complete events. Every PASS entry in the V1 qualification ledger must reference at least one evidence artifact. Timing evidence should include normalized CSV plus analyzer JSON where practical. Hardware-dependent criteria that cannot yet be stated from the frozen schematic/component specification remain BLOCKED rather than receiving guessed tolerances.
+
 
 A stable release must not be declared from host coverage alone. The release checklist should record, at minimum:
 
@@ -288,7 +293,7 @@ A stable release must not be declared from host coverage alone. The release chec
 - I2C/SPI display-stress timing: PASS
 - boot/reset output safety: PASS
 - gate timing/jitter: PASS
-- External Sync HIL suite: PASS once that subsystem exists
+- External Sync and RST HIL suites: PASS
 
 ## Persisted PLAY boot-safety
 

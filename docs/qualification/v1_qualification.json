@@ -1,0 +1,133 @@
+{
+  "schema": 1,
+  "product": "South Signal Lab CLOCK",
+  "baseline": "0.19.0-beta.2",
+  "scheduler_tick_us": 50,
+  "overall_status": "IN_PROGRESS",
+  "tests": [
+    {
+      "id": "HIL-BOOT-001",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-BOOT-002",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-GATE-001",
+      "status": "BLOCKED",
+      "evidence": [],
+      "note": "Final representative Eurorack load specification is not yet frozen."
+    },
+    {
+      "id": "HIL-GATE-002",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-GATE-003",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-GATE-004",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-TIME-001",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-TIME-002",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-SYNC-001",
+      "status": "BLOCKED",
+      "evidence": [],
+      "note": "Final comparator tolerance envelope is not yet frozen."
+    },
+    {
+      "id": "HIL-SYNC-002",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-SYNC-003",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-SYNC-004",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-SYNC-005",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-SYNC-006",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-RST-001",
+      "status": "BLOCKED",
+      "evidence": [],
+      "note": "Final comparator/protection amplitude and rate envelope is not yet frozen."
+    },
+    {
+      "id": "HIL-RST-002",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-CTRL-001",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-CTRL-002",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-DISP-001",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-DISP-002",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-DISP-003",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-DISP-004",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-LONG-001",
+      "status": "BLOCKED",
+      "evidence": [],
+      "note": "Absolute ppm limit depends on the oscillator specification of the frozen hardware revision."
+    },
+    {
+      "id": "HIL-LONG-002",
+      "status": "PENDING",
+      "evidence": []
+    }
+  ]
+}
