@@ -8,6 +8,20 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-alpha.62] - 2026-09-09
+
+### Fixed
+
+- Fixed Windows/MSVC `/W4 /WX` simulator builds by removing implicit narrowing through `std::pair` converting constructors in Formula 1 and screensaver geometry. Small coordinate tables now use explicitly typed aggregate point structures.
+- Fixed the persistence migration erase-fill value so `std::fill_n` receives `std::uint8_t` directly instead of instantiating an `unsigned int` to `uint8_t` conversion.
+- Removed an unused Moon Buggy geometry constant and an unused stored timer-instance field exposed by an additional Clang `-Werror` portability pass.
+
+### Validation
+
+- Native headless simulator builds cleanly with GCC and Clang using `-Wconversion -Wsign-conversion -Werror`; both simulator test cases pass on both builds.
+- Repository coverage after the portability fixes: **95.99% executable lines**, **98.31% functions**, **90.04% non-throw decision branches**.
+- The fixes are type/portability corrections only and do not change clock, SYNC/RST, display-transport, persistence-layout, or game behavior.
+
 ## [0.19.0-alpha.61] - 2026-09-09
 
 ### Changed

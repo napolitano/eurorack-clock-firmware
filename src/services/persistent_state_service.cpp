@@ -158,7 +158,7 @@ void PersistentStateService::begin() {
     }
     constexpr std::size_t kRecordsEnd =
         kCurrentRecordSize + kUserPresetSlotCount * kPresetRecordSize;
-    std::fill_n(storageImage.begin(), kRecordsEnd, 0xFFU);
+    std::fill_n(storageImage.begin(), kRecordsEnd, static_cast<std::uint8_t>(0xFFU));
     if (hasStoredCurrentState_) {
         const auto migrated = serializeCurrentRecord(storedCurrentState_);
         std::copy(migrated.begin(), migrated.end(), storageImage.begin());

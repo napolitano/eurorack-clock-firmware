@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Prototype documentation — v0.19.0-alpha.61**
+> **Prototype documentation — v0.19.0-alpha.62**
 >
 > The module is still prerelease hardware/firmware. External-sync capture/PLL behavior, diagnostics, and the final event-driven timer scheduler are not final yet. Complete working-state persistence and named user preset slots are implemented in this prerelease.
 

@@ -23,7 +23,6 @@ constexpr std::int16_t kGroundY = 46;
 constexpr std::int16_t kInitialPlayerScreenX = 42;
 constexpr std::int16_t kMinPlayerScreenX = 20;
 constexpr std::int16_t kMaxPlayerScreenX = 104;
-constexpr std::int16_t kEggWidth = 9;
 constexpr std::int16_t kEggHeight = 11;
 constexpr std::int16_t kPhysicsScale = 8;
 constexpr std::int16_t kJumpImpulse = 27;

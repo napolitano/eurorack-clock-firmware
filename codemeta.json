@@ -2,7 +2,7 @@
   "@context": "https://w3id.org/codemeta/3.0",
   "@type": "SoftwareSourceCode",
   "name": "South Signal Lab CLOCK",
-  "softwareVersion": "0.19.0-alpha.61",
+  "softwareVersion": "0.19.0-alpha.62",
   "datePublished": "2026-09-09",
   "dateModified": "2026-09-09",
   "description": "Eight-output Eurorack precision clock, Euclidean rhythm, gate-sequencer, and divider firmware for STM32F401CCU6 with deterministic timing, external synchronization, persistent presets, and a native desktop simulator.",

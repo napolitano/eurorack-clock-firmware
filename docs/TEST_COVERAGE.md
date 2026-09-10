@@ -1,6 +1,6 @@
 <!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
-# South Signal Lab CLOCK Test Coverage — v0.19.0-alpha.61
+# South Signal Lab CLOCK Test Coverage — v0.19.0-alpha.62
 
 The prerelease test policy is now repository-wide rather than limited to `clock_core`.
 
@@ -14,12 +14,12 @@ The following are mandatory:
 
 The prerelease gates remain stringent without requiring synthetic tests for every defensive/error path. The coverage report still lists every uncovered production function and source decision so regressions remain visible during review.
 
-Current repository-wide validated baseline (alpha.61):
+Current repository-wide validated baseline (alpha.62):
 
 ```text
-Executable lines:   6150/6408 (95.97%)
+Executable lines:   6149/6406 (95.99%)
 Functions:           524/533  (98.31%)
-Decision branches:  3640/4044 (90.01%)
+Decision branches:  3636/4038 (90.04%)
 Compiler branches:  3641/4728 (77.01%, informational only)
 ```
 

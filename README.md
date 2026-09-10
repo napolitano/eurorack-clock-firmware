@@ -2,13 +2,13 @@
 
 # CLOCK — Eurorack Clock by South Signal Lab
 
-> **Eight-channel precision clock, rhythm and gate generator for Eurorack — STM32F401 firmware `0.19.0-alpha.61`.**
+> **Eight-channel precision clock, rhythm and gate generator for Eurorack — STM32F401 firmware `0.19.0-alpha.62`.**
 
-[![Firmware](https://img.shields.io/badge/firmware-0.19.0--alpha.61-007fff)](CHANGELOG.md)
+[![Firmware](https://img.shields.io/badge/firmware-0.19.0--alpha.62-007fff)](CHANGELOG.md)
 [![Status](https://img.shields.io/badge/status-alpha-f59e0b)](CHANGELOG.md)
 [![CI](https://img.shields.io/badge/CI-GitHub%20Actions-2088ff?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
 [![Release](https://img.shields.io/badge/release-GitHub%20Actions-2088ff?logo=githubactions&logoColor=white)](.github/workflows/release.yml)
-[![Coverage](https://img.shields.io/badge/coverage-95.97%25%20lines%20%7C%2090.01%25%20decisions-2ea44f)](docs/TEST_COVERAGE.md)
+[![Coverage](https://img.shields.io/badge/coverage-95.99%25%20lines%20%7C%2090.04%25%20decisions-2ea44f)](docs/TEST_COVERAGE.md)
 [![Tests](https://img.shields.io/badge/tests-host%20%2B%20simulator-2ea44f)](test/README.md)
 [![PlatformIO](https://img.shields.io/badge/PlatformIO-project-F5822A?logo=platformio&logoColor=white)](platformio.ini)
 [![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)](platformio.ini)
@@ -331,11 +331,11 @@ python scripts/run_host_tests.py --sanitizers-only
 
 Hard CI gates:
 
-| Metric | Gate | Current alpha.61 baseline |
+| Metric | Gate | Current alpha.62 baseline |
 | --- | ---: | ---: |
-| Executable lines | ≥95% | 95.97% |
+| Executable lines | ≥95% | 95.99% |
 | Functions | ≥95% | 98.31% |
-| Source decisions | ≥90% | 90.01% |
+| Source decisions | ≥90% | 90.04% |
 | Host warnings | 0 | `-Werror` |
 | ASan | clean | clean |
 | UBSan | clean | clean |

@@ -819,6 +819,21 @@ void testPersistentV3Migration() {
         0x52U, 0x41U, 0x49U, 0x44U, 1U, 2U, 3U, 4U,
         5U, 6U, 7U, 8U, 9U, 10U, 11U, 12U};
 
+    // A CRC-valid current record with a semantically invalid payload must be rejected.
+    // This exercises the post-decode semantic-validation path independently of CRC checks.
+    auto semanticallyInvalidV6 = v6Current;
+    semanticallyInvalidV6[8U] = 0U;  // BPM = 0, below every supported tempo range.
+    semanticallyInvalidV6[9U] = 0U;
+    writeTestUint32Le(
+        semanticallyInvalidV6.data() + semanticallyInvalidV6.size() - 4U,
+        testCrc32(semanticallyInvalidV6.data(), semanticallyInvalidV6.size() - 4U));
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage invalidV6Storage;
+    CHECK(invalidV6Storage.writeBytes(0U, semanticallyInvalidV6.data(), semanticallyInvalidV6.size()));
+    services::PersistentStateService invalidV6(invalidV6Storage);
+    invalidV6.begin();
+    CHECK(!invalidV6.hasStoredCurrentState());
+
     // v5 -> v6: user state remains intact and the new RST semantic defaults to TRIGGER.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV5Storage;

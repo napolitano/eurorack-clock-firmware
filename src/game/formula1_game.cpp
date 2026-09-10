@@ -10,7 +10,6 @@
 #include <algorithm>
 #include <array>
 #include <cstdio>
-#include <utility>
 
 #include "hal/system_clock.h"
 #include "ui_text.h"
@@ -31,7 +30,12 @@ constexpr std::int16_t kPlayerBodyWidth = 12;
 constexpr std::int16_t kPlayerBodyHeight = 8;
 constexpr std::uint32_t kTrackSegmentLength = 180U;
 constexpr std::array<std::int8_t, 16U> kCurveProfile{{0, 0, 4, 9, 14, 10, 5, 0, -5, -11, -15, -10, -4, 0, 5, 0}};
-constexpr std::array<std::pair<std::int8_t, std::int8_t>, 18U> kMiniTrack{{
+struct MiniTrackPoint final {
+    std::int8_t x;
+    std::int8_t y;
+};
+
+constexpr std::array<MiniTrackPoint, 18U> kMiniTrack{{
     {-10, 4}, {-12, 1}, {-11, -3}, {-7, -5}, {-3, -5}, {0, -2}, {3, -5}, {8, -5}, {11, -2},
     {11, 2}, {8, 5}, {4, 5}, {1, 3}, {-2, 5}, {-6, 5}, {-10, 4}, {-12, 1}, {-10, 4}
 }};
@@ -135,12 +139,12 @@ void drawMiniTrack(hal::OledDisplay& display, const std::uint32_t distance) {
     constexpr std::int16_t originY = 57;
     for (std::size_t i = 1U; i < kMiniTrack.size(); ++i) {
         display.drawLine(
-            static_cast<std::int16_t>(originX + kMiniTrack[i - 1U].first), static_cast<std::int16_t>(originY + kMiniTrack[i - 1U].second),
-            static_cast<std::int16_t>(originX + kMiniTrack[i].first), static_cast<std::int16_t>(originY + kMiniTrack[i].second));
+            static_cast<std::int16_t>(originX + kMiniTrack[i - 1U].x), static_cast<std::int16_t>(originY + kMiniTrack[i - 1U].y),
+            static_cast<std::int16_t>(originX + kMiniTrack[i].x), static_cast<std::int16_t>(originY + kMiniTrack[i].y));
     }
     const std::size_t segment = static_cast<std::size_t>((distance / 90U) % (kMiniTrack.size() - 1U));
     const auto marker = kMiniTrack[segment];
-    display.fillRectangle(static_cast<std::int16_t>(originX + marker.first - 1), static_cast<std::int16_t>(originY + marker.second - 1), 3, 3);
+    display.fillRectangle(static_cast<std::int16_t>(originX + marker.x - 1), static_cast<std::int16_t>(originY + marker.y - 1), 3, 3);
 }
 void drawCrashBurst(hal::OledDisplay& display, const std::int16_t centerX, const std::uint32_t phase) {
     const std::int16_t cy = 40;

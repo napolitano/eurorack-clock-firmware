@@ -37,14 +37,11 @@ class HardwareTimer {
 public:
     using Callback = void (*)();
 
-    explicit HardwareTimer(std::uint32_t instance) : instance_(instance) {}
+    explicit HardwareTimer(std::uint32_t instance) { (void)instance; }
 
     void pause() { clockfw::simfw::timerRunning = false; }
     void setOverflow(std::uint32_t value, std::uint8_t) { clockfw::simfw::timerFrequencyHz = value; }
     void setInterruptPriority(std::uint32_t, std::uint32_t) {}
     void attachInterrupt(Callback callback) { clockfw::simfw::timerCallback = callback; }
     void resume() { clockfw::simfw::timerRunning = true; }
-
-private:
-    std::uint32_t instance_ = 0U;
 };

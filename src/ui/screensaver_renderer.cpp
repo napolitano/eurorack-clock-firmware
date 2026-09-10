@@ -13,7 +13,6 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstdlib>
-#include <utility>
 
 namespace clockfw::ui {
 namespace {
@@ -39,6 +38,12 @@ struct FernViewport final {
     std::int32_t maxX;
     std::int32_t minY;
     std::int32_t maxY;
+};
+
+/** Small signed OLED-space point without converting std::pair constructors. */
+struct Point16 final {
+    std::int16_t x;
+    std::int16_t y;
 };
 
 /**
@@ -307,22 +312,22 @@ void ScreensaverRenderer::renderHeartbeat(const std::uint32_t frameIndex) {
     display_.clear();
     constexpr std::array<std::int16_t, 12U> kPulseScale{{16, 18, 23, 20, 17, 16, 16, 17, 20, 18, 16, 16}};
     const std::int16_t scale = kPulseScale[frameIndex % kPulseScale.size()];
-    constexpr std::array<std::pair<std::int16_t, std::int16_t>, 12U> kHeart{{
+    constexpr std::array<Point16, 12U> kHeart{{
         {-8, -3}, {-6, -7}, {-2, -8}, {0, -5}, {2, -8}, {6, -7},
         {8, -3}, {7, 1}, {4, 5}, {0, 9}, {-4, 5}, {-7, 1}}};
     constexpr std::int16_t centerX = 64;
     constexpr std::int16_t centerY = 31;
 
-    auto scaledPoint = [scale](const std::pair<std::int16_t, std::int16_t>& point) {
-        return std::pair<std::int16_t, std::int16_t>{
-            static_cast<std::int16_t>(centerX + (static_cast<std::int32_t>(point.first) * scale) / 16),
-            static_cast<std::int16_t>(centerY + (static_cast<std::int32_t>(point.second) * scale) / 16)};
+    auto scaledPoint = [scale](const Point16& point) {
+        return Point16{
+            static_cast<std::int16_t>(centerX + (static_cast<std::int32_t>(point.x) * scale) / 16),
+            static_cast<std::int16_t>(centerY + (static_cast<std::int32_t>(point.y) * scale) / 16)};
     };
 
     for (std::size_t index = 0U; index < kHeart.size(); ++index) {
         const auto first = scaledPoint(kHeart[index]);
         const auto second = scaledPoint(kHeart[(index + 1U) % kHeart.size()]);
-        display_.drawLine(first.first, first.second, second.first, second.second);
+        display_.drawLine(first.x, first.y, second.x, second.y);
     }
     if ((frameIndex % 12U) == 2U || (frameIndex % 12U) == 8U) {
         display_.setPixel(centerX, centerY);
@@ -384,32 +389,32 @@ void ScreensaverRenderer::renderAcid(const std::uint32_t frameIndex) {
     auto rotate = [angle](const std::int16_t x, const std::int16_t y) {
         const std::int32_t c = sineSample(angle + 8U);
         const std::int32_t s = sineSample(angle);
-        return std::pair<std::int16_t, std::int16_t>{
+        return Point16{
             static_cast<std::int16_t>((static_cast<std::int32_t>(x) * c - static_cast<std::int32_t>(y) * s) / 127),
             static_cast<std::int16_t>((static_cast<std::int32_t>(x) * s + static_cast<std::int32_t>(y) * c) / 127)};
     };
 
-    std::pair<std::int16_t, std::int16_t> previous{};
+    Point16 previous{};
     for (std::uint32_t point = 0U; point <= 16U; ++point) {
         const std::uint32_t phase = (point * 32U / 16U) % 32U;
         const std::int16_t x = static_cast<std::int16_t>(static_cast<std::int32_t>(sineSample(phase + 8U)) * kRadius / 127);
         const std::int16_t y = static_cast<std::int16_t>(static_cast<std::int32_t>(sineSample(phase)) * kRadius / 127);
         const auto r = rotate(x, y);
-        const std::pair<std::int16_t, std::int16_t> current{static_cast<std::int16_t>(cx + r.first), static_cast<std::int16_t>(cy + r.second)};
-        if (point > 0U) display_.drawLine(previous.first, previous.second, current.first, current.second);
+        const Point16 current{static_cast<std::int16_t>(cx + r.x), static_cast<std::int16_t>(cy + r.y)};
+        if (point > 0U) display_.drawLine(previous.x, previous.y, current.x, current.y);
         previous = current;
     }
-    for (const auto& eye : std::array<std::pair<std::int16_t, std::int16_t>, 2U>{{{-4, -3}, {4, -3}}}) {
-        const auto r = rotate(eye.first, eye.second);
-        display_.fillRectangle(static_cast<std::int16_t>(cx + r.first - 1), static_cast<std::int16_t>(cy + r.second - 1), 2, 2);
+    for (const auto& eye : std::array<Point16, 2U>{{{-4, -3}, {4, -3}}}) {
+        const auto r = rotate(eye.x, eye.y);
+        display_.fillRectangle(static_cast<std::int16_t>(cx + r.x - 1), static_cast<std::int16_t>(cy + r.y - 1), 2, 2);
     }
-    constexpr std::array<std::pair<std::int16_t, std::int16_t>, 5U> kSmile{{{-5, 2}, {-3, 5}, {0, 6}, {3, 5}, {5, 2}}};
-    auto previousMouth = rotate(kSmile[0].first, kSmile[0].second);
+    constexpr std::array<Point16, 5U> kSmile{{{-5, 2}, {-3, 5}, {0, 6}, {3, 5}, {5, 2}}};
+    auto previousMouth = rotate(kSmile[0].x, kSmile[0].y);
     for (std::size_t index = 1U; index < kSmile.size(); ++index) {
-        const auto currentMouth = rotate(kSmile[index].first, kSmile[index].second);
+        const auto currentMouth = rotate(kSmile[index].x, kSmile[index].y);
         display_.drawLine(
-            static_cast<std::int16_t>(cx + previousMouth.first), static_cast<std::int16_t>(cy + previousMouth.second),
-            static_cast<std::int16_t>(cx + currentMouth.first), static_cast<std::int16_t>(cy + currentMouth.second));
+            static_cast<std::int16_t>(cx + previousMouth.x), static_cast<std::int16_t>(cy + previousMouth.y),
+            static_cast<std::int16_t>(cx + currentMouth.x), static_cast<std::int16_t>(cy + currentMouth.y));
         previousMouth = currentMouth;
     }
     display_.present();
