@@ -18,6 +18,7 @@
 #include <HardwareTimer.h>
 #include <SPI.h>
 #include <Wire.h>
+#include <unity.h>
 
 #include "app/clock_application.h"
 #include "clock_core.h"
@@ -186,11 +187,13 @@ struct BreakoutGameTestAccess {
 };
 }
 
+void setUp() {}
+void tearDown() {}
+
 namespace {
-int gFailures = 0;
 int gChecks = 0;
 
-#define CHECK(expr) do { ++gChecks; if (!(expr)) { ++gFailures; std::cerr << __FILE__ << ':' << __LINE__ << " CHECK failed: " #expr "\n"; } } while (0)
+#define CHECK(expr) do { ++gChecks; TEST_ASSERT_TRUE(expr); } while (0)
 #define CHECK_EQ(a,b) CHECK((a) == (b))
 #define CHECK_NE(a,b) CHECK((a) != (b))
 
@@ -2437,7 +2440,7 @@ void testControlPanel() {
     CHECK_EQ(controls.sample(92U).encoderDelta,0);
 }
 
-void renderEveryScreenAndState() {
+void testRenderEveryScreenAndState() {
     resetFakes(); prepareDisplaySuccess(); hal::OledDisplay display; CHECK(display.begin());
     ClockState state=makeDefaultState();
     hal::GateOutputDriver gates; gates.beginDisabled(); engine::ClockEngine engine(gates); engine.begin(state); engine.play();
@@ -3894,27 +3897,28 @@ void testApplicationAndEntryPoints() {
 } // namespace
 
 int main() {
-    testLocalizationAndFont();
-    testDefaultsTemplatesAndServices();
-    testPersistentStorageTransactionalUpdate();
-    testPersistentStorageAndStateService();
-    testPersistentV3Migration();
-    testPersistentStateValidationBoundaries();
-    testMenuModelAndFormatters();
-    testHalBasicsAndDisplay();
-    testControlPanel();
-    testEngineAndSettingsEditor();
-    testOperatingModesPersistenceAndGlobalEditors();
-    testChannelRescheduleKeepsSharedMusicalEpoch();
-    testCrossModeSynchronizationRegressions();
-    testOneClockHumanizeAndTempoLimits();
-    testEngineAuditRegressions();
-    testEngineBoundaryBranches();
-    renderEveryScreenAndState();
-    testScreensaverRenderingAndPolicy();
-    testUiControllerFlows();
-    testEasterEggGameAndHighScore();
-    testApplicationAndEntryPoints();
-    std::cout << "Host firmware tests: " << gChecks << " checks, " << gFailures << " failures\n";
-    return gFailures == 0 ? 0 : 1;
+    UNITY_BEGIN();
+    RUN_TEST(testLocalizationAndFont);
+    RUN_TEST(testDefaultsTemplatesAndServices);
+    RUN_TEST(testPersistentStorageTransactionalUpdate);
+    RUN_TEST(testPersistentStorageAndStateService);
+    RUN_TEST(testPersistentV3Migration);
+    RUN_TEST(testPersistentStateValidationBoundaries);
+    RUN_TEST(testMenuModelAndFormatters);
+    RUN_TEST(testHalBasicsAndDisplay);
+    RUN_TEST(testControlPanel);
+    RUN_TEST(testEngineAndSettingsEditor);
+    RUN_TEST(testOperatingModesPersistenceAndGlobalEditors);
+    RUN_TEST(testChannelRescheduleKeepsSharedMusicalEpoch);
+    RUN_TEST(testCrossModeSynchronizationRegressions);
+    RUN_TEST(testOneClockHumanizeAndTempoLimits);
+    RUN_TEST(testEngineAuditRegressions);
+    RUN_TEST(testEngineBoundaryBranches);
+    RUN_TEST(testRenderEveryScreenAndState);
+    RUN_TEST(testScreensaverRenderingAndPolicy);
+    RUN_TEST(testUiControllerFlows);
+    RUN_TEST(testEasterEggGameAndHighScore);
+    RUN_TEST(testApplicationAndEntryPoints);
+    std::cout << "Host firmware assertions: " << gChecks << "\n";
+    return UNITY_END();
 }

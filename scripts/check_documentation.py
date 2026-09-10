@@ -9,6 +9,7 @@ from __future__ import annotations
 
 import json
 import re
+import subprocess
 import sys
 import xml.etree.ElementTree as ET
 from pathlib import Path
@@ -120,6 +121,16 @@ def check_manual_svgs(errors: list[str]) -> None:
             errors.append(f'{path.relative_to(ROOT)}: SVG requires a non-empty <desc>')
 
 
+
+def check_generated_front_panel(errors: list[str]) -> None:
+    """Keep the manual front-panel illustration synchronized with simulator geometry."""
+    command = [sys.executable, str(ROOT / 'scripts' / 'generate_front_panel_illustration.py'), '--check']
+    result = subprocess.run(command, text=True, capture_output=True)
+    if result.returncode != 0:
+        detail = (result.stderr or result.stdout).strip()
+        errors.append(f'docs/manual/assets/front-panel-anatomy.svg: generated illustration is stale ({detail})')
+
+
 def check_version_identity(errors: list[str]) -> None:
     """Keep current project identity/version synchronized across primary documentation metadata."""
     version_header = (ROOT / 'src' / 'version.h').read_text(encoding='utf-8')
@@ -134,10 +145,9 @@ def check_version_identity(errors: list[str]) -> None:
             errors.append(f'{path.relative_to(ROOT)}: current firmware version {version} is not documented')
 
     readme = (ROOT / 'README.md').read_text(encoding='utf-8')
-    badge_version = version.replace('-', '--')
-    expected_badge = f'badge/firmware-{badge_version}-007fff'
-    if expected_badge not in readme:
-        errors.append(f'README.md: firmware badge must identify {version}')
+    expected_ci_badge = 'actions/workflows/ci.yml/badge.svg'
+    if expected_ci_badge not in readme:
+        errors.append('README.md: CI badge must use the live GitHub Actions workflow status')
 
     if 'PROJECT_NAME           = "South Signal Lab CLOCK Firmware"' not in (ROOT / 'Doxyfile').read_text(encoding='utf-8'):
         errors.append('Doxyfile: PROJECT_NAME must use canonical South Signal Lab CLOCK identity')
@@ -218,6 +228,7 @@ def main() -> int:
     check_fences(errors)
     check_readme_footers(errors)
     check_manual_svgs(errors)
+    check_generated_front_panel(errors)
     check_version_identity(errors)
     check_project_metadata(errors)
     if errors:

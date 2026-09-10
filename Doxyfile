@@ -5,7 +5,7 @@
 PROJECT_NAME           = "South Signal Lab CLOCK Firmware"
 PROJECT_NUMBER         =
 PROJECT_BRIEF          = "Eight-channel Eurorack precision clock, rhythm and gate generator"
-OUTPUT_DIRECTORY       = build/docs/doxygen
+OUTPUT_DIRECTORY       = build
 INPUT                  = src lib/clock_core/src
 FILE_PATTERNS          = *.h *.hpp *.cpp
 RECURSIVE              = YES
@@ -17,7 +17,7 @@ OPTIMIZE_OUTPUT_FOR_C   = NO
 MARKDOWN_SUPPORT        = YES
 GENERATE_HTML           = YES
 GENERATE_LATEX          = NO
-HTML_OUTPUT             = html
+HTML_OUTPUT             = doxygen
 QUIET                   = YES
 WARN_IF_UNDOCUMENTED    = YES
 WARN_IF_DOC_ERROR       = YES

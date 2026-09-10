@@ -8,4 +8,4 @@
 
 #pragma once
 
-#define CLOCK_FIRMWARE_VERSION "0.19.0-alpha.62"
+#define CLOCK_FIRMWARE_VERSION "0.19.0-alpha.63"

@@ -1,8 +1,8 @@
 <!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
-# South Signal Lab CLOCK Test Coverage — v0.19.0-alpha.62
+# South Signal Lab CLOCK Test Coverage — v0.19.0-alpha.63
 
-The prerelease test policy is now repository-wide rather than limited to `clock_core`.
+The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 89 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -14,13 +14,13 @@ The following are mandatory:
 
 The prerelease gates remain stringent without requiring synthetic tests for every defensive/error path. The coverage report still lists every uncovered production function and source decision so regressions remain visible during review.
 
-Current repository-wide validated baseline (alpha.62):
+Current repository-wide validated baseline (alpha.63):
 
 ```text
-Executable lines:   6149/6406 (95.99%)
-Functions:           524/533  (98.31%)
-Decision branches:  3636/4038 (90.04%)
-Compiler branches:  3641/4728 (77.01%, informational only)
+Executable lines:   6248/6507 (96.02%)
+Functions:           533/542  (98.34%)
+Decision branches:  3710/4115 (90.16%)
+Compiler branches:  3711/4788 (77.51%, informational only)
 ```
 
 ## Full host matrix

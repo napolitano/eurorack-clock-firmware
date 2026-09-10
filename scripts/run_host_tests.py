@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 BUILD_ROOT = ROOT / "build" / "host_tests"
 COVERAGE_DIR = ROOT / "coverage"
 FAKE_INCLUDE = ROOT / "test" / "support" / "fake_framework"
+FAKE_UNITY_INCLUDE = ROOT / "test" / "support" / "fake_unity"
 
 WARNING_FLAGS = [
     "-Wall",
@@ -101,6 +102,7 @@ def compile_host_firmware_variant(name: str, defines: list[str]) -> Path:
         *defines,
         "-I", str(ROOT / "src"),
         "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         *[str(path) for path in production_sources()],
         str(ROOT / "test" / "host_firmware" / "test_main.cpp"),
@@ -121,6 +123,7 @@ def compile_core_suite() -> Path:
         *COVERAGE_FLAGS,
         "-I", str(ROOT / "src"),
         "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         str(ROOT / "lib" / "clock_core" / "src" / "clock_core.cpp"),
         str(ROOT / "test" / "test_clock_core" / "test_main.cpp"),
@@ -163,6 +166,7 @@ def compile_realtime_suite(
         *(defines or []),
         "-I", str(ROOT / "src"),
         "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         *[str(path) for path in realtime_sources()],
         str(ROOT / "test" / "realtime" / "test_main.cpp"),
@@ -187,6 +191,7 @@ def compile_sanitized_realtime_suite(
         *(defines or []),
         "-I", str(ROOT / "src"),
         "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         *[str(path) for path in realtime_sources()],
         str(ROOT / "test" / "realtime" / "test_main.cpp"),
@@ -221,6 +226,7 @@ def compile_sanitized_core_suite() -> None:
         *SANITIZER_FLAGS,
         "-I", str(ROOT / "src"),
         "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         str(ROOT / "lib" / "clock_core" / "src" / "clock_core.cpp"),
         str(ROOT / "test" / "test_clock_core" / "test_main.cpp"),
@@ -241,6 +247,7 @@ def compile_sanitized_firmware_variant(name: str, defines: list[str]) -> None:
         *defines,
         "-I", str(ROOT / "src"),
         "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(FAKE_UNITY_INCLUDE),
         "-I", str(FAKE_INCLUDE),
         *[str(path) for path in production_sources()],
         str(ROOT / "test" / "host_firmware" / "test_main.cpp"),

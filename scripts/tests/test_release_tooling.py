@@ -105,6 +105,27 @@ class ProjectMetadataTests(unittest.TestCase):
         metadata = json.loads((ROOT / "codemeta.json").read_text(encoding="utf-8"))
         self.assertNotIn("identifier", metadata)
 
+    def test_repository_funding_exposes_github_and_patreon(self) -> None:
+        funding = (ROOT / ".github" / "FUNDING.yml").read_text(encoding="utf-8")
+        self.assertRegex(funding, r"(?m)^github:\s+napolitano\s*$")
+        self.assertRegex(funding, r"(?m)^patreon:\s+southsignallab\s*$")
+
+    def test_doxygen_output_is_clean_checkout_safe(self) -> None:
+        doxyfile = (ROOT / "Doxyfile").read_text(encoding="utf-8")
+        self.assertRegex(doxyfile, r"(?m)^OUTPUT_DIRECTORY\s*=\s*build\s*$")
+        self.assertRegex(doxyfile, r"(?m)^HTML_OUTPUT\s*=\s*doxygen\s*$")
+
+    def test_native_test_inventory_gate_passes(self) -> None:
+        result = subprocess.run(
+            [PYTHON, str(ROOT / "scripts/check_test_inventory.py")],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertIn("total=89", result.stdout)
+
 
 
 class ReleaseNotesTests(unittest.TestCase):

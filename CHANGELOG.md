@@ -8,7 +8,41 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-alpha.63] - 2026-09-10
+
+### Documentation
+
+- Rebuilt the repository landing page around the actual product: a compact best-practice badge set, a prominent **Why another Eurorack Clock?** section, concise product rationale, the three output topologies, timing/sync behavior, simulator/test entry points, hardware target, sponsorship, and explicit source-available licensing language.
+- Replaced the former front-panel callout graphic with a scalable numbered manual SVG generated from `sim/panel_layout.ini`. The new illustration follows the Quantizer/Drift documentation style, uses CLOCK cobalt blue, and keeps OLED, encoder, PLAY/TAP/STOP, SYNC/RST, eight outputs, and activity LEDs aligned with the simulator geometry.
+- Reworked `docs/USER_GUIDE.md` into a more didactic operating reference: Quick Start, numbered front-panel tour, detailed Clock/One Clock/Divider Bank/Euclid/Sequencer sections, timing-control semantics, External SYNC/RST, presets, and current technical limits.
+- Added descriptive context to embedded UI screenshots. Main operating states remain individually explained; screensavers and boot Easter eggs are presented as compact 2-/3-column galleries instead of consuming one full documentation block per image.
+- Documented the intended future manual-authoring pipeline: Markdown as the maintainable content source, deterministic SVG/framebuffer assets, a controlled ODT template/postprocessor, and PDF visual-regression gates. Plain default Pandoc-to-ODT output is explicitly not accepted as a replacement until it reproduces the approved publication layout.
+- Synchronized the Markdown documentation index and manual workspace rules with the generated front-panel asset and screenshot-description requirements.
+
+### Release metadata
+
+- Advanced firmware/documentation identity, `CITATION.cff`, and CodeMeta metadata to `0.19.0-alpha.63`.
+- Stamped the maintained ODT manual to alpha.63 and added the version-matched frozen manual source under `docs/manual/releases/0.19.0-alpha.63/`.
+- No production clock-engine or hardware-behavior change is introduced by alpha.63; the runtime audit/test baseline from alpha.62 remains the code baseline for this documentation-focused increment.
+
+### Validation
+
+- Architecture policy, documentation/link/SVG checks, and native-test inventory pass; Python release/manual/persistence tooling: **41/41 PASS**.
+- Native inventory remains **89 named cases**: 44 Clock Core, 24 Realtime/SYNC/RST, and 21 complete Host Firmware/UI/HAL scenarios. Direct host execution passes with 215,299 Core assertions, 159/162 Realtime assertions, 3,171 I2C firmware assertions, 2,136 assertions for each SPI controller variant, and 3,169 fixed-I2C/reset assertions.
+- Aggregate production coverage is **96.02% executable lines**, **98.34% functions**, and **90.16% non-throw decision branches**; all configured hard gates pass.
+- ASan/UBSan passes for Core, Realtime, external-GPIO Realtime, complete I2C firmware, SPI SSD1306, SPI SSD1315, and fixed-I2C/reset firmware.
+- Headless simulator builds and tests pass with both GCC and Clang: **2/2 PASS** for each compiler.
+- The alpha.63 frozen ODT validates and converts locally to a **38-page PDF**. Local conversion uses font substitution because Ubuntu fonts are not installed in this environment; the release workflow remains responsible for the required Ubuntu-font publication check.
+- PlatformIO and Doxygen executables are not installed in this validation environment. Their configuration is covered by repository tooling tests, but no local `pio` target build or real `doxygen Doxyfile` execution is claimed for this package.
+
+
 ## [0.19.0-alpha.62] - 2026-09-09
+
+- Expose GitHub Sponsors and Patreon through `.github/FUNDING.yml` so GitHub can render the repository sponsorship sidebar.
+- Make bare `doxygen Doxyfile` generation work from a clean checkout by using a creatable top-level output directory.
+- Expand `pio test -e native` from the 44-case core-only filter to the complete 89-case native Core + Realtime + Host Firmware suite, with a regression gate on the published test inventory.
+- Harden runtime memory and timing behavior: remove large persistence stack frames, avoid idle/control-path interrupt locks, narrow master-tempo updates, and make SYNC/RST overflow handling continuity-safe.
+- Add permanent architecture gates that reject embedded heap allocation and production stack frames larger than 4 KiB.
 
 ### Fixed
 
@@ -21,9 +55,12 @@ This project is still in active development. Until the first stable release, ver
 
 ### Validation
 
+- Native test inventory: **89 named cases** — 44 Clock Core, 24 Realtime/SYNC/RST and 21 complete Host Firmware/UI/HAL scenarios. The default host run executes more than **218,000 assertions**.
+- Full firmware host coverage: **96.02% executable lines**, **98.34% functions**, **90.16% non-throw decision branches**; the 90% decision gate is restored and passing.
+- Architecture, documentation and native-test inventory checks pass; Python tooling regression suite: **41/41 PASS**.
+- Changed Realtime/SYNC/RST paths pass ASan/UBSan in both ordinary and external-GPIO configurations.
 - Native headless simulator builds cleanly with GCC and Clang using `-Wconversion -Wsign-conversion -Werror`; both simulator test cases pass on both builds.
-- Repository coverage after the portability fixes: **95.99% executable lines**, **98.31% functions**, **90.04% non-throw decision branches**.
-- The fixes are type/portability corrections only and do not change clock, SYNC/RST, display-transport, persistence-layout, or game behavior.
+- Final comparator/PCB and oscilloscope-level timing validation remain hardware-in-the-loop requirements and are not inferred from host tests.
 
 ## [0.19.0-alpha.61] - 2026-09-09
 

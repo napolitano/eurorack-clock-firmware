@@ -10,6 +10,7 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <unity.h>
 
 #include "clock_core.h"
 #include "config.h"
@@ -24,30 +25,15 @@
 
 using namespace clockfw;
 
+void setUp() {}
+void tearDown() {}
+
 namespace {
 
 std::uint32_t checks = 0U;
-std::uint32_t failures = 0U;
 
-#define CHECK(condition) do { \
-    ++checks; \
-    if (!(condition)) { \
-        ++failures; \
-        std::cerr << "FAIL " << __FILE__ << ':' << __LINE__ << ": " #condition "\n"; \
-    } \
-} while (false)
-
-#define CHECK_EQ(actual, expected) do { \
-    const auto actualValue = (actual); \
-    const auto expectedValue = (expected); \
-    ++checks; \
-    if (actualValue != expectedValue) { \
-        ++failures; \
-        std::cerr << "FAIL " << __FILE__ << ':' << __LINE__ << ": " #actual \
-                  << "=" << static_cast<unsigned long long>(actualValue) \
-                  << " expected " << static_cast<unsigned long long>(expectedValue) << "\n"; \
-    } \
-} while (false)
+#define CHECK(condition) do { ++checks; TEST_ASSERT_TRUE(condition); } while (false)
+#define CHECK_EQ(actual, expected) do { ++checks; TEST_ASSERT_TRUE((actual) == (expected)); } while (false)
 
 ClockState makeRealtimeState() {
     ClockState state{};
@@ -610,32 +596,115 @@ void testSyncQueueOverflowDoesNotMasqueradeAsTempoDrop() {
     CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
 }
 
+void testExternalSyncConfigurationBoundaryPaths() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::External;
+    fixture.state.tempoRange.minimumBpm = 0U;
+    fixture.state.externalSync.pulsesPerQuarterNote = 0U;
+    fixture.state.externalSync.glitchFilterUs = 0U;
+    fixture.begin();
+
+    // Apply the begin-time dirty state, then change one field at a time so every
+    // settingsEqual short-circuit and the no-op/configuration hot path are covered.
+    fixture.sync.processSchedulerTick(0U);
+    ClockState updated = fixture.state;
+    updated.externalSync.edge = SyncEdge::Falling;
+    fixture.sync.updateConfiguration(updated);
+    fixture.sync.processSchedulerTick(1U);
+    updated.externalSync.lossMode = SyncLossMode::Freewheel;
+    fixture.sync.updateConfiguration(updated);
+    fixture.sync.processSchedulerTick(2U);
+    updated.externalSync.glitchFilterUs = 250U;
+    fixture.sync.updateConfiguration(updated);
+    fixture.sync.processSchedulerTick(3U);
+    updated.bpm = 121U;
+    fixture.sync.updateConfiguration(updated);
+    fixture.sync.processSchedulerTick(4U);
+    updated.tempoRange.minimumBpm = 20U;
+    fixture.sync.updateConfiguration(updated);
+    fixture.sync.processSchedulerTick(5U);
+
+    // Return to rising/zero-PPQN/zero-minimum settings and exercise defensive
+    // period paths that validation normally prevents from user configuration.
+    updated.externalSync.edge = SyncEdge::Rising;
+    updated.externalSync.lossMode = SyncLossMode::Stop;
+    updated.externalSync.glitchFilterUs = 0U;
+    updated.tempoRange.minimumBpm = 0U;
+    fixture.sync.updateConfiguration(updated);
+    fixture.sync.processSchedulerTick(6U);
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(fixture.engine.snapshot().externalLocked);
+
+    // Duplicate timestamp: period == 0 must be ignored without corrupting lock.
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(fixture.engine.snapshot().externalLocked);
+
+    // A gap beyond the supported 1-BPM technical floor becomes a fresh
+    // acquisition boundary rather than an ultra-slow tempo sample.
+    fixture.inputs.injectSyncEdgeForTest(60002000U, true);
+    fixture.sync.processSchedulerTick(60002000U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 121000U);
+}
+
+void testEngineExternalSyncDefensiveConfigurationPaths() {
+    {
+        Fixture fixture;
+        fixture.state.source = ClockSource::Internal;
+        fixture.begin();
+        fixture.engine.acceptExternalPulseFromIsr(123000U, 0U);
+        CHECK(fixture.engine.snapshot().externalLocked);
+    }
+
+    {
+        Fixture fixture;
+        fixture.state.source = ClockSource::External;
+        fixture.state.masterMeter.beats = 0U;
+        fixture.state.masterMeter.unit = 0U;
+        fixture.state.channels[0].common.resetMode = ResetMode::Free;
+        fixture.begin();
+
+        // First pulse initializes the external epoch. A zero PPQN is defensively
+        // normalized to one; the second pulse also exercises zero meter fallbacks.
+        fixture.engine.acceptExternalPulseFromIsr(120000U, 0U);
+        fixture.engine.acceptExternalPulseFromIsr(120000U, 0U);
+        const auto snapshot = fixture.engine.snapshot();
+        CHECK(snapshot.externalLocked);
+        CHECK(snapshot.masterBeat >= 1U);
+        CHECK(snapshot.masterBar >= 1U);
+    }
+}
+
 }  // namespace
 
 int main() {
-    testMinuteLongMasterTimingHasNoDrift();
-    testConfiguredGateLengthsReachPhysicalGpio();
-    testRepresentativeExternalTemposAndPpqn();
-    testFallingEdgeSelection();
-    testGlitchesDoNotCorruptPeriodEstimator();
-    testDeterministicJitterRemainsBounded();
-    testSyncTimeoutBoundaryAndLossModes();
-    testSlowExternalClockDoesNotTimeoutBeforeSecondPulse();
-    testTimestampWraparound();
-    testResetTriggerIsEdgeTriggered();
-    testResetBurstIsCoalescedPerSchedulerQuantum();
-    testResetOverflowStillCoalescesToOneReset();
-    testResetGateHoldsAndReleasesScheduler();
-    testGateModeHonorsAlreadyHighInputAndRuntimeModeChange();
-    testResetWinsWhenSyncArrivesOnSameSchedulerBoundary();
-    testPhysicalComparatorIrqPathWhenPinsAreAssigned();
-    testInputQueuesPublishStableContinuityBoundaryOnOverflow();
-    testOverflowMarkerCannotCreateCrossGapTempo();
-    testTechnicalMaximumRejectsImpossibleSyncRate();
-    testUnchangedSyncConfigurationDoesNotMaskInterrupts();
-    testExplicitExternalLockClearAndReacquire();
-    testSyncQueueOverflowDoesNotMasqueradeAsTempoDrop();
-
-    std::cout << "Realtime tests: " << checks << " checks, " << failures << " failures\n";
-    return failures == 0U ? EXIT_SUCCESS : EXIT_FAILURE;
+    UNITY_BEGIN();
+    RUN_TEST(testMinuteLongMasterTimingHasNoDrift);
+    RUN_TEST(testConfiguredGateLengthsReachPhysicalGpio);
+    RUN_TEST(testRepresentativeExternalTemposAndPpqn);
+    RUN_TEST(testFallingEdgeSelection);
+    RUN_TEST(testGlitchesDoNotCorruptPeriodEstimator);
+    RUN_TEST(testDeterministicJitterRemainsBounded);
+    RUN_TEST(testSyncTimeoutBoundaryAndLossModes);
+    RUN_TEST(testSlowExternalClockDoesNotTimeoutBeforeSecondPulse);
+    RUN_TEST(testTimestampWraparound);
+    RUN_TEST(testResetTriggerIsEdgeTriggered);
+    RUN_TEST(testResetBurstIsCoalescedPerSchedulerQuantum);
+    RUN_TEST(testResetOverflowStillCoalescesToOneReset);
+    RUN_TEST(testResetGateHoldsAndReleasesScheduler);
+    RUN_TEST(testGateModeHonorsAlreadyHighInputAndRuntimeModeChange);
+    RUN_TEST(testResetWinsWhenSyncArrivesOnSameSchedulerBoundary);
+    RUN_TEST(testPhysicalComparatorIrqPathWhenPinsAreAssigned);
+    RUN_TEST(testInputQueuesPublishStableContinuityBoundaryOnOverflow);
+    RUN_TEST(testOverflowMarkerCannotCreateCrossGapTempo);
+    RUN_TEST(testTechnicalMaximumRejectsImpossibleSyncRate);
+    RUN_TEST(testUnchangedSyncConfigurationDoesNotMaskInterrupts);
+    RUN_TEST(testExplicitExternalLockClearAndReacquire);
+    RUN_TEST(testSyncQueueOverflowDoesNotMasqueradeAsTempoDrop);
+    RUN_TEST(testExternalSyncConfigurationBoundaryPaths);
+    RUN_TEST(testEngineExternalSyncDefensiveConfigurationPaths);
+    std::cout << "Realtime assertions: " << checks << "\n";
+    return UNITY_END();
 }

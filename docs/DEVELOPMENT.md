@@ -222,8 +222,8 @@ The STM32 firmware build only runs after host coverage and both native-simulator
 A release tag must exactly match `src/version.h`:
 
 ```text
-firmware: 0.19.0-alpha.62
-Git tag:   v0.19.0-alpha.62
+firmware: 0.19.0-alpha.63
+Git tag:   v0.19.0-alpha.63
 ```
 
 A mismatch fails before publication.
@@ -270,7 +270,7 @@ python scripts/check_documentation.py
 doxygen Doxyfile
 ```
 
-Generated output goes to `build/docs/doxygen/` and is ignored by Git.
+Generated HTML output goes to `build/doxygen/` and is ignored by Git. The Doxyfile uses `build/` as its top-level output directory so a plain `doxygen Doxyfile` also works from a clean checkout.
 
 ## License
 

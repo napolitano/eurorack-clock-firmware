@@ -55,7 +55,10 @@ jobs:
       - name: Run release-tooling tests
         run: python -m unittest discover -s scripts/tests -p 'test_*.py' -v
 
-      - name: Run native production-core tests
+      - name: Validate native test inventory
+        run: python scripts/check_test_inventory.py
+
+      - name: Run native complete tests
         run: pio test -e native
 
       - name: Run complete host firmware tests and coverage gate
