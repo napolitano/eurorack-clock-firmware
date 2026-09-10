@@ -16,12 +16,11 @@ CPP_ROOTS = (ROOT / "src", ROOT / "lib", ROOT / "test", ROOT / "sim")
 HARDWARE_ALLOWED_PATHS = (
     Path("src/hal"),
     Path("src/pin_map.h"),
-    Path("test/support/fake_framework"),
-    Path("test/test_host_firmware"),
-    Path("test/test_sync_behavior"),
-    Path("test/test_swing"),
-    Path("test/test_humanize"),
-    Path("test/test_controls"),
+    # Native/host tests are an explicit hardware-boundary test harness. They may
+    # include the framework fakes and invoke direct GPIO/time APIs to exercise HAL
+    # behavior. Restrict the production boundary, not the spelling of test suite
+    # directories (for example test_host_firmware vs. legacy host_firmware).
+    Path("test"),
     Path("sim/framework"),
     Path("sim/simulator_runtime.cpp"),
 )
@@ -244,16 +243,16 @@ def check_api_briefs(errors: list[str]) -> None:
             statement = []
 
 def check_hardware_boundaries(errors: list[str]) -> None:
-    """Keep framework headers and direct GPIO/time APIs inside HAL or pin mapping."""
+    """Keep production framework headers and direct GPIO/time APIs inside HAL or pin mapping."""
     for path in iter_cpp_files():
         text = path.read_text(encoding="utf-8")
         if HARDWARE_INCLUDE_PATTERN.search(text) and not is_framework_include_allowed_path(path):
             errors.append(
-                f"{repository_relative(path)}: framework include is only allowed in HAL/pin_map or src/main.cpp"
+                f"{repository_relative(path)}: production framework include is only allowed in HAL/pin_map or src/main.cpp"
             )
         if DIRECT_HARDWARE_API_PATTERN.search(text) and not is_hardware_allowed_path(path):
             errors.append(
-                f"{repository_relative(path)}: direct framework hardware API is only allowed in HAL"
+                f"{repository_relative(path)}: production direct framework hardware API is only allowed in HAL"
             )
 
 

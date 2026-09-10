@@ -8,21 +8,24 @@
 pio test -e native
 ```
 
-This is the developer-facing Native entry point. Beta.4 deliberately makes timing, musical behavior and physical-control contracts visible instead of presenting only the 44-case mathematical core. PlatformIO executes eight conventionally named suites:
+This is the developer-facing Native entry point. Beta.4 deliberately makes timing, musical behavior and physical-control contracts visible instead of presenting only the 44-case mathematical core. PlatformIO executes eleven conventionally named suites:
 
 | Suite | Named cases | What it proves |
 | --- | ---: | --- |
 | `test_clock_core` | 44 | hardware-independent clock mathematics and exhaustive invariants |
 | `test_realtime` | 24 | deterministic scheduler/GPIO/SYNC/RST integration and stress behavior |
-| `test_sync_behavior` | 80 | exact and changing external clocks, jitter/glitches/loss, PPQN/edge semantics and nominal analogue-front-end behavior |
+| `test_sync_behavior` | 83 | exact and changing external clocks, permanent-HIGH behavior, jitter/glitches/loss, PPQN/edge semantics and nominal analogue-front-end behavior |
 | `test_swing` | 22 | swing pair mathematics and observable scheduler edge spacing |
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
 | `test_tap_tempo` | 22 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
-| `test_controls` | 28 | encoder quadrature, accumulated detents, debounce, bounce, hold and simultaneous button behavior |
+| `test_controls` | 34 | encoder quadrature, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
+| `test_settings` | 52 | settings boundaries, enum transitions, invariants and channel/mode editor contracts |
+| `test_screensavers` | 15 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
+| `test_easter_eggs` | 22 | intro launch gating, reset state, output safety and game-specific controls |
 | `test_host_firmware` | 22 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
-| **Total** | **254** | public Native inventory |
+| **Total** | **352** | public Native inventory |
 
-The default Native configuration executes more than **223,000 assertions**. `scripts/check_test_inventory.py` rejects a total regression below 240 cases and also enforces minimum sizes for every visible suite.
+The default Native configuration executes more than **223,000 assertions**. `scripts/check_test_inventory.py` rejects a total regression below 340 cases and also enforces minimum sizes for every visible suite.
 
 ### Swing and Humanize behavior
 
@@ -36,7 +39,7 @@ The default Native configuration executes more than **223,000 assertions**. `scr
 
 ### Encoder and buttons
 
-`test_controls` drives the production `ControlPanel` against GPIO fakes. It verifies both Gray-code directions, partial cycles, contact bounce, six detents accumulated while foreground polling is absent, the +/-127 report bound with remainder preservation, idle sampling without gratuitous global interrupt masking, active-low button press/release debounce, no hold-repeat, bounce restart, simultaneous buttons and encoder activity during button debounce. The broader host-firmware suite continues to test how these samples drive the UI state machine.
+`test_controls` drives the production `ControlPanel` against GPIO fakes. It verifies both Gray-code directions, partial cycles, contact bounce, six detents accumulated while foreground polling is absent, 1000-detent fast turns in either direction, repeated burst/drain cycles, deliberate signed backlog saturation without wrap, the +/-127 report bound with remainder preservation, idle sampling without gratuitous global interrupt masking, active-low button press/release debounce, no hold-repeat, bounce restart, simultaneous buttons and encoder activity during button debounce. The broader host-firmware suite continues to test how these samples drive the UI state machine.
 
 ### External-SYNC behavior suite
 
@@ -49,9 +52,16 @@ The default Native configuration executes more than **223,000 assertions**. `scr
 - **continuous tempo movement**: linear 60->180 and 180->60 BPM ramps, slow drift around 120 BPM, repeated tempo steps, acceleration with alternating jitter and a 24-PPQN tempo ramp;
 - abrupt 60<->180 BPM changes, adaptive timeout boundaries and STOP/FREEWHEEL/INTERNAL/AUTO loss behavior;
 - timestamp wrap, queue-overflow continuity and explicit lock reacquisition;
+- a permanently HIGH SYNC input: one selected edge only, natural timeout after a previous lock, and no manufactured falling-edge pulse train;
 - runtime PPQN and selected-edge changes, including the beta.4 regression that previously allowed an old period filter to contaminate a newly interpreted clock.
 
 The suite also contains a **host-only nominal electrical model** of the documented Rev-1 LM393 input resistor network. It calculates the nominal ~1.79 V rising and ~1.46 V falling thresholds and drives the production digital SYNC estimator from modelled 2.5 V, 3 V and 4 V inputs at 20, 120 and 999 BPM. This validates intended nominal design behavior and hysteresis logic; resistor tolerance, clamp-diode behavior, LM393 common-mode/propagation effects, noise, PCB parasitics and actual switching thresholds remain physical HIL requirements.
+
+### Settings, screensavers and Easter eggs
+
+`test_settings` turns the Settings editor into an explicit behavioral contract rather than relying only on broad UI scenarios. It covers master tempo/min/max coupling, meter limits, SYNC source/PPQN/edge/loss/reset/filter/timeout settings, screensaver timing invariants, per-channel rate/swing/probability/gate/phase/reset/mute limits, Euclid bounds, Sequencer editing/copy/paste boundaries, One Clock Humanize choices and Divider Bank settings.
+
+`test_screensavers` executes every renderer, checks expected framebuffer activity, deterministic/rewind behavior where applicable, and sweeps frames long enough to exercise stateful animations. `test_easter_eggs` verifies that each boot game waits for explicit launch input, starts in a defined reset state, keeps Eurorack outputs safe in the host path, and obeys its game-specific encoder/TAP/control contracts. These are state-machine tests; graphical appearance is still covered separately by framebuffer/simulator regression assets.
 
 ## Complete firmware host suite
 

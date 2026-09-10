@@ -17,9 +17,12 @@ SUITES = {
     "test_humanize": ROOT / "test" / "test_humanize" / "test_main.cpp",
     "test_tap_tempo": ROOT / "test" / "test_tap_tempo" / "test_main.cpp",
     "test_controls": ROOT / "test" / "test_controls" / "test_main.cpp",
+    "test_settings": ROOT / "test" / "test_settings" / "test_main.cpp",
+    "test_screensavers": ROOT / "test" / "test_screensavers" / "test_main.cpp",
+    "test_easter_eggs": ROOT / "test" / "test_easter_eggs" / "test_main.cpp",
     "test_host_firmware": ROOT / "test" / "test_host_firmware" / "test_main.cpp",
 }
-MIN_CASES = 240
+MIN_CASES = 340
 MIN_SUITE_CASES = {
     "test_clock_core": 40,
     "test_realtime": 20,
@@ -27,7 +30,10 @@ MIN_SUITE_CASES = {
     "test_swing": 20,
     "test_humanize": 10,
     "test_tap_tempo": 20,
-    "test_controls": 25,
+    "test_controls": 30,
+    "test_settings": 50,
+    "test_screensavers": 15,
+    "test_easter_eggs": 20,
     "test_host_firmware": 20,
 }
 

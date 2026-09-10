@@ -837,6 +837,45 @@ void testRuntimeLossModeChangePreservesValidLockAndEstimator() {
 
 }  // namespace
 
+
+void testHeldHighSyncCreatesOnlyOneSelectedEdge() {
+    Fixture fixture;
+    fixture.begin();
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    const std::uint32_t initial = fixture.sync.filteredBpmMilli();
+    for (std::uint32_t now = 1050U; now < 500000U; now += 50000U) {
+        fixture.sync.processSchedulerTick(now);
+    }
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), initial);
+}
+
+void testHeldHighSyncAfterLockEventuallyTimesOut() {
+    Fixture fixture;
+    fixture.state.externalSync.timeoutMs = 200U;
+    fixture.begin();
+    acquireRising(fixture, 500000U);
+    fixture.inputs.injectSyncEdgeForTest(1001000U, true);
+    fixture.sync.processSchedulerTick(1001000U);
+    CHECK(fixture.engine.snapshot().externalLocked);
+    fixture.sync.processSchedulerTick(2000999U);
+    CHECK(fixture.engine.snapshot().externalLocked);
+    fixture.sync.processSchedulerTick(2001000U);
+    CHECK(!fixture.engine.snapshot().externalLocked);
+}
+
+void testHeldHighSyncCannotManufactureFallingEdgeClock() {
+    Fixture fixture;
+    fixture.state.externalSync.edge = SyncEdge::Falling;
+    fixture.begin();
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    for (std::uint32_t now = 1050U; now < 500000U; now += 50000U) {
+        fixture.sync.processSchedulerTick(now);
+    }
+    CHECK(!fixture.engine.snapshot().externalLocked);
+}
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(testSyncFrontendReferenceDividerIsNominal161mV);
@@ -919,6 +958,9 @@ int main() {
     RUN_TEST(testRuntimeGlitchFilterChangePreservesValidLockAndEstimator);
     RUN_TEST(testRuntimeTimeoutChangePreservesValidLockAndEstimator);
     RUN_TEST(testRuntimeLossModeChangePreservesValidLockAndEstimator);
+    RUN_TEST(testHeldHighSyncCreatesOnlyOneSelectedEdge);
+    RUN_TEST(testHeldHighSyncAfterLockEventuallyTimesOut);
+    RUN_TEST(testHeldHighSyncCannotManufactureFallingEdgeClock);
     std::cout << "SYNC behavior assertions: " << checks << "\n";
     return UNITY_END();
 }

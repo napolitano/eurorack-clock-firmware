@@ -115,6 +115,13 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertRegex(doxyfile, r"(?m)^OUTPUT_DIRECTORY\s*=\s*build\s*$")
         self.assertRegex(doxyfile, r"(?m)^HTML_OUTPUT\s*=\s*doxygen\s*$")
 
+    def test_architecture_allows_framework_fakes_in_any_test_suite(self) -> None:
+        module = runpy.run_path(str(ROOT / "scripts" / "check_architecture.py"))
+        allows = module["is_framework_include_allowed_path"]
+        self.assertTrue(allows(ROOT / "test/test_host_firmware/test_main.cpp"))
+        self.assertTrue(allows(ROOT / "test/host_firmware/test_main.cpp"))
+        self.assertFalse(allows(ROOT / "src/services/external_sync_controller.cpp"))
+
     def test_native_test_inventory_gate_passes(self) -> None:
         result = subprocess.run(
             [PYTHON, str(ROOT / "scripts/check_test_inventory.py")],
@@ -126,13 +133,16 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("test_clock_core=44", result.stdout)
         self.assertIn("test_realtime=24", result.stdout)
-        self.assertIn("test_sync_behavior=80", result.stdout)
+        self.assertIn("test_sync_behavior=83", result.stdout)
         self.assertIn("test_swing=22", result.stdout)
         self.assertIn("test_humanize=12", result.stdout)
         self.assertIn("test_tap_tempo=22", result.stdout)
-        self.assertIn("test_controls=28", result.stdout)
+        self.assertIn("test_controls=34", result.stdout)
+        self.assertIn("test_settings=52", result.stdout)
+        self.assertIn("test_screensavers=15", result.stdout)
+        self.assertIn("test_easter_eggs=22", result.stdout)
         self.assertIn("test_host_firmware=22", result.stdout)
-        self.assertIn("total=254", result.stdout)
+        self.assertIn("total=352", result.stdout)
 
 
 

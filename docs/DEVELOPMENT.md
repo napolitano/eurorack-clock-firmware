@@ -114,7 +114,7 @@ The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly b
 pio test -e native
 ```
 
-The Native entry point contains **254 named test cases** in eight separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 80 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 22 `test_tap_tempo`, 28 `test_controls`, and 22 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation and physical-control contracts are independently visible by name.
+The Native entry point contains **352 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 22 `test_tap_tempo`, 34 `test_controls`, 52 `test_settings`, 15 `test_screensavers`, 22 `test_easter_eggs`, and 22 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name.
 
 Covered areas include:
 
@@ -124,7 +124,11 @@ Covered areas include:
 - exact and strongly varying external clocks across 1..999 BPM and 1/2/4/24 PPQN;
 - glitch storms, duplicate timestamps, edge polarity, adaptive timeout and all external-loss policies;
 - runtime PPQN/edge changes with explicit estimator reacquisition;
+- permanently asserted SYNC input, including timeout after prior lock and prevention of synthetic repeated selected edges;
 - nominal LM393-front-end hysteresis and 2.5/3/4 V input behavior through a host-only electrical model;
+- fast-turn encoder bursts/backlog saturation and concurrent button-bounce activity without detent loss;
+- atomic settings limits and invariants for Clock, SYNC, screensaver, channel, Euclid, Sequencer, One Clock and Divider Bank pages;
+- every screensaver renderer and all five Easter-egg launch/reset/control contracts;
 - complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes.
 
 The nominal electrical model is a design-level check, not a substitute for bench measurements. Physical threshold tolerance, noise susceptibility, propagation delay and actual STM32 capture timing remain HIL.

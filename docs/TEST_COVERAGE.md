@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v0.19.0-beta.4
 
-The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 254 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 352 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -17,15 +17,15 @@ The prerelease gates remain stringent without requiring synthetic tests for ever
 Current repository-wide validated baseline (`0.19.0-beta.4`):
 
 ```text
-Executable lines:   6258/6517 (96.03%)
+Executable lines:   6269/6517 (96.19%)
 Functions:           533/542  (98.34%)
-Decision branches:  3724/4122 (90.34%)
-Compiler branches:  3725/4796 (77.67%, informational only)
+Decision branches:  3741/4122 (90.76%)
+Compiler branches:  3742/4796 (78.02%, informational only)
 ```
 
 ## Full host matrix
 
-`scripts/run_host_tests.py` builds and executes fourteen coverage inputs:
+`scripts/run_host_tests.py` builds and executes seventeen coverage inputs:
 
 1. exhaustive deterministic `clock_core` tests
 2. focused realtime timing/SYNC/RST tests
@@ -35,12 +35,15 @@ Compiler branches:  3725/4796 (77.67%, informational only)
 6. deterministic One Clock Humanize tests
 7. Tap Tempo estimator edge-case tests
 8. rotary encoder and button HAL behavior tests
-9. complete firmware with I2C OLED auto-probe
-10. complete firmware with SPI SSD1306 transport
-11. complete firmware with SPI SSD1315 transport
-12. complete firmware with custom SPI wiring
-13. complete firmware with fixed I2C address and configured OLED reset pin
-14. the PlatformIO native-smoke entry point
+9. atomic Settings editor and boundary tests
+10. screensaver renderer/state tests
+11. Easter-egg launch/reset/control-state tests
+12. complete firmware with I2C OLED auto-probe
+13. complete firmware with SPI SSD1306 transport
+14. complete firmware with SPI SSD1315 transport
+15. complete firmware with custom SPI wiring
+16. complete firmware with fixed I2C address and configured OLED reset pin
+17. the PlatformIO native-smoke entry point
 
 The complete firmware variants compile the real production `.cpp` files against deterministic host fakes for Arduino GPIO/time, Wire, SPI and HardwareTimer. This tests firmware logic and HAL contracts without pretending to measure real electrical timing.
 
@@ -49,7 +52,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - application boot lifecycle, safe display-failure path, scheduler callback and Arduino `setup()`/`loop()` glue
 - all `ClockEngine` public methods and OFF/CLOCK/EUC/SEQ behavior
 - pause/stop, external-loss STOP/FREE behavior, bar progression/wrap and GLOBAL/FREE reset handling
-- all settings mutation pages and sequencer commands, including invalid-index boundary handling
+- all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 52-case Settings suite also locks down min/max coupling, enum boundaries and cross-setting invariants
 - tap tempo and all factory templates
 - all menu pages, labels, compact formatters and localization fallback
 - performance, pictographic 2×4 channel overview, six-function 2×3 mode palette, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Fractal/Orbit screensaver effects, preset overwrite/name-band, templates and sequencer render paths
@@ -64,13 +67,13 @@ The complete firmware variants compile the real production `.cpp` files against 
 - schema-v3/v4/v5 to schema-v6 CURRENT/preset migration, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
 - external-sync regression cases for 20/120/999 BPM, 1/2/4/24 PPQN, jitter, adaptive lock timeout, queue overflow/reacquisition, timestamp wraparound, effective-tempo gate release, monotonic scheduler time, phase alignment, ISR-safe pulse entry, and PPQN interpretation
 - atomic external-SYNC behavior at 1/20/30/60/120/240/300/600/900/999 BPM, strong deterministic jitter, alternating/chaotic periods, abrupt tempo changes, duplicate timestamps, glitch storms, runtime PPQN/edge changes, lock-loss policies and continuity recovery
-- continuous external-tempo movement including 60->180 and 180->60 ramps, slow drift, repeated tempo steps, ramp-plus-jitter and 24-PPQN acceleration
-- dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, and atomic encoder/button debounce/queue behavior
+- continuous external-tempo movement including 60->180 and 180->60 ramps, slow drift, repeated tempo steps, ramp-plus-jitter and 24-PPQN acceleration; permanently asserted SYNC is checked for one-edge behavior and natural lock timeout rather than a synthetic pulse train
+- dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, fast-turn encoder backlog/saturation behavior, and atomic button debounce/queue behavior
 - nominal LM393-front-end design-model checks for the documented resistor/hysteresis network, including end-to-end modeled 2.5 V, 3 V and 4 V clocks at low/nominal/maximum supported tempo; this remains explicitly separate from physical comparator HIL
 - ISR-safe external reset with configurable rising-edge TRIGGER or level-sensitive GATE semantics, startup-HIGH handling, queue saturation, deterministic RST-over-SYNC priority, and PLAY-transport preservation
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release
 - channel overview selection, TAP-turn six-function palette, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, and preset overwrite/save/load/name-band workflow
-- 1–999 BPM master accumulation, 60-second Tap Tempo input, Pixel Raid gameplay model, Formula 1, Breakout, and Egg Journey boot-game render/physics/lives/retry/parallax paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-buffer-disabled LED life-loss effects
+- 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-buffer-disabled LED life-loss effects
 
 ## Decision branches versus compiler branches
 

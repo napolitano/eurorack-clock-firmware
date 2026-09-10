@@ -12,13 +12,16 @@ This project is still in active development. Until the first stable release, ver
 
 ### Native behavioral test expansion
 
-- Expanded the public PlatformIO Native inventory from 90 to **254 explicitly named test cases** across eight conventionally named suites: 44 `test_clock_core`, 24 `test_realtime`, 80 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 22 `test_tap_tempo`, 28 `test_controls`, and 22 `test_host_firmware`. `pio test -e native` now makes the musical-timing and control contracts visible instead of leaving the 44-case core as the dominant result.
+- Expanded the public PlatformIO Native inventory from 90 to **352 explicitly named test cases** across eleven conventionally named suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 22 `test_tap_tempo`, 34 `test_controls`, 52 `test_settings`, 15 `test_screensavers`, 22 `test_easter_eggs`, and 22 `test_host_firmware`. `pio test -e native` now makes musical timing, physical controls, settings and non-performance state-machine contracts visible instead of leaving the 44-case core as the dominant result.
 - Added a dedicated atomic external-SYNC behavior suite covering exact 1..999 BPM boundaries, 1/2/4/24 PPQN, rising/falling-edge interpretation, duplicate timestamps, glitch/filter boundaries, glitch storms, opposite-polarity noise, adaptive timeout, all loss policies, timestamp wrap, queue-overflow continuity, lock reacquisition, abrupt tempo changes, alternating/chaotic periods, and deterministic jitter through +/-20%.
 - Extended External Sync with continuous-speed-change tests: linear acceleration/deceleration, slow tempo drift, repeated tempo steps, acceleration under alternating jitter, and 24-PPQN tempo ramps.
-- Added dedicated atomic suites for Swing, One Clock Humanize, Tap Tempo, rotary encoder decoding and all four debounced front-panel buttons. These remain alongside broader integration tests rather than replacing them.
+- Added dedicated atomic suites for Swing, One Clock Humanize, Tap Tempo, rotary encoder decoding and all four debounced front-panel buttons. Fast-turn stress now verifies 1000-detent bursts in both directions, repeated burst/drain cycles, cancellation, deliberate backlog saturation without wrap, and encoder traffic during button bounce.
+- Added 52 atomic Settings tests spanning Clock/SYNC/screensaver/channel/Euclid/Sequencer/One Clock/Divider Bank limits and invariants, 15 screensaver state/render tests, and 22 Easter-egg launch/reset/control-state tests.
+- Added permanent-HIGH SYNC regressions: a held input may contribute only its real selected transition, must time out naturally after a previous lock, and cannot manufacture a falling-edge clock while held HIGH.
 - Fixed the Native include path for shared test support (`-I test/support`), so the packaged `test_sync_behavior` suite resolves `sync_frontend_model.h` under real PlatformIO instead of only in the standalone host runner.
+- Fixed the architecture gate exposed by real CI: framework fakes are now permitted anywhere below `test/` as an explicit suite-name-independent test harness boundary, while production framework access remains restricted to HAL/pin-map/main boundaries. A tooling regression protects both the current and legacy host-firmware suite paths.
 - Added a host-only nominal electrical model of the documented Rev-1 LM393 resistor/hysteresis network. The model calculates the nominal ~1.79 V rising and ~1.46 V falling thresholds and drives the real digital SYNC estimator from modeled **2.5 V, 3 V and 4 V** clock amplitudes at 20, 120 and 999 BPM. The documentation explicitly keeps resistor tolerances, LM393 analogue behavior, noise, delay and real thresholds in physical HIL.
-- Raised the Native inventory guard to 240 total cases and added per-suite minimums so future refactors cannot silently collapse important behavioral coverage back into a few broad tests. The authoritative GCC coverage/sanitizer runner now includes the new SYNC behavior suite.
+- Raised the Native inventory guard to 340 total cases and added per-suite minimums so future refactors cannot silently collapse important behavioral coverage back into a few broad tests. The authoritative GCC coverage/sanitizer runner now includes the Settings, screensaver, Easter-egg and other dedicated behavior suites.
 
 ### External-SYNC defect correction
 
@@ -27,8 +30,9 @@ This project is still in active development. Until the first stable release, ver
 
 ### Test visibility and documentation
 
-- Renamed the integration suites to `test_realtime` and `test_host_firmware` and added dedicated `test_sync_behavior`, `test_swing`, `test_humanize`, `test_tap_tempo`, and `test_controls` suites, matching PlatformIO's conventional test-suite naming and making important contracts reviewable by name.
+- Renamed the integration suites to `test_realtime` and `test_host_firmware` and added dedicated `test_sync_behavior`, `test_swing`, `test_humanize`, `test_tap_tempo`, `test_controls`, `test_settings`, `test_screensavers`, and `test_easter_eggs` suites, matching PlatformIO's conventional test-suite naming and making important contracts reviewable by name.
 - Updated README, test documentation, development guidance, simulator/HIL boundaries and coverage documentation to explain what Native tests prove and what still requires bench validation.
+- The expanded dedicated suites raise the aggregate host baseline to **96.19% lines, 98.34% functions and 90.76% decision branches** while keeping the 90% decision-coverage gate intact.
 
 ## [0.19.0-beta.3] - 2026-09-10
 

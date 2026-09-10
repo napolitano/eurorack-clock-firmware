@@ -68,7 +68,26 @@ void testButtonActivityDoesNotLoseEncoderDetent(){ hal::ControlPanel c;c.begin()
 void testInitiallyPressedButtonIsStableWithoutSyntheticEdge(){ fakefw::setPin(pinmap::kResetBackButtonPin,LOW);hal::ControlPanel c;c.begin();auto s=c.sample(0U);TEST_ASSERT_TRUE(s.resetButton.pressed);TEST_ASSERT_EQUAL(hal::ButtonEdge::None,s.resetButton.edge); }
 }
 
+
+int drainAllEncoder(hal::ControlPanel& c, std::uint32_t& nowMs) {
+    int total = 0;
+    for (int guard = 0; guard < 400; ++guard) {
+        const int delta = c.sample(nowMs++).encoderDelta;
+        total += delta;
+        if (delta == 0) return total;
+    }
+    return total;
+}
+
+void testFastTurnThousandDetentsAreNotLostForward(){ hal::ControlPanel c;c.begin();forwardDetent();const int sign=c.sample(1U).encoderDelta;for(int i=0;i<1000;++i)forwardDetent();std::uint32_t now=2U;TEST_ASSERT_EQUAL(sign*1000,drainAllEncoder(c,now)); }
+void testFastTurnThousandDetentsAreNotLostReverse(){ hal::ControlPanel c;c.begin();reverseDetent();const int sign=c.sample(1U).encoderDelta;for(int i=0;i<1000;++i)reverseDetent();std::uint32_t now=2U;TEST_ASSERT_EQUAL(sign*1000,drainAllEncoder(c,now)); }
+void testFastTurnRepeatedForegroundDrainsPreserveTotal(){ hal::ControlPanel c;c.begin();forwardDetent();const int sign=c.sample(1U).encoderDelta;int total=0;std::uint32_t now=2U;for(int batch=0;batch<20;++batch){for(int i=0;i<50;++i)forwardDetent();total+=c.sample(now++).encoderDelta;}std::uint32_t tailNow=now;total+=drainAllEncoder(c,tailNow);TEST_ASSERT_EQUAL(sign*1000,total); }
+void testFastTurnDirectionReversalCancelsLargeBacklog(){ hal::ControlPanel c;c.begin();for(int i=0;i<500;++i)forwardDetent();for(int i=0;i<500;++i)reverseDetent();std::uint32_t now=1U;TEST_ASSERT_EQUAL(0,drainAllEncoder(c,now)); }
+void testFastTurnBacklogSaturatesWithoutSignedOverflow(){ hal::ControlPanel c;c.begin();forwardDetent();const int sign=c.sample(1U).encoderDelta;for(int i=0;i<33000;++i)forwardDetent();std::uint32_t now=2U;TEST_ASSERT_EQUAL(sign*32767,drainAllEncoder(c,now)); }
+void testFastTurnDuringButtonBouncePreservesAllDetents(){ hal::ControlPanel c;c.begin();forwardDetent();const int sign=c.sample(1U).encoderDelta;fakefw::setPin(pinmap::kTapTempoButtonPin,LOW);(void)c.sample(2U);for(int i=0;i<100;++i)forwardDetent();fakefw::setPin(pinmap::kTapTempoButtonPin,HIGH);int total=c.sample(10U).encoderDelta;fakefw::setPin(pinmap::kTapTempoButtonPin,LOW);std::uint32_t now=11U;total+=drainAllEncoder(c,now);TEST_ASSERT_EQUAL(sign*100,total); }
+
 int main(){UNITY_BEGIN();
 RUN_TEST(testIdleSampleDoesNotMaskInterrupts);RUN_TEST(testGrayCycleAProducesOneDetent);RUN_TEST(testGrayCycleBProducesOppositeDetent);RUN_TEST(testPartialGrayCycleProducesNoDetent);RUN_TEST(testEncoderBounceReturnsToSameStateWithoutDetent);RUN_TEST(testSixFastDetentsAccumulateWithoutForegroundPoll);RUN_TEST(testEncoderDrainIsEmptyAfterSample);RUN_TEST(testEncoderDrainCapsAt127AndPreservesRemainderForCycleA);RUN_TEST(testEncoderDrainCapsAt127AndPreservesRemainderForCycleB);RUN_TEST(testDirectionReversalCancelsPendingMovement);RUN_TEST(testEncoderLowAtStartupDoesNotManufactureDetent);RUN_TEST(testAllEncoderPinsUsePullups);
+RUN_TEST(testFastTurnThousandDetentsAreNotLostForward);RUN_TEST(testFastTurnThousandDetentsAreNotLostReverse);RUN_TEST(testFastTurnRepeatedForegroundDrainsPreserveTotal);RUN_TEST(testFastTurnDirectionReversalCancelsLargeBacklog);RUN_TEST(testFastTurnBacklogSaturatesWithoutSignedOverflow);RUN_TEST(testFastTurnDuringButtonBouncePreservesAllDetents);
 RUN_TEST(testEncoderPushDebouncesPress);RUN_TEST(testPlayPauseDebouncesPress);RUN_TEST(testTapDebouncesPress);RUN_TEST(testResetBackDebouncesPress);RUN_TEST(testEncoderPushDebouncesRelease);RUN_TEST(testPlayPauseDebouncesRelease);RUN_TEST(testTapDebouncesRelease);RUN_TEST(testResetBackDebouncesRelease);RUN_TEST(testEncoderPushHoldDoesNotRepeat);RUN_TEST(testPlayPauseHoldDoesNotRepeat);RUN_TEST(testTapHoldDoesNotRepeat);RUN_TEST(testResetBackHoldDoesNotRepeat);RUN_TEST(testButtonBounceBeforeDebounceDoesNotPress);RUN_TEST(testSimultaneousButtonsReportIndependentEdges);RUN_TEST(testButtonActivityDoesNotLoseEncoderDetent);RUN_TEST(testInitiallyPressedButtonIsStableWithoutSyntheticEdge);
 return UNITY_END();}

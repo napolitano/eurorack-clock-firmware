@@ -295,6 +295,59 @@ def tap_tempo_sources() -> list[Path]:
 def control_sources() -> list[Path]:
     return [ROOT / "src/hal/control_panel.cpp", ROOT / "src/hal/interrupt_lock.cpp"]
 
+
+def settings_sources() -> list[Path]:
+    """Return production units needed by the atomic settings-contract suite."""
+    return realtime_sources() + [
+        ROOT / "src/domain/clock_labels.cpp",
+        ROOT / "src/ui/settings_editor.cpp",
+        ROOT / "src/ui/settings_editor_sync.cpp",
+        ROOT / "src/ui/menu_model.cpp",
+        ROOT / "src/ui/menu_model_sync.cpp",
+        ROOT / "src/ui/text_formatter.cpp",
+        ROOT / "src/ui_text.cpp",
+    ]
+
+
+def screensaver_sources() -> list[Path]:
+    """Return framebuffer and renderer units needed by the screensaver stress suite."""
+    return [
+        ROOT / "src/hal/display_font.cpp",
+        ROOT / "src/hal/oled_display.cpp",
+        ROOT / "src/hal/oled_display_transport.cpp",
+        ROOT / "src/ui/screensaver_renderer.cpp",
+        ROOT / "src/ui/screensaver_spectrum.cpp",
+        ROOT / "src/ui/screensaver_field.cpp",
+        ROOT / "src/ui/screensaver_blox.cpp",
+        ROOT / "src/ui/screensaver_matrix.cpp",
+        ROOT / "src/ui/screensaver_cube_cover.cpp",
+    ]
+
+
+def easter_egg_sources() -> list[Path]:
+    """Return production units needed by focused boot Easter-egg behavior tests."""
+    return [
+        ROOT / "src/hal/control_panel.cpp",
+        ROOT / "src/hal/interrupt_lock.cpp",
+        ROOT / "src/hal/gate_output_driver.cpp",
+        ROOT / "src/hal/system_clock.cpp",
+        ROOT / "src/hal/display_font.cpp",
+        ROOT / "src/hal/oled_display.cpp",
+        ROOT / "src/hal/oled_display_transport.cpp",
+        ROOT / "src/hal/persistent_storage.cpp",
+        ROOT / "src/game/easter_egg_score_store.cpp",
+        ROOT / "src/game/arcade_leaderboard_store.cpp",
+        ROOT / "src/game/arcade_shell.cpp",
+        ROOT / "src/game/pixel_raid_game.cpp",
+        ROOT / "src/game/formula1_game.cpp",
+        ROOT / "src/game/breakout_game.cpp",
+        ROOT / "src/game/moon_buggy_game.cpp",
+        ROOT / "src/game/moon_buggy_render.cpp",
+        ROOT / "src/game/beatknecht.cpp",
+        ROOT / "src/ui_text.cpp",
+    ]
+
+
 def compile_native_smoke() -> Path:
     """Execute the PlatformIO native-build entry point under coverage as test-support code."""
     build_dir = BUILD_ROOT / "native_smoke"
@@ -372,6 +425,9 @@ def run_sanitizer_matrix() -> None:
     compile_sanitized_behavior_suite("humanize", realtime_sources(), ROOT / "test/test_humanize/test_main.cpp")
     compile_sanitized_behavior_suite("tap_tempo", tap_tempo_sources(), ROOT / "test/test_tap_tempo/test_main.cpp")
     compile_sanitized_behavior_suite("controls", control_sources(), ROOT / "test/test_controls/test_main.cpp")
+    compile_sanitized_behavior_suite("settings", settings_sources(), ROOT / "test/test_settings/test_main.cpp")
+    compile_sanitized_behavior_suite("screensavers", screensaver_sources(), ROOT / "test/test_screensavers/test_main.cpp")
+    compile_sanitized_behavior_suite("easter_eggs", easter_egg_sources(), ROOT / "test/test_easter_eggs/test_main.cpp")
     compile_sanitized_firmware_variant("firmware_i2c", [])
     compile_sanitized_firmware_variant(
         "firmware_spi_ssd1306", ["-DCLOCK_DISPLAY_USE_SPI=1", "-DCLOCK_DISPLAY_CONTROLLER=1306"])
@@ -614,6 +670,9 @@ def main() -> int:
         compile_behavior_suite("humanize", realtime_sources(), ROOT / "test/test_humanize/test_main.cpp"),
         compile_behavior_suite("tap_tempo", tap_tempo_sources(), ROOT / "test/test_tap_tempo/test_main.cpp"),
         compile_behavior_suite("controls", control_sources(), ROOT / "test/test_controls/test_main.cpp"),
+        compile_behavior_suite("settings", settings_sources(), ROOT / "test/test_settings/test_main.cpp"),
+        compile_behavior_suite("screensavers", screensaver_sources(), ROOT / "test/test_screensavers/test_main.cpp"),
+        compile_behavior_suite("easter_eggs", easter_egg_sources(), ROOT / "test/test_easter_eggs/test_main.cpp"),
         compile_host_firmware_variant("firmware_i2c", []),
         compile_host_firmware_variant(
             "firmware_spi_ssd1306",
