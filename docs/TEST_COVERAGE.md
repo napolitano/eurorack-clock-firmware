@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v0.19.0-beta.4
 
-The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 164 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 254 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -19,24 +19,28 @@ Current repository-wide validated baseline (`0.19.0-beta.4`):
 ```text
 Executable lines:   6258/6517 (96.03%)
 Functions:           533/542  (98.34%)
-Decision branches:  3719/4122 (90.22%)
-Compiler branches:  3720/4796 (77.56%, informational only)
+Decision branches:  3724/4122 (90.34%)
+Compiler branches:  3725/4796 (77.67%, informational only)
 ```
 
 ## Full host matrix
 
-`scripts/run_host_tests.py` builds and executes ten coverage inputs:
+`scripts/run_host_tests.py` builds and executes fourteen coverage inputs:
 
 1. exhaustive deterministic `clock_core` tests
 2. focused realtime timing/SYNC/RST tests
 3. realtime tests through configured external GPIO IRQ pins
 4. atomic external-SYNC/input-front-end behavioral tests
-5. complete firmware with I2C OLED auto-probe
-6. complete firmware with SPI SSD1306 transport
-7. complete firmware with SPI SSD1315 transport
-8. complete firmware with custom SPI wiring
-9. complete firmware with fixed I2C address and configured OLED reset pin
-10. the PlatformIO native-smoke entry point
+5. atomic swing and observed engine-edge tests
+6. deterministic One Clock Humanize tests
+7. Tap Tempo estimator edge-case tests
+8. rotary encoder and button HAL behavior tests
+9. complete firmware with I2C OLED auto-probe
+10. complete firmware with SPI SSD1306 transport
+11. complete firmware with SPI SSD1315 transport
+12. complete firmware with custom SPI wiring
+13. complete firmware with fixed I2C address and configured OLED reset pin
+14. the PlatformIO native-smoke entry point
 
 The complete firmware variants compile the real production `.cpp` files against deterministic host fakes for Arduino GPIO/time, Wire, SPI and HardwareTimer. This tests firmware logic and HAL contracts without pretending to measure real electrical timing.
 
@@ -60,6 +64,8 @@ The complete firmware variants compile the real production `.cpp` files against 
 - schema-v3/v4/v5 to schema-v6 CURRENT/preset migration, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
 - external-sync regression cases for 20/120/999 BPM, 1/2/4/24 PPQN, jitter, adaptive lock timeout, queue overflow/reacquisition, timestamp wraparound, effective-tempo gate release, monotonic scheduler time, phase alignment, ISR-safe pulse entry, and PPQN interpretation
 - atomic external-SYNC behavior at 1/20/30/60/120/240/300/600/900/999 BPM, strong deterministic jitter, alternating/chaotic periods, abrupt tempo changes, duplicate timestamps, glitch storms, runtime PPQN/edge changes, lock-loss policies and continuity recovery
+- continuous external-tempo movement including 60->180 and 180->60 ramps, slow drift, repeated tempo steps, ramp-plus-jitter and 24-PPQN acceleration
+- dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, and atomic encoder/button debounce/queue behavior
 - nominal LM393-front-end design-model checks for the documented resistor/hysteresis network, including end-to-end modeled 2.5 V, 3 V and 4 V clocks at low/nominal/maximum supported tempo; this remains explicitly separate from physical comparator HIL
 - ISR-safe external reset with configurable rising-edge TRIGGER or level-sensitive GATE semantics, startup-HIGH handling, queue saturation, deterministic RST-over-SYNC priority, and PLAY-transport preservation
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release

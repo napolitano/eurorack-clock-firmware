@@ -244,6 +244,57 @@ def compile_sanitized_sync_behavior_suite() -> None:
     ])
     run_sanitized_executable(executable, build_dir)
 
+
+def compile_behavior_suite(name: str, sources: list[Path], test_path: Path) -> Path:
+    """Compile one focused, explicitly named native behavior suite for coverage."""
+    build_dir = BUILD_ROOT / name
+    build_dir.mkdir(parents=True, exist_ok=True)
+    executable = build_dir / "tests"
+    run([
+        os.environ.get("CXX", "g++"),
+        *COVERAGE_FLAGS,
+        "-DCLOCK_HOST_TEST=1",
+        "-I", str(ROOT / "src"),
+        "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(ROOT / "test" / "support"),
+        "-I", str(FAKE_UNITY_INCLUDE),
+        "-I", str(FAKE_INCLUDE),
+        *[str(path) for path in sources],
+        str(test_path),
+        "-o", str(executable),
+    ])
+    run([str(executable)], cwd=build_dir)
+    return build_dir
+
+
+def compile_sanitized_behavior_suite(name: str, sources: list[Path], test_path: Path) -> None:
+    """Run one focused native behavior suite under ASan and UBSan."""
+    build_dir = BUILD_ROOT / f"sanitizer_{name}"
+    build_dir.mkdir(parents=True, exist_ok=True)
+    executable = build_dir / "tests"
+    run([
+        os.environ.get("CXX", "g++"),
+        *SANITIZER_FLAGS,
+        "-DCLOCK_HOST_TEST=1",
+        "-I", str(ROOT / "src"),
+        "-I", str(ROOT / "lib" / "clock_core" / "src"),
+        "-I", str(ROOT / "test" / "support"),
+        "-I", str(FAKE_UNITY_INCLUDE),
+        "-I", str(FAKE_INCLUDE),
+        *[str(path) for path in sources],
+        str(test_path),
+        "-o", str(executable),
+    ])
+    run_sanitized_executable(executable, build_dir)
+
+
+def tap_tempo_sources() -> list[Path]:
+    return [ROOT / "src/services/tap_tempo.cpp"]
+
+
+def control_sources() -> list[Path]:
+    return [ROOT / "src/hal/control_panel.cpp", ROOT / "src/hal/interrupt_lock.cpp"]
+
 def compile_native_smoke() -> Path:
     """Execute the PlatformIO native-build entry point under coverage as test-support code."""
     build_dir = BUILD_ROOT / "native_smoke"
@@ -317,6 +368,10 @@ def run_sanitizer_matrix() -> None:
         ["-DCLOCK_EXTERNAL_SYNC_PIN=PB3", "-DCLOCK_EXTERNAL_RESET_PIN=PB4"],
     )
     compile_sanitized_sync_behavior_suite()
+    compile_sanitized_behavior_suite("swing", realtime_sources(), ROOT / "test/test_swing/test_main.cpp")
+    compile_sanitized_behavior_suite("humanize", realtime_sources(), ROOT / "test/test_humanize/test_main.cpp")
+    compile_sanitized_behavior_suite("tap_tempo", tap_tempo_sources(), ROOT / "test/test_tap_tempo/test_main.cpp")
+    compile_sanitized_behavior_suite("controls", control_sources(), ROOT / "test/test_controls/test_main.cpp")
     compile_sanitized_firmware_variant("firmware_i2c", [])
     compile_sanitized_firmware_variant(
         "firmware_spi_ssd1306", ["-DCLOCK_DISPLAY_USE_SPI=1", "-DCLOCK_DISPLAY_CONTROLLER=1306"])
@@ -555,6 +610,10 @@ def main() -> int:
             ["-DCLOCK_EXTERNAL_SYNC_PIN=PB3", "-DCLOCK_EXTERNAL_RESET_PIN=PB4"],
         ),
         compile_sync_behavior_suite(),
+        compile_behavior_suite("swing", realtime_sources(), ROOT / "test/test_swing/test_main.cpp"),
+        compile_behavior_suite("humanize", realtime_sources(), ROOT / "test/test_humanize/test_main.cpp"),
+        compile_behavior_suite("tap_tempo", tap_tempo_sources(), ROOT / "test/test_tap_tempo/test_main.cpp"),
+        compile_behavior_suite("controls", control_sources(), ROOT / "test/test_controls/test_main.cpp"),
         compile_host_firmware_variant("firmware_i2c", []),
         compile_host_firmware_variant(
             "firmware_spi_ssd1306",

@@ -516,6 +516,100 @@ void testAbrupt180To60BpmChangeConvergesWithoutUnlock() {
     CHECK_NEAR(fixture.sync.filteredBpmMilli(), 60000U, 1000U);
 }
 
+
+void testLinearAccelerationFrom60To180BpmStaysLocked() {
+    Fixture fixture; fixture.begin();
+    std::uint32_t timestamp = 1000U; injectRisingPulse(fixture, timestamp);
+    std::uint32_t previousFiltered = 0U;
+    for (std::uint32_t i = 0U; i < 80U; ++i) {
+        const std::uint32_t bpm = 60U + (120U * i) / 79U;
+        timestamp += 60000000U / bpm;
+        injectRisingPulse(fixture, timestamp);
+        CHECK(fixture.engine.snapshot().externalLocked);
+        const std::uint32_t filtered = fixture.sync.filteredBpmMilli();
+        CHECK(filtered >= 1000U && filtered <= 999000U);
+        if (i > 12U) CHECK(filtered + 5000U >= previousFiltered);
+        previousFiltered = filtered;
+    }
+    CHECK(fixture.sync.filteredBpmMilli() >= 165000U);
+    CHECK(fixture.sync.filteredBpmMilli() <= 185000U);
+}
+
+void testLinearDecelerationFrom180To60BpmStaysLocked() {
+    Fixture fixture; fixture.begin();
+    std::uint32_t timestamp = 1000U; injectRisingPulse(fixture, timestamp);
+    std::uint32_t previousFiltered = 1000000U;
+    for (std::uint32_t i = 0U; i < 80U; ++i) {
+        const std::uint32_t bpm = 180U - (120U * i) / 79U;
+        timestamp += 60000000U / bpm;
+        injectRisingPulse(fixture, timestamp);
+        CHECK(fixture.engine.snapshot().externalLocked);
+        const std::uint32_t filtered = fixture.sync.filteredBpmMilli();
+        CHECK(filtered >= 1000U && filtered <= 999000U);
+        if (i > 12U) CHECK(filtered <= previousFiltered + 5000U);
+        previousFiltered = filtered;
+    }
+    CHECK(fixture.sync.filteredBpmMilli() >= 55000U);
+    CHECK(fixture.sync.filteredBpmMilli() <= 70000U);
+}
+
+void testSlowTempoDriftAround120BpmRemainsLockedAndBounded() {
+    Fixture fixture; fixture.begin();
+    std::uint32_t timestamp = 1000U; injectRisingPulse(fixture, timestamp);
+    for (std::uint32_t i = 0U; i < 200U; ++i) {
+        const std::int32_t offset = static_cast<std::int32_t>(i % 41U) - 20;
+        const std::uint32_t bpm = static_cast<std::uint32_t>(120 + offset / 4);
+        timestamp += 60000000U / bpm; injectRisingPulse(fixture, timestamp);
+        CHECK(fixture.engine.snapshot().externalLocked);
+        CHECK(fixture.sync.filteredBpmMilli() >= 110000U);
+        CHECK(fixture.sync.filteredBpmMilli() <= 130000U);
+    }
+}
+
+void testRepeatedTempoStepsDoNotLoseLock() {
+    Fixture fixture; fixture.begin();
+    constexpr std::array<std::uint32_t, 8U> bpms{{120U, 90U, 150U, 60U, 180U, 75U, 200U, 120U}};
+    std::uint32_t timestamp = 1000U; injectRisingPulse(fixture, timestamp);
+    for (const std::uint32_t bpm : bpms) {
+        for (std::uint32_t n = 0U; n < 16U; ++n) {
+            timestamp += 60000000U / bpm; injectRisingPulse(fixture, timestamp);
+            CHECK(fixture.engine.snapshot().externalLocked);
+            CHECK(fixture.sync.filteredBpmMilli() >= 1000U);
+            CHECK(fixture.sync.filteredBpmMilli() <= 999000U);
+        }
+    }
+    CHECK_NEAR(fixture.sync.filteredBpmMilli(), 120000U, 5000U);
+}
+
+void testAccelerationWithAlternatingJitterRemainsLocked() {
+    Fixture fixture; fixture.begin();
+    std::uint32_t timestamp = 1000U; injectRisingPulse(fixture, timestamp);
+    for (std::uint32_t i = 0U; i < 96U; ++i) {
+        const std::uint32_t bpm = 80U + (80U * i) / 95U;
+        const std::uint32_t nominal = 60000000U / bpm;
+        const std::int32_t jitter = (i & 1U) == 0U ? -2000 : 2000;
+        const std::int32_t interval = static_cast<std::int32_t>(nominal) + jitter;
+        CHECK(interval > 0); timestamp += static_cast<std::uint32_t>(interval);
+        injectRisingPulse(fixture, timestamp); CHECK(fixture.engine.snapshot().externalLocked);
+    }
+    CHECK(fixture.sync.filteredBpmMilli() >= 145000U);
+    CHECK(fixture.sync.filteredBpmMilli() <= 170000U);
+}
+
+void testTwentyFourPpqnTempoRampRemainsLocked() {
+    Fixture fixture; fixture.state.externalSync.pulsesPerQuarterNote = 24U; fixture.begin();
+    std::uint32_t timestamp = 1000U; injectRisingPulse(fixture, timestamp);
+    for (std::uint32_t i = 0U; i < 120U; ++i) {
+        const std::uint32_t bpm = 90U + (60U * i) / 119U;
+        timestamp += 60000000U / (bpm * 24U); injectRisingPulse(fixture, timestamp);
+        CHECK(fixture.engine.snapshot().externalLocked);
+        CHECK(fixture.sync.filteredBpmMilli() >= 1000U);
+        CHECK(fixture.sync.filteredBpmMilli() <= 999000U);
+    }
+    CHECK(fixture.sync.filteredBpmMilli() >= 135000U);
+    CHECK(fixture.sync.filteredBpmMilli() <= 160000U);
+}
+
 // -------------------------------------------------------------------------
 // Lock loss, fallback policies, range boundaries, wrap and continuity.
 // -------------------------------------------------------------------------
@@ -803,6 +897,12 @@ int main() {
     RUN_TEST(testChaoticValidPeriodSequenceNeverProducesOutOfRangeTempo);
     RUN_TEST(testAbrupt60To180BpmChangeConvergesWithoutUnlock);
     RUN_TEST(testAbrupt180To60BpmChangeConvergesWithoutUnlock);
+    RUN_TEST(testLinearAccelerationFrom60To180BpmStaysLocked);
+    RUN_TEST(testLinearDecelerationFrom180To60BpmStaysLocked);
+    RUN_TEST(testSlowTempoDriftAround120BpmRemainsLockedAndBounded);
+    RUN_TEST(testRepeatedTempoStepsDoNotLoseLock);
+    RUN_TEST(testAccelerationWithAlternatingJitterRemainsLocked);
+    RUN_TEST(testTwentyFourPpqnTempoRampRemainsLocked);
     RUN_TEST(testAdaptiveTimeoutKeepsLockOneMicrosecondBeforeBoundary);
     RUN_TEST(testAdaptiveTimeoutDropsLockExactlyAtBoundary);
     RUN_TEST(testStopLossModeFreezesEngineAfterTimeout);

@@ -234,16 +234,20 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **164 explicitly named Native test cases**. PlatformIO is configured to expose all four suites rather than only the 44-case mathematical core:
+Current inventory: **254 explicitly named Native test cases**. PlatformIO exposes eight behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
-| `test_clock_core` | 44 | deterministic rate, Q32, swing, probability, Euclid and sequencer mathematics |
+| `test_clock_core` | 44 | deterministic rate, Q32, probability, Euclid and sequencer mathematics |
 | `test_realtime` | 24 | scheduler, physical gate driver, SYNC/RST integration and queue stress |
-| `test_sync_behavior` | 74 | atomic external-SYNC behavior, jitter/glitch/loss boundaries, PPQN/edge changes, and a nominal LM393-front-end voltage model |
+| `test_sync_behavior` | 80 | external-SYNC boundaries, changing tempo, jitter/glitches/loss, PPQN/edge changes, and nominal LM393-front-end voltage behavior |
+| `test_swing` | 22 | atomic swing mathematics plus observed engine edge spacing and pair-duration conservation |
+| `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
+| `test_tap_tempo` | 22 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
+| `test_controls` | 28 | encoder Gray-code decoding, queued detents, saturation/drain behavior, button debounce/bounce/hold and simultaneous controls |
 | `test_host_firmware` | 22 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
 
-The default Native run executes more than **221,000 assertions**. The large assertion count is deliberate, but it is no longer used to hide broad behavior inside a small visible case count. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
+The default Native run executes more than **223,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
 
 The broader host matrix additionally recompiles display variants, runs sanitizer configurations and produces aggregate coverage:
 
@@ -256,7 +260,7 @@ Current validated aggregate baseline:
 ```text
 Executable lines     6258 / 6517   96.03 %
 Functions              533 / 542    98.34 %
-Decision branches     3719 / 4122   90.22 %
+Decision branches     3724 / 4122   90.34 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).

@@ -13,13 +13,21 @@ SUITES = {
     "test_clock_core": ROOT / "test" / "test_clock_core" / "test_main.cpp",
     "test_realtime": ROOT / "test" / "test_realtime" / "test_main.cpp",
     "test_sync_behavior": ROOT / "test" / "test_sync_behavior" / "test_main.cpp",
+    "test_swing": ROOT / "test" / "test_swing" / "test_main.cpp",
+    "test_humanize": ROOT / "test" / "test_humanize" / "test_main.cpp",
+    "test_tap_tempo": ROOT / "test" / "test_tap_tempo" / "test_main.cpp",
+    "test_controls": ROOT / "test" / "test_controls" / "test_main.cpp",
     "test_host_firmware": ROOT / "test" / "test_host_firmware" / "test_main.cpp",
 }
-MIN_CASES = 150
+MIN_CASES = 240
 MIN_SUITE_CASES = {
     "test_clock_core": 40,
     "test_realtime": 20,
-    "test_sync_behavior": 60,
+    "test_sync_behavior": 75,
+    "test_swing": 20,
+    "test_humanize": 10,
+    "test_tap_tempo": 20,
+    "test_controls": 25,
     "test_host_firmware": 20,
 }
 
@@ -32,6 +40,8 @@ def main() -> int:
     native = native_match.group(1)
     if not re.search(r"(?m)^test_build_src\s*=\s*yes\s*$", native):
         raise RuntimeError("env:native must build production src for integration tests")
+    if not re.search(r"(?m)^\s*-I\s+test/support\s*$", native):
+        raise RuntimeError("env:native must expose test/support for shared native test headers")
     for suite in SUITES:
         if not re.search(rf"(?m)^\s+{re.escape(suite)}\s*$", native):
             raise RuntimeError(f"env:native does not expose suite: {suite}")

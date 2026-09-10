@@ -114,7 +114,7 @@ The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly b
 pio test -e native
 ```
 
-The Native entry point contains **164 named test cases** in four separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 74 `test_sync_behavior`, and 22 `test_host_firmware`. The core still uses exhaustive loops for mathematical invariants; important engine and SYNC behaviors are also represented as atomic named cases so a green summary is not dominated by a single broad test function.
+The Native entry point contains **254 named test cases** in eight separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 80 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 22 `test_tap_tempo`, 28 `test_controls`, and 22 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation and physical-control contracts are independently visible by name.
 
 Covered areas include:
 
@@ -166,7 +166,7 @@ CI requires:
 - AddressSanitizer = **clean**
 - UndefinedBehaviorSanitizer = **clean**
 
-The last complete repository-wide coverage baseline remains alpha.31 at 97.18% executable lines, 100.00% functions, and 90.12% source decision branches. Alpha.35 changes product branding and boot rendering; its default and SPI headless builds/tests are green, but the full serial gcov matrix was not completed in the current validation environment, so no new alpha.35 coverage percentage is claimed. The report lists every uncovered production function and decision branch explicitly so the prerelease thresholds do not hide newly introduced blind spots.
+The beta.4 repository-wide baseline is maintained by `run_host_tests.py` and must remain above 95% executable lines, 95% functions and 90% source decision branches. The report lists every uncovered production function and decision branch explicitly so prerelease thresholds do not hide newly introduced blind spots.
 
 Raw GCC compiler-branch coverage is reported separately because GCC also emits synthetic throw/exception edges. These are informational only; source decision branches are gated at 90%.
 

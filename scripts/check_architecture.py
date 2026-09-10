@@ -19,6 +19,9 @@ HARDWARE_ALLOWED_PATHS = (
     Path("test/support/fake_framework"),
     Path("test/test_host_firmware"),
     Path("test/test_sync_behavior"),
+    Path("test/test_swing"),
+    Path("test/test_humanize"),
+    Path("test/test_controls"),
     Path("sim/framework"),
     Path("sim/simulator_runtime.cpp"),
 )
