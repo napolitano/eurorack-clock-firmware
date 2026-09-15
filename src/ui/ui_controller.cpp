@@ -86,6 +86,7 @@ void UiController::processControls(
 }
 
 void UiController::serviceRendering(const std::uint32_t nowMs) {
+    serviceTapTempoFeedback(nowMs);
     if (serviceStopModeDisplay(nowMs)) {
         return;
     }
@@ -349,7 +350,24 @@ void UiController::stopTransport(const std::uint32_t nowMs) {
 }
 
 void UiController::registerTapTempo(const std::uint32_t nowMs) {
-    const std::uint16_t estimatedBpm = tapTempo_.registerTap(nowMs, state_.tempoRange.minimumBpm, state_.tempoRange.maximumBpm);
+    const std::uint32_t sequenceIntervalMs =
+        services::TapTempo::maximumSequenceIntervalMs(state_.tempoRange.minimumBpm);
+    const bool sequenceContinues =
+        tapVisualSequenceActive_ && sequenceIntervalMs > 0U &&
+        nowMs - lastTapVisualAtMs_ <= sequenceIntervalMs;
+
+    lastTapVisualAtMs_ = nowMs;
+    tapVisualSequenceActive_ = sequenceIntervalMs > 0U;
+    if (sequenceContinues) {
+        tapIndicatorStartedAtMs_ = nowMs;
+        navigation_.tapIndicatorFrame = 1U;
+        invalidate();
+    } else {
+        navigation_.tapIndicatorFrame = 0U;
+    }
+
+    const std::uint16_t estimatedBpm = tapTempo_.registerTap(
+        nowMs, state_.tempoRange.minimumBpm, state_.tempoRange.maximumBpm);
     if (estimatedBpm == 0U) {
         return;
     }
@@ -359,6 +377,34 @@ void UiController::registerTapTempo(const std::uint32_t nowMs) {
     engine_.updateConfiguration(state_, false);
     persistCurrentState(nowMs);
     invalidate();
+}
+
+void UiController::serviceTapTempoFeedback(const std::uint32_t nowMs) {
+    const std::uint32_t sequenceIntervalMs =
+        services::TapTempo::maximumSequenceIntervalMs(state_.tempoRange.minimumBpm);
+    if (tapVisualSequenceActive_ &&
+        (sequenceIntervalMs == 0U || nowMs - lastTapVisualAtMs_ > sequenceIntervalMs)) {
+        tapVisualSequenceActive_ = false;
+        tapTempo_.reset();
+        if (navigation_.tapIndicatorFrame != 0U) {
+            navigation_.tapIndicatorFrame = 0U;
+            invalidate();
+        }
+    }
+
+    if (navigation_.tapIndicatorFrame == 0U) {
+        return;
+    }
+
+    const std::uint32_t elapsedMs = nowMs - tapIndicatorStartedAtMs_;
+    const std::uint32_t frameIndex = elapsedMs / config::kTapIndicatorFrameDurationMs;
+    const std::uint8_t nextFrame = frameIndex < config::kTapIndicatorFrameCount
+        ? static_cast<std::uint8_t>(frameIndex + 1U)
+        : 0U;
+    if (nextFrame != navigation_.tapIndicatorFrame) {
+        navigation_.tapIndicatorFrame = nextFrame;
+        invalidate();
+    }
 }
 
 int UiController::clampInt(const int value, const int minimum, const int maximum) {

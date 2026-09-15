@@ -458,8 +458,12 @@ void testDefaultsTemplatesAndServices() {
     CHECK_EQ(tap.registerTap(1000U, 1U, 300U), 0U);
     CHECK_EQ(tap.registerTap(61000U, 1U, 300U), 1U);   // 60 s interval = 1 BPM
     CHECK_EQ(tap.registerTap(130000U, 1U, 300U), 0U); // sequence timeout/reset
-    CHECK_EQ(tap.registerTap(130500U, 130U, 140U), 130U); // clamp low
-    CHECK_EQ(tap.registerTap(131000U, 20U, 100U), 100U);  // clamp high
+    tap.reset();
+    CHECK_EQ(tap.registerTap(130000U, 130U, 140U), 0U);
+    CHECK_EQ(tap.registerTap(130461U, 130U, 140U), 130U); // slowest interval still permitted by min BPM
+    tap.reset();
+    CHECK_EQ(tap.registerTap(130500U, 20U, 100U), 0U);
+    CHECK_EQ(tap.registerTap(131000U, 20U, 100U), 100U);  // user maximum still clamps fast taps
     tap.reset();
     CHECK_EQ(tap.registerTap(1000U, 20U, 999U), 0U);
     CHECK_EQ(tap.registerTap(1060U, 20U, 999U), 999U);    // 60 ms ~= 1000 BPM, user max clamps to 999
@@ -2575,6 +2579,145 @@ void controllerOpenSettingsChord(ui::UiController& controller,std::uint32_t& now
 void controllerReset(ui::UiController& controller,std::uint32_t& now){hal::ControlSample s{};s.resetButton=pressedEdge();controller.processControls(s,now++);}
 void controllerTurn(ui::UiController& controller,std::int8_t delta,std::uint32_t& now){hal::ControlSample s{};s.encoderDelta=delta;controller.processControls(s,now++);}
 void controllerConfirmModeYes(ui::UiController& controller,std::uint32_t& now){controllerTurn(controller,1,now);controllerShortPress(controller,now);}
+void controllerTapAt(ui::UiController& controller,const std::uint32_t releasedAtMs){hal::ControlSample s{};s.tapButton=pressedEdge();controller.processControls(s,releasedAtMs-1U);s={};s.tapButton=releasedEdge();controller.processControls(s,releasedAtMs);}
+
+std::size_t countFramebufferPixels(
+    const std::array<std::uint8_t, hal::OledDisplay::kFramebufferSize>& framebuffer,
+    const std::int16_t x,
+    const std::int16_t y,
+    const std::int16_t width,
+    const std::int16_t height) {
+    std::size_t count = 0U;
+    for (std::int16_t row = 0; row < height; ++row) {
+        for (std::int16_t column = 0; column < width; ++column) {
+            const std::int16_t pixelX = static_cast<std::int16_t>(x + column);
+            const std::int16_t pixelY = static_cast<std::int16_t>(y + row);
+            const std::size_t index = static_cast<std::size_t>(pixelX) +
+                static_cast<std::size_t>(pixelY / 8) * static_cast<std::size_t>(hal::OledDisplay::kWidth);
+            const std::uint8_t mask = static_cast<std::uint8_t>(1U << (pixelY & 7));
+            if ((framebuffer[index] & mask) != 0U) {
+                ++count;
+            }
+        }
+    }
+    return count;
+}
+
+void testTapIndicatorStartsOnSecondTapAndRestartsEveryFollowingTap() {
+    resetFakes(); prepareDisplaySuccess();
+    hal::OledDisplay display; CHECK(display.begin());
+    ClockState state = makeDefaultState();
+    hal::GateOutputDriver gates; gates.beginDisabled();
+    engine::ClockEngine engine(gates); engine.begin(state);
+    hal::PersistentStorage::resetForTest(); hal::PersistentStorage storage;
+    services::PersistentStateService persistence(storage); persistence.begin();
+    ui::UiRenderer renderer(display, persistence);
+    ui::UiController controller(state, engine, renderer, persistence);
+
+    controllerTapAt(controller, 1000U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 0U);
+    controllerTapAt(controller, 1500U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 1U);
+    CHECK_EQ(state.bpm, 120U);
+
+    controller.serviceRendering(1580U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 2U);
+    controllerTapAt(controller, 2000U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 1U);
+    controllerTapAt(controller, 2500U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 1U);
+}
+
+void testTapIndicatorRendersFourShrinkingEightPixelFramesThenClears() {
+    resetFakes(); prepareDisplaySuccess();
+    hal::OledDisplay display; CHECK(display.begin());
+    ClockState state = makeDefaultState();
+    hal::GateOutputDriver gates; gates.beginDisabled();
+    engine::ClockEngine engine(gates); engine.begin(state);
+    hal::PersistentStorage::resetForTest(); hal::PersistentStorage storage;
+    services::PersistentStateService persistence(storage); persistence.begin();
+    ui::UiRenderer renderer(display, persistence);
+    ui::UiController controller(state, engine, renderer, persistence);
+
+    controllerTapAt(controller, 1000U);
+    controllerTapAt(controller, 1500U);
+
+    display.setFont(hal::DisplayFont::TempoLarge);
+    const hal::TextBounds tempoBounds = display.measureText("120", 0, 20);
+    const std::int16_t tapX = static_cast<std::int16_t>(
+        (static_cast<int>(hal::OledDisplay::kWidth) - static_cast<int>(tempoBounds.width)) / 2 +
+        static_cast<int>(tempoBounds.width) + 5);
+    const std::int16_t tapY = static_cast<std::int16_t>(20 + (static_cast<int>(tempoBounds.height) - 8) / 2);
+
+    std::array<std::size_t, 4U> pixelCounts{};
+    for (std::uint8_t frame = 0U; frame < 4U; ++frame) {
+        const std::uint32_t frameTime = 1500U + static_cast<std::uint32_t>(frame) * config::kTapIndicatorFrameDurationMs;
+        controller.serviceRendering(frameTime);
+        CHECK_EQ(controller.navigation().tapIndicatorFrame, static_cast<std::uint8_t>(frame + 1U));
+        pixelCounts[frame] = countFramebufferPixels(display.framebufferForTest(), tapX, tapY, 8, 8);
+        CHECK(pixelCounts[frame] > 0U);
+        if (frame > 0U) {
+            CHECK(pixelCounts[frame] < pixelCounts[frame - 1U]);
+        }
+    }
+
+    controller.serviceRendering(1500U + 4U * config::kTapIndicatorFrameDurationMs);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 0U);
+    controller.serviceRendering(1500U + 4U * config::kTapIndicatorFrameDurationMs + config::kDisplayRefreshMinimumMs);
+    CHECK_EQ(countFramebufferPixels(display.framebufferForTest(), tapX, tapY, 8, 8), 0U);
+}
+
+void testTapIndicatorSequenceResetsAfterConfiguredMinimumBpmInterval() {
+    resetFakes(); prepareDisplaySuccess();
+    hal::OledDisplay display; CHECK(display.begin());
+    ClockState state = makeDefaultState();
+    state.tempoRange.minimumBpm = 20U;
+    hal::GateOutputDriver gates; gates.beginDisabled();
+    engine::ClockEngine engine(gates); engine.begin(state);
+    hal::PersistentStorage::resetForTest(); hal::PersistentStorage storage;
+    services::PersistentStateService persistence(storage); persistence.begin();
+    ui::UiRenderer renderer(display, persistence);
+    ui::UiController controller(state, engine, renderer, persistence);
+
+    controllerTapAt(controller, 1000U);
+    controllerTapAt(controller, 1500U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 1U);
+
+    // At 20 BPM exactly 3000 ms is still a valid interval.
+    controllerTapAt(controller, 4500U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 1U);
+
+    // One millisecond beyond that boundary starts a fresh sequence: no indicator.
+    controllerTapAt(controller, 7501U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 0U);
+    controllerTapAt(controller, 8001U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 1U);
+}
+
+void testTapIndicatorIsExclusiveToPerformanceTapTempo() {
+    resetFakes(); prepareDisplaySuccess();
+    hal::OledDisplay display; CHECK(display.begin());
+    ClockState state = makeDefaultState();
+    hal::GateOutputDriver gates; gates.beginDisabled();
+    engine::ClockEngine engine(gates); engine.begin(state);
+    hal::PersistentStorage::resetForTest(); hal::PersistentStorage storage;
+    services::PersistentStateService persistence(storage); persistence.begin();
+    ui::UiRenderer renderer(display, persistence);
+    ui::UiController controller(state, engine, renderer, persistence);
+    std::uint32_t now = 1000U;
+
+    controllerOpenSettingsChord(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 0U);
+    controllerReset(controller, now);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
+
+    controllerTapAt(controller, 2000U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 0U);
+    controllerTapAt(controller, 2500U);
+    CHECK_EQ(controller.navigation().tapIndicatorFrame, 1U);
+}
 
 
 void testScreensaverRenderingAndPolicy() {
@@ -3930,6 +4073,10 @@ int main() {
     RUN_TEST(testEngineAuditRegressions);
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
+    RUN_TEST(testTapIndicatorStartsOnSecondTapAndRestartsEveryFollowingTap);
+    RUN_TEST(testTapIndicatorRendersFourShrinkingEightPixelFramesThenClears);
+    RUN_TEST(testTapIndicatorSequenceResetsAfterConfiguredMinimumBpmInterval);
+    RUN_TEST(testTapIndicatorIsExclusiveToPerformanceTapTempo);
     RUN_TEST(testScreensaverRenderingAndPolicy);
     RUN_TEST(testUiControllerFlows);
     RUN_TEST(testEasterEggGameAndHighScore);

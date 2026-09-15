@@ -154,8 +154,11 @@ inline constexpr std::uint32_t kTapMinimumIntervalMs = 60UL;
 /** Longest accepted Tap Tempo interval; 60 s corresponds to 1 BPM. */
 inline constexpr std::uint32_t kTapMaximumIntervalMs = 60000UL;
 
-/** Inactivity interval after which Tap Tempo starts a new measurement sequence. */
-inline constexpr std::uint32_t kTapSequenceResetMs = 65000UL;
+/** Number of shrinking frames in the Performance-screen Tap Tempo indicator. */
+inline constexpr std::uint8_t kTapIndicatorFrameCount = 4U;
+
+/** Duration of one Tap Tempo indicator animation frame. */
+inline constexpr std::uint32_t kTapIndicatorFrameDurationMs = 50UL;
 
 
 }  // namespace clockfw::config

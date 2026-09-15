@@ -17,13 +17,13 @@ This is the developer-facing Native entry point. Beta.4 deliberately makes timin
 | `test_sync_behavior` | 83 | exact and changing external clocks, permanent-HIGH behavior, jitter/glitches/loss, PPQN/edge semantics and nominal analogue-front-end behavior |
 | `test_swing` | 22 | swing pair mathematics and observable scheduler edge spacing |
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
-| `test_tap_tempo` | 22 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
+| `test_tap_tempo` | 24 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
 | `test_controls` | 38 | encoder quadrature, recovery after missed/coalesced transitions, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
 | `test_settings` | 52 | settings boundaries, enum transitions, invariants and channel/mode editor contracts |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 22 | intro launch gating, reset state, output safety and game-specific controls |
-| `test_host_firmware` | 22 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
-| **Total** | **356** | public Native inventory |
+| `test_host_firmware` | 26 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
+| **Total** | **362** | public Native inventory |
 
 The default Native configuration executes more than **223,000 assertions**. `scripts/check_test_inventory.py` rejects a total regression below 340 cases and also enforces minimum sizes for every visible suite.
 
@@ -35,7 +35,7 @@ The default Native configuration executes more than **223,000 assertions**. `scr
 
 ### Tap Tempo behavior
 
-`test_tap_tempo` exposes the estimator independently of the broad UI integration scenarios. It verifies 30/60/120/240 BPM-class intervals, the 999 BPM clamp, user MIN/MAX clamps, timestamp zero, reset and sequence timeout, too-fast/duplicate intervals, rolling four-interval averaging, small jitter, alternating fast/slow taps and unsigned timestamp wrap.
+`test_tap_tempo` exposes the estimator independently of the broad UI integration scenarios. It verifies 30/60/120/240 BPM-class intervals, the 999 BPM ceiling, the MIN-BPM-derived sequence timeout, exact slowest-valid boundaries, timestamp zero, reset behavior, too-fast/duplicate intervals, rolling four-interval averaging, small jitter, alternating fast/slow taps and unsigned timestamp wrap. The host-firmware suite separately verifies that the first TAP is visually silent, the second and following TAPs restart the four-frame 8×8 shrinking indicator, and a timeout returns the UI to first-tap state.
 
 ### Encoder and buttons
 

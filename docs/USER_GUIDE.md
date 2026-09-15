@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Beta documentation — v0.19.0-beta.6 · V1 feature freeze**
+> **Beta documentation — v0.19.0-beta.7 · V1 feature freeze**
 >
 > CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation and physical HIL timing sign-off remain open. Timer Input Capture or compare-event scheduling are implementation options only if measured V1 timing requires them.
 
@@ -292,6 +292,8 @@ Transport has three states: **PLAY, PAUSE, STOP**.
 - PLAY/PAUSE toggles running and paused states without an implicit phase reset.
 - STOP/BACK from Performance enters STOP and applies the global reset policy.
 - Tap Tempo adjusts the master tempo from a sequence of TAP presses within the supported 1–999 BPM technical range and the configured user MIN/MAX boundaries.
+- The first TAP starts a new measurement sequence without an indicator. The second and every following TAP in that sequence triggers a four-frame **8×8 shrinking-dot animation** immediately to the right of the BPM numerals, vertically centered on the tempo display.
+- The Tap Tempo sequence expires after one beat at the configured **MIN BPM**. At the factory minimum of 20 BPM this is 3000 ms; after a longer pause the next TAP is again the silent first tap and the following TAP resumes visual feedback.
 
 CLOCK persists the working configuration but never restores PLAY on power-up. Flash commits are also deferred while transport is PLAYING so erase/program work cannot block the live gate path.
 

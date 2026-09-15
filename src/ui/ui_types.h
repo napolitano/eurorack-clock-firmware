@@ -73,6 +73,8 @@ struct NavigationState {
     bool editing = false;
     std::uint8_t sequencerCursor = 0U;
     std::uint8_t sequencerPage = 0U;
+    /** 0 hides the Performance-screen tap indicator; 1..4 select shrinking animation frames. */
+    std::uint8_t tapIndicatorFrame = 0U;
     PresetSlotAction presetSlotAction = PresetSlotAction::Load;
     std::uint8_t selectedPresetSlot = 0U;
     std::uint8_t nameCharacterIndex = 0U;

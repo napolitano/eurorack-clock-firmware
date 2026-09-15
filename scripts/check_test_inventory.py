@@ -22,7 +22,7 @@ SUITES = {
     "test_easter_eggs": ROOT / "test" / "test_easter_eggs" / "test_main.cpp",
     "test_host_firmware": ROOT / "test" / "test_host_firmware" / "test_main.cpp",
 }
-MIN_CASES = 350
+MIN_CASES = 360
 MIN_SUITE_CASES = {
     "test_clock_core": 40,
     "test_realtime": 20,

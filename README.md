@@ -17,7 +17,7 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `0.19.0-beta.6`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
+> **Current status: `0.19.0-beta.7`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
 
 **HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
 
@@ -177,6 +177,8 @@ The normal interaction grammar is deliberately small:
 | TAP | Tap Tempo | Modifier | Sequencer: previous 16-step page |
 | STOP/BACK | Stop + reset global phase | Back/cancel | Back/cancel |
 
+On Performance, the first TAP starts a tempo-measurement sequence without visual feedback. From the second TAP onward, each TAP restarts a compact **8×8 shrinking-dot animation** immediately to the right of the centered BPM numerals. The four non-blocking frames contract from a filled 8-pixel disc to a 2-pixel dot. If no new TAP arrives within one beat at the configured **MIN BPM**, both the Tap Tempo sequence and the visual sequence reset; the next TAP is again the silent first tap.
+
 The performance screen stays intentionally sparse: timing authority/lock, selected context, meter, transport, BPM and only the non-default timing modifiers that matter at that moment. Euclid and Sequencer add a live pattern strip at the bottom.
 
 ![One Clock performance screen showing master mode, 4/4, PLAY, 124 BPM, 9% Swing and x1 rate.](docs/manual/assets/performance-one-clock-play.png)
@@ -234,7 +236,7 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **356 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **362 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
@@ -243,12 +245,12 @@ Current inventory: **356 explicitly named Native test cases**. PlatformIO expose
 | `test_sync_behavior` | 83 | external-SYNC boundaries, changing tempo, jitter/glitches/loss, PPQN/edge changes, permanent-HIGH behavior, and nominal LM393-front-end voltage behavior |
 | `test_swing` | 22 | atomic swing mathematics plus observed engine edge spacing and pair-duration conservation |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
-| `test_tap_tempo` | 22 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
+| `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
 | `test_controls` | 38 | encoder Gray-code decoding, cycle resynchronization after missed/coalesced edges, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
 | `test_settings` | 52 | settings limits, enum transitions, timing invariants, channel/Euclid/Sequencer edits and invalid-input behavior |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 22 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
-| `test_host_firmware` | 22 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
+| `test_host_firmware` | 26 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
 
 The default Native run executes more than **223,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
 
@@ -261,9 +263,9 @@ python scripts/run_host_tests.py
 Current validated aggregate baseline:
 
 ```text
-Executable lines     6270 / 6518   96.20 %
-Functions              533 / 542    98.34 %
-Decision branches     3743 / 4124   90.76 %
+Executable lines     6321 / 6575   96.14 %
+Functions              536 / 545    98.35 %
+Decision branches     3776 / 4164   90.68 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).

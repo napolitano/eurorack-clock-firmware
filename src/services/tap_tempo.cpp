@@ -14,6 +14,15 @@
 
 namespace clockfw::services {
 
+std::uint32_t TapTempo::maximumSequenceIntervalMs(const std::uint16_t minimumBpm) {
+    if (minimumBpm == 0U) {
+        return 0U;
+    }
+
+    const std::uint32_t intervalMs = 60000UL / minimumBpm;
+    return std::clamp<std::uint32_t>(
+        intervalMs, config::kTapMinimumIntervalMs, config::kTapMaximumIntervalMs);
+}
 
 void TapTempo::reset() {
     previousTapAtMs_ = 0U;
@@ -29,7 +38,9 @@ std::uint16_t TapTempo::registerTap(
     if (minimumBpm == 0U || maximumBpm == 0U || minimumBpm > maximumBpm) {
         return 0U;
     }
-    if (!havePreviousTap_ || nowMs - previousTapAtMs_ > config::kTapSequenceResetMs) {
+    const std::uint32_t maximumSequenceIntervalMs =
+        TapTempo::maximumSequenceIntervalMs(minimumBpm);
+    if (!havePreviousTap_ || nowMs - previousTapAtMs_ > maximumSequenceIntervalMs) {
         intervalCount_ = 0U;
         previousTapAtMs_ = nowMs;
         havePreviousTap_ = true;

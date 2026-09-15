@@ -26,14 +26,16 @@ void testOneSecondIs60Bpm() { TapTempo t; t.registerTap(100U,20U,999U); TEST_ASS
 void testTwoSecondsIs30Bpm() { TapTempo t; t.registerTap(100U,20U,999U); TEST_ASSERT_EQUAL_UINT32(30U,t.registerTap(2100U,20U,999U)); }
 void testQuarterSecondIs240Bpm() { TapTempo t; t.registerTap(100U,20U,999U); TEST_ASSERT_EQUAL_UINT32(240U,t.registerTap(350U,20U,999U)); }
 void testSixtyMillisecondsClampsTo999Bpm() { TapTempo t; t.registerTap(100U,20U,999U); TEST_ASSERT_EQUAL_UINT32(999U,t.registerTap(160U,20U,999U)); }
-void testTempoClampsToUserMinimum() { TapTempo t; t.registerTap(100U,90U,110U); TEST_ASSERT_EQUAL_UINT32(90U,t.registerTap(1100U,90U,110U)); }
+void testTapBelowUserMinimumStartsNewSequence() { TapTempo t; t.registerTap(100U,90U,110U); TEST_ASSERT_EQUAL_UINT32(0U,t.registerTap(1100U,90U,110U)); }
 void testTempoClampsToUserMaximum() { TapTempo t; t.registerTap(100U,90U,110U); TEST_ASSERT_EQUAL_UINT32(110U,t.registerTap(600U,90U,110U)); }
 void testZeroMinimumIsRejected() { TapTempo t; TEST_ASSERT_EQUAL_UINT32(0U,t.registerTap(100U,0U,120U)); }
 void testZeroMaximumIsRejected() { TapTempo t; TEST_ASSERT_EQUAL_UINT32(0U,t.registerTap(100U,20U,0U)); }
 void testInvertedRangeIsRejected() { TapTempo t; TEST_ASSERT_EQUAL_UINT32(0U,t.registerTap(100U,121U,120U)); }
 void testDuplicateTapIsRejectedAndResetsHistory() { TapTempo t; t.registerTap(1000U,20U,999U); TEST_ASSERT_EQUAL_UINT32(0U,t.registerTap(1000U,20U,999U)); TEST_ASSERT_EQUAL_UINT32(120U,t.registerTap(1500U,20U,999U)); }
 void testTooFastTapResetsHistory() { TapTempo t; t.registerTap(1000U,20U,999U); TEST_ASSERT_EQUAL_UINT32(0U,t.registerTap(1000U + clockfw::config::kTapMinimumIntervalMs - 1U,20U,999U)); }
-void testTooSlowTapStartsNewSequence() { TapTempo t; t.registerTap(1000U,20U,999U); TEST_ASSERT_EQUAL_UINT32(0U,t.registerTap(1000U + clockfw::config::kTapSequenceResetMs + 1U,20U,999U)); }
+void testTooSlowTapStartsNewSequenceAtMinimumBpmInterval() { TapTempo t; t.registerTap(1000U,20U,999U); TEST_ASSERT_EQUAL_UINT32(0U,t.registerTap(4001U,20U,999U)); }
+void testExactMinimumBpmIntervalRemainsInSequence() { TapTempo t; t.registerTap(1000U,20U,999U); TEST_ASSERT_EQUAL_UINT32(20U,t.registerTap(4000U,20U,999U)); }
+void testSequenceIntervalTracksConfiguredMinimumBpm() { TEST_ASSERT_EQUAL_UINT32(3000U,TapTempo::maximumSequenceIntervalMs(20U)); TEST_ASSERT_EQUAL_UINT32(500U,TapTempo::maximumSequenceIntervalMs(120U)); TEST_ASSERT_EQUAL_UINT32(60000U,TapTempo::maximumSequenceIntervalMs(1U)); TEST_ASSERT_EQUAL_UINT32(60U,TapTempo::maximumSequenceIntervalMs(999U)); TEST_ASSERT_EQUAL_UINT32(0U,TapTempo::maximumSequenceIntervalMs(0U)); }
 void testExplicitResetForgetsPreviousTap() { TapTempo t; t.registerTap(1000U,20U,999U); t.reset(); TEST_ASSERT_EQUAL_UINT32(0U,t.registerTap(1500U,20U,999U)); }
 void testTwoIntervalsAreAveraged() { TapTempo t; t.registerTap(0U,20U,999U); t.registerTap(500U,20U,999U); TEST_ASSERT_EQUAL_UINT32(109U,t.registerTap(1100U,20U,999U)); }
 void testThreeIntervalsAreAveraged() { TapTempo t; t.registerTap(0U,20U,999U); t.registerTap(500U,20U,999U); t.registerTap(1000U,20U,999U); TEST_ASSERT_EQUAL_UINT32(120U,t.registerTap(1500U,20U,999U)); }
@@ -47,9 +49,9 @@ int main(){
     UNITY_BEGIN();
     RUN_TEST(testFirstTapAtZeroIsAcceptedAsAnchor); RUN_TEST(testFirstNonzeroTapReturnsNoTempo);
     RUN_TEST(testFiveHundredMillisecondsIs120Bpm); RUN_TEST(testOneSecondIs60Bpm); RUN_TEST(testTwoSecondsIs30Bpm); RUN_TEST(testQuarterSecondIs240Bpm);
-    RUN_TEST(testSixtyMillisecondsClampsTo999Bpm); RUN_TEST(testTempoClampsToUserMinimum); RUN_TEST(testTempoClampsToUserMaximum);
+    RUN_TEST(testSixtyMillisecondsClampsTo999Bpm); RUN_TEST(testTapBelowUserMinimumStartsNewSequence); RUN_TEST(testTempoClampsToUserMaximum);
     RUN_TEST(testZeroMinimumIsRejected); RUN_TEST(testZeroMaximumIsRejected); RUN_TEST(testInvertedRangeIsRejected);
-    RUN_TEST(testDuplicateTapIsRejectedAndResetsHistory); RUN_TEST(testTooFastTapResetsHistory); RUN_TEST(testTooSlowTapStartsNewSequence); RUN_TEST(testExplicitResetForgetsPreviousTap);
+    RUN_TEST(testDuplicateTapIsRejectedAndResetsHistory); RUN_TEST(testTooFastTapResetsHistory); RUN_TEST(testTooSlowTapStartsNewSequenceAtMinimumBpmInterval); RUN_TEST(testExactMinimumBpmIntervalRemainsInSequence); RUN_TEST(testSequenceIntervalTracksConfiguredMinimumBpm); RUN_TEST(testExplicitResetForgetsPreviousTap);
     RUN_TEST(testTwoIntervalsAreAveraged); RUN_TEST(testThreeIntervalsAreAveraged); RUN_TEST(testRollingWindowDropsOldestAfterFourIntervals);
     RUN_TEST(testSmallJitterAveragesNear120Bpm); RUN_TEST(testAlternatingFastSlowTapsAverageStably); RUN_TEST(testTimestampWrapProducesCorrectInterval);
     return UNITY_END();

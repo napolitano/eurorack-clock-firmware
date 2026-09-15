@@ -42,6 +42,21 @@ constexpr std::int16_t kChannelStatusMasterX = 15;
 /** X position after the role/lock area when the slave lock icon is present. */
 constexpr std::int16_t kChannelStatusLockedSlaveX = 21;
 
+/** Horizontal gap between the centered BPM numerals and the Tap Tempo animation. */
+constexpr std::int16_t kTapIndicatorGapX = 5;
+
+/** Width/height of the Tap Tempo feedback bitmap. */
+constexpr std::int16_t kTapIndicatorSize = 8;
+
+/** Four centered shrinking filled-circle masks, one byte per 8-pixel row. */
+constexpr std::uint8_t kTapIndicatorMasks[4][8] = {
+    {0x3CU, 0x7EU, 0xFFU, 0xFFU, 0xFFU, 0xFFU, 0x7EU, 0x3CU},
+    {0x00U, 0x3CU, 0x7EU, 0x7EU, 0x7EU, 0x7EU, 0x3CU, 0x00U},
+    {0x00U, 0x00U, 0x18U, 0x3CU, 0x3CU, 0x18U, 0x00U, 0x00U},
+    {0x00U, 0x00U, 0x00U, 0x18U, 0x18U, 0x00U, 0x00U, 0x00U},
+};
+static_assert(config::kTapIndicatorFrameCount == 4U);
+
 /** Formats the compact rate value shown at the right of CLOCK-mode tempo. */
 void formatClockPerformanceRate(
     const CommonChannelSettings& settings,
@@ -145,6 +160,15 @@ void PerformanceRenderer::render(
         (static_cast<int>(hal::OledDisplay::kWidth) - static_cast<int>(tempoBounds.width)) / 2);
     display_.drawText(tempoX, tempoTopY, tempoText);
     display_.setFont(hal::DisplayFont::Small);
+
+    if (navigation.tapIndicatorFrame > 0U) {
+        const std::int16_t tapX = static_cast<std::int16_t>(
+            tempoX + static_cast<std::int16_t>(tempoBounds.width) + kTapIndicatorGapX);
+        const std::int16_t tapY = static_cast<std::int16_t>(
+            tempoTopY +
+            (static_cast<std::int16_t>(tempoBounds.height) - kTapIndicatorSize) / 2);
+        drawTapIndicator(tapX, tapY, navigation.tapIndicatorFrame);
+    }
 
     if (selectedChannel.common.swingPercent > 0U) {
         char swingText[8]{};
@@ -356,6 +380,31 @@ void PerformanceRenderer::drawHumanizeIcon(const std::int16_t x, const std::int1
     display_.drawLine(
         static_cast<std::int16_t>(x + 3), static_cast<std::int16_t>(y + 5),
         static_cast<std::int16_t>(x + 5), static_cast<std::int16_t>(y + 7));
+}
+
+void PerformanceRenderer::drawTapIndicator(
+    const std::int16_t x,
+    const std::int16_t y,
+    const std::uint8_t frame) {
+    if (frame == 0U || frame > 4U) {
+        return;
+    }
+
+    // Clear the dedicated 8x8 feedback slot first. This also keeps the short-lived
+    // animation legible when a long rate summary would otherwise cross the same pixels.
+    display_.fillRectangle(x, y, kTapIndicatorSize, kTapIndicatorSize, hal::PixelColor::Black);
+    const std::uint8_t* const mask = kTapIndicatorMasks[frame - 1U];
+    for (std::int16_t row = 0; row < kTapIndicatorSize; ++row) {
+        for (std::int16_t column = 0; column < kTapIndicatorSize; ++column) {
+            const std::uint8_t bit = static_cast<std::uint8_t>(0x80U >> column);
+            if ((mask[row] & bit) != 0U) {
+                display_.setPixel(
+                    static_cast<std::int16_t>(x + column),
+                    static_cast<std::int16_t>(y + row),
+                    hal::PixelColor::White);
+            }
+        }
+    }
 }
 
 char PerformanceRenderer::statusModeCharacter(const ChannelMode mode) {

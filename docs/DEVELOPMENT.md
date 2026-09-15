@@ -114,7 +114,7 @@ The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly b
 pio test -e native
 ```
 
-The Native entry point contains **356 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 22 `test_tap_tempo`, 38 `test_controls`, 52 `test_settings`, 15 `test_screensavers`, 22 `test_easter_eggs`, and 22 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite also locks down recovery from missed/coalesced quadrature transitions so a partial cycle cannot create a persistent one-detent direction deadband.
+The Native entry point contains **362 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 38 `test_controls`, 52 `test_settings`, 15 `test_screensavers`, 22 `test_easter_eggs`, and 26 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite also locks down recovery from missed/coalesced quadrature transitions so a partial cycle cannot create a persistent one-detent direction deadband.
 
 Covered areas include:
 
@@ -226,8 +226,8 @@ The STM32 firmware build only runs after host coverage and both native-simulator
 A release tag must exactly match `src/version.h`:
 
 ```text
-firmware: 0.19.0-beta.6
-Git tag:   v0.19.0-beta.6
+firmware: 0.19.0-beta.7
+Git tag:   v0.19.0-beta.7
 ```
 
 A mismatch fails before publication.

@@ -20,6 +20,17 @@ public:
     void reset();
 
     /**
+     * @brief Returns the longest interval that still belongs to one Tap Tempo sequence.
+     * @param minimumBpm Current user-configured lower BPM limit.
+     * @return Maximum valid inter-tap interval in milliseconds, or 0 for an invalid limit.
+     *
+     * The sequence timeout follows the slowest tempo the user currently permits. A tap
+     * arriving later than this becomes the first tap of a new sequence instead of being
+     * clamped to the minimum BPM.
+     */
+    static std::uint32_t maximumSequenceIntervalMs(std::uint16_t minimumBpm);
+
+    /**
      * @brief Processes one tap timestamp.
      * @param nowMs Monotonic tap time in milliseconds.
      * @param minimumBpm Lower BPM clamp.

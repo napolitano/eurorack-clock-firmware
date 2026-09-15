@@ -90,8 +90,11 @@ private:
     /** @brief Stops transport and resets the master/global channel phase. */
     void stopTransport(std::uint32_t nowMs);
 
-    /** @brief Feeds one tap timestamp into the rolling tempo estimator. */
+    /** @brief Feeds one tap timestamp into the rolling tempo estimator and visual tap sequence. */
     void registerTapTempo(std::uint32_t nowMs);
+
+    /** @brief Advances/clears the non-blocking Performance-screen Tap Tempo animation. */
+    void serviceTapTempoFeedback(std::uint32_t nowMs);
 
     /** @brief Opens a text settings page at a specific row and resets edit/scroll state. */
     void openSettingsPage(SettingsPage page, std::uint8_t initialCursor = 0U);
@@ -157,6 +160,10 @@ private:
     SettingsEditor settingsEditor_;
     services::TapTempo tapTempo_{};
     NavigationState navigation_{};
+
+    bool tapVisualSequenceActive_ = false;
+    std::uint32_t lastTapVisualAtMs_ = 0U;
+    std::uint32_t tapIndicatorStartedAtMs_ = 0U;
 
     bool renderDirty_ = true;
     std::uint32_t lastRenderAtMs_ = 0U;

@@ -8,6 +8,21 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.7] - 2026-09-15
+
+### Tap Tempo feedback
+
+- Added a compact four-frame 8x8 shrinking-dot Tap Tempo animation to the Performance screen, positioned immediately to the right of the centered BPM numerals and vertically centered on the tempo display.
+- The first TAP starts a measurement sequence without visual feedback. The second and every subsequent TAP in the same sequence restarts the animation from its full filled-circle frame.
+- Tap Tempo sequence lifetime now follows the configured minimum BPM instead of a fixed 65-second inactivity window. One exact beat at MIN BPM remains valid; a longer pause starts a fresh sequence and requires a second TAP before visual feedback resumes.
+- The animation is driven entirely by the foreground UI clock and display invalidation path; it does not block or alter the 20-kHz musical scheduler.
+
+### Tests
+
+- Expanded `test_tap_tempo` from 22 to 24 named cases with MIN-BPM-derived sequence-boundary coverage.
+- Expanded `test_host_firmware` from 22 to 26 named cases with first/second TAP semantics, four shrinking framebuffer frames, timeout reset and Performance-only feedback coverage.
+- Native inventory is now **362 explicitly named test cases**, with the repository floor raised to 360.
+
 ## [0.19.0-beta.6] - 2026-09-15
 
 ### Fixed

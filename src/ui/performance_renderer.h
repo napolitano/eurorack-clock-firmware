@@ -67,6 +67,9 @@ private:
     /** @brief Draws the ONE CLOCK humanize status icon. */
     void drawHumanizeIcon(std::int16_t x, std::int16_t y);
 
+    /** @brief Draws one 8x8 shrinking Tap Tempo feedback frame beside the BPM. */
+    void drawTapIndicator(std::int16_t x, std::int16_t y, std::uint8_t frame);
+
     /** @brief Returns the one-character O/C/E/S status abbreviation for one channel mode. */
     static char statusModeCharacter(ChannelMode mode);
 
