@@ -228,6 +228,12 @@ enum class TextId : std::uint16_t {
     ResetInputMode,
     Trigger,
     GateInput,
+    EncoderDirection,
+    Normal,
+    Reversed,
+    Orientation,
+    Degrees0,
+    Degrees180,
     Count
 };
 
@@ -268,7 +274,8 @@ inline constexpr TextCatalog kEnglishUs{{
     "NEW HIGH SCORE", "EXIT GAME?",
     "CHANGE MODE?", "GLOBAL MODE", "ONE CLOCK / 8 OUTS", "FIXED DIVIDER BANK",
     "PRESETS", "DISPLAY", "SYSTEM", "GENERAL SETTINGS", "CHANNEL SETTINGS", "LICENSES", "UPDATES",
-    "RST MODE", "TRIGGER", "GATE"
+    "RST MODE", "TRIGGER", "GATE",
+    "ENCODER DIR", "NORMAL", "REVERSED", "ORIENTATION", "0 DEG", "180 DEG"
 }};
 
 /**

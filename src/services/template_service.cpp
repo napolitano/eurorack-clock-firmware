@@ -38,8 +38,10 @@ bool TemplateService::apply(const std::size_t templateIndex, ClockState& state) 
     }
 
     const TransportState liveTransport = state.transport;
+    const DevicePreferences devicePreferences = state.device;
     initializeFactoryDefaults(state);
     state.transport = liveTransport;
+    state.device = devicePreferences;
 
     // ALL MASTER intentionally inherits the shipping ONE CLOCK factory mode.
     // Every other factory template describes per-channel behavior and must

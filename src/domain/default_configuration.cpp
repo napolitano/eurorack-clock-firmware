@@ -40,6 +40,10 @@ void initializeFactoryDefaults(ClockState& state) {
         defaults::kScreensaverDimAfterMinutes,
         defaults::kScreensaverOffAfterMinutes};
 
+    state.device = {
+        defaults::kEncoderDirectionReversed,
+        defaults::kDisplayRotated180};
+
     for (std::size_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
         ChannelConfig& channel = state.channels[channelIndex];
         channel.common.mode = defaults::kChannelMode;

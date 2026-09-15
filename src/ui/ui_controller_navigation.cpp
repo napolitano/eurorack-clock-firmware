@@ -183,8 +183,11 @@ void UiController::activateCurrentSetting() {
             openSettingsPage(SettingsPage::Master);
         } else if (navigation_.cursor == 1U) {
             openSettingsPage(SettingsPage::Sync);
-        } else {
+        } else if (navigation_.cursor == 2U) {
             openSettingsPage(SettingsPage::Screensaver);
+        } else {
+            navigation_.editing = !navigation_.editing;
+            invalidate();
         }
         return;
     }

@@ -55,7 +55,7 @@ std::uint8_t settingsPageItemCount(
     const ChannelMode mode) {
     switch (page) {
         case SettingsPage::Root: return 5U;
-        case SettingsPage::General: return 3U;
+        case SettingsPage::General: return 5U;
         case SettingsPage::Master: return 5U;
         case SettingsPage::Sync: return 7U;
         case SettingsPage::Preferences: return 4U;
@@ -105,9 +105,23 @@ MenuRow buildMenuRow(
         constexpr text::TextId kLabels[] = {
             text::TextId::ModeClockLong,
             text::TextId::Sync,
-            text::TextId::Screensaver};
+            text::TextId::Screensaver,
+            text::TextId::EncoderDirection,
+            text::TextId::Orientation};
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
-        copyText(row.value, sizeof(row.value), text::TextId::Arrow);
+        if (rowIndex < 3U) {
+            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
+        } else if (rowIndex == 3U) {
+            copyText(
+                row.value,
+                sizeof(row.value),
+                state.device.encoderDirectionReversed ? text::TextId::Reversed : text::TextId::Normal);
+        } else {
+            copyText(
+                row.value,
+                sizeof(row.value),
+                state.device.displayRotated180 ? text::TextId::Degrees180 : text::TextId::Degrees0);
+        }
     } else if (page == SettingsPage::Master) {
         if (rowIndex == 0U) {
             copyText(row.label, sizeof(row.label), text::TextId::Tempo);

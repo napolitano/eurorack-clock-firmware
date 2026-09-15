@@ -137,12 +137,12 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertIn("test_swing=22", result.stdout)
         self.assertIn("test_humanize=12", result.stdout)
         self.assertIn("test_tap_tempo=24", result.stdout)
-        self.assertIn("test_controls=38", result.stdout)
-        self.assertIn("test_settings=52", result.stdout)
+        self.assertIn("test_controls=40", result.stdout)
+        self.assertIn("test_settings=56", result.stdout)
         self.assertIn("test_screensavers=15", result.stdout)
         self.assertIn("test_easter_eggs=22", result.stdout)
         self.assertIn("test_host_firmware=26", result.stdout)
-        self.assertIn("total=362", result.stdout)
+        self.assertIn("total=368", result.stdout)
 
 
 
@@ -469,9 +469,9 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("Why no general CV modulation?", readme)
         self.assertIn("digital timing, gate, and trigger", roadmap)
         self.assertIn("0.19.0-beta.1", roadmap)
-        self.assertIn("2,504 bytes", audit)
-        self.assertIn("63 bytes", audit)
-        self.assertIn("schema v7", audit)
+        self.assertIn("2,522 bytes", audit)
+        self.assertIn("61 bytes", audit)
+        self.assertIn("schema v8", audit)
 
     def test_hil_qualification_contract_is_staged_from_1_5(self) -> None:
         ci = (ROOT / ".github" / "workflows" / "ci.yml").read_text(encoding="utf-8")

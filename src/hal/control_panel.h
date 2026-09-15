@@ -46,6 +46,9 @@ public:
      */
     ControlSample sample(std::uint32_t nowMs);
 
+    /** @brief Reverses the semantic sign of completed encoder detents without touching quadrature decoding. */
+    void setEncoderDirectionReversed(bool reversed);
+
 private:
     /** @brief Small state machine used for one active-low button input. */
     class DebouncedButton final {
@@ -88,6 +91,7 @@ private:
     volatile std::uint8_t encoderCycleAnchorState_ = 0U;
     volatile std::int8_t encoderAccumulator_ = 0;
     volatile std::int16_t pendingEncoderDetents_ = 0;
+    bool encoderDirectionReversed_ = false;
 };
 
 }  // namespace clockfw::hal

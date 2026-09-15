@@ -1,6 +1,6 @@
 /**
  * @file persistent_state_migration.cpp
- * @brief Backward-compatible v3/v4/v5 to v6 persistence migration helpers.
+ * @brief Backward-compatible v3/v4/v5/v6 to v7 persistence migration helpers.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -41,20 +41,81 @@ bool isAllowedLegacyPresetCharacter(const char character) {
 }  // namespace
 
 
+
+bool PersistentStateService::deserializeV6State(
+    const std::array<std::uint8_t, kV6StatePayloadSize>& payload,
+    ClockState& state) {
+    static_assert(kStatePayloadSize == kV6StatePayloadSize + 2U);
+
+    std::array<std::uint8_t, kStatePayloadSize> upgraded{};
+    std::copy(payload.begin(), payload.end(), upgraded.begin());
+    upgraded[kV6StatePayloadSize] = 0U;       // encoder direction: NORMAL
+    upgraded[kV6StatePayloadSize + 1U] = 0U;  // display orientation: 0 degrees
+    return deserializeState(upgraded, state);
+}
+
+bool PersistentStateService::deserializeV6CurrentRecord(
+    const std::array<std::uint8_t, kV6CurrentRecordSize>& record,
+    ClockState& state) {
+    constexpr std::uint32_t kCurrentMagicValue = 0x36525543UL;  // "CUR6"
+    if (readUint32LeMigration(record.data()) != kCurrentMagicValue ||
+        record[4] != kV6SchemaVersion ||
+        record[5] != 0U ||
+        readUint16LeMigration(record.data() + 6U) != kV6StatePayloadSize ||
+        readUint32LeMigration(record.data() + kV6CurrentRecordSize - 4U) !=
+            calculateCrc32(record.data(), kV6CurrentRecordSize - 4U)) {
+        return false;
+    }
+
+    constexpr std::size_t kPayloadOffset = 8U;
+    std::array<std::uint8_t, kV6StatePayloadSize> payload{};
+    std::copy_n(record.begin() + static_cast<std::ptrdiff_t>(kPayloadOffset), payload.size(), payload.begin());
+    return deserializeV6State(payload, state);
+}
+
+bool PersistentStateService::deserializeV6PresetRecord(
+    const std::array<std::uint8_t, kV6PresetRecordSize>& record,
+    char* const name,
+    ClockState& state) {
+    constexpr std::uint32_t kPresetMagicValue = 0x36455250UL;  // "PRE6"
+    constexpr std::size_t kNameOffset = 8U;
+    constexpr std::size_t kPayloadOffset = kNameOffset + kPresetNameLength;
+    if (readUint32LeMigration(record.data()) != kPresetMagicValue ||
+        record[4] != kV6SchemaVersion ||
+        record[5] != 1U ||
+        readUint16LeMigration(record.data() + 6U) != kV6StatePayloadSize ||
+        readUint32LeMigration(record.data() + kV6PresetRecordSize - 4U) !=
+            calculateCrc32(record.data(), kV6PresetRecordSize - 4U)) {
+        return false;
+    }
+    for (std::size_t index = 0U; index < kPresetNameLength; ++index) {
+        const char character = static_cast<char>(record[kNameOffset + index]);
+        if (!isAllowedLegacyPresetCharacter(character)) {
+            return false;
+        }
+        name[index] = character;
+    }
+    name[kPresetNameLength] = '\0';
+
+    std::array<std::uint8_t, kV6StatePayloadSize> payload{};
+    std::copy_n(record.begin() + static_cast<std::ptrdiff_t>(kPayloadOffset), payload.size(), payload.begin());
+    return deserializeV6State(payload, state);
+}
+
 bool PersistentStateService::deserializeV5State(
     const std::array<std::uint8_t, kV5StatePayloadSize>& payload,
     ClockState& state) {
     constexpr std::size_t kResetModeOffsetV6 = 14U;
-    static_assert(kStatePayloadSize == kV5StatePayloadSize + 1U);
+    static_assert(kV6StatePayloadSize == kV5StatePayloadSize + 1U);
 
-    std::array<std::uint8_t, kStatePayloadSize> upgraded{};
+    std::array<std::uint8_t, kV6StatePayloadSize> upgraded{};
     std::copy_n(payload.begin(), kResetModeOffsetV6, upgraded.begin());
     upgraded[kResetModeOffsetV6] = static_cast<std::uint8_t>(defaults::kExternalResetMode);
     std::copy(
         payload.begin() + static_cast<std::ptrdiff_t>(kResetModeOffsetV6),
         payload.end(),
         upgraded.begin() + static_cast<std::ptrdiff_t>(kResetModeOffsetV6 + 1U));
-    return deserializeState(upgraded, state);
+    return deserializeV6State(upgraded, state);
 }
 
 bool PersistentStateService::deserializeV5CurrentRecord(

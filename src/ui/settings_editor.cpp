@@ -43,6 +43,9 @@ void SettingsEditor::adjust(
     }
 
     switch (page) {
+        case SettingsPage::General:
+            adjustGeneral(rowIndex, delta);
+            break;
         case SettingsPage::Master:
             adjustMaster(rowIndex, delta);
             break;
@@ -74,7 +77,6 @@ void SettingsEditor::adjust(
             adjustDividerBank(rowIndex, delta);
             break;
         case SettingsPage::Root:
-        case SettingsPage::General:
         case SettingsPage::Preferences:
         case SettingsPage::Info:
         case SettingsPage::Licenses:
@@ -130,6 +132,19 @@ bool SettingsEditor::executeSequencerCommand(
 
     engine_.updateChannel(channelIndex, channel, false);
     return true;
+}
+
+void SettingsEditor::adjustGeneral(const std::uint8_t rowIndex, const std::int8_t delta) {
+    if (delta == 0) {
+        return;
+    }
+    if (rowIndex == 3U) {
+        const int value = state_.device.encoderDirectionReversed ? 1 : 0;
+        state_.device.encoderDirectionReversed = clampInt(value + delta, 0, 1) != 0;
+    } else if (rowIndex == 4U) {
+        const int value = state_.device.displayRotated180 ? 1 : 0;
+        state_.device.displayRotated180 = clampInt(value + delta, 0, 1) != 0;
+    }
 }
 
 void SettingsEditor::adjustMaster(const std::uint8_t rowIndex, const std::int8_t delta) {

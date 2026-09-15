@@ -72,6 +72,12 @@ inline constexpr std::uint8_t kScreensaverDimAfterMinutes = 5U;
 /** Minutes of STOP inactivity before the OLED panel is switched off. */
 inline constexpr std::uint8_t kScreensaverOffAfterMinutes = 10U;
 
+/** Factory semantic encoder direction; false preserves physical clockwise increment. */
+inline constexpr bool kEncoderDirectionReversed = false;
+
+/** Factory OLED panel orientation; false uses the normal 0-degree mounting. */
+inline constexpr bool kDisplayRotated180 = false;
+
 /** Factory per-channel generator mode. */
 inline constexpr ChannelMode kChannelMode = ChannelMode::Clock;
 

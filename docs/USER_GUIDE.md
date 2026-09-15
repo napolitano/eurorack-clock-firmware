@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Beta documentation — v0.19.0-beta.7 · V1 feature freeze**
+> **Beta documentation — v0.19.0-beta.8 · V1 feature freeze**
 >
 > CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation and physical HIL timing sign-off remain open. Timer Input Capture or compare-event scheduling are implementation options only if measured V1 timing requires them.
 
@@ -347,7 +347,14 @@ Preset names can contain up to 16 characters. Saving over an occupied slot requi
 
 Factory templates currently include `ALL MASTER`, `CLOCK TREE`, `DIVIDERS`, `POLYRHYTHM`, `EUCLID KIT`, and `HYBRID`. Loading a template changes CURRENT; it does not silently create or overwrite a named user preset.
 
-## 19. Screensaver and display protection
+## 19. Device orientation, screensaver, and display protection
+
+`SETTINGS → GENERAL SETTINGS` contains two persistent installation preferences in addition to the CLOCK, SYNC and SCREENSAVER subpages:
+
+- **ENCODER DIR** — `NORMAL / REVERSED`. `REVERSED` flips the user-facing rotary direction after quadrature decoding; detent recovery, bounce handling and Fast Turn buffering are unchanged.
+- **ORIENTATION** — `0 DEG / 180 DEG`. The OLED controller flips both axes in hardware, so the entire interface including boot screen, settings, screensavers and Easter eggs can be read with the module mounted upside down.
+
+Both preferences take effect immediately and survive power cycling. They are device-local: loading a named preset or applying a factory template does not change them. Factory defaults are `NORMAL` and `0 DEG`.
 
 Display protection is active only while transport is STOP. The factory timing is:
 

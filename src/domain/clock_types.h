@@ -155,6 +155,12 @@ struct DisplayPreferences {
     std::uint8_t offAfterMinutes = 10U;
 };
 
+/** @brief Device-local front-panel preferences that must not change when a musical preset is loaded. */
+struct DevicePreferences {
+    bool encoderDirectionReversed = false;
+    bool displayRotated180 = false;
+};
+
 /** @brief User-adjustable limits applied to manual and tap-tempo changes only. */
 struct TempoRangeSettings {
     std::uint16_t minimumBpm = 20U;
@@ -173,6 +179,7 @@ struct ClockState {
     UnifiedClockSettings unifiedClock{};
     DividerBankSettings dividerBank{};
     DisplayPreferences display{};
+    DevicePreferences device{};
     ChannelConfig channels[kChannelCount]{};
 };
 

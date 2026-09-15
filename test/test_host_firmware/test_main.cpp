@@ -256,6 +256,31 @@ void writeTestUint32Le(std::uint8_t* const destination, const std::uint32_t valu
 }
 
 
+
+template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
+std::array<std::uint8_t, LegacySize> makeLegacyV6Record(
+    const std::array<std::uint8_t, CurrentSize>& current) {
+    constexpr std::size_t kV7PayloadSize = 254U;
+    constexpr std::size_t kV6PayloadSize = 252U;
+    static_assert(kV7PayloadSize == kV6PayloadSize + 2U);
+    std::array<std::uint8_t, LegacySize> legacy{};
+
+    if constexpr (PayloadOffset == 8U) {
+        writeTestUint32Le(legacy.data(), 0x36525543UL);  // "CUR6"
+    } else {
+        std::copy_n(current.begin() + 8, 16U, legacy.begin() + 8);
+        writeTestUint32Le(legacy.data(), 0x36455250UL);  // "PRE6"
+    }
+    legacy[4] = 6U;
+    legacy[5] = current[5];
+    writeTestUint16Le(legacy.data() + 6U, static_cast<std::uint16_t>(kV6PayloadSize));
+    std::copy_n(current.begin() + static_cast<std::ptrdiff_t>(PayloadOffset),
+                kV6PayloadSize,
+                legacy.begin() + static_cast<std::ptrdiff_t>(PayloadOffset));
+    writeTestUint32Le(legacy.data() + LegacySize - 4U, testCrc32(legacy.data(), LegacySize - 4U));
+    return legacy;
+}
+
 template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
 std::array<std::uint8_t, LegacySize> makeLegacyV5Record(
     const std::array<std::uint8_t, CurrentSize>& current) {
@@ -420,6 +445,9 @@ void testDefaultsTemplatesAndServices() {
     CHECK_EQ(state.display.dimAfterMinutes, 5U);
     CHECK_EQ(state.display.offAfterMinutes, 10U);
 
+    CHECK(!state.device.encoderDirectionReversed);
+    CHECK(!state.device.displayRotated180);
+
     for (std::size_t index = 0U; index < services::TemplateService::kTemplateCount; ++index) {
         ClockState templated{};
         CHECK(services::TemplateService::apply(index, templated));
@@ -435,8 +463,11 @@ void testDefaultsTemplatesAndServices() {
     }
     ClockState playingTemplate = makeDefaultState();
     playingTemplate.transport = TransportState::Playing;
+    playingTemplate.device = {true, true};
     CHECK(services::TemplateService::apply(1U, playingTemplate));
     CHECK_EQ(playingTemplate.transport, TransportState::Playing);
+    CHECK(playingTemplate.device.encoderDirectionReversed);
+    CHECK(playingTemplate.device.displayRotated180);
 
     CHECK(!services::TemplateService::apply(99U, state));
     CHECK(std::strcmp(services::TemplateService::name(99U), "OFF") == 0);
@@ -475,12 +506,12 @@ void testPersistentLayoutV1ForwardCompatibilityContract() {
     CHECK_EQ(hal::persistent_layout::kMaximumImageBytes, 12288U);
     CHECK_EQ(hal::persistent_layout::kLegacyScoreRegionOffset, 3072U);
     CHECK_EQ(hal::persistent_layout::kLeaderboardRegionOffset, 4096U);
-    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 252U);
-    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 264U);
-    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 280U);
-    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2504U);
-    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 568U);
-    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 63U);
+    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 254U);
+    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 266U);
+    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 282U);
+    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2522U);
+    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 550U);
+    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 61U);
 }
 
 void testPersistentStorageTransactionalUpdate() {
@@ -714,6 +745,7 @@ void testPersistentStorageAndStateService() {
     complete.source = ClockSource::Auto;
     complete.externalSync = {24U, SyncEdge::Falling, SyncLossMode::Internal, ExternalResetMode::Gate, 750U, 2200U};
     complete.display = {ScreensaverMode::Orbit, 3U, 7U, 12U};
+    complete.device = {true, true};
     for (std::uint8_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
         ChannelConfig& channel = complete.channels[channelIndex];
         channel.common.mode = static_cast<ChannelMode>(channelIndex % 4U);
@@ -745,6 +777,8 @@ void testPersistentStorageAndStateService() {
     CHECK_EQ(restored.display.screensaverAfterMinutes, 3U);
     CHECK_EQ(restored.display.dimAfterMinutes, 7U);
     CHECK_EQ(restored.display.offAfterMinutes, 12U);
+    CHECK(restored.device.encoderDirectionReversed);
+    CHECK(restored.device.displayRotated180);
     CHECK_EQ(restored.channels[6].common.mode, ChannelMode::Sequencer);
     CHECK_EQ(restored.channels[5].euclid.steps, 18U);
     CHECK_EQ(restored.channels[7].sequencer.length, 24U);
@@ -787,10 +821,13 @@ void testPersistentStorageAndStateService() {
     char presetName[17]{}; fullReload.presetName(0U, presetName, sizeof(presetName));
     CHECK(std::strcmp(presetName, "GROOVE_1") == 0);
     ClockState loadedPreset = makeDefaultState(); loadedPreset.transport = TransportState::Paused;
+    loadedPreset.device = {false, false};
     CHECK(fullReload.loadPreset(0U, loadedPreset));
     CHECK_EQ(loadedPreset.bpm, 137U);
     CHECK_EQ(loadedPreset.transport, TransportState::Paused);
     CHECK_EQ(loadedPreset.channels[7].sequencer.pattern, complete.channels[7].sequencer.pattern);
+    CHECK(!loadedPreset.device.encoderDirectionReversed);
+    CHECK(!loadedPreset.device.displayRotated180);
     CHECK(!fullReload.renamePreset(0U, nullptr));
     CHECK(fullReload.renamePreset(0U, "ALT-01"));
     fullReload.presetName(0U, presetName, sizeof(presetName));
@@ -812,10 +849,10 @@ void testPersistentStorageAndStateService() {
     hal::PersistentStorage::failNextReadForTest();
     CHECK(!fullReload.renamePreset(2U, "READFAIL"));
 
-    constexpr std::size_t kV6CurrentRecordSizeForTest = 264U;
-    constexpr std::size_t kV6PresetRecordSizeForTest = 280U;
+    constexpr std::size_t kV7CurrentRecordSizeForTest = 266U;
+    constexpr std::size_t kV7PresetRecordSizeForTest = 282U;
     constexpr std::size_t kPreset2OffsetForTest =
-        kV6CurrentRecordSizeForTest + 2U * kV6PresetRecordSizeForTest;
+        kV7CurrentRecordSizeForTest + 2U * kV7PresetRecordSizeForTest;
     std::uint8_t presetMagicByte = 0U;
     CHECK(storage.readBytes(kPreset2OffsetForTest, &presetMagicByte, 1U));
     const std::uint8_t corruptPresetMagic = static_cast<std::uint8_t>(presetMagicByte ^ 0x01U);
@@ -856,6 +893,8 @@ void testPersistentStorageAndStateService() {
 
 
 void testPersistentV3Migration() {
+    constexpr std::size_t kV7CurrentSize = 266U;
+    constexpr std::size_t kV7PresetSize = 282U;
     constexpr std::size_t kV6CurrentSize = 264U;
     constexpr std::size_t kV6PresetSize = 280U;
     constexpr std::size_t kV5CurrentSize = 263U;
@@ -864,15 +903,15 @@ void testPersistentV3Migration() {
     constexpr std::size_t kV4PresetSize = 273U;
     constexpr std::size_t kV3CurrentSize = 253U;
     constexpr std::size_t kV3PresetSize = 269U;
+    constexpr std::size_t kV7PresetOffset = kV7CurrentSize;
     constexpr std::size_t kV6PresetOffset = kV6CurrentSize;
     constexpr std::size_t kV5PresetOffset = kV5CurrentSize;
     constexpr std::size_t kV4PresetOffset = kV4CurrentSize;
     constexpr std::size_t kV3PresetOffset = kV3CurrentSize;
     constexpr std::size_t kScoreOffset = 3072U;
 
-    // Seed a v6 record using the production serializer, then remove only the
-    // reset-mode byte to obtain a byte-accurate v5 fixture. Older fixtures are
-    // derived from that v5 layout so every migration step is tested independently.
+    // Seed a v7 record using the production serializer, strip the two appended
+    // device-preference bytes to obtain v6, then derive each older schema in turn.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage seedStorage;
     services::PersistentStateService seed(seedStorage);
@@ -890,10 +929,12 @@ void testPersistentV3Migration() {
     CHECK(seed.savePreset(0U, "MIGRATE", legacyState));
     seed.service(5000U);
 
-    std::array<std::uint8_t, kV6CurrentSize> v6Current{};
-    std::array<std::uint8_t, kV6PresetSize> v6Preset{};
-    CHECK(seedStorage.readBytes(0U, v6Current.data(), v6Current.size()));
-    CHECK(seedStorage.readBytes(kV6PresetOffset, v6Preset.data(), v6Preset.size()));
+    std::array<std::uint8_t, kV7CurrentSize> v7Current{};
+    std::array<std::uint8_t, kV7PresetSize> v7Preset{};
+    CHECK(seedStorage.readBytes(0U, v7Current.data(), v7Current.size()));
+    CHECK(seedStorage.readBytes(kV7PresetOffset, v7Preset.data(), v7Preset.size()));
+    const auto v6Current = makeLegacyV6Record<kV7CurrentSize, kV6CurrentSize, 8U>(v7Current);
+    const auto v6Preset = makeLegacyV6Record<kV7PresetSize, kV6PresetSize, 24U>(v7Preset);
     const auto v5Current = makeLegacyV5Record<kV6CurrentSize, kV5CurrentSize, 8U>(v6Current);
     const auto v5Preset = makeLegacyV5Record<kV6PresetSize, kV5PresetSize, 24U>(v6Preset);
     const auto v4Current = makeLegacyV4Record<kV5CurrentSize, kV4CurrentSize, 8U>(v5Current);
@@ -920,7 +961,28 @@ void testPersistentV3Migration() {
     invalidV6.begin();
     CHECK(!invalidV6.hasStoredCurrentState());
 
-    // v5 -> v6: user state remains intact and the new RST semantic defaults to TRIGGER.
+    // v6 -> v7: musical state is preserved and new device preferences default safely.
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage legacyV6Storage;
+    CHECK(legacyV6Storage.writeBytes(0U, v6Current.data(), v6Current.size()));
+    CHECK(legacyV6Storage.writeBytes(kV6PresetOffset, v6Preset.data(), v6Preset.size()));
+    services::PersistentStateService migratedV6(legacyV6Storage);
+    migratedV6.begin();
+    ClockState restoredV6 = makeDefaultState();
+    CHECK(migratedV6.restoreCurrentState(restoredV6));
+    CHECK_EQ(restoredV6.bpm, 143U);
+    CHECK_EQ(restoredV6.externalSync.resetMode, ExternalResetMode::Gate);
+    CHECK(!restoredV6.device.encoderDirectionReversed);
+    CHECK(!restoredV6.device.displayRotated180);
+    CHECK(migratedV6.presetExists(0U));
+    std::array<std::uint8_t, kV7CurrentSize> migratedV6ToV7Current{};
+    std::array<std::uint8_t, kV7PresetSize> migratedV6ToV7Preset{};
+    CHECK(legacyV6Storage.readBytes(0U, migratedV6ToV7Current.data(), migratedV6ToV7Current.size()));
+    CHECK(legacyV6Storage.readBytes(kV7PresetOffset, migratedV6ToV7Preset.data(), migratedV6ToV7Preset.size()));
+    CHECK_EQ(migratedV6ToV7Current[4], 7U);
+    CHECK_EQ(migratedV6ToV7Preset[4], 7U);
+
+    // v5 -> v7: user state remains intact; newer fields receive safe defaults.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV5Storage;
     CHECK(legacyV5Storage.writeBytes(0U, v5Current.data(), v5Current.size()));
@@ -932,15 +994,17 @@ void testPersistentV3Migration() {
     CHECK(migratedV5.restoreCurrentState(restoredV5));
     CHECK_EQ(restoredV5.bpm, 143U);
     CHECK_EQ(restoredV5.externalSync.resetMode, defaults::kExternalResetMode);
+    CHECK(!restoredV5.device.encoderDirectionReversed);
+    CHECK(!restoredV5.device.displayRotated180);
     CHECK(migratedV5.presetExists(0U));
-    std::array<std::uint8_t, kV6CurrentSize> migratedV6Current{};
-    std::array<std::uint8_t, kV6PresetSize> migratedV6Preset{};
-    CHECK(legacyV5Storage.readBytes(0U, migratedV6Current.data(), migratedV6Current.size()));
-    CHECK(legacyV5Storage.readBytes(kV6PresetOffset, migratedV6Preset.data(), migratedV6Preset.size()));
-    CHECK_EQ(migratedV6Current[4], 6U);
-    CHECK_EQ(migratedV6Preset[4], 6U);
+    std::array<std::uint8_t, kV7CurrentSize> migratedV7Current{};
+    std::array<std::uint8_t, kV7PresetSize> migratedV7Preset{};
+    CHECK(legacyV5Storage.readBytes(0U, migratedV7Current.data(), migratedV7Current.size()));
+    CHECK(legacyV5Storage.readBytes(kV7PresetOffset, migratedV7Preset.data(), migratedV7Preset.size()));
+    CHECK_EQ(migratedV7Current[4], 7U);
+    CHECK_EQ(migratedV7Preset[4], 7U);
 
-    // v4 -> v6: user BPM remains intact and newer preferences receive factory defaults.
+    // v4 -> v7: user BPM remains intact and newer preferences receive factory defaults.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV4Storage;
     CHECK(legacyV4Storage.writeBytes(0U, v4Current.data(), v4Current.size()));
@@ -956,12 +1020,12 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV4.unifiedClock.humanizeUs, defaults::kUnifiedClockHumanizeUs);
     CHECK_EQ(restoredV4.externalSync.resetMode, defaults::kExternalResetMode);
     CHECK(migratedV4.presetExists(0U));
-    CHECK(legacyV4Storage.readBytes(0U, migratedV6Current.data(), migratedV6Current.size()));
-    CHECK(legacyV4Storage.readBytes(kV6PresetOffset, migratedV6Preset.data(), migratedV6Preset.size()));
-    CHECK_EQ(migratedV6Current[4], 6U);
-    CHECK_EQ(migratedV6Preset[4], 6U);
+    CHECK(legacyV4Storage.readBytes(0U, migratedV7Current.data(), migratedV7Current.size()));
+    CHECK(legacyV4Storage.readBytes(kV7PresetOffset, migratedV7Preset.data(), migratedV7Preset.size()));
+    CHECK_EQ(migratedV7Current[4], 7U);
+    CHECK_EQ(migratedV7Preset[4], 7U);
 
-    // v3 -> v6 through the v4/v5 layouts, preserving the independent high-score area.
+    // v3 -> v7 through the v4/v5/v6 layouts, preserving the independent high-score area.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyStorage;
     CHECK(legacyStorage.writeBytes(0U, v3Current.data(), v3Current.size()));
@@ -984,6 +1048,8 @@ void testPersistentV3Migration() {
     CHECK_EQ(restored.tempoRange.maximumBpm, defaults::kMaximumBpm);
     CHECK_EQ(restored.unifiedClock.humanizeUs, 0U);
     CHECK_EQ(restored.externalSync.resetMode, defaults::kExternalResetMode);
+    CHECK(!restored.device.encoderDirectionReversed);
+    CHECK(!restored.device.displayRotated180);
     CHECK(migrated.presetExists(0U));
     char presetName[services::PersistentStateService::kPresetNameLength + 1U]{};
     migrated.presetName(0U, presetName, sizeof(presetName));
@@ -999,10 +1065,10 @@ void testPersistentV3Migration() {
     std::array<std::uint8_t, 16U> scoreAfter{};
     CHECK(legacyStorage.readBytes(kScoreOffset, scoreAfter.data(), scoreAfter.size()));
     CHECK(scoreAfter == scoreMarker);
-    CHECK(legacyStorage.readBytes(0U, migratedV6Current.data(), migratedV6Current.size()));
-    CHECK(legacyStorage.readBytes(kV6PresetOffset, migratedV6Preset.data(), migratedV6Preset.size()));
-    CHECK_EQ(migratedV6Current[4], 6U);
-    CHECK_EQ(migratedV6Preset[4], 6U);
+    CHECK(legacyStorage.readBytes(0U, migratedV7Current.data(), migratedV7Current.size()));
+    CHECK(legacyStorage.readBytes(kV7PresetOffset, migratedV7Preset.data(), migratedV7Preset.size()));
+    CHECK_EQ(migratedV7Current[4], 7U);
+    CHECK_EQ(migratedV7Preset[4], 7U);
 
     // A damaged v3 CURRENT must not prevent a valid v3 preset from being recovered.
     auto corruptCurrent = v3Current;
@@ -1299,6 +1365,30 @@ void testHalBasicsAndDisplay() {
 #else
     CHECK(display.begin()); CHECK(Wire.begun); CHECK(!Wire.transmissions.empty());
 #endif
+    const auto framebufferBeforeRotation = display.framebufferForTest();
+#if CLOCK_DISPLAY_USE_SPI
+    const std::size_t rotationStart = SPI.transfers.size();
+    display.setRotation180(true);
+    CHECK_EQ(SPI.transfers.size(), rotationStart + 2U);
+    CHECK_EQ(SPI.transfers[rotationStart], 0xA0U);
+    CHECK_EQ(SPI.transfers[rotationStart + 1U], 0xC0U);
+    display.setRotation180(false);
+    CHECK_EQ(SPI.transfers[rotationStart + 2U], 0xA1U);
+    CHECK_EQ(SPI.transfers[rotationStart + 3U], 0xC8U);
+#else
+    const std::size_t rotationStart = Wire.transmissions.size();
+    display.setRotation180(true);
+    CHECK_EQ(Wire.transmissions.size(), rotationStart + 2U);
+    CHECK_EQ(Wire.transmissions[rotationStart].bytes.size(), 2U);
+    CHECK_EQ(Wire.transmissions[rotationStart].bytes[0], 0x00U);
+    CHECK_EQ(Wire.transmissions[rotationStart].bytes[1], 0xA0U);
+    CHECK_EQ(Wire.transmissions[rotationStart + 1U].bytes[1], 0xC0U);
+    display.setRotation180(false);
+    CHECK_EQ(Wire.transmissions[rotationStart + 2U].bytes[1], 0xA1U);
+    CHECK_EQ(Wire.transmissions[rotationStart + 3U].bytes[1], 0xC8U);
+#endif
+    CHECK(display.framebufferForTest() == framebufferBeforeRotation);
+
     display.clear();
     display.setFont(hal::DisplayFont::Small); display.setTextColor(hal::PixelColor::White);
     auto empty=display.measureText(nullptr,1,2); CHECK_EQ(empty.width,0U); CHECK_EQ(empty.y,2);

@@ -8,6 +8,29 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.8] - 2026-09-15
+
+### Device installation preferences
+
+- Added persistent **ENCODER DIR** (`NORMAL / REVERSED`) and **ORIENTATION** (`0 DEG / 180 DEG`) entries to General Settings. Both apply immediately at runtime.
+- Encoder inversion is applied after the hardened quadrature decoder, preserving detent recovery, contact-bounce handling and Fast Turn/backlog behavior.
+- OLED rotation uses the SSD1306/SSD1315 segment-remap and COM-scan controller commands rather than transforming the framebuffer; all UI render coordinates and simulator framebuffer semantics therefore remain canonical.
+- Named presets and factory templates deliberately preserve both preferences because they describe the physical module installation rather than musical state. Factory defaults remain NORMAL and 0°.
+
+### Persistence compatibility
+
+- Advanced the durable state format from schema v6 to **schema v7** by appending two device-preference bytes to the serialized state payload.
+- Added explicit v6 CURRENT/preset migration to v7 with NORMAL/0° defaults; the existing v3/v4/v5 migration chain now converges through v6 into v7.
+- Updated the forward-compatibility budget to 254-byte state payloads, a 2,522-byte CURRENT-plus-eight-presets footprint and 61 bytes of remaining naive in-place payload growth before the next fixed persistence region.
+
+### Tests
+
+- Expanded `test_controls` from 38 to **40** named cases with reversed-direction detent and Fast Turn/backlog coverage.
+- Expanded `test_settings` from 52 to **56** named cases with both directions of the encoder and OLED orientation settings.
+- Extended host-firmware coverage for v6→v7 migration, device-preference preset/template isolation, and SSD1306/SSD1315 0°/180° controller commands without framebuffer mutation.
+- Native inventory is now **368 explicitly named test cases**.
+
+
 ## [0.19.0-beta.7] - 2026-09-15
 
 ### Tap Tempo feedback

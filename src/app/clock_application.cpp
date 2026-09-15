@@ -60,6 +60,7 @@ void ClockApplication::begin(const ClockState& initialState) {
     if (!display_.begin()) {
         haltSafely();
     }
+    synchronizeDevicePreferences(true);
 
 #ifdef CLOCK_SIMULATOR
     // Desktop simulation must not block inside boot delay loops; SDL still needs
@@ -101,6 +102,7 @@ void ClockApplication::runOnce() {
 #endif
     const hal::ControlSample controls = controlPanel_.sample(nowMs);
     uiController_.processControls(controls, nowMs);
+    synchronizeDevicePreferences();
     externalSyncController_.updateConfiguration(state_);
     // Render visible state changes before any timing-safe Flash flush. This keeps
     // PAUSE/STOP feedback immediate even when the subsequent sector commit takes
@@ -267,6 +269,22 @@ bool ClockApplication::serviceSelectedEasterEggForSimulator(const std::uint32_t 
     }
 }
 #endif
+
+
+void ClockApplication::synchronizeDevicePreferences(const bool force) {
+    if (force || !devicePreferencesApplied_ ||
+        state_.device.encoderDirectionReversed != appliedEncoderDirectionReversed_) {
+        controlPanel_.setEncoderDirectionReversed(state_.device.encoderDirectionReversed);
+        appliedEncoderDirectionReversed_ = state_.device.encoderDirectionReversed;
+    }
+    if (force || !devicePreferencesApplied_ ||
+        state_.device.displayRotated180 != appliedDisplayRotated180_) {
+        display_.setRotation180(state_.device.displayRotated180);
+        appliedDisplayRotated180_ = state_.device.displayRotated180;
+        uiController_.invalidate();
+    }
+    devicePreferencesApplied_ = true;
+}
 
 void ClockApplication::schedulerInterruptThunk() {
     // The callback is registered only after begin() assigns activeInstance_, and

@@ -32,6 +32,18 @@ void PersistentStateService::begin() {
         currentRecord.size()) && deserializeCurrentRecord(currentRecord, loadedCurrent);
 
     if (!hasStoredCurrentState_) {
+        std::array<std::uint8_t, kV6CurrentRecordSize> v6Record{};
+        if (storage_.readBytes(
+                kCurrentRecordOffset,
+                v6Record.data(),
+                v6Record.size()) &&
+            deserializeV6CurrentRecord(v6Record, loadedCurrent)) {
+            hasStoredCurrentState_ = true;
+            migrationNeeded = true;
+        }
+    }
+
+    if (!hasStoredCurrentState_) {
         std::array<std::uint8_t, kV5CurrentRecordSize> v5Record{};
         if (storage_.readBytes(
                 kCurrentRecordOffset,
@@ -82,7 +94,7 @@ void PersistentStateService::begin() {
     }
     writePending_ = false;
 
-    // Build a canonical v6 records area in PersistentStorage's bounded staging
+    // Build a canonical v7 records area in PersistentStorage's bounded staging
     // buffer while records are being inspected. If no old schema is found the
     // transaction is simply discarded. This avoids keeping migrated copies of all
     // eight ClockState objects or an 8-KiB storage image on the call stack.
@@ -105,6 +117,16 @@ void PersistentStateService::begin() {
             presetOffset(slotIndex),
             record.data(),
             record.size()) && deserializePresetRecord(record, name, loadedPreset);
+
+        if (!presetValid_[slotIndex]) {
+            std::array<std::uint8_t, kV6PresetRecordSize> v6Record{};
+            presetValid_[slotIndex] = storage_.readBytes(
+                v6PresetOffset(slotIndex),
+                v6Record.data(),
+                v6Record.size()) &&
+                deserializeV6PresetRecord(v6Record, name, loadedPreset);
+            loadedPriorSchema = presetValid_[slotIndex];
+        }
 
         if (!presetValid_[slotIndex]) {
             std::array<std::uint8_t, kV5PresetRecordSize> v5Record{};
@@ -318,10 +340,13 @@ bool PersistentStateService::loadPreset(
         return false;
     }
 
-    // Loading a configuration must never cause an implicit transport transition.
+    // Loading a musical preset must never cause an implicit transport transition
+    // or change device-local panel/display orientation preferences.
     const TransportState liveTransport = state.transport;
+    const DevicePreferences liveDevicePreferences = state.device;
     state = loaded;
     state.transport = liveTransport;
+    state.device = liveDevicePreferences;
     return true;
 }
 

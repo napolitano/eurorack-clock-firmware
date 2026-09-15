@@ -84,13 +84,21 @@ void ControlPanel::begin() {
 }
 
 ControlSample ControlPanel::sample(const std::uint32_t nowMs) {
+    std::int8_t encoderDelta = sampleEncoder();
+    if (encoderDirectionReversed_) {
+        encoderDelta = static_cast<std::int8_t>(-encoderDelta);
+    }
     return {
-        sampleEncoder(),
+        encoderDelta,
         encoderButton_.sample(nowMs),
         transportButton_.sample(nowMs),
         tapButton_.sample(nowMs),
         resetButton_.sample(nowMs)
     };
+}
+
+void ControlPanel::setEncoderDirectionReversed(const bool reversed) {
+    encoderDirectionReversed_ = reversed;
 }
 
 std::int8_t ControlPanel::sampleEncoder() {

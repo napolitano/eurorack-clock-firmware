@@ -9,7 +9,7 @@ This audit does **not** implement post-1.0 features. It records the constraints 
 
 ## Result
 
-The current V1 runtime is suitable for release qualification, with one important persistence constraint: **post-1.0 per-step metadata must not be added by simply expanding the existing schema-v6 ClockState record.** There is a clean migration path, but the V1 logical layout does not contain enough repeated-record headroom for that approach.
+The current V1 runtime is suitable for release qualification, with one important persistence constraint: **post-1.0 per-step metadata must not be added by simply expanding the existing schema-v7 ClockState record.** There is a clean migration path, but the V1 logical layout does not contain enough repeated-record headroom for that approach.
 
 No V1 feature must be added to solve this now. The correct action before 1.0 is to freeze and test the current layout, document the migration boundary, and require a new schema/layout design when the first storage-heavy 1.x feature is implemented.
 
@@ -29,26 +29,26 @@ The boundaries are now centralized in `src/hal/persistent_layout.h` and guarded 
 
 ## Exact V1 state budget
 
-Current schema v6 uses:
+Current schema v7 uses:
 
-- serialized `ClockState` payload: **252 bytes**;
-- CURRENT record: **264 bytes**;
-- one named preset record: **280 bytes**;
-- CURRENT + eight presets: **2,504 bytes**.
+- serialized `ClockState` payload: **254 bytes**;
+- CURRENT record: **266 bytes**;
+- one named preset record: **282 bytes**;
+- CURRENT + eight presets: **2,522 bytes**.
 
-The next fixed region begins at byte 3,072, so only **568 bytes** remain between the current preset area and the legacy-score compatibility region.
+The next fixed region begins at byte 3,072, so only **550 bytes** remain between the current preset area and the legacy-score compatibility region.
 
 Every byte added naively to the serialized ClockState payload is repeated once in CURRENT and once in each of eight presets. It therefore consumes **9 logical-image bytes**. The maximum safe in-place payload growth before colliding with the next region is only:
 
 ```text
-floor(568 / 9) = 63 bytes
+floor(550 / 9) = 61 bytes
 ```
 
-This is now a tested V1 contract (`kMaximumInPlaceStatePayloadGrowthBytes == 63`). It corrects the misleading assumption that all unused bytes in the 8-KiB image are available to grow the state record.
+This is now a tested V1 contract (`kMaximumInPlaceStatePayloadGrowthBytes == 61`). It corrects the misleading assumption that all unused bytes in the 8-KiB image are available to grow the state record.
 
 ## Consequence for post-1.0 Sequencer/Groove work
 
-Eight channels × 64 Sequencer steps = **512 steps**. Even one extra byte of metadata per step would require 512 bytes for one state and 4,608 bytes when repeated across CURRENT + eight presets. Step Probability, gate length/tie, trigger conditions, and custom Groove data therefore require a **schema v7 (or later) layout strategy**, not incremental schema-v6 growth.
+Eight channels × 64 Sequencer steps = **512 steps**. Even one extra byte of metadata per step would require 512 bytes for one state and 4,608 bytes when repeated across CURRENT + eight presets. Step Probability, gate length/tie, trigger conditions, and custom Groove data therefore require a **schema v8 (or later) layout strategy**, not incremental schema-v7 growth.
 
 Accepted future approaches include:
 
@@ -57,7 +57,7 @@ Accepted future approaches include:
 3. sparse/override storage where default step metadata consumes no record space;
 4. a controlled logical-image increase up to the 12-KiB policy ceiling if target RAM/Flash measurements prove it safe.
 
-The design must preserve migration from V1 schema v6. Raw C++ structs and compiler bitfields remain prohibited for durable storage.
+The design must preserve migration from the readable V1 schema-v6 format and the current schema-v7 format. Raw C++ structs and compiler bitfields remain prohibited for durable storage.
 
 ## RAM consequence of increasing the logical image
 
@@ -76,7 +76,7 @@ Post-1.0 storage-heavy rhythm data must therefore remain outside the small hot-p
 ## Public-contract decisions frozen for V1
 
 - Hardware Rev 1 remains gate/trigger focused; no analog CV subsystem is required for 1.0.
-- Persistent schema v6 remains readable and is the migration source for future schema revisions.
+- Persistent schema v7 is the current write format; schema v6 remains readable and is an explicit migration source for upgrades.
 - Boot always enters STOP regardless of stored transport history.
 - CURRENT and eight named presets remain the user-facing persistence model.
 - No future 1.x feature may silently invalidate V1 presets; migration or explicit compatibility handling is required.
@@ -87,7 +87,7 @@ Post-1.0 storage-heavy rhythm data must therefore remain outside the small hot-p
 - one centralized persistent logical-layout header;
 - compile-time region-order and non-overlap checks;
 - explicit tested constants for V1 state/preset footprint and in-place growth ceiling;
-- documentation that distinguishes physical Flash headroom from actually usable schema-v6 record headroom;
+- documentation that distinguishes physical Flash headroom from actually usable schema-v7 record headroom;
 - a release roadmap that forbids new musical features during V1 qualification.
 
 ## Open qualification work - not architecture blockers

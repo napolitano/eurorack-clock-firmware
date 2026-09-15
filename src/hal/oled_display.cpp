@@ -87,6 +87,13 @@ void OledDisplay::setPower(const bool enabled) {
     sendCommand(enabled ? 0xAFU : 0xAEU);
 }
 
+void OledDisplay::setRotation180(const bool rotated) {
+    // The controller performs both axis flips in hardware. The framebuffer stays
+    // unchanged, so renderers, screenshots, and drawing coordinates remain canonical.
+    sendCommand(rotated ? 0xA0U : 0xA1U);  // Segment remap: horizontal axis.
+    sendCommand(rotated ? 0xC0U : 0xC8U);  // COM scan direction: vertical axis.
+}
+
 
 
 #if defined(CLOCK_HOST_TEST) || defined(CLOCK_SIMULATOR)

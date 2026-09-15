@@ -18,12 +18,12 @@ This is the developer-facing Native entry point. Beta.4 deliberately makes timin
 | `test_swing` | 22 | swing pair mathematics and observable scheduler edge spacing |
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
 | `test_tap_tempo` | 24 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
-| `test_controls` | 38 | encoder quadrature, recovery after missed/coalesced transitions, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
-| `test_settings` | 52 | settings boundaries, enum transitions, invariants and channel/mode editor contracts |
+| `test_controls` | 40 | encoder quadrature, recovery after missed/coalesced transitions, NORMAL/REVERSED direction mapping, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
+| `test_settings` | 56 | settings boundaries, encoder/display device preferences, enum transitions, invariants and channel/mode editor contracts |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 22 | intro launch gating, reset state, output safety and game-specific controls |
 | `test_host_firmware` | 26 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
-| **Total** | **362** | public Native inventory |
+| **Total** | **368** | public Native inventory |
 
 The default Native configuration executes more than **223,000 assertions**. `scripts/check_test_inventory.py` rejects a total regression below 340 cases and also enforces minimum sizes for every visible suite.
 
@@ -39,7 +39,7 @@ The default Native configuration executes more than **223,000 assertions**. `scr
 
 ### Encoder and buttons
 
-`test_controls` drives the production `ControlPanel` against GPIO fakes. It verifies both Gray-code directions, partial cycles, contact bounce, six detents accumulated while foreground polling is absent, 1000-detent fast turns in either direction, repeated burst/drain cycles, deliberate signed backlog saturation without wrap, the +/-127 report bound with remainder preservation, idle sampling without gratuitous global interrupt masking, active-low button press/release debounce, no hold-repeat, bounce restart, simultaneous buttons and encoder activity during button debounce. The broader host-firmware suite continues to test how these samples drive the UI state machine.
+`test_controls` drives the production `ControlPanel` against GPIO fakes. It verifies both Gray-code directions, device-level NORMAL/REVERSED semantic mapping, partial cycles, contact bounce, six detents accumulated while foreground polling is absent, 1000-detent fast turns in either direction, repeated burst/drain cycles, deliberate signed backlog saturation without wrap, the +/-127 report bound with remainder preservation, idle sampling without gratuitous global interrupt masking, active-low button press/release debounce, no hold-repeat, bounce restart, simultaneous buttons and encoder activity during button debounce. The broader host-firmware suite continues to test how these samples drive the UI state machine.
 
 ### External-SYNC behavior suite
 
@@ -59,7 +59,7 @@ The suite also contains a **host-only nominal electrical model** of the document
 
 ### Settings, screensavers and Easter eggs
 
-`test_settings` turns the Settings editor into an explicit behavioral contract rather than relying only on broad UI scenarios. It covers master tempo/min/max coupling, meter limits, SYNC source/PPQN/edge/loss/reset/filter/timeout settings, screensaver timing invariants, per-channel rate/swing/probability/gate/phase/reset/mute limits, Euclid bounds, Sequencer editing/copy/paste boundaries, One Clock Humanize choices and Divider Bank settings.
+`test_settings` turns the Settings editor into an explicit behavioral contract rather than relying only on broad UI scenarios. It covers master tempo/min/max coupling, meter limits, persistent encoder direction and OLED orientation, SYNC source/PPQN/edge/loss/reset/filter/timeout settings, screensaver timing invariants, per-channel rate/swing/probability/gate/phase/reset/mute limits, Euclid bounds, Sequencer editing/copy/paste boundaries, One Clock Humanize choices and Divider Bank settings.
 
 `test_screensavers` executes every renderer, checks expected framebuffer activity, deterministic/rewind behavior where applicable, and sweeps frames long enough to exercise stateful animations. `test_easter_eggs` verifies that each boot game waits for explicit launch input, starts in a defined reset state, keeps Eurorack outputs safe in the host path, and obeys its game-specific encoder/TAP/control contracts. These are state-machine tests; graphical appearance is still covered separately by framebuffer/simulator regression assets.
 

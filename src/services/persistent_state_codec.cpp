@@ -18,11 +18,11 @@
 namespace clockfw::services {
 namespace {
 
-/** Four-byte CURRENT magic value "CUR6" stored little-endian. */
-constexpr std::uint32_t kCurrentMagic = 0x36525543UL;
+/** Four-byte CURRENT magic value "CUR7" stored little-endian. */
+constexpr std::uint32_t kCurrentMagic = 0x37525543UL;
 
-/** Four-byte preset magic value "PRE6" stored little-endian. */
-constexpr std::uint32_t kPresetMagic = 0x36455250UL;
+/** Four-byte preset magic value "PRE7" stored little-endian. */
+constexpr std::uint32_t kPresetMagic = 0x37455250UL;
 
 /** Reflected CRC-32 polynomial used by Ethernet/ZIP and many embedded formats. */
 constexpr std::uint32_t kCrcPolynomial = 0xEDB88320UL;
@@ -194,6 +194,11 @@ PersistentStateService::serializeState(const ClockState& state) {
         writer.write64(channel.sequencer.pattern);
     }
 
+    // Device-local preferences are deliberately appended so every schema-v6
+    // payload remains a byte-for-byte prefix and migration cannot disturb musical state.
+    writer.write8(state.device.encoderDirectionReversed ? 1U : 0U);
+    writer.write8(state.device.displayRotated180 ? 1U : 0U);
+
     // A schema-size mismatch is a programmer error and should fail at compile/test time.
     (void)writer.position();
     return payload;
@@ -256,6 +261,9 @@ bool PersistentStateService::deserializeState(
         channel.sequencer.rotation = reader.read8();
         channel.sequencer.pattern = reader.read64();
     }
+
+    candidate.device.encoderDirectionReversed = reader.read8() != 0U;
+    candidate.device.displayRotated180 = reader.read8() != 0U;
 
     if (reader.position() != kStatePayloadSize || !isStateValid(candidate)) {
         return false;

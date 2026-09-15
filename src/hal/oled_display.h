@@ -105,6 +105,9 @@ public:
     /** @brief Switches the OLED panel on or off while preserving display RAM. */
     void setPower(bool enabled);
 
+    /** @brief Selects the controller's native 0-degree or 180-degree scan orientation. */
+    void setRotation180(bool rotated);
+
 #if defined(CLOCK_HOST_TEST) || defined(CLOCK_SIMULATOR)
     /** @brief Returns the raw drawing framebuffer for deterministic host screenshots and native simulation. */
     const std::array<std::uint8_t, kFramebufferSize>& framebufferForTest() const;

@@ -103,6 +103,9 @@ private:
     bool serviceSelectedEasterEggForSimulator(std::uint32_t nowMs);
 #endif
 
+    /** @brief Applies persistent device-local control/display preferences to the HAL only when they change. */
+    void synchronizeDevicePreferences(bool force = false);
+
     /** @brief Enters a safe permanent failure state when the display cannot be initialized. */
     [[noreturn]] void haltSafely();
 
@@ -138,6 +141,9 @@ private:
     services::ExternalSyncController externalSyncController_;
     ui::UiRenderer renderer_;
     ui::UiController uiController_;
+    bool appliedEncoderDirectionReversed_ = false;
+    bool appliedDisplayRotated180_ = false;
+    bool devicePreferencesApplied_ = false;
 #ifdef CLOCK_SIMULATOR
     enum class SimulatorLifecycle : std::uint8_t { Booting, EasterEgg, Running, PoweredOff };
     SimulatorLifecycle simulatorLifecycle_ = SimulatorLifecycle::PoweredOff;
