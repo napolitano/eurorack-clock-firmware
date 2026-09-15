@@ -47,6 +47,10 @@ inline void resetArduino() {
     pinModes.clear(); pinValues.clear(); writes.clear(); interruptBindings.clear(); nowMs=0U; nowUs=0U;
     noInterruptCalls=0U; interruptCalls=0U; throwOnDelay=false; delayAdvanceOverrideMs=0U;
 }
+inline void setPinSilently(std::uint32_t pin, std::uint8_t value) {
+    pinValues[pin] = value;
+}
+
 inline void setPin(std::uint32_t pin, std::uint8_t value) {
     const auto existing = pinValues.find(pin);
     const std::uint8_t previous = existing == pinValues.end() ? HIGH : existing->second;

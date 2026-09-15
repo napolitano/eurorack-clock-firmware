@@ -86,8 +86,76 @@ void testFastTurnDirectionReversalCancelsLargeBacklog(){ hal::ControlPanel c;c.b
 void testFastTurnBacklogSaturatesWithoutSignedOverflow(){ hal::ControlPanel c;c.begin();forwardDetent();const int sign=c.sample(1U).encoderDelta;for(int i=0;i<33000;++i)forwardDetent();std::uint32_t now=2U;TEST_ASSERT_EQUAL(sign*32767,drainAllEncoder(c,now)); }
 void testFastTurnDuringButtonBouncePreservesAllDetents(){ hal::ControlPanel c;c.begin();forwardDetent();const int sign=c.sample(1U).encoderDelta;fakefw::setPin(pinmap::kTapTempoButtonPin,LOW);(void)c.sample(2U);for(int i=0;i<100;++i)forwardDetent();fakefw::setPin(pinmap::kTapTempoButtonPin,HIGH);int total=c.sample(10U).encoderDelta;fakefw::setPin(pinmap::kTapTempoButtonPin,LOW);std::uint32_t now=11U;total+=drainAllEncoder(c,now);TEST_ASSERT_EQUAL(sign*100,total); }
 
+
+void corruptEncoderPhaseWithMissedIntermediateEdge(){
+    // Simulate EXTI coalescing while interrupts are masked: B moves low without
+    // its ISR being serviced; the next A edge therefore appears as an invalid
+    // two-bit jump to the decoder. Complete the physical detent afterwards.
+    fakefw::setPinSilently(pinmap::kEncoderPhaseBPin, LOW);
+    fakefw::setPin(pinmap::kEncoderPhaseAPin, LOW);
+    fakefw::setPin(pinmap::kEncoderPhaseBPin, HIGH);
+    fakefw::setPin(pinmap::kEncoderPhaseAPin, HIGH);
+}
+
+void testMissedIntermediateEdgeMustNotCreatePersistentDirectionDeadband(){
+    hal::ControlPanel c; c.begin();
+    forwardDetent(); const int forwardSign=c.sample(1U).encoderDelta;
+    TEST_ASSERT_TRUE(forwardSign==1 || forwardSign==-1);
+    corruptEncoderPhaseWithMissedIntermediateEdge();
+    TEST_ASSERT_EQUAL(0,c.sample(2U).encoderDelta);
+    reverseDetent();
+    TEST_ASSERT_EQUAL(-forwardSign,c.sample(3U).encoderDelta);
+    forwardDetent();
+    TEST_ASSERT_EQUAL(forwardSign,c.sample(4U).encoderDelta);
+    reverseDetent();
+    TEST_ASSERT_EQUAL(-forwardSign,c.sample(5U).encoderDelta);
+}
+
+
+void testAlternatingSingleDetentsRemainResponsiveAfterCorruptedCycle(){
+    hal::ControlPanel c; c.begin();
+    forwardDetent(); const int forwardSign=c.sample(1U).encoderDelta;
+    TEST_ASSERT_TRUE(forwardSign==1 || forwardSign==-1);
+    corruptEncoderPhaseWithMissedIntermediateEdge();
+    TEST_ASSERT_EQUAL(0,c.sample(2U).encoderDelta);
+    for (std::uint32_t i=0U;i<12U;++i) {
+        if ((i & 1U)==0U) {
+            reverseDetent();
+            TEST_ASSERT_EQUAL(-forwardSign,c.sample(3U+i).encoderDelta);
+        } else {
+            forwardDetent();
+            TEST_ASSERT_EQUAL(forwardSign,c.sample(3U+i).encoderDelta);
+        }
+    }
+}
+
+void testRepeatedCorruptedCyclesDoNotShiftEncoderPhase(){
+    hal::ControlPanel c; c.begin();
+    forwardDetent(); const int forwardSign=c.sample(1U).encoderDelta;
+    TEST_ASSERT_TRUE(forwardSign==1 || forwardSign==-1);
+    for (std::uint32_t i=0U;i<8U;++i) {
+        corruptEncoderPhaseWithMissedIntermediateEdge();
+        TEST_ASSERT_EQUAL(0,c.sample(2U+i*2U).encoderDelta);
+        forwardDetent();
+        TEST_ASSERT_EQUAL(forwardSign,c.sample(3U+i*2U).encoderDelta);
+    }
+}
+
+void testMidCycleDirectionReversalDoesNotPoisonNextDetent(){
+    hal::ControlPanel c; c.begin();
+    forwardDetent(); const int forwardSign=c.sample(1U).encoderDelta;
+    TEST_ASSERT_TRUE(forwardSign==1 || forwardSign==-1);
+    setEncoder(1,0);
+    setEncoder(0,0);
+    setEncoder(1,0);
+    setEncoder(1,1);
+    TEST_ASSERT_EQUAL(0,c.sample(2U).encoderDelta);
+    reverseDetent();
+    TEST_ASSERT_EQUAL(-forwardSign,c.sample(3U).encoderDelta);
+}
+
 int main(){UNITY_BEGIN();
 RUN_TEST(testIdleSampleDoesNotMaskInterrupts);RUN_TEST(testGrayCycleAProducesOneDetent);RUN_TEST(testGrayCycleBProducesOppositeDetent);RUN_TEST(testPartialGrayCycleProducesNoDetent);RUN_TEST(testEncoderBounceReturnsToSameStateWithoutDetent);RUN_TEST(testSixFastDetentsAccumulateWithoutForegroundPoll);RUN_TEST(testEncoderDrainIsEmptyAfterSample);RUN_TEST(testEncoderDrainCapsAt127AndPreservesRemainderForCycleA);RUN_TEST(testEncoderDrainCapsAt127AndPreservesRemainderForCycleB);RUN_TEST(testDirectionReversalCancelsPendingMovement);RUN_TEST(testEncoderLowAtStartupDoesNotManufactureDetent);RUN_TEST(testAllEncoderPinsUsePullups);
-RUN_TEST(testFastTurnThousandDetentsAreNotLostForward);RUN_TEST(testFastTurnThousandDetentsAreNotLostReverse);RUN_TEST(testFastTurnRepeatedForegroundDrainsPreserveTotal);RUN_TEST(testFastTurnDirectionReversalCancelsLargeBacklog);RUN_TEST(testFastTurnBacklogSaturatesWithoutSignedOverflow);RUN_TEST(testFastTurnDuringButtonBouncePreservesAllDetents);
+RUN_TEST(testFastTurnThousandDetentsAreNotLostForward);RUN_TEST(testFastTurnThousandDetentsAreNotLostReverse);RUN_TEST(testFastTurnRepeatedForegroundDrainsPreserveTotal);RUN_TEST(testFastTurnDirectionReversalCancelsLargeBacklog);RUN_TEST(testFastTurnBacklogSaturatesWithoutSignedOverflow);RUN_TEST(testFastTurnDuringButtonBouncePreservesAllDetents);RUN_TEST(testMissedIntermediateEdgeMustNotCreatePersistentDirectionDeadband);RUN_TEST(testAlternatingSingleDetentsRemainResponsiveAfterCorruptedCycle);RUN_TEST(testRepeatedCorruptedCyclesDoNotShiftEncoderPhase);RUN_TEST(testMidCycleDirectionReversalDoesNotPoisonNextDetent);
 RUN_TEST(testEncoderPushDebouncesPress);RUN_TEST(testPlayPauseDebouncesPress);RUN_TEST(testTapDebouncesPress);RUN_TEST(testResetBackDebouncesPress);RUN_TEST(testEncoderPushDebouncesRelease);RUN_TEST(testPlayPauseDebouncesRelease);RUN_TEST(testTapDebouncesRelease);RUN_TEST(testResetBackDebouncesRelease);RUN_TEST(testEncoderPushHoldDoesNotRepeat);RUN_TEST(testPlayPauseHoldDoesNotRepeat);RUN_TEST(testTapHoldDoesNotRepeat);RUN_TEST(testResetBackHoldDoesNotRepeat);RUN_TEST(testButtonBounceBeforeDebounceDoesNotPress);RUN_TEST(testSimultaneousButtonsReportIndependentEdges);RUN_TEST(testButtonActivityDoesNotLoseEncoderDetent);RUN_TEST(testInitiallyPressedButtonIsStableWithoutSyntheticEdge);
 return UNITY_END();}

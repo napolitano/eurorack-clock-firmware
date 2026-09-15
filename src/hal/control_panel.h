@@ -85,6 +85,7 @@ private:
     DebouncedButton resetButton_;
     static ControlPanel* activeInstance_;
     volatile std::uint8_t previousEncoderState_ = 0U;
+    volatile std::uint8_t encoderCycleAnchorState_ = 0U;
     volatile std::int8_t encoderAccumulator_ = 0;
     volatile std::int16_t pendingEncoderDetents_ = 0;
 };

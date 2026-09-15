@@ -17,9 +17,9 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `0.19.0-beta.4`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
+> **Current status: `0.19.0-beta.6`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
 
-**Beta.4 HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
+**HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
 
 ## Why another Eurorack Clock?
 
@@ -234,7 +234,7 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **352 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **356 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
@@ -244,7 +244,7 @@ Current inventory: **352 explicitly named Native test cases**. PlatformIO expose
 | `test_swing` | 22 | atomic swing mathematics plus observed engine edge spacing and pair-duration conservation |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 22 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
-| `test_controls` | 34 | encoder Gray-code decoding, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
+| `test_controls` | 38 | encoder Gray-code decoding, cycle resynchronization after missed/coalesced edges, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
 | `test_settings` | 52 | settings limits, enum transitions, timing invariants, channel/Euclid/Sequencer edits and invalid-input behavior |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 22 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
@@ -261,9 +261,9 @@ python scripts/run_host_tests.py
 Current validated aggregate baseline:
 
 ```text
-Executable lines     6269 / 6517   96.19 %
+Executable lines     6270 / 6518   96.20 %
 Functions              533 / 542    98.34 %
-Decision branches     3741 / 4122   90.76 %
+Decision branches     3743 / 4124   90.76 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).
@@ -280,6 +280,7 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | [Simulator](docs/SIMULATOR.md) | Desktop simulator and headless usage |
 | [HIL Test Plan](docs/HIL_TEST_PLAN.md) | Physical qualification evidence; advisory to release automation through 1.4.x, enforced from 1.5.0 |
 | [Roadmap](docs/ROADMAP.md) | V1 freeze, 1.0 qualification path, post-1.0 musical roadmap and VCV track |
+| [GitHub Wiki publication](docs/WIKI.md) | Generated Wiki structure, automatic sync and ODT manual download |
 | [V1 Forward-Compatibility Audit](docs/V1_FORWARD_COMPATIBILITY.md) | Persistence/event-architecture constraints that protect later 1.x migration |
 | [Development](docs/DEVELOPMENT.md) | Developer workflow and quality gates |
 | [Doxygen](Doxyfile) | Source-level API documentation |

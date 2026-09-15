@@ -4,7 +4,7 @@
 
 ## Supported versions
 
-CLOCK is currently an alpha project. Security and safety fixes are applied to the active development line; older alpha snapshots should be treated as unsupported once a newer snapshot supersedes them.
+CLOCK is currently in beta qualification toward the first stable release. Security and safety fixes are applied to the active development line; older alpha snapshots should be treated as unsupported once a newer snapshot supersedes them.
 
 ## Reporting
 

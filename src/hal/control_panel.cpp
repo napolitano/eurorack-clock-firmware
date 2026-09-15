@@ -69,6 +69,7 @@ void ControlPanel::begin() {
     previousEncoderState_ =
         (digitalRead(pinmap::kEncoderPhaseAPin) == HIGH ? 2U : 0U) |
         (digitalRead(pinmap::kEncoderPhaseBPin) == HIGH ? 1U : 0U);
+    encoderCycleAnchorState_ = previousEncoderState_;
     encoderAccumulator_ = 0;
     pendingEncoderDetents_ = 0;
     activeInstance_ = this;
@@ -128,17 +129,29 @@ void ControlPanel::handleEncoderEdgeFromIsr() {
     encoderAccumulator_ = static_cast<std::int8_t>(
         encoderAccumulator_ + kEncoderTransitions[transitionIndex]);
 
-    if (encoderAccumulator_ >= 4) {
-        encoderAccumulator_ = static_cast<std::int8_t>(encoderAccumulator_ - 4);
+    // Count one user detent only after the quadrature sequence returns to the
+    // electrical phase captured at begin(). The PEC11L-4120K-S0020 has one
+    // quadrature pulse per mechanical detent, so a complete detent is one full
+    // four-transition cycle. If EXTI delivery is briefly masked/coalesced, the
+    // observed path can lose an intermediate state and leave a +/-1..3 residue.
+    // Carrying that residue across later detents creates a persistent one-detent
+    // reversal deadband. Returning to the cycle anchor is therefore also our
+    // resynchronization boundary: accept only a complete +/-4 cycle and discard
+    // every incomplete/corrupted residue there.
+    if (currentState != encoderCycleAnchorState_) {
+        return;
+    }
+
+    if (encoderAccumulator_ == 4) {
         if (pendingEncoderDetents_ < 32767) {
             ++pendingEncoderDetents_;
         }
-    } else if (encoderAccumulator_ <= -4) {
-        encoderAccumulator_ = static_cast<std::int8_t>(encoderAccumulator_ + 4);
+    } else if (encoderAccumulator_ == -4) {
         if (pendingEncoderDetents_ > -32767) {
             --pendingEncoderDetents_;
         }
     }
+    encoderAccumulator_ = 0;
 }
 
 }  // namespace clockfw::hal

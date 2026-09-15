@@ -8,6 +8,38 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.6] - 2026-09-15
+
+### Fixed
+
+- Fixed a persistent rotary-encoder direction deadband that could appear after one or more quadrature transitions were missed or coalesced. The old free-running quarter-step accumulator could retain a +/-2 phase residue: the first detent after each direction reversal was then consumed by that residue, and alternating one-detent left/right movement could produce no UI change at all.
+- Encoder decoding now commits a detent only when the quadrature sequence returns to the electrical cycle phase captured at startup. Complete +/-4 cycles produce one detent; incomplete or corrupted cycles are discarded at that resynchronization boundary instead of poisoning later direction changes.
+
+### Tests
+
+- Added regression coverage that reproduces the observed field symptom by deliberately hiding an intermediate encoder transition, then verifies immediate first-detent response after direction changes, repeated alternating one-detent motion, repeated corrupted cycles, and mid-cycle reversals.
+- Expanded `test_controls` from 34 to 38 named cases and the complete Native inventory from 352 to **356 explicitly named test cases**. The inventory floor is now 350.
+
+### Hardware note
+
+- The Bourns PEC11L-4120K-S0020 used by CLOCK is a 20-detent / 20-pulse quadrature encoder. The decoder therefore treats one complete quadrature cycle as one user detent. Physical contact bounce, EXTI timing and any PCB-level filtering remain part of hardware qualification.
+
+## [0.19.0-beta.5] - 2026-09-10
+
+### Generated GitHub Wiki
+
+- Added a deterministic repository-owned Wiki generator that publishes a curated documentation hierarchy instead of maintaining a second documentation source by hand.
+- Added an automatic default-branch push workflow for the separate GitHub Wiki repository, with explicit source-of-truth notices and generated navigation.
+- Added a prominent version-frozen ODT manual download to the generated User Manual Wiki page; Wiki generation fails if the matching frozen ODT is absent.
+- Rewrites repository-relative documentation links to Wiki pages or exact source-commit URLs so generated pages remain navigable outside the main repository tree.
+- Applies the canonical centered `From Munich with &#9829;` footer to every generated Wiki content page.
+- Added regression tests for page inventory, Wiki link rewriting, ODT download targeting and footer consistency.
+- Documented the one-time GitHub Wiki initialization requirement and corrected the security-policy lifecycle wording from alpha to beta qualification.
+
+### Compatibility
+
+- No clock-engine, timing, persistence, UI or musical-behavior changes in beta.5.
+
 ## [0.19.0-beta.4] - 2026-09-10
 
 ### Native behavioral test expansion

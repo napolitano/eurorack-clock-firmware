@@ -1,0 +1,68 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+
+name: Publish Wiki
+
+on:
+  push:
+  workflow_dispatch:
+
+# GitHub Wikis are backed by a separate <repository>.wiki.git repository.
+# The repository-scoped GITHUB_TOKEN needs contents:write to push there.
+permissions:
+  contents: write
+
+concurrency:
+  group: publish-wiki-${{ github.repository }}
+  cancel-in-progress: true
+
+jobs:
+  publish-wiki:
+    name: Generate and publish GitHub Wiki
+    if: github.ref == format('refs/heads/{0}', github.event.repository.default_branch)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: "3.11"
+
+      - name: Generate Wiki from canonical documentation
+        run: >-
+          python scripts/build_wiki.py
+          --output build/wiki
+          --repository "${{ github.repository }}"
+          --ref "${{ github.sha }}"
+          --server-url "${{ github.server_url }}"
+
+      - name: Publish generated Wiki
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          GITHUB_HOST="${GITHUB_SERVER_URL#https://}"
+          AUTH_URL="https://x-access-token:${GITHUB_TOKEN}@${GITHUB_HOST}/${GITHUB_REPOSITORY}.wiki.git"
+
+          if ! git clone --quiet "${AUTH_URL}" build/wiki-repository; then
+            echo "::error title=GitHub Wiki is not initialized::Enable Wiki under Settings > Features and create its first page once in the GitHub UI. The .wiki.git repository does not exist before that initialization."
+            exit 1
+          fi
+
+          find build/wiki-repository -mindepth 1 -maxdepth 1 ! -name .git -exec rm -rf {} +
+          cp -a build/wiki/. build/wiki-repository/
+
+          cd build/wiki-repository
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+
+          if git diff --cached --quiet; then
+            echo "Wiki already matches commit ${GITHUB_SHA}."
+            exit 0
+          fi
+
+          git commit -m "docs(wiki): sync from ${GITHUB_SHA:0:12}"
+          git push --quiet origin HEAD

@@ -26,6 +26,8 @@ This stamps the current `CLOCK_FIRMWARE_VERSION` into the ODT body, metadata, fr
 
 The release workflow converts the frozen ODT with LibreOffice and publishes **both ODT and PDF** as GitHub Release assets. The release PDF is checked for a non-zero page count, the expected firmware version, and Ubuntu-family font embedding. A separate `Manual publication smoke test` workflow exercises the same publication path for documentation changes.
 
+The generated GitHub Wiki also exposes the matching version-frozen ODT directly from its Home and **Manual & Downloads** pages. `scripts/build_wiki.py` refuses to generate a Wiki for a firmware version whose frozen ODT is missing.
+
 Local helpers:
 
 ```bash

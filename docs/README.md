@@ -21,6 +21,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 | understand release/licensing constraints | [`LICENSING.md`](LICENSING.md) |
 | understand citation, DOI, and project identity | [`PROJECT_IDENTITY.md`](PROJECT_IDENTITY.md) |
 | review the release and feature plan | [`ROADMAP.md`](ROADMAP.md) |
+| understand or maintain the generated GitHub Wiki | [`WIKI.md`](WIKI.md) |
 | maintain or publish the end-user manual | [`manual/README.md`](manual/README.md) |
 | write or review repository documentation | [`DOCUMENTATION_STYLE.md`](DOCUMENTATION_STYLE.md) |
 | contribute to CLOCK | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |

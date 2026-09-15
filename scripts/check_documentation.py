@@ -11,6 +11,7 @@ import json
 import re
 import subprocess
 import sys
+import tempfile
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from urllib.parse import unquote
@@ -267,6 +268,52 @@ def check_project_metadata(errors: list[str]) -> None:
             errors.append(f'README.md: missing project identity metadata reference {required!r}')
 
 
+
+def check_wiki_publication_contract(errors: list[str]) -> None:
+    """Keep the generated GitHub Wiki and ODT-download publication path buildable."""
+    required = (
+        ROOT / 'scripts/build_wiki.py',
+        ROOT / '.github/workflows/wiki.yml',
+        ROOT / 'docs/WIKI.md',
+    )
+    for path in required:
+        if not path.is_file():
+            errors.append(f'{path.relative_to(ROOT)}: required generated-Wiki artifact is missing')
+    if any(not path.is_file() for path in required):
+        return
+
+    workflow = (ROOT / '.github/workflows/wiki.yml').read_text(encoding='utf-8')
+    for needle in ('push:', 'contents: write', 'scripts/build_wiki.py', '.wiki.git'):
+        if needle not in workflow:
+            errors.append(f'.github/workflows/wiki.yml: missing Wiki publication contract {needle!r}')
+
+    with tempfile.TemporaryDirectory() as temporary:
+        output = Path(temporary) / 'wiki'
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / 'scripts/build_wiki.py'),
+                '--output', str(output),
+                '--repository', 'validation/clock',
+                '--ref', 'validation-ref',
+            ],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+        )
+        if result.returncode != 0:
+            detail = (result.stderr or result.stdout).strip()
+            errors.append(f'scripts/build_wiki.py: generated Wiki validation failed ({detail})')
+            return
+        home = (output / 'Home.md').read_text(encoding='utf-8')
+        manual = (output / 'Manual-and-Downloads.md').read_text(encoding='utf-8')
+        if 'From Munich with &#9829;' not in home or 'From Munich with &#9829;' not in manual:
+            errors.append('generated Wiki: canonical Munich footer missing')
+        version_header = (ROOT / 'src/version.h').read_text(encoding='utf-8')
+        match = VERSION_RE.search(version_header)
+        if match and f'clock-user-manual.{match.group(1)}.odt' not in manual:
+            errors.append('generated Wiki: current version-frozen ODT download is missing')
+
 def main() -> int:
     """Run all documentation quality checks and return a shell-friendly status code."""
     errors: list[str] = []
@@ -279,6 +326,7 @@ def main() -> int:
     check_v1_scope_contract(errors)
     check_hil_qualification_contract(errors)
     check_project_metadata(errors)
+    check_wiki_publication_contract(errors)
     if errors:
         print('Documentation check failed:', file=sys.stderr)
         for error in errors:
