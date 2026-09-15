@@ -8,6 +8,19 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.10] - 2026-09-15
+
+### Simulator OLED edge fidelity
+
+- Fixed the native simulator OLED renderer overwriting the outermost displayed pixels with its decorative bezel stroke. The bezel is now drawn outside the active 128x64 matrix and before panel pixels, so edge content remains fully visible.
+- Expanded the black OLED well to cover the complete integer-scaled active matrix even when the physically configured display opening is a few desktop pixels smaller than the selected simulator pixel scale.
+- Kept the firmware framebuffer, SSD1306/SSD1315 controller model, production OLED transport and UI coordinates unchanged. This is a simulator presentation fix only.
+
+### Compatibility
+
+- No clock-engine, timing, persistence, musical behavior or physical OLED command changes.
+
+
 ## [0.19.0-beta.9] - 2026-09-15
 
 ### Simulator OLED controller model

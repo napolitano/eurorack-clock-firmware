@@ -243,8 +243,32 @@ void PanelRenderer::renderOled(SDL_Renderer* const renderer, const SimulatorRunt
         (panelLayout_.display.height - renderedHeight) * 0.5F);
     const layout::Rect pixelArea{displayX, displayY, renderedWidth, renderedHeight};
 
+    // The configurable physical display opening can be a few desktop pixels
+    // smaller than the integer-scaled 128x64 active matrix. Never use that
+    // opening as an implicit clip/background boundary: every simulated OLED
+    // pixel must retain its full nearest-neighbour square.
+    const float wellLeft = std::min(panelLayout_.display.x, pixelArea.x);
+    const float wellTop = std::min(panelLayout_.display.y, pixelArea.y);
+    const float wellRight = std::max(
+        panelLayout_.display.x + panelLayout_.display.width,
+        pixelArea.x + pixelArea.width);
+    const float wellBottom = std::max(
+        panelLayout_.display.y + panelLayout_.display.height,
+        pixelArea.y + pixelArea.height);
+    const layout::Rect displayWell{
+        wellLeft, wellTop, wellRight - wellLeft, wellBottom - wellTop};
+
     setColor(renderer, 5U, 6U, 7U);
-    fillRect(renderer, panelLayout_.display);
+    fillRect(renderer, displayWell);
+
+    // Draw the bezel outside the active matrix and before OLED pixels. Beta.9
+    // drew a stroke on pixelArea after the pixels, which overwrote the outer
+    // screen-pixel row/column and made edge content look cropped.
+    setColor(renderer, 82U, 84U, 87U);
+    const layout::Rect bezel{
+        pixelArea.x - 1.0F, pixelArea.y - 1.0F,
+        pixelArea.width + 2.0F, pixelArea.height + 2.0F};
+    strokeRect(renderer, bezel);
 
     const auto& framebuffer = runtime.framebuffer();
     setColor(renderer, 236U, 239U, 242U);
@@ -264,8 +288,6 @@ void PanelRenderer::renderOled(SDL_Renderer* const renderer, const SimulatorRunt
             (void)SDL_RenderFillRect(renderer, &pixel);
         }
     }
-    setColor(renderer, 82U, 84U, 87U);
-    strokeRect(renderer, pixelArea);
 }
 
 void PanelRenderer::drawCircle(
