@@ -21,18 +21,6 @@ int fail(const char* const message) {
     return 1;
 }
 
-bool framebufferPixel(
-    const std::array<std::uint8_t, clockfw::hal::OledDisplay::kFramebufferSize>& framebuffer,
-    const std::int16_t x,
-    const std::int16_t y) {
-    if (x < 0 || x >= clockfw::hal::OledDisplay::kWidth || y < 0 || y >= clockfw::hal::OledDisplay::kHeight) {
-        return false;
-    }
-    const std::size_t index = static_cast<std::size_t>(x) +
-        static_cast<std::size_t>(y / 8) * static_cast<std::size_t>(clockfw::hal::OledDisplay::kWidth);
-    return (framebuffer[index] & static_cast<std::uint8_t>(1U << (y & 7))) != 0U;
-}
-
 }  // namespace
 
 int main() {
@@ -74,24 +62,22 @@ int main() {
     runtime.setButton(SimButton::Encoder, true);
     runtime.setPower(true);
     runtime.advanceMicroseconds(1050000ULL);
-    if (!runtime.pixelRaidActive() || runtime.outputStageEnabled()) {
-        return fail("holding encoder across power-on boot must launch Pixel Raid with outputs disabled");
+    if (!runtime.easterEggActive() || runtime.outputStageEnabled()) {
+        return fail("holding encoder across power-on boot must launch the selected Easter egg with outputs disabled");
     }
     runtime.setButton(SimButton::Encoder, false);
     runtime.advanceMicroseconds(35000ULL);
     runtime.setButton(SimButton::Tap, true);
     runtime.advanceMicroseconds(45000ULL);
-    if (!framebufferPixel(runtime.framebuffer(), 64, 55) &&
-        !framebufferPixel(runtime.framebuffer(), 64, 56) &&
-        !framebufferPixel(runtime.framebuffer(), 64, 57)) {
-        return fail("Pixel Raid projectile must survive long enough to appear in a rendered OLED frame");
+    if (!runtime.outputStageEnabled()) {
+        return fail("default BEATKNECHT must enable the output stage only after explicit launch");
     }
     runtime.setButton(SimButton::Tap, false);
     runtime.setPower(false);
     runtime.setButton(SimButton::Encoder, false);
     runtime.setPower(true);
     runtime.advanceMicroseconds(1050000ULL);
-    if (runtime.pixelRaidActive() || !runtime.outputStageEnabled()) {
+    if (runtime.easterEggActive() || !runtime.outputStageEnabled()) {
         return fail("normal power-on without boot chord must return to the clock application");
     }
 

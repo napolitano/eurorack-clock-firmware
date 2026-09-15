@@ -19,7 +19,7 @@
 #include "game/arcade_leaderboard_store.h"
 #include "game/arcade_shell.h"
 #include "game/formula1_game.h"
-#include "game/moon_buggy_game.h"
+#include "game/egg_journey_game.h"
 #include "game/pixel_raid_game.h"
 #include "game/beatknecht.h"
 #include "hal/control_panel.h"
@@ -34,8 +34,8 @@ struct Formula1GameTestAccess {
     static void forceCrash(Formula1Game& game, const std::uint32_t nowMs) { game.startCrash(nowMs); }
     static void render(Formula1Game& game) { game.render(); }
 };
-struct MoonBuggyGameTestAccess {
-    static void configureActionFrame(MoonBuggyGame& game) {
+struct EggJourneyGameTestAccess {
+    static void configureActionFrame(EggJourneyGame& game) {
         game.playerWorldX_ = 24;
         game.jumpHeightFp_ = 32;
         game.jumpVelocityFp_ = 5;
@@ -44,22 +44,22 @@ struct MoonBuggyGameTestAccess {
         game.asteroid_.active = true;
         game.score_ = 428U;
     }
-    static void forceBroken(MoonBuggyGame& game) {
+    static void forceBroken(EggJourneyGame& game) {
         game.asteroid_.active = false;
-        game.failureMode_ = MoonBuggyGame::FailureMode::Broken;
+        game.failureMode_ = EggJourneyGame::FailureMode::Broken;
         game.lives_ = 2U;
         game.awaitingRetry_ = true;
     }
-    static void forceFlat(MoonBuggyGame& game) {
+    static void forceFlat(EggJourneyGame& game) {
         game.asteroid_.active = false;
         game.addImpactCrater(game.playerWorldX_, 9);
         game.lastPhysicsAtMs_ = 500U;
         game.impactFlashUntilMs_ = 900U;
-        game.failureMode_ = MoonBuggyGame::FailureMode::Flattened;
+        game.failureMode_ = EggJourneyGame::FailureMode::Flattened;
         game.lives_ = 1U;
         game.awaitingRetry_ = true;
     }
-    static void render(MoonBuggyGame& game) { game.render(); }
+    static void render(EggJourneyGame& game) { game.render(); }
 };
 struct BreakoutGameTestAccess {
     static void configureActionFrame(BreakoutGame& game) {
@@ -451,16 +451,16 @@ private:
 
         game::ArcadeShell eggIntro(display_, game::ArcadeTitle::EggJourney, &eggStore);
         eggIntro.begin(0U); eggIntro.render(1200U); capture("egg-journey-intro", "Egg Journey individual retro intro with marquee");
-        game::MoonBuggyGame moonBuggy(display_, controls, gateOutputs, eggStore);
-        moonBuggy.run();
-        game::MoonBuggyGameTestAccess::configureActionFrame(moonBuggy);
-        game::MoonBuggyGameTestAccess::render(moonBuggy);
+        game::EggJourneyGame eggJourney(display_, controls, gateOutputs, eggStore);
+        eggJourney.run();
+        game::EggJourneyGameTestAccess::configureActionFrame(eggJourney);
+        game::EggJourneyGameTestAccess::render(eggJourney);
         capture("egg-journey", "Egg Journey boot Easter egg with jumping egg and incoming asteroid");
-        game::MoonBuggyGameTestAccess::forceBroken(moonBuggy);
-        game::MoonBuggyGameTestAccess::render(moonBuggy);
+        game::EggJourneyGameTestAccess::forceBroken(eggJourney);
+        game::EggJourneyGameTestAccess::render(eggJourney);
         capture("egg-journey-broken", "Egg Journey crater crash with broken egg shell");
-        game::MoonBuggyGameTestAccess::forceFlat(moonBuggy);
-        game::MoonBuggyGameTestAccess::render(moonBuggy);
+        game::EggJourneyGameTestAccess::forceFlat(eggJourney);
+        game::EggJourneyGameTestAccess::render(eggJourney);
         capture("egg-journey-flat", "Egg Journey asteroid collision with flattened egg");
 
         game::ArcadeShell beatIntro(display_, game::ArcadeTitle::Beatknecht, nullptr);

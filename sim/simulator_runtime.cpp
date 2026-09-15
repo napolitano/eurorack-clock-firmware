@@ -215,8 +215,8 @@ void SimulatorRuntime::togglePower() {
     setPower(!poweredOn_);
 }
 
-bool SimulatorRuntime::pixelRaidActive() const {
-    return application_ != nullptr && application_->pixelRaidActiveForSimulator();
+bool SimulatorRuntime::easterEggActive() const {
+    return application_ != nullptr && application_->easterEggActiveForSimulator();
 }
 
 void SimulatorRuntime::serviceEncoderSequence() {

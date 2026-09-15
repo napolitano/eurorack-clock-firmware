@@ -1,5 +1,5 @@
 /**
- * @file moon_buggy_game.h
+ * @file egg_journey_game.h
  * @brief Boot-only monochrome lunar traversal Easter egg starring a fragile egg.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
@@ -19,10 +19,10 @@
 namespace clockfw::game {
 
 /** @brief Lunar obstacle game with craters, falling asteroids, jumping, and a durable high score. */
-class MoonBuggyGame final {
+class EggJourneyGame final {
 public:
     /** @brief Constructs the game around the shared display, controls, safe gate HAL, and score slot. */
-    MoonBuggyGame(
+    EggJourneyGame(
         hal::OledDisplay& display,
         hal::ControlPanel& controls,
         hal::GateOutputDriver& gateOutputs,
@@ -38,7 +38,7 @@ public:
 #endif
 
 private:
-    friend struct MoonBuggyGameTestAccess;
+    friend struct EggJourneyGameTestAccess;
 
     enum class FailureMode : std::uint8_t { None, Broken, Flattened };
 

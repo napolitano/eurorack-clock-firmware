@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Beta documentation — v0.19.0-beta.10 · V1 feature freeze**
+> **Beta documentation — v0.19.0-beta.11 · V1 feature freeze**
 >
 > CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation and physical HIL timing sign-off remain open. Timer Input Capture or compare-event scheduling are implementation options only if measured V1 timing requires them.
 
@@ -391,7 +391,7 @@ The configured order is constrained to `START <= DIM <= OFF`. Any front-panel ac
 
 ## 20. Hidden boot Easter eggs
 
-Hold the encoder push continuously from power-up until the boot screen finishes to enter the compile-time selected Easter egg. `CLOCK_EASTER_EGG` selects one of five implementations.
+Hold the encoder push continuously from power-up until the boot screen finishes to enter the compile-time selected Easter egg. `CLOCK_EASTER_EGG` selects one of five implementations; the shipped/default build selects **BEATKNECHT**.
 
 The four ranked games — **Pixel Raid, Formula 1, Breakout, and Egg Journey** — share the same presentation flow: game-specific intro, gameplay, optional three-letter initials entry for a qualifying score, and a scrollable Top 100. A long encoder hold exits back to the normal firmware lifecycle.
 

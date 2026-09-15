@@ -33,7 +33,7 @@ enum class EasterEgg : std::uint8_t { PixelRaid = 1U, Formula1 = 2U, Breakout = 
 inline constexpr UiLanguage kUiLanguage = UiLanguage::EnglishUs;
 
 #ifndef CLOCK_EASTER_EGG
-#define CLOCK_EASTER_EGG 1
+#define CLOCK_EASTER_EGG 5
 #endif
 static_assert(CLOCK_EASTER_EGG >= 1 && CLOCK_EASTER_EGG <= 5, "CLOCK_EASTER_EGG must be 1, 2, 3, 4, or 5");
 inline constexpr EasterEgg kEasterEgg = static_cast<EasterEgg>(CLOCK_EASTER_EGG);

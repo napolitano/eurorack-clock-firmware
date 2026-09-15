@@ -26,7 +26,7 @@ ClockApplication::ClockApplication()
       pixelRaidGame_(display_, controlPanel_, gateOutputs_, pixelRaidLeaderboard_),
       formula1Game_(display_, controlPanel_, gateOutputs_, formula1Leaderboard_),
       breakoutGame_(display_, controlPanel_, gateOutputs_, breakoutLeaderboard_),
-      moonBuggyGame_(display_, controlPanel_, gateOutputs_, eggJourneyLeaderboard_),
+      eggJourneyGame_(display_, controlPanel_, gateOutputs_, eggJourneyLeaderboard_),
       beatknecht_(display_, controlPanel_, gateOutputs_),
       persistentState_(persistentStorage_),
       engine_(gateOutputs_),
@@ -147,7 +147,7 @@ bool ClockApplication::runningForSimulator() const {
     return simulatorLifecycle_ == SimulatorLifecycle::Running;
 }
 
-bool ClockApplication::pixelRaidActiveForSimulator() const {
+bool ClockApplication::easterEggActiveForSimulator() const {
     return simulatorLifecycle_ == SimulatorLifecycle::EasterEgg;
 }
 
@@ -219,14 +219,16 @@ void ClockApplication::runSelectedEasterEgg() {
             breakoutGame_.run();
             break;
         case config::EasterEgg::EggJourney:
-            moonBuggyGame_.run();
+            eggJourneyGame_.run();
             break;
         case config::EasterEgg::Beatknecht:
             beatknecht_.run();
             break;
         case config::EasterEgg::PixelRaid:
-        default:
             pixelRaidGame_.run();
+            break;
+        default:
+            beatknecht_.run();
             break;
     }
 }
@@ -241,14 +243,16 @@ void ClockApplication::beginSelectedEasterEggForSimulator() {
             breakoutGame_.beginForSimulator();
             break;
         case config::EasterEgg::EggJourney:
-            moonBuggyGame_.beginForSimulator();
+            eggJourneyGame_.beginForSimulator();
             break;
         case config::EasterEgg::Beatknecht:
             beatknecht_.beginForSimulator();
             break;
         case config::EasterEgg::PixelRaid:
-        default:
             pixelRaidGame_.beginForSimulator();
+            break;
+        default:
+            beatknecht_.beginForSimulator();
             break;
     }
 }
@@ -260,12 +264,13 @@ bool ClockApplication::serviceSelectedEasterEggForSimulator(const std::uint32_t 
         case config::EasterEgg::Breakout:
             return breakoutGame_.serviceForSimulator(nowMs);
         case config::EasterEgg::EggJourney:
-            return moonBuggyGame_.serviceForSimulator(nowMs);
+            return eggJourneyGame_.serviceForSimulator(nowMs);
         case config::EasterEgg::Beatknecht:
             return beatknecht_.serviceForSimulator(nowMs);
         case config::EasterEgg::PixelRaid:
-        default:
             return pixelRaidGame_.serviceForSimulator(nowMs);
+        default:
+            return beatknecht_.serviceForSimulator(nowMs);
     }
 }
 #endif

@@ -41,7 +41,8 @@ std::uint8_t EasterEggScoreStore::magicGameByte() const {
     switch (scoreId_) {
         case EasterEggScoreId::Formula1: return static_cast<std::uint8_t>('F');
         case EasterEggScoreId::Breakout: return static_cast<std::uint8_t>('B');
-        case EasterEggScoreId::MoonBuggy: return static_cast<std::uint8_t>('M');
+        // Keep the prerelease 'M' magic byte so existing prerelease Egg Journey scores migrate intact.
+        case EasterEggScoreId::EggJourney: return static_cast<std::uint8_t>('M');
         case EasterEggScoreId::PixelRaid:
         default: return static_cast<std::uint8_t>('P');
     }

@@ -57,7 +57,7 @@ LeaderboardTable ArcadeLeaderboardStore::loadLegacyFallback() const {
     switch (gameId_) {
         case ArcadeGameId::Formula1: legacyId = EasterEggScoreId::Formula1; break;
         case ArcadeGameId::Breakout: legacyId = EasterEggScoreId::Breakout; break;
-        case ArcadeGameId::EggJourney: legacyId = EasterEggScoreId::MoonBuggy; break;
+        case ArcadeGameId::EggJourney: legacyId = EasterEggScoreId::EggJourney; break;
         case ArcadeGameId::PixelRaid: default: break;
     }
     EasterEggScoreStore legacy(storage_, legacyId);

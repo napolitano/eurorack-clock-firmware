@@ -1,11 +1,11 @@
 /**
- * @file moon_buggy_game.cpp
+ * @file egg_journey_game.cpp
  * @brief Boot-only lunar traversal Easter egg implementation.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
  */
-#include "game/moon_buggy_game.h"
+#include "game/egg_journey_game.h"
 
 #include <algorithm>
 #include <array>
@@ -75,14 +75,14 @@ std::int16_t craterDepth(const std::int32_t worldX, const std::int32_t center, c
 
 }  // namespace
 
-MoonBuggyGame::MoonBuggyGame(
+EggJourneyGame::EggJourneyGame(
     hal::OledDisplay& display,
     hal::ControlPanel& controls,
     hal::GateOutputDriver& gateOutputs,
     ArcadeLeaderboardStore& leaderboard)
     : display_(display), controls_(controls), gateOutputs_(gateOutputs), shell_(display, ArcadeTitle::EggJourney, &leaderboard) {}
 
-void MoonBuggyGame::run() {
+void EggJourneyGame::run() {
     gateOutputs_.disableOutputStage(); gateOutputs_.setAllChannelsLow();
     const std::uint32_t startedAtMs = hal::SystemClock::milliseconds(); shell_.begin(startedAtMs);
 #ifdef CLOCK_HOST_TEST
@@ -107,13 +107,13 @@ void MoonBuggyGame::run() {
 }
 
 #ifdef CLOCK_SIMULATOR
-void MoonBuggyGame::beginForSimulator() {
+void EggJourneyGame::beginForSimulator() {
     gateOutputs_.disableOutputStage(); gateOutputs_.setAllChannelsLow();
     const std::uint32_t nowMs = hal::SystemClock::milliseconds(); shell_.begin(nowMs);
     lastSimulatorFrameAtMs_ = nowMs; shell_.render(nowMs);
 }
 
-bool MoonBuggyGame::serviceForSimulator(const std::uint32_t nowMs) {
+bool EggJourneyGame::serviceForSimulator(const std::uint32_t nowMs) {
     const hal::ControlSample controls = controls_.sample(nowMs);
     if (controls.encoderButton.edge == hal::ButtonEdge::Pressed) encoderPressedAtMs_ = nowMs;
     if (!controls.encoderButton.pressed) encoderPressedAtMs_ = 0U;
@@ -127,7 +127,7 @@ bool MoonBuggyGame::serviceForSimulator(const std::uint32_t nowMs) {
 }
 #endif
 
-void MoonBuggyGame::resetSession() {
+void EggJourneyGame::resetSession() {
     for (ImpactCrater& crater : impactCraters_) crater = {};
     asteroid_ = {};
     nextImpactCraterSlot_ = 0U;
@@ -154,14 +154,14 @@ void MoonBuggyGame::resetSession() {
     exitRequested_ = false;
 }
 
-std::uint32_t MoonBuggyGame::nextRandom() {
+std::uint32_t EggJourneyGame::nextRandom() {
     randomState_ ^= randomState_ << 13U;
     randomState_ ^= randomState_ >> 17U;
     randomState_ ^= randomState_ << 5U;
     return randomState_;
 }
 
-void MoonBuggyGame::spawnAsteroid(const std::uint32_t nowMs) {
+void EggJourneyGame::spawnAsteroid(const std::uint32_t nowMs) {
     if (asteroid_.active || gameOver_) return;
     const std::int32_t offset = 24 + static_cast<std::int32_t>(nextRandom() % 34U);
     const std::int32_t direction = (nextRandom() & 1U) != 0U ? 1 : -1;
@@ -174,7 +174,7 @@ void MoonBuggyGame::spawnAsteroid(const std::uint32_t nowMs) {
     nextAsteroidDelayMs_ = baseDelay + nextRandom() % 2200U;
 }
 
-void MoonBuggyGame::addImpactCrater(const std::int32_t worldX, const std::int16_t radius) {
+void EggJourneyGame::addImpactCrater(const std::int32_t worldX, const std::int16_t radius) {
     ImpactCrater& crater = impactCraters_[nextImpactCraterSlot_];
     crater.worldX = worldX;
     crater.radius = radius;
@@ -182,7 +182,7 @@ void MoonBuggyGame::addImpactCrater(const std::int32_t worldX, const std::int16_
     nextImpactCraterSlot_ = (nextImpactCraterSlot_ + 1U) % impactCraters_.size();
 }
 
-void MoonBuggyGame::impactAsteroid(const std::uint32_t nowMs) {
+void EggJourneyGame::impactAsteroid(const std::uint32_t nowMs) {
     if (!asteroid_.active) return;
     const std::int32_t target = asteroid_.targetWorldX;
     asteroid_.active = false;
@@ -196,7 +196,7 @@ void MoonBuggyGame::impactAsteroid(const std::uint32_t nowMs) {
     score_ = std::min<std::uint32_t>(999999U, score_ + 100U + static_cast<std::uint32_t>(journeyStage(cameraWorldX_)) * 25U);
 }
 
-std::int16_t MoonBuggyGame::craterDepthAt(const std::int32_t worldX) const {
+std::int16_t EggJourneyGame::craterDepthAt(const std::int32_t worldX) const {
     std::int16_t depth = 0;
     const std::int32_t cell = floorDiv(worldX, 58);
     for (std::int32_t offset = -1; offset <= 1; ++offset) {
@@ -212,7 +212,7 @@ std::int16_t MoonBuggyGame::craterDepthAt(const std::int32_t worldX) const {
     return depth;
 }
 
-void MoonBuggyGame::fail(const FailureMode mode) {
+void EggJourneyGame::fail(const FailureMode mode) {
     if (gameOver_ || awaitingRetry_) return;
     failureMode_ = mode;
     horizontalVelocity_ = 0;
@@ -228,7 +228,7 @@ void MoonBuggyGame::fail(const FailureMode mode) {
     }
 }
 
-void MoonBuggyGame::respawnAfterFailure() {
+void EggJourneyGame::respawnAfterFailure() {
     // Advance the camera enough that the crater which consumed the life is
     // behind the respawn point. This prevents an immediate second collision.
     cameraWorldX_ += 24;
@@ -244,7 +244,7 @@ void MoonBuggyGame::respawnAfterFailure() {
     lastAsteroidAtMs_ = lastPhysicsAtMs_;
 }
 
-void MoonBuggyGame::update(const hal::ControlSample& controls, const std::uint32_t nowMs) {
+void EggJourneyGame::update(const hal::ControlSample& controls, const std::uint32_t nowMs) {
     if (gameOver_) return;
     if (awaitingRetry_) {
         // A fresh physical press is required. Merely holding TAP across the
@@ -314,7 +314,7 @@ void MoonBuggyGame::update(const hal::ControlSample& controls, const std::uint32
     }
 }
 
-void MoonBuggyGame::finishScore() {
+void EggJourneyGame::finishScore() {
     if (scoreFinalized_) return;
     shell_.finishRun(score_);
     highScore_.score = std::max<std::uint32_t>(highScore_.score, score_);

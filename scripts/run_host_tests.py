@@ -341,8 +341,8 @@ def easter_egg_sources() -> list[Path]:
         ROOT / "src/game/pixel_raid_game.cpp",
         ROOT / "src/game/formula1_game.cpp",
         ROOT / "src/game/breakout_game.cpp",
-        ROOT / "src/game/moon_buggy_game.cpp",
-        ROOT / "src/game/moon_buggy_render.cpp",
+        ROOT / "src/game/egg_journey_game.cpp",
+        ROOT / "src/game/egg_journey_render.cpp",
         ROOT / "src/game/beatknecht.cpp",
         ROOT / "src/ui_text.cpp",
     ]

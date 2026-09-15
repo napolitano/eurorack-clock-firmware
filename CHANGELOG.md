@@ -8,6 +8,26 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.11] - 2026-09-15
+
+### Boot Easter egg default and Egg Journey naming
+
+- Changed the shipped/default compile-time boot Easter egg from Pixel Raid to **BEATKNECHT** (`CLOCK_EASTER_EGG=5`). All five Easter eggs remain selectable at build time.
+- Renamed the former internal `MoonBuggyGame` implementation to **`EggJourneyGame`** and renamed its sources from `moon_buggy_*` to **`egg_journey_*`**, matching the product-facing Egg Journey name already used by the UI and manual.
+- Renamed the legacy score-slot enum to `EggJourney` while deliberately retaining the historical `'M'` record marker and slot index so prerelease Moon Buggy/Egg Journey high scores remain readable.
+- Updated application composition, host tests, screenshot tooling, architecture checks, and host coverage source lists to the new Egg Journey identifiers.
+- Generalized the simulator lifecycle probe from the former Pixel-Raid-specific name to `easterEggActive` and updated the boot regression to exercise the new BEATKNECHT default/output-stage contract.
+
+### Documentation and tests
+
+- Updated the root README, manual workspace README, configuration reference, User Guide, and ODT manual to state that BEATKNECHT is the shipped/default Easter egg.
+- Added an explicit Native regression for the default Easter-egg selection. `test_easter_eggs` now contains **23** named cases and the repository-wide Native inventory is **369**.
+
+### Compatibility
+
+- No clock-engine, scheduler, persistence layout, musical timing, OLED, or hardware behavior changes. The Egg Journey rename preserves existing persistent score compatibility.
+
+
 ## [0.19.0-beta.10] - 2026-09-15
 
 ### Simulator OLED edge fidelity

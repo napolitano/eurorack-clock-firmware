@@ -49,7 +49,7 @@ The controller can also be selected directly with `CLOCK_DISPLAY_CONTROLLER=1306
 
 ### Boot Easter egg
 
-`CLOCK_EASTER_EGG` is a compile-time selector and is deliberately not exposed in the normal UI:
+`CLOCK_EASTER_EGG` is a compile-time selector and is deliberately not exposed in the normal UI. The shipped/default build uses **BEATKNECHT (`5`)**:
 
 | Value | Game | Controls |
 | --- | --- | --- |
@@ -57,7 +57,7 @@ The controller can also be selected directly with `CLOCK_DISPLAY_CONTROLLER=1306
 | `2` | Formula 1 | encoder steer; automatic speed/crash recovery; score + independent Top 100 |
 | `3` | Breakout | encoder paddle, TAP launch; variable angles/modifiers, three lives; score + independent Top 100 |
 | `4` | Egg Journey | auto-scrolling parallax terrain; encoder forward/backward, TAP jump/retry; three lives/progression; score + independent Top 100 |
-| `5` | BEATKNECHT | TAP cycles rhythm styles; encoder changes BPM; eight curated 16-step gate patterns drive OUT 1–8; no leaderboard |
+| `5` **(default)** | BEATKNECHT | TAP cycles rhythm styles; encoder changes BPM; eight curated 16-step gate patterns drive OUT 1–8; no leaderboard |
 
 The boot chord is unchanged: hold encoder push throughout the boot screen. Every selection opens with an individual retro intro that loops until TAP or encoder PUSH explicitly starts it; there is no automatic timeout into gameplay. Ranked arcade games route final scores through the shared initials/scrollable Top-100 flow; BACK from the ranking starts a new run and a long encoder hold exits. Existing single-score prerelease records are retained as migration fallbacks. All modes run before the normal clock scheduler starts. The arcade games keep the external gate-output stage disabled; BEATKNECHT intentionally enables it only after TAP or encoder PUSH leaves its intro for its eight rhythm gates and returns every output LOW before exiting.
 

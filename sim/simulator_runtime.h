@@ -132,8 +132,8 @@ public:
     /** @brief Toggles the simulated module power state. */
     void togglePower();
 
-    /** @brief Returns true while Pixel Raid owns the simulator firmware UI. */
-    bool pixelRaidActive() const;
+    /** @brief Returns true while the selected boot Easter egg owns the simulator firmware UI. */
+    bool easterEggActive() const;
 
     /** @brief Connects or disconnects the virtual source from SYNC IN. */
     void setSyncCableConnected(bool connected);

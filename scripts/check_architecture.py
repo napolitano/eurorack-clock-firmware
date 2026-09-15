@@ -40,7 +40,7 @@ IMPLEMENTATION_COMPANION_HEADERS = {
     "screensaver_blox.cpp": "screensaver_renderer.h",
     "screensaver_matrix.cpp": "screensaver_renderer.h",
     "screensaver_cube_cover.cpp": "screensaver_renderer.h",
-    "moon_buggy_render.cpp": "moon_buggy_game.h",
+    "egg_journey_render.cpp": "egg_journey_game.h",
     "clock_engine_timing.cpp": "clock_engine.h",
     "clock_engine_sync.cpp": "clock_engine.h",
     "ui_controller_navigation.cpp": "ui_controller.h",

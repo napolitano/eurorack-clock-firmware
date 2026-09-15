@@ -1,11 +1,11 @@
 /**
- * @file moon_buggy_render.cpp
+ * @file egg_journey_render.cpp
  * @brief Monochrome EGG JOURNEY scenery and sprite rendering.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
  */
-#include "game/moon_buggy_game.h"
+#include "game/egg_journey_game.h"
 
 #include <array>
 #include <cstdio>
@@ -106,7 +106,7 @@ void drawImpactBurst(hal::OledDisplay& display, const std::int16_t x, const std:
 }
 }  // namespace
 
-void MoonBuggyGame::render() {
+void EggJourneyGame::render() {
     display_.clear();
     display_.setFont(hal::DisplayFont::Small);
     display_.setTextColor(hal::PixelColor::White);

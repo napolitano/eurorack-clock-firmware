@@ -17,7 +17,7 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `0.19.0-beta.10`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
+> **Current status: `0.19.0-beta.11`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
 
 **HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
 
@@ -218,6 +218,8 @@ cmake --build --preset simulator
 
 Headless simulator tests are available through the dedicated preset and CI. See [`docs/SIMULATOR.md`](docs/SIMULATOR.md).
 
+The hidden boot Easter egg is selected at compile time. The shipped/default configuration uses **BEATKNECHT** (`CLOCK_EASTER_EGG=5`); Pixel Raid, Formula 1, Breakout, and Egg Journey remain selectable alternatives. Egg Journey is implemented under the matching `egg_journey_*` source names.
+
 ## Build and test
 
 ### Firmware
@@ -238,7 +240,7 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **368 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **369 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
@@ -251,7 +253,7 @@ Current inventory: **368 explicitly named Native test cases**. PlatformIO expose
 | `test_controls` | 40 | encoder Gray-code decoding, cycle resynchronization after missed/coalesced edges, NORMAL/REVERSED semantic direction, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
 | `test_settings` | 56 | settings limits, device-local encoder/display preferences, enum transitions, timing invariants, channel/Euclid/Sequencer edits and invalid-input behavior |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
-| `test_easter_eggs` | 22 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
+| `test_easter_eggs` | 23 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
 | `test_host_firmware` | 26 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
 
 The default Native run executes more than **223,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.

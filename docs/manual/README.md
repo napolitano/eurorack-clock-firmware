@@ -100,6 +100,8 @@ The catalog currently covers:
 
 The catalog is intentionally finite and representative. It covers every distinct user-visible operating/UI state rather than attempting the meaningless Cartesian product of every parameter value.
 
+The shipped/default boot Easter egg is **BEATKNECHT** (`CLOCK_EASTER_EGG=5`). Egg Journey is named consistently in both user-facing material and its `egg_journey_*` firmware sources.
+
 ## Manual structure
 
 The maintained manual follows this user-oriented publication structure:

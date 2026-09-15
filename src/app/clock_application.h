@@ -13,7 +13,7 @@
 #include "game/breakout_game.h"
 #include "game/arcade_leaderboard_store.h"
 #include "game/formula1_game.h"
-#include "game/moon_buggy_game.h"
+#include "game/egg_journey_game.h"
 #include "game/pixel_raid_game.h"
 #include "game/beatknecht.h"
 #include "hal/control_panel.h"
@@ -79,7 +79,7 @@ public:
     bool runningForSimulator() const;
 
     /** @brief Returns true while the configured boot Easter egg owns display/controls. */
-    bool pixelRaidActiveForSimulator() const;
+    bool easterEggActiveForSimulator() const;
 
     /** @brief Places the simulated module into its electrically safe powered-off state. */
     void powerOffForSimulator();
@@ -134,7 +134,7 @@ private:
     game::PixelRaidGame pixelRaidGame_;
     game::Formula1Game formula1Game_;
     game::BreakoutGame breakoutGame_;
-    game::MoonBuggyGame moonBuggyGame_;
+    game::EggJourneyGame eggJourneyGame_;
     game::Beatknecht beatknecht_;
     services::PersistentStateService persistentState_;
     engine::ClockEngine engine_;

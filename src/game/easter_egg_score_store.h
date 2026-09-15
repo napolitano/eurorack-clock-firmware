@@ -16,7 +16,7 @@
 namespace clockfw::game {
 
 /** @brief Identifies the independent durable score slot used by one Easter egg. */
-enum class EasterEggScoreId : std::uint8_t { PixelRaid = 0U, Formula1 = 1U, Breakout = 2U, MoonBuggy = 3U };
+enum class EasterEggScoreId : std::uint8_t { PixelRaid = 0U, Formula1 = 1U, Breakout = 2U, EggJourney = 3U };
 
 /** @brief Persistent three-letter arcade high-score entry. */
 struct HighScoreEntry {

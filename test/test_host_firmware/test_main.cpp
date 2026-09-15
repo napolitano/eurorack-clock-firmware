@@ -34,7 +34,7 @@
 #include "game/breakout_game.h"
 #include "game/easter_egg_score_store.h"
 #include "game/formula1_game.h"
-#include "game/moon_buggy_game.h"
+#include "game/egg_journey_game.h"
 #include "game/pixel_raid_game.h"
 #include "game/beatknecht.h"
 #include "hal/control_panel.h"
@@ -120,27 +120,27 @@ struct Formula1GameTestAccess {
     static void finishScore(Formula1Game& game, std::uint32_t score) { game.score_ = score; game.finishScore(); }
 };
 
-struct MoonBuggyGameTestAccess {
-    static void reset(MoonBuggyGame& game) { game.resetSession(); }
-    static void update(MoonBuggyGame& game, const hal::ControlSample& controls, std::uint32_t nowMs) { game.update(controls, nowMs); }
-    static void render(MoonBuggyGame& game) { game.render(); }
-    static std::int32_t worldX(const MoonBuggyGame& game) { return game.playerWorldX_; }
-    static std::int32_t cameraX(const MoonBuggyGame& game) { return game.cameraWorldX_; }
-    static std::int16_t screenX(const MoonBuggyGame& game) { return game.playerScreenX_; }
-    static std::int16_t jumpHeight(const MoonBuggyGame& game) { return game.jumpHeightFp_; }
-    static bool gameOver(const MoonBuggyGame& game) { return game.gameOver_; }
-    static bool awaitingRetry(const MoonBuggyGame& game) { return game.awaitingRetry_; }
-    static std::uint8_t lives(const MoonBuggyGame& game) { return game.lives_; }
-    static void setWorldX(MoonBuggyGame& game, std::int32_t worldX) {
+struct EggJourneyGameTestAccess {
+    static void reset(EggJourneyGame& game) { game.resetSession(); }
+    static void update(EggJourneyGame& game, const hal::ControlSample& controls, std::uint32_t nowMs) { game.update(controls, nowMs); }
+    static void render(EggJourneyGame& game) { game.render(); }
+    static std::int32_t worldX(const EggJourneyGame& game) { return game.playerWorldX_; }
+    static std::int32_t cameraX(const EggJourneyGame& game) { return game.cameraWorldX_; }
+    static std::int16_t screenX(const EggJourneyGame& game) { return game.playerScreenX_; }
+    static std::int16_t jumpHeight(const EggJourneyGame& game) { return game.jumpHeightFp_; }
+    static bool gameOver(const EggJourneyGame& game) { return game.gameOver_; }
+    static bool awaitingRetry(const EggJourneyGame& game) { return game.awaitingRetry_; }
+    static std::uint8_t lives(const EggJourneyGame& game) { return game.lives_; }
+    static void setWorldX(EggJourneyGame& game, std::int32_t worldX) {
         game.cameraWorldX_ = worldX - game.playerScreenX_ - 1;
         game.playerWorldX_ = worldX;
     }
-    static std::int16_t craterDepth(const MoonBuggyGame& game, std::int32_t worldX) { return game.craterDepthAt(worldX); }
-    static void forceFailure(MoonBuggyGame& game, bool flattened) { game.fail(flattened ? MoonBuggyGame::FailureMode::Flattened : MoonBuggyGame::FailureMode::Broken); }
-    static void setScore(MoonBuggyGame& game, std::uint32_t score) { game.score_ = score; game.finishScore(); }
-    static void spawnAsteroid(MoonBuggyGame& game, std::uint32_t nowMs) { game.spawnAsteroid(nowMs); }
-    static bool asteroidActive(const MoonBuggyGame& game) { return game.asteroid_.active; }
-    static void targetPlayer(MoonBuggyGame& game) { game.asteroid_.targetWorldX = game.playerWorldX_; game.asteroid_.y = 33; game.asteroid_.active = true; }
+    static std::int16_t craterDepth(const EggJourneyGame& game, std::int32_t worldX) { return game.craterDepthAt(worldX); }
+    static void forceFailure(EggJourneyGame& game, bool flattened) { game.fail(flattened ? EggJourneyGame::FailureMode::Flattened : EggJourneyGame::FailureMode::Broken); }
+    static void setScore(EggJourneyGame& game, std::uint32_t score) { game.score_ = score; game.finishScore(); }
+    static void spawnAsteroid(EggJourneyGame& game, std::uint32_t nowMs) { game.spawnAsteroid(nowMs); }
+    static bool asteroidActive(const EggJourneyGame& game) { return game.asteroid_.active; }
+    static void targetPlayer(EggJourneyGame& game) { game.asteroid_.targetWorldX = game.playerWorldX_; game.asteroid_.y = 33; game.asteroid_.active = true; }
 };
 
 struct BeatknechtTestAccess {
@@ -3476,13 +3476,13 @@ void testEasterEggGameAndHighScore() {
     CHECK(formulaScoreSlot.save(formulaScore));
     CHECK_EQ(formulaScoreSlot.load().score, 2468U);
     CHECK_EQ(scoreStore.load().score, 1234U);
-    game::EasterEggScoreStore moonBuggyScoreSlot(storage, game::EasterEggScoreId::MoonBuggy);
-    CHECK_EQ(moonBuggyScoreSlot.load().score, 0U);
-    game::HighScoreEntry moonScore{};
-    moonScore.score = 1357U;
-    moonScore.initials = {{'E', 'G', 'G', '\0'}};
-    CHECK(moonBuggyScoreSlot.save(moonScore));
-    CHECK_EQ(moonBuggyScoreSlot.load().score, 1357U);
+    game::EasterEggScoreStore eggJourneyScoreSlot(storage, game::EasterEggScoreId::EggJourney);
+    CHECK_EQ(eggJourneyScoreSlot.load().score, 0U);
+    game::HighScoreEntry eggJourneyScore{};
+    eggJourneyScore.score = 1357U;
+    eggJourneyScore.initials = {{'E', 'G', 'G', '\0'}};
+    CHECK(eggJourneyScoreSlot.save(eggJourneyScore));
+    CHECK_EQ(eggJourneyScoreSlot.load().score, 1357U);
     CHECK_EQ(formulaScoreSlot.load().score, 2468U);
     CHECK_EQ(scoreStore.load().score, 1234U);
 
@@ -3997,81 +3997,81 @@ void testEasterEggGameAndHighScore() {
     // Egg Journey: the terrain auto-scrolls, encoder changes the egg's screen position,
     // TAP jumps, failures consume three lives, TAP RETRY requires a fresh press, and the
     // high score owns its own slot.
-    game::MoonBuggyGame moonBuggy(display, controls, gates, eggLeaderboard);
-    moonBuggy.run();
+    game::EggJourneyGame eggJourney(display, controls, gates, eggLeaderboard);
+    eggJourney.run();
     CHECK(std::any_of(display.framebufferForTest().begin(), display.framebufferForTest().end(), [](const std::uint8_t value) { return value != 0U; }));
     CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin], pinmap::kGateBufferDisabledLevel);
-    game::MoonBuggyGameTestAccess::reset(moonBuggy);
-    const std::int32_t cameraBefore = game::MoonBuggyGameTestAccess::cameraX(moonBuggy);
-    const std::int16_t screenBefore = game::MoonBuggyGameTestAccess::screenX(moonBuggy);
+    game::EggJourneyGameTestAccess::reset(eggJourney);
+    const std::int32_t cameraBefore = game::EggJourneyGameTestAccess::cameraX(eggJourney);
+    const std::int16_t screenBefore = game::EggJourneyGameTestAccess::screenX(eggJourney);
     hal::ControlSample moonControls{};
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 45U);
-    CHECK(game::MoonBuggyGameTestAccess::cameraX(moonBuggy) > cameraBefore);
-    CHECK_EQ(game::MoonBuggyGameTestAccess::screenX(moonBuggy), screenBefore);
-    game::MoonBuggyGameTestAccess::reset(moonBuggy);
-    game::MoonBuggyGameTestAccess::setWorldX(moonBuggy, 3700);
-    const std::int32_t advancedCameraBefore = game::MoonBuggyGameTestAccess::cameraX(moonBuggy);
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 45U);
-    CHECK(game::MoonBuggyGameTestAccess::cameraX(moonBuggy) - advancedCameraBefore >= 2);
-    game::MoonBuggyGameTestAccess::reset(moonBuggy);
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 45U);
+    CHECK(game::EggJourneyGameTestAccess::cameraX(eggJourney) > cameraBefore);
+    CHECK_EQ(game::EggJourneyGameTestAccess::screenX(eggJourney), screenBefore);
+    game::EggJourneyGameTestAccess::reset(eggJourney);
+    game::EggJourneyGameTestAccess::setWorldX(eggJourney, 3700);
+    const std::int32_t advancedCameraBefore = game::EggJourneyGameTestAccess::cameraX(eggJourney);
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 45U);
+    CHECK(game::EggJourneyGameTestAccess::cameraX(eggJourney) - advancedCameraBefore >= 2);
+    game::EggJourneyGameTestAccess::reset(eggJourney);
     moonControls = {};
     moonControls.encoderDelta = 2;
     moonControls.tapButton = pressedEdge();
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 90U);
-    CHECK(game::MoonBuggyGameTestAccess::screenX(moonBuggy) > screenBefore);
-    CHECK(game::MoonBuggyGameTestAccess::jumpHeight(moonBuggy) > 0);
-    game::MoonBuggyGameTestAccess::spawnAsteroid(moonBuggy, 1000U);
-    CHECK(game::MoonBuggyGameTestAccess::asteroidActive(moonBuggy));
-    game::MoonBuggyGameTestAccess::render(moonBuggy);
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 90U);
+    CHECK(game::EggJourneyGameTestAccess::screenX(eggJourney) > screenBefore);
+    CHECK(game::EggJourneyGameTestAccess::jumpHeight(eggJourney) > 0);
+    game::EggJourneyGameTestAccess::spawnAsteroid(eggJourney, 1000U);
+    CHECK(game::EggJourneyGameTestAccess::asteroidActive(eggJourney));
+    game::EggJourneyGameTestAccess::render(eggJourney);
     const auto moonActionFrame = display.framebufferForTest();
     CHECK(std::any_of(moonActionFrame.begin(), moonActionFrame.end(), [](const std::uint8_t value) { return value != 0U; }));
 
-    game::MoonBuggyGameTestAccess::reset(moonBuggy);
-    CHECK_EQ(game::MoonBuggyGameTestAccess::lives(moonBuggy), 3U);
-    CHECK(game::MoonBuggyGameTestAccess::craterDepth(moonBuggy, -18) >= 3);
-    game::MoonBuggyGameTestAccess::setWorldX(moonBuggy, -18);
+    game::EggJourneyGameTestAccess::reset(eggJourney);
+    CHECK_EQ(game::EggJourneyGameTestAccess::lives(eggJourney), 3U);
+    CHECK(game::EggJourneyGameTestAccess::craterDepth(eggJourney, -18) >= 3);
+    game::EggJourneyGameTestAccess::setWorldX(eggJourney, -18);
     moonControls = {};
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 45U);
-    CHECK(!game::MoonBuggyGameTestAccess::gameOver(moonBuggy));
-    CHECK(game::MoonBuggyGameTestAccess::awaitingRetry(moonBuggy));
-    CHECK_EQ(game::MoonBuggyGameTestAccess::lives(moonBuggy), 2U);
-    game::MoonBuggyGameTestAccess::render(moonBuggy);
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 45U);
+    CHECK(!game::EggJourneyGameTestAccess::gameOver(eggJourney));
+    CHECK(game::EggJourneyGameTestAccess::awaitingRetry(eggJourney));
+    CHECK_EQ(game::EggJourneyGameTestAccess::lives(eggJourney), 2U);
+    game::EggJourneyGameTestAccess::render(eggJourney);
     const auto brokenEggFrame = display.framebufferForTest();
 
     // TAP RETRY is explicitly release-armed, then accepts a new press.
     moonControls = {};
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 46U);
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 46U);
     moonControls.tapButton = pressedEdge();
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 47U);
-    CHECK(!game::MoonBuggyGameTestAccess::awaitingRetry(moonBuggy));
-    CHECK(!game::MoonBuggyGameTestAccess::gameOver(moonBuggy));
-    CHECK_EQ(game::MoonBuggyGameTestAccess::lives(moonBuggy), 2U);
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 47U);
+    CHECK(!game::EggJourneyGameTestAccess::awaitingRetry(eggJourney));
+    CHECK(!game::EggJourneyGameTestAccess::gameOver(eggJourney));
+    CHECK_EQ(game::EggJourneyGameTestAccess::lives(eggJourney), 2U);
 
-    game::MoonBuggyGameTestAccess::forceFailure(moonBuggy, true);
-    CHECK_EQ(game::MoonBuggyGameTestAccess::lives(moonBuggy), 1U);
-    CHECK(game::MoonBuggyGameTestAccess::awaitingRetry(moonBuggy));
+    game::EggJourneyGameTestAccess::forceFailure(eggJourney, true);
+    CHECK_EQ(game::EggJourneyGameTestAccess::lives(eggJourney), 1U);
+    CHECK(game::EggJourneyGameTestAccess::awaitingRetry(eggJourney));
     moonControls = {};
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 48U);
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 48U);
     moonControls.tapButton = pressedEdge();
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 49U);
-    CHECK(!game::MoonBuggyGameTestAccess::awaitingRetry(moonBuggy));
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 49U);
+    CHECK(!game::EggJourneyGameTestAccess::awaitingRetry(eggJourney));
 
-    game::MoonBuggyGameTestAccess::forceFailure(moonBuggy, true);
-    CHECK_EQ(game::MoonBuggyGameTestAccess::lives(moonBuggy), 0U);
-    CHECK(game::MoonBuggyGameTestAccess::gameOver(moonBuggy));
-    game::MoonBuggyGameTestAccess::render(moonBuggy);
+    game::EggJourneyGameTestAccess::forceFailure(eggJourney, true);
+    CHECK_EQ(game::EggJourneyGameTestAccess::lives(eggJourney), 0U);
+    CHECK(game::EggJourneyGameTestAccess::gameOver(eggJourney));
+    game::EggJourneyGameTestAccess::render(eggJourney);
     CHECK(display.framebufferForTest() != brokenEggFrame);
 
     // Final GAME OVER is handed to the shared arcade results flow, not the retry state.
     moonControls = {};
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 50U);
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 50U);
     moonControls.tapButton = pressedEdge();
-    game::MoonBuggyGameTestAccess::update(moonBuggy, moonControls, 51U);
-    CHECK(game::MoonBuggyGameTestAccess::gameOver(moonBuggy));
-    CHECK_EQ(game::MoonBuggyGameTestAccess::lives(moonBuggy), 0U);
+    game::EggJourneyGameTestAccess::update(eggJourney, moonControls, 51U);
+    CHECK(game::EggJourneyGameTestAccess::gameOver(eggJourney));
+    CHECK_EQ(game::EggJourneyGameTestAccess::lives(eggJourney), 0U);
 
-    game::MoonBuggyGameTestAccess::reset(moonBuggy);
-    game::MoonBuggyGameTestAccess::setScore(moonBuggy, 7777U);
+    game::EggJourneyGameTestAccess::reset(eggJourney);
+    game::EggJourneyGameTestAccess::setScore(eggJourney, 7777U);
     CHECK_EQ(eggLeaderboard.qualifyingRank(7777U, eggLeaderboard.load()), 0);
     CHECK_EQ(formulaLeaderboard.load().entries[0].score, 2468U);
     CHECK_EQ(scoreStore.load().score, 1234U);
