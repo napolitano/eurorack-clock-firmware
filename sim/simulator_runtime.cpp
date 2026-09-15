@@ -125,7 +125,7 @@ SimulatorRuntime::framebuffer() const {
     if (!poweredOn_ || application_ == nullptr) {
         return poweredOffFramebuffer_;
     }
-    return application_->displayForSimulator().framebufferForTest();
+    return application_->displayForSimulator().panelFramebufferForSimulator();
 }
 
 const ClockState& SimulatorRuntime::state() const {

@@ -34,6 +34,7 @@ IMPLEMENTATION_COMPANION_HEADERS = {
     "persistent_state_codec.cpp": "persistent_state_service.h",
     "persistent_state_migration.cpp": "persistent_state_service.h",
     "oled_display_transport.cpp": "oled_display.h",
+    "oled_display_controller_model.cpp": "oled_display.h",
     "screensaver_spectrum.cpp": "screensaver_renderer.h",
     "screensaver_field.cpp": "screensaver_renderer.h",
     "screensaver_blox.cpp": "screensaver_renderer.h",

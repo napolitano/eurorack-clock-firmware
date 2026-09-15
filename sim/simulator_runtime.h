@@ -99,7 +99,7 @@ public:
     /** @brief Flushes simulated non-volatile storage when its contents changed. */
     void flushPersistence();
 
-    /** @brief Returns actual 128x64 firmware framebuffer, or a blank frame while powered off. */
+    /** @brief Returns the 128x64 virtual panel image after SSD1306/SSD1315 scan mapping, or blank while powered off. */
     const std::array<std::uint8_t, hal::OledDisplay::kFramebufferSize>& framebuffer() const;
 
     /** @brief Returns current real firmware application state, or the last safe state while off. */

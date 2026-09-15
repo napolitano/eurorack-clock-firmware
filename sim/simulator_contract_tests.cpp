@@ -16,6 +16,7 @@
 #include <string>
 
 #include "domain/clock_types.h"
+#include "hal/oled_display.h"
 #include "panel_layout.h"
 #include "scope_timeline.h"
 
@@ -30,6 +31,49 @@ int fail(const char* const message) {
 }  // namespace
 
 int runStaticContracts() {
+
+    // The virtual OLED must follow the same controller commands as hardware.
+    // CLOCK's canonical 0-degree scan mapping is A1/C8; A0/C0 rotates both axes.
+    {
+        hal::OledDisplay display{};
+        display.setRotation180(false);
+        display.setPixel(3, 5);
+        const auto& canonical = display.framebufferForTest();
+        const auto pixelIsSet = [](
+            const std::array<std::uint8_t, hal::OledDisplay::kFramebufferSize>& framebuffer,
+            const std::int16_t x,
+            const std::int16_t y) {
+            const std::size_t index = static_cast<std::size_t>(x) +
+                static_cast<std::size_t>(y / 8) * static_cast<std::size_t>(hal::OledDisplay::kWidth);
+            return (framebuffer[index] & static_cast<std::uint8_t>(1U << (y & 7))) != 0U;
+        };
+
+        if (!pixelIsSet(canonical, 3, 5) ||
+            !pixelIsSet(display.panelFramebufferForSimulator(), 3, 5)) {
+            return fail("A1/C8 must preserve canonical OLED orientation in the simulator");
+        }
+
+        display.setRotation180(true);
+        const auto& rotated = display.panelFramebufferForSimulator();
+        if (!pixelIsSet(rotated, 124, 58) || pixelIsSet(rotated, 3, 5) ||
+            !pixelIsSet(display.framebufferForTest(), 3, 5)) {
+            return fail("A0/C0 must rotate the simulated OLED 180 degrees without mutating the framebuffer");
+        }
+
+        // Parameter bytes can legally equal remap/scan opcodes. The controller model
+        // must consume them as data rather than accidentally changing orientation.
+        display.setContrast(0xA0U);
+        display.setContrast(0xC0U);
+        const auto& stillRotated = display.panelFramebufferForSimulator();
+        if (!pixelIsSet(stillRotated, 124, 58) || pixelIsSet(stillRotated, 3, 5)) {
+            return fail("OLED command parameters must not be misread as A0/C0 orientation commands");
+        }
+
+        display.setRotation180(false);
+        if (!pixelIsSet(display.panelFramebufferForSimulator(), 3, 5)) {
+            return fail("A1/C8 must restore the simulated OLED to 0 degrees immediately");
+        }
+    }
     // The developer-scope ruler is a real timeline, not a screen-fixed decoration.
     if (scope::kWindowOptionsUs != std::array<std::uint64_t, 7U>{{
             500000ULL, 1000000ULL, 2000000ULL, 4000000ULL, 8000000ULL,

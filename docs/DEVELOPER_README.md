@@ -703,8 +703,8 @@ CI runs automatically on pushes and pull requests. It checks architecture, Pytho
 Release tags must exactly match `src/version.h`:
 
 ```text
-Firmware: 0.19.0-beta.8
-Tag:      v0.19.0-beta.8
+Firmware: 0.19.0-beta.9
+Tag:      v0.19.0-beta.9
 ```
 
 Prerelease tags containing `-` are published as GitHub prereleases.

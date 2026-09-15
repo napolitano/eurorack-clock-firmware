@@ -106,6 +106,8 @@ const std::array<std::uint8_t, OledDisplay::kFramebufferSize>& OledDisplay::pres
 }
 #endif
 
+
+
 void OledDisplay::setFont(const DisplayFont font) {
     font_ = font;
 }

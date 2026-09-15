@@ -8,6 +8,21 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.9] - 2026-09-15
+
+### Simulator OLED controller model
+
+- Added SSD1306/SSD1315 scan-orientation modeling to the native simulator. The simulated panel now follows the actual `A0/A1` segment-remap and `C0/C8` COM-scan commands emitted by `OledDisplay` instead of rendering the canonical framebuffer unconditionally.
+- Kept the production/UI framebuffer canonical: the virtual panel applies controller scan mapping only at the simulator display boundary, matching the physical OLED behavior without changing renderer coordinates or screenshots generated directly from firmware state.
+- Modeled segment and COM directions independently, so partial command combinations expose horizontal or vertical mirroring instead of collapsing orientation into one application-level boolean.
+- Added command-parameter tracking so legal parameter bytes such as contrast value `0xA0` or `0xC0` cannot be mistaken for orientation commands.
+- Added simulator regressions for canonical `A1/C8`, rotated `A0/C0`, immediate return to 0 degrees, framebuffer immutability, and command-parameter isolation.
+
+### Compatibility
+
+- No STM32 timing, clock-engine, persistence, musical behavior, or physical OLED command changes. This release corrects only the native simulator's interpretation of the already-existing beta.8 display-orientation commands.
+
+
 ## [0.19.0-beta.8] - 2026-09-15
 
 ### Device installation preferences

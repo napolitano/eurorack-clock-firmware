@@ -115,6 +115,15 @@ void OledDisplay::sendCommands(
         return;
     }
 
+#if defined(CLOCK_SIMULATOR)
+    // Feed the same command bytes that go to the transport into the virtual OLED
+    // controller. The simulator therefore follows A0/A1 and C0/C8 exactly like
+    // the physical SSD1306/SSD1315 instead of mirroring application state.
+    for (std::size_t index = 0U; index < size; ++index) {
+        observeControllerCommandForSimulator(commands[index]);
+    }
+#endif
+
     if (config::kDisplayTransport == config::DisplayTransport::I2c) {
         Wire.beginTransmission(i2cAddress_);
         Wire.write(kSsd1306CommandControlByte);

@@ -1,6 +1,6 @@
 <!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
-# South Signal Lab CLOCK Test Coverage — v0.19.0-beta.8
+# South Signal Lab CLOCK Test Coverage — v0.19.0-beta.9
 
 The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 368 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
@@ -14,7 +14,7 @@ The following are mandatory:
 
 The prerelease gates remain stringent without requiring synthetic tests for every defensive/error path. The coverage report still lists every uncovered production function and source decision so regressions remain visible during review.
 
-Current repository-wide validated baseline (`0.19.0-beta.8`):
+Current repository-wide validated baseline (`0.19.0-beta.9`):
 
 ```text
 Executable lines:   6424/6682 (96.14%)
@@ -108,7 +108,7 @@ cmake --build --preset simulator-headless
 ctest --preset simulator-headless
 ```
 
-These tests boot the complete firmware above the simulator HAL, exercise real debounced controls and scheduler callbacks, verify OLED output and gate edges, verify host-file persistence, power-cycle the application, enter the configured boot Easter egg through the real boot chord, check framebuffer-visible projectiles, drive ideal SYNC/RST comparator sources, and verify scope reset/re-arm semantics. CI executes this layer on Windows, macOS, and Linux.
+These tests boot the complete firmware above the simulator HAL, exercise real debounced controls and scheduler callbacks, verify OLED output and gate edges, verify host-file persistence, power-cycle the application, enter the configured boot Easter egg through the real boot chord, check framebuffer-visible projectiles, drive ideal SYNC/RST comparator sources, and verify scope reset/re-arm semantics. The virtual OLED additionally consumes the real `A0/A1` segment-remap and `C0/C8` COM-scan command stream: regressions prove 0-degree `A1/C8`, 180-degree `A0/C0`, canonical-framebuffer immutability, immediate reversal, and command-parameter isolation. CI executes this layer on Windows, macOS, and Linux.
 
 ## Hardware-in-the-loop remains mandatory
 
