@@ -146,12 +146,12 @@ A board revision can therefore remap the OLED without editing source code, for e
 extends = env:blackpill_f401cc_spi_ssd1315
 build_flags =
     ${env:blackpill_f401cc_spi_ssd1315.build_flags}
-    -DCLOCK_DISPLAY_SPI_CS_PIN=PB0
-    -DCLOCK_DISPLAY_SPI_DC_PIN=PB1
-    -DCLOCK_DISPLAY_RESET_PIN=PB5
+    -DCLOCK_DISPLAY_SPI_CS_PIN=clockfw::mcu::PB0
+    -DCLOCK_DISPLAY_SPI_DC_PIN=clockfw::mcu::PB1
+    -DCLOCK_DISPLAY_RESET_PIN=clockfw::mcu::PB5
 ```
 
-Use Arduino **digital pin names** (`PA7`, not `PA_7`) for these macros. STM32duino's integer `SPIClass` constructor expects digital pin numbers and performs the `PinName` conversion internally.
+Use CLOCK's framework-independent encoded pin constants (`clockfw::mcu::PA7`, `clockfw::mcu::PB9`, etc.) for these macros. The STM32Cube HAL maps those identifiers to the selected GPIO/alternate-function configuration.
 
 The current prototype SPI bus is deliberately limited to **1 MHz** for breadboard/point-to-point bring-up margin. Both supported controller families permit substantially faster serial operation, but the prototype wiring is not treated as a controlled-impedance PCB interconnect.
 

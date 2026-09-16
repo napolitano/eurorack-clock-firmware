@@ -4,7 +4,7 @@
 
 This guide describes a reproducible development setup for the **CLOCK** firmware using **VSCodium**. Windows is the primary workstation platform; macOS and Linux are fully supported for editing and PlatformIO builds. The repository's full host coverage pipeline is GNU GCC/gcov based, so Linux or WSL2 is the simplest environment for running the exact same coverage and sanitizer checks as CI.
 
-The firmware targets the **STM32F401CCU6 Black Pill** and uses PlatformIO with the STM32duino Arduino framework. No third-party PlatformIO libraries are required.
+The firmware targets the **STM32F401CCU6 Black Pill** and uses PlatformIO with the STM32CubeF4 framework. No third-party PlatformIO libraries are required.
 
 ## 1. What the toolchain contains
 
@@ -14,7 +14,7 @@ There are three distinct layers in the development toolchain:
 2. **PlatformIO Core** — resolves the STM32 platform/toolchain, builds firmware, runs the native core tests, and uploads through DFU.
 3. **Host GCC toolchain** — builds the complete firmware against deterministic fake hardware for coverage, ASan, and UBSan.
 
-PlatformIO downloads the ARM compiler, STM32duino framework, and target tools into its own package directory. Do **not** install a separate ARM GCC toolchain unless a specific debugging workflow requires it.
+PlatformIO downloads the ARM compiler, STM32CubeF4 framework, and target tools into its own package directory. Do **not** install a separate ARM GCC toolchain unless a specific debugging workflow requires it.
 
 ## 2. Repository layout developers should know first
 
@@ -185,7 +185,7 @@ In the VSCodium terminal:
 pio run -e blackpill_f401cc
 ```
 
-The first build takes longer because PlatformIO downloads the pinned STM32 platform, STM32duino framework, ARM toolchain, and upload utilities.
+The first build takes longer because PlatformIO downloads the pinned STM32 platform, STM32CubeF4 framework, ARM toolchain, and upload utilities.
 
 The build must also pass the post-link memory gate:
 
@@ -698,18 +698,18 @@ Host coverage is not a substitute for bench verification. Read `docs/TIMING.md` 
 
 ## 31. GitHub Actions and releases
 
-CI runs automatically on pushes and pull requests. It checks architecture, Python tooling, native tests, complete host coverage, sanitizers, the headless simulator on Windows/macOS/Linux, the SDL3 frontend build, the I2C firmware build, the SPI build, and memory budgets. Target BIN/ELF files are not uploaded while STM32duino remains statically linked; tagged releases are source-only.
+CI runs automatically on pushes and pull requests. It checks architecture, Python tooling, native tests, complete host coverage, sanitizers, the headless simulator on Windows/macOS/Linux, the SDL3 frontend build, the I2C firmware build, the SPI build, and memory budgets. Firmware binary packaging is enabled from the STM32CubeF4 target; release publication remains controlled by the release workflow.
 
 Release tags must exactly match `src/version.h`:
 
 ```text
-Firmware: 0.19.0-beta.11
-Tag:      v0.19.0-beta.11
+Firmware: 0.19.0-beta.12
+Tag:      v0.19.0-beta.12
 ```
 
 Prerelease tags containing `-` are published as GitHub prereleases.
 
-`scripts/package_release.py` derives deterministic binary filenames from the version source of truth, but it is deliberately fail-closed while STM32duino remains statically linked. The explicit `--acknowledge-lgpl-static-link` flag is reserved for a separately compliance-reviewed binary distribution.
+`scripts/package_release.py` derives deterministic binary filenames from the version source of truth and packages firmware together with the applicable notices and third-party license texts.
 
 ## 32. Recommended first-day validation
 

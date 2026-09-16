@@ -324,7 +324,7 @@ The simulator does not replace hardware-in-the-loop validation. It cannot prove 
 
 SDL3 is a simulator-only build dependency and does not enter the STM32 firmware image. SDL 3.x is distributed under the zlib license. The source repository retains the upstream notice in `third_party/LICENSE-SDL-zlib.txt` and lists SDL in `THIRD_PARTY_NOTICES.md`.
 
-This does not change the firmware's PolyForm Noncommercial license or the separate STM32duino/STM32Cube/CMSIS licensing analysis documented in `docs/LICENSING.md`.
+This does not change the firmware's PolyForm Noncommercial license or the separate STM32CubeF4/CMSIS licensing analysis documented in `docs/LICENSING.md`.
 
 ## Configurable front-panel artwork and geometry
 

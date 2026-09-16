@@ -145,6 +145,7 @@ def realtime_sources() -> list[Path]:
         "src/hal/external_input_capture.cpp",
         "src/hal/gate_output_driver.cpp",
         "src/hal/interrupt_lock.cpp",
+        "src/hal/platform_io.cpp",
         "src/hal/system_clock.cpp",
         "src/services/external_sync_controller.cpp",
     ]
@@ -293,7 +294,7 @@ def tap_tempo_sources() -> list[Path]:
 
 
 def control_sources() -> list[Path]:
-    return [ROOT / "src/hal/control_panel.cpp", ROOT / "src/hal/interrupt_lock.cpp"]
+    return [ROOT / "src/hal/control_panel.cpp", ROOT / "src/hal/interrupt_lock.cpp", ROOT / "src/hal/platform_io.cpp"]
 
 
 def settings_sources() -> list[Path]:
@@ -315,6 +316,7 @@ def screensaver_sources() -> list[Path]:
         ROOT / "src/hal/display_font.cpp",
         ROOT / "src/hal/oled_display.cpp",
         ROOT / "src/hal/oled_display_transport.cpp",
+        ROOT / "src/hal/platform_io.cpp",
         ROOT / "src/ui/screensaver_renderer.cpp",
         ROOT / "src/ui/screensaver_spectrum.cpp",
         ROOT / "src/ui/screensaver_field.cpp",
@@ -334,6 +336,7 @@ def easter_egg_sources() -> list[Path]:
         ROOT / "src/hal/display_font.cpp",
         ROOT / "src/hal/oled_display.cpp",
         ROOT / "src/hal/oled_display_transport.cpp",
+        ROOT / "src/hal/platform_io.cpp",
         ROOT / "src/hal/persistent_storage.cpp",
         ROOT / "src/game/easter_egg_score_store.cpp",
         ROOT / "src/game/arcade_leaderboard_store.cpp",
@@ -418,7 +421,7 @@ def run_sanitizer_matrix() -> None:
     compile_sanitized_realtime_suite()
     compile_sanitized_realtime_suite(
         "realtime_external_gpio",
-        ["-DCLOCK_EXTERNAL_SYNC_PIN=PB3", "-DCLOCK_EXTERNAL_RESET_PIN=PB4"],
+        ["-DCLOCK_EXTERNAL_SYNC_PIN=clockfw::mcu::PB3", "-DCLOCK_EXTERNAL_RESET_PIN=clockfw::mcu::PB4"],
     )
     compile_sanitized_sync_behavior_suite()
     compile_sanitized_behavior_suite("swing", realtime_sources(), ROOT / "test/test_swing/test_main.cpp")
@@ -663,7 +666,7 @@ def main() -> int:
         compile_realtime_suite(),
         compile_realtime_suite(
             "realtime_external_gpio",
-            ["-DCLOCK_EXTERNAL_SYNC_PIN=PB3", "-DCLOCK_EXTERNAL_RESET_PIN=PB4"],
+            ["-DCLOCK_EXTERNAL_SYNC_PIN=clockfw::mcu::PB3", "-DCLOCK_EXTERNAL_RESET_PIN=clockfw::mcu::PB4"],
         ),
         compile_sync_behavior_suite(),
         compile_behavior_suite("swing", realtime_sources(), ROOT / "test/test_swing/test_main.cpp"),

@@ -8,6 +8,8 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace clockfw::hal {
 
 /**
@@ -29,6 +31,9 @@ public:
 
     /** @brief Prevents copy-assignment of a critical-section guard. */
     InterruptLock& operator=(const InterruptLock&) = delete;
+
+private:
+    std::uint32_t previousPrimask_ = 0U;
 };
 
 }  // namespace clockfw::hal

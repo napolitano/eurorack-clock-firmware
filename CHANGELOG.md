@@ -8,6 +8,34 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.12] - 2026-09-15
+
+### STM32CubeF4 runtime migration
+
+- Replaced the STM32duino/Arduino embedded runtime with direct **STM32CubeF4 HAL/CMSIS** integration for the STM32F401CC target. The firmware target now builds with PlatformIO `framework = stm32cube`.
+- Added a narrow platform HAL for GPIO, EXTI, millisecond/microsecond timing, critical sections and MCU initialization while keeping host-test and simulator adapters deterministic.
+- Replaced Arduino `HardwareTimer` scheduling with direct TIM3 configuration at the existing 20 kHz scheduler rate and retained the documented interrupt-priority contract.
+- Replaced embedded `Wire`/`SPI` OLED transport with direct I2C1/SPI1 HAL transfers. Display controller behavior, SPI/I2C feature support and UI rendering contracts remain unchanged.
+- Preserved the 25 MHz HSE to 84 MHz system-clock configuration and added a free-running 1 MHz TIM5 microsecond timebase. Critical sections now restore the previous PRIMASK state instead of unconditionally enabling interrupts.
+
+### Licensing and release readiness
+
+- Removed the STM32duino LGPL runtime dependency and retired `third_party/LICENSE-LGPL-2.1.txt`. The embedded runtime now depends on STM32CubeF4 HAL/LL (BSD-3-Clause) and CMSIS/CMSIS Device (Apache-2.0).
+- Removed the former static-link binary-release blocker from release packaging and documentation.
+- Added `scripts/check_embedded_dependencies.py` and CI/release gates that reject a return to the Arduino framework, unreviewed embedded `lib_deps`, or the retired STM32duino notice/license.
+- Updated third-party notices, licensing/dependency documentation and the on-device framework/license information.
+
+### Validation
+
+- Preserved the **369-test** Native inventory and passed the complete host firmware matrix for I2C, SPI/SSD1306, SPI/SSD1315, custom SPI wiring and fixed-reset I2C configurations.
+- Validated full I2C and SPI/SSD1315 host firmware under ASan/UBSan, plus architecture, documentation, dependency-policy and 64/64 tooling tests.
+- A real ARM/STM32Cube PlatformIO target build remains an explicit CI gate because the local packaging environment does not contain the PlatformIO/ARM toolchain.
+
+### Compatibility
+
+- No persistence-schema, clock-engine, scheduler-frequency, musical behavior, UI workflow or hardware-pin contract change is intended. This release changes the embedded platform runtime beneath the existing HAL boundary.
+
+
 ## [0.19.0-beta.11] - 2026-09-15
 
 ### Boot Easter egg default and Egg Journey naming

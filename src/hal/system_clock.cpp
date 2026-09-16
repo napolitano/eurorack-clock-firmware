@@ -1,6 +1,6 @@
 /**
  * @file system_clock.cpp
- * @brief Thin HAL wrapper around Arduino monotonic time and delay primitives.
+ * @brief Thin HAL wrapper around framework-independent monotonic time and delay primitives.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -8,20 +8,20 @@
 
 #include "hal/system_clock.h"
 
-#include <Arduino.h>
+#include "hal/platform_io.h"
 
 namespace clockfw::hal {
 
 std::uint32_t SystemClock::milliseconds() {
-    return millis();
+    return platform::milliseconds();
 }
 
 std::uint32_t SystemClock::microseconds() {
-    return micros();
+    return platform::microseconds();
 }
 
 void SystemClock::delayMilliseconds(const std::uint32_t durationMs) {
-    delay(durationMs);
+    platform::delayMilliseconds(durationMs);
 }
 
 }  // namespace clockfw::hal

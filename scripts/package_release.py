@@ -40,22 +40,7 @@ def main() -> int:
     parser.add_argument("--third-party-dir", default="third_party")
     parser.add_argument("--citation-file", default="CITATION.cff")
     parser.add_argument("--codemeta-file", default="codemeta.json")
-    parser.add_argument(
-        "--acknowledge-lgpl-static-link",
-        action="store_true",
-        help=(
-            "Explicitly acknowledge that publishing the generated static BIN/ELF "
-            "requires a separately reviewed LGPL compliance package."
-        ),
-    )
     args = parser.parse_args()
-
-    if not args.acknowledge_lgpl_static_link:
-        raise SystemExit(
-            "Binary packaging is intentionally disabled while the target statically "
-            "links STM32duino LGPL components. Use --acknowledge-lgpl-static-link "
-            "only for a compliance-reviewed distribution."
-        )
 
     build_dir = Path(args.build_dir)
     out_dir = Path(args.out_dir)

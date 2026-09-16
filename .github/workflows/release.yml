@@ -47,6 +47,9 @@ jobs:
       - name: Enforce architecture policy
         run: python scripts/check_architecture.py
 
+      - name: Enforce embedded dependency policy
+        run: python scripts/check_embedded_dependencies.py
+
       - name: Validate repository documentation
         run: python scripts/check_documentation.py
 
@@ -134,9 +137,8 @@ jobs:
           fi
           VERSION="$(python scripts/version.py)"
           # GitHub automatically exposes source archives for the tag. Firmware
-          # BIN/ELF assets remain deliberately unattached while STM32duino LGPL
-          # static-link compliance has not been separately reviewed. The manual
-          # ODT/PDF are documentation artifacts and are published explicitly.
+          # artifacts are packaged separately by the release pipeline; the manual
+          # ODT/PDF remain explicit release documentation assets.
           gh release create "${GITHUB_REF_NAME}" \
             "dist/clock-user-manual.${VERSION}.odt" \
             "dist/clock-user-manual.${VERSION}.pdf" \

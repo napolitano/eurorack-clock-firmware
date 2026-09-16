@@ -8,7 +8,7 @@
 
 #include "hal/control_panel.h"
 
-#include <Arduino.h>
+#include "hal/platform_io.h"
 
 #include "pin_map.h"
 #include "hal/interrupt_lock.h"
@@ -34,14 +34,14 @@ ControlPanel* ControlPanel::activeInstance_ = nullptr;
 ControlPanel::DebouncedButton::DebouncedButton(const std::uint32_t pin) : pin_(pin) {}
 
 void ControlPanel::DebouncedButton::begin(const std::uint32_t nowMs) {
-    pinMode(pin_, INPUT_PULLUP);
-    rawPressed_ = digitalRead(pin_) == LOW;
+    platform::configureInputPullup(pin_);
+    rawPressed_ = !platform::read(pin_);
     stablePressed_ = rawPressed_;
     rawChangedAtMs_ = nowMs;
 }
 
 ButtonSample ControlPanel::DebouncedButton::sample(const std::uint32_t nowMs) {
-    const bool currentRawPressed = digitalRead(pin_) == LOW;
+    const bool currentRawPressed = !platform::read(pin_);
     if (currentRawPressed != rawPressed_) {
         rawPressed_ = currentRawPressed;
         rawChangedAtMs_ = nowMs;
@@ -63,20 +63,20 @@ ControlPanel::ControlPanel()
       resetButton_(pinmap::kResetBackButtonPin) {}
 
 void ControlPanel::begin() {
-    pinMode(pinmap::kEncoderPhaseAPin, INPUT_PULLUP);
-    pinMode(pinmap::kEncoderPhaseBPin, INPUT_PULLUP);
+    platform::configureInputPullup(pinmap::kEncoderPhaseAPin);
+    platform::configureInputPullup(pinmap::kEncoderPhaseBPin);
 
     previousEncoderState_ =
-        (digitalRead(pinmap::kEncoderPhaseAPin) == HIGH ? 2U : 0U) |
-        (digitalRead(pinmap::kEncoderPhaseBPin) == HIGH ? 1U : 0U);
+        (platform::read(pinmap::kEncoderPhaseAPin) ? 2U : 0U) |
+        (platform::read(pinmap::kEncoderPhaseBPin) ? 1U : 0U);
     encoderCycleAnchorState_ = previousEncoderState_;
     encoderAccumulator_ = 0;
     pendingEncoderDetents_ = 0;
     activeInstance_ = this;
-    attachInterrupt(digitalPinToInterrupt(pinmap::kEncoderPhaseAPin), encoderInterruptThunk, CHANGE);
-    attachInterrupt(digitalPinToInterrupt(pinmap::kEncoderPhaseBPin), encoderInterruptThunk, CHANGE);
+    platform::attachInterrupt(pinmap::kEncoderPhaseAPin, encoderInterruptThunk, platform::InterruptEdge::Change);
+    platform::attachInterrupt(pinmap::kEncoderPhaseBPin, encoderInterruptThunk, platform::InterruptEdge::Change);
 
-    const std::uint32_t nowMs = millis();
+    const std::uint32_t nowMs = platform::milliseconds();
     encoderButton_.begin(nowMs);
     transportButton_.begin(nowMs);
     tapButton_.begin(nowMs);
@@ -129,8 +129,8 @@ void ControlPanel::encoderInterruptThunk() {
 
 void ControlPanel::handleEncoderEdgeFromIsr() {
     const std::uint8_t currentState =
-        (digitalRead(pinmap::kEncoderPhaseAPin) == HIGH ? 2U : 0U) |
-        (digitalRead(pinmap::kEncoderPhaseBPin) == HIGH ? 1U : 0U);
+        (platform::read(pinmap::kEncoderPhaseAPin) ? 2U : 0U) |
+        (platform::read(pinmap::kEncoderPhaseBPin) ? 1U : 0U);
     const std::uint8_t transitionIndex = static_cast<std::uint8_t>(
         (static_cast<std::uint16_t>(previousEncoderState_) << 2U) | currentState);
     previousEncoderState_ = currentState;

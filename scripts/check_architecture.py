@@ -382,7 +382,7 @@ def main() -> int:
 
     print("Architecture check passed.")
     print(f"  C++ files checked: {len(iter_cpp_files())}")
-    print("  Hardware APIs: HAL/pin_map only; Arduino entry declaration allowed in src/main.cpp")
+    print("  Hardware APIs: STM32Cube confined to HAL/pin_map; host framework fakes confined to test/simulator boundaries")
     print("  Static UI text: centralized in src/ui_text.h")
     print("  Third-party PlatformIO libraries: none")
     print("  Embedded heap allocation: prohibited in src/ and lib/")

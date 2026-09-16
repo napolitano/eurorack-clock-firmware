@@ -8,7 +8,7 @@
 
 #include "hal/external_input_capture.h"
 
-#include <Arduino.h>
+#include "hal/platform_io.h"
 
 #include "hal/system_clock.h"
 #include "pin_map.h"
@@ -20,19 +20,13 @@ ExternalInputCapture* ExternalInputCapture::activeInstance_ = nullptr;
 void ExternalInputCapture::begin() {
     activeInstance_ = this;
     if (pinmap::kExternalSyncSignalPin != pinmap::kUnassignedDigitalPin) {
-        pinMode(pinmap::kExternalSyncSignalPin, INPUT_PULLUP);
-        attachInterrupt(
-            digitalPinToInterrupt(pinmap::kExternalSyncSignalPin),
-            syncInterruptThunk,
-            CHANGE);
+        platform::configureInputPullup(pinmap::kExternalSyncSignalPin);
+        platform::attachInterrupt(pinmap::kExternalSyncSignalPin, syncInterruptThunk, platform::InterruptEdge::Change);
     }
     if (pinmap::kExternalResetSignalPin != pinmap::kUnassignedDigitalPin) {
-        pinMode(pinmap::kExternalResetSignalPin, INPUT_PULLUP);
-        resetLevelHigh_ = digitalRead(pinmap::kExternalResetSignalPin) == HIGH;
-        attachInterrupt(
-            digitalPinToInterrupt(pinmap::kExternalResetSignalPin),
-            resetInterruptThunk,
-            CHANGE);
+        platform::configureInputPullup(pinmap::kExternalResetSignalPin);
+        resetLevelHigh_ = platform::read(pinmap::kExternalResetSignalPin);
+        platform::attachInterrupt(pinmap::kExternalResetSignalPin, resetInterruptThunk, platform::InterruptEdge::Change);
     }
 }
 
@@ -71,11 +65,11 @@ void ExternalInputCapture::resetInterruptThunk() {
 void ExternalInputCapture::captureSyncFromIsr() {
     pushFromIsr(syncQueue_, {
         SystemClock::microseconds(),
-        digitalRead(pinmap::kExternalSyncSignalPin) == HIGH});
+        platform::read(pinmap::kExternalSyncSignalPin)});
 }
 
 void ExternalInputCapture::captureResetFromIsr() {
-    const bool high = digitalRead(pinmap::kExternalResetSignalPin) == HIGH;
+    const bool high = platform::read(pinmap::kExternalResetSignalPin);
     resetLevelHigh_ = high;
     pushFromIsr(resetQueue_, {SystemClock::microseconds(), high});
 }

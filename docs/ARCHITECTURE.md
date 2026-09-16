@@ -38,7 +38,7 @@ flowchart TB
     Engine --> HAL[HAL]
     Renderers --> HAL
     Services --> HAL
-    HAL --> STM[STM32duino / STM32F401]
+    HAL --> STM[STM32CubeF4 / STM32F401]
     HAL -. same production interfaces .-> SimShim[Native simulator shim]
     SimShim --> SDL[SDL3 panel + developer scope]
 ```
@@ -133,7 +133,7 @@ The core owns no display, GPIO, Flash, or wall-clock operations.
 
 ### Current scheduler
 
-TIM3 services the engine at 20 kHz (50 µs). The scheduler is an alpha backend, but the surrounding interfaces are deliberately designed so a future timer-compare/event backend can replace it without changing the domain/UI model.
+TIM3 services the engine at 20 kHz (50 µs). The scheduler is the current V1 backend, but the surrounding interfaces are deliberately designed so a future timer-compare/event backend can replace it without changing the domain/UI model.
 
 ```mermaid
 flowchart LR
@@ -170,7 +170,7 @@ Humanize is applied only when `OperatingMode::UnifiedClock` (user-visible **One 
 
 ## HAL
 
-HAL is the only production implementation layer allowed to call STM32duino hardware APIs.
+HAL is the only production implementation layer allowed to call STM32CubeF4 hardware APIs.
 
 | Component | Responsibility |
 | --- | --- |
@@ -221,7 +221,7 @@ Static firmware strings live in `ui_text.h`. Renderers must not embed user-facin
 
 ## Persistence
 
-CLOCK uses two independent 16 KiB STM32F401 Flash sectors. STM32duino EEPROM emulation is not used.
+CLOCK uses two independent 16 KiB STM32F401 Flash sectors. Legacy STM32duino EEPROM emulation is not used.
 
 ```mermaid
 stateDiagram-v2

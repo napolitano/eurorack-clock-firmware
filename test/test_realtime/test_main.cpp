@@ -11,6 +11,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <unity.h>
+#include <Arduino.h>
 
 #include "clock_core.h"
 #include "config.h"

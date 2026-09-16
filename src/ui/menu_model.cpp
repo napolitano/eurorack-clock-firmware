@@ -243,7 +243,7 @@ MenuRow buildMenuRow(
         } else if (rowIndex == 1U) {
             copyText(row.value, sizeof(row.value), text::TextId::FrameworkName);
         } else if (rowIndex == 2U) {
-            copyText(row.value, sizeof(row.value), text::TextId::LgplShort);
+            copyText(row.value, sizeof(row.value), text::TextId::CubeLicenseShort);
         } else if (rowIndex == 3U) {
             copyText(row.value, sizeof(row.value), text::TextId::BsdShort);
         } else if (rowIndex == 4U) {

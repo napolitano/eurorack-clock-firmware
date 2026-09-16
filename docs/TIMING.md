@@ -6,7 +6,7 @@ This document defines the firmware timing boundary. It distinguishes hard real-t
 
 ## Hard real-time layer
 
-CLOCK currently uses TIM3 as a **20 kHz scheduler interrupt**. One scheduler quantum is therefore **50 µs**. Gate scheduling, pulse termination, phase progression, external-sync consumption, and external-reset semantics execute from this scheduler path rather than from the Arduino foreground loop.
+CLOCK currently uses TIM3 as a **20 kHz scheduler interrupt**. One scheduler quantum is therefore **50 µs**. Gate scheduling, pulse termination, phase progression, external-sync consumption, and external-reset semantics execute from this scheduler path rather than from the foreground application loop.
 
 The target interrupt hierarchy is deliberately asymmetric:
 
@@ -41,7 +41,7 @@ SPI is the default PlatformIO/reference profile. `present()` transfers dirty pag
 
 ### I2C — procurement-compatible transport
 
-I2C is treated as a supported production option, not a legacy test path. STM32duino master transmissions can keep the foreground waiting for transfer completion, so CLOCK never sends a complete 1 KiB framebuffer from one runtime `present()` call.
+I2C is treated as a supported production option, not a legacy test path. blocking STM32Cube I2C master transmissions can keep the foreground waiting for transfer completion, so CLOCK never sends a complete 1 KiB framebuffer from one runtime `present()` call.
 
 Instead:
 

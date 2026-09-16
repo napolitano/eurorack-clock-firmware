@@ -11,59 +11,58 @@
 
 #pragma once
 
-#include <Arduino.h>
-
 #include <array>
 #include <cstdint>
 
 #include "domain/clock_types.h"
+#include "hal/gpio_pin.h"
 
 namespace clockfw::pinmap {
 
 /** Sentinel used for optional GPIO signals that are not connected. */
-inline constexpr std::uint32_t kUnassignedDigitalPin = UINT32_MAX;
+inline constexpr std::uint32_t kUnassignedDigitalPin = mcu::kUnassigned;
 
 /** Encoder phase-A / CLK contact. */
-inline constexpr std::uint32_t kEncoderPhaseAPin = PA0;
+inline constexpr std::uint32_t kEncoderPhaseAPin = mcu::PA0;
 
 /** Encoder phase-B / DT contact. */
-inline constexpr std::uint32_t kEncoderPhaseBPin = PA1;
+inline constexpr std::uint32_t kEncoderPhaseBPin = mcu::PA1;
 
 /** Encoder integrated push switch. */
-inline constexpr std::uint32_t kEncoderPushButtonPin = PB10;
+inline constexpr std::uint32_t kEncoderPushButtonPin = mcu::PB10;
 
 /** Dedicated PLAY/PAUSE front-panel button. */
-inline constexpr std::uint32_t kPlayPauseButtonPin = PB12;
+inline constexpr std::uint32_t kPlayPauseButtonPin = mcu::PB12;
 
 /** Dedicated TAP TEMPO front-panel button. */
-inline constexpr std::uint32_t kTapTempoButtonPin = PB13;
+inline constexpr std::uint32_t kTapTempoButtonPin = mcu::PB13;
 
 /** Dedicated RESET/BACK front-panel button. */
-inline constexpr std::uint32_t kResetBackButtonPin = PB14;
+inline constexpr std::uint32_t kResetBackButtonPin = mcu::PB14;
 
 /** Channel 1 logic output feeding activity LED 1 and 74HCT244 input 1. */
-inline constexpr std::uint32_t kChannel1GateLedPin = PA2;
+inline constexpr std::uint32_t kChannel1GateLedPin = mcu::PA2;
 
 /** Channel 2 logic output feeding activity LED 2 and 74HCT244 input 2. */
-inline constexpr std::uint32_t kChannel2GateLedPin = PA3;
+inline constexpr std::uint32_t kChannel2GateLedPin = mcu::PA3;
 
 /** Channel 3 logic output feeding activity LED 3 and 74HCT244 input 3. */
-inline constexpr std::uint32_t kChannel3GateLedPin = PA8;
+inline constexpr std::uint32_t kChannel3GateLedPin = mcu::PA8;
 
 /** Channel 4 logic output feeding activity LED 4 and 74HCT244 input 4. */
-inline constexpr std::uint32_t kChannel4GateLedPin = PA9;
+inline constexpr std::uint32_t kChannel4GateLedPin = mcu::PA9;
 
 /** Channel 5 logic output feeding activity LED 5 and 74HCT244 input 5. */
-inline constexpr std::uint32_t kChannel5GateLedPin = PA10;
+inline constexpr std::uint32_t kChannel5GateLedPin = mcu::PA10;
 
 /** Channel 6 logic output feeding activity LED 6 and 74HCT244 input 6. */
-inline constexpr std::uint32_t kChannel6GateLedPin = PB0;
+inline constexpr std::uint32_t kChannel6GateLedPin = mcu::PB0;
 
 /** Channel 7 logic output feeding activity LED 7 and 74HCT244 input 7. */
-inline constexpr std::uint32_t kChannel7GateLedPin = PB1;
+inline constexpr std::uint32_t kChannel7GateLedPin = mcu::PB1;
 
 /** Channel 8 logic output feeding activity LED 8 and 74HCT244 input 8. */
-inline constexpr std::uint32_t kChannel8GateLedPin = PB5;
+inline constexpr std::uint32_t kChannel8GateLedPin = mcu::PB5;
 
 /** Ordered channel-pin table used by the gate-output driver. */
 inline constexpr std::array<std::uint32_t, kChannelCount> kGateChannelPins{{
@@ -78,43 +77,42 @@ inline constexpr std::array<std::uint32_t, kChannelCount> kGateChannelPins{{
 }};
 
 /** Active-low output-enable input shared by both 74HCT244 buffer banks. */
-inline constexpr std::uint32_t kGateBufferOutputEnablePin = PB8;
+inline constexpr std::uint32_t kGateBufferOutputEnablePin = mcu::PB8;
 
 /** Logic level that disables the active-low gate output buffer. */
-inline constexpr std::uint8_t kGateBufferDisabledLevel = HIGH;
+inline constexpr bool kGateBufferDisabledLevel = true;
 
 /** Logic level that enables the active-low gate output buffer. */
-inline constexpr std::uint8_t kGateBufferEnabledLevel = LOW;
+inline constexpr bool kGateBufferEnabledLevel = false;
 
 /**
  * Display wiring defaults. Every display signal can be overridden from
- * PlatformIO build_flags without editing this file. Arduino digital-pin names
- * (PA7, PB9, ...) are used deliberately: SPIClass's constructor accepts
- * digital pin numbers and performs the PinName conversion internally.
+ * PlatformIO build_flags without editing this file. framework-independent encoded STM32 pin identifiers are used so the same
+ * map is shared by STM32Cube, host tests, and the simulator.
  */
 #ifndef CLOCK_DISPLAY_I2C_SDA_PIN
-#define CLOCK_DISPLAY_I2C_SDA_PIN PB7
+#define CLOCK_DISPLAY_I2C_SDA_PIN clockfw::mcu::PB7
 #endif
 #ifndef CLOCK_DISPLAY_I2C_SCL_PIN
-#define CLOCK_DISPLAY_I2C_SCL_PIN PB6
+#define CLOCK_DISPLAY_I2C_SCL_PIN clockfw::mcu::PB6
 #endif
 #ifndef CLOCK_DISPLAY_SPI_SCK_PIN
-#define CLOCK_DISPLAY_SPI_SCK_PIN PA5
+#define CLOCK_DISPLAY_SPI_SCK_PIN clockfw::mcu::PA5
 #endif
 #ifndef CLOCK_DISPLAY_SPI_MOSI_PIN
-#define CLOCK_DISPLAY_SPI_MOSI_PIN PA7
+#define CLOCK_DISPLAY_SPI_MOSI_PIN clockfw::mcu::PA7
 #endif
 #ifndef CLOCK_DISPLAY_SPI_MISO_PIN
-#define CLOCK_DISPLAY_SPI_MISO_PIN PA6
+#define CLOCK_DISPLAY_SPI_MISO_PIN clockfw::mcu::PA6
 #endif
 #ifndef CLOCK_DISPLAY_SPI_CS_PIN
-#define CLOCK_DISPLAY_SPI_CS_PIN PA4
+#define CLOCK_DISPLAY_SPI_CS_PIN clockfw::mcu::PA4
 #endif
 #ifndef CLOCK_DISPLAY_SPI_DC_PIN
-#define CLOCK_DISPLAY_SPI_DC_PIN PB9
+#define CLOCK_DISPLAY_SPI_DC_PIN clockfw::mcu::PB9
 #endif
 #ifndef CLOCK_DISPLAY_RESET_PIN
-#define CLOCK_DISPLAY_RESET_PIN PB15
+#define CLOCK_DISPLAY_RESET_PIN clockfw::mcu::PB15
 #endif
 
 /** I2C SDA peripheral pin for the selected OLED wiring profile. */
@@ -129,7 +127,7 @@ inline constexpr std::uint32_t kDisplaySpiClockPin = CLOCK_DISPLAY_SPI_SCK_PIN;
 /** SPI MOSI/DIN peripheral pin for the selected OLED wiring profile. */
 inline constexpr std::uint32_t kDisplaySpiDataPin = CLOCK_DISPLAY_SPI_MOSI_PIN;
 
-/** SPI MISO pin required by STM32duino; it is electrically unused by the write-only OLED. */
+/** SPI MISO pin identifier retained for wiring documentation; it is electrically unused by the write-only OLED. */
 inline constexpr std::uint32_t kDisplaySpiMisoPin = CLOCK_DISPLAY_SPI_MISO_PIN;
 
 /** SPI OLED chip-select GPIO. */

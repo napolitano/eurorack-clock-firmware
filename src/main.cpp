@@ -1,37 +1,22 @@
 /**
  * @file main.cpp
- * @brief Arduino framework entry points for the CLOCK eight-channel clock firmware.
+ * @brief STM32CubeF4 entry point for the CLOCK eight-channel clock firmware.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
  */
-
-#include <Arduino.h>
-
 #include "app/clock_application.h"
+#include "hal/platform_io.h"
 
-namespace {
+namespace { clockfw::app::ClockApplication application; }
 
-/** Single top-level application instance; all subsystem ownership lives inside it. */
-clockfw::app::ClockApplication application;
-
-}  // namespace
-
-/**
- * Initializes all hardware and firmware subsystems.
- *
- * Arduino.h declares setup() with C linkage. Keeping that declaration visible
- * here is required so STM32duino's framework main() can resolve this entry point.
- */
-void setup() {
+#if defined(CLOCK_HOST_TEST)
+extern "C" void setup(){ application.begin(); }
+extern "C" void loop(){ application.runOnce(); }
+#else
+int main(){
+    clockfw::hal::platform::initializeMcu();
     application.begin();
+    while(true){ application.runOnce(); }
 }
-
-/**
- * Runs one non-real-time control/UI iteration.
- *
- * Like setup(), this definition inherits the C linkage declared by Arduino.h.
- */
-void loop() {
-    application.runOnce();
-}
+#endif

@@ -8,16 +8,16 @@
 
 #include "hal/interrupt_lock.h"
 
-#include <Arduino.h>
+#include "hal/platform_io.h"
 
 namespace clockfw::hal {
 
 InterruptLock::InterruptLock() {
-    noInterrupts();
+    previousPrimask_ = platform::enterCritical();
 }
 
 InterruptLock::~InterruptLock() {
-    interrupts();
+    platform::exitCritical(previousPrimask_);
 }
 
 }  // namespace clockfw::hal

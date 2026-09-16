@@ -86,7 +86,7 @@ public:
 #endif
 
 private:
-    /** @brief Timer ISR thunk required by the callback-only STM32duino HardwareTimer API. */
+    /** @brief Timer ISR thunk used by the HAL periodic-timer callback boundary. */
     static void schedulerInterruptThunk();
 
     /** @brief Renders the boot screen and returns true only when encoder push stayed held throughout. */

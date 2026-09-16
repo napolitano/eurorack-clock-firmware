@@ -215,7 +215,7 @@ Order:
 7. STM32F401 I2C firmware build
 8. STM32F401 SPI display compile-check
 9. verify both STM32 target builds and their memory budgets
-10. upload host coverage only; firmware BIN/ELF files are deliberately not distributed while STM32duino LGPL code remains statically linked
+10. verify STM32CubeF4 firmware artifacts and embedded dependency policy before release packaging
 
 The STM32 firmware build only runs after host coverage and both native-simulator CI gates pass.
 
@@ -226,8 +226,8 @@ The STM32 firmware build only runs after host coverage and both native-simulator
 A release tag must exactly match `src/version.h`:
 
 ```text
-firmware: 0.19.0-beta.11
-Git tag:   v0.19.0-beta.11
+firmware: 0.19.0-beta.12
+Git tag:   v0.19.0-beta.12
 ```
 
 A mismatch fails before publication.
@@ -253,7 +253,7 @@ For a tag build the workflow:
 9. extracts release notes from the matching `CHANGELOG.md` section
 10. publishes the GitHub Release with the versioned **ODT and PDF manual artifacts** attached
 
-GitHub supplies the source archive for the tagged commit. Firmware BIN/ELF attachment is intentionally disabled until either the STM32duino LGPL static-link obligations are handled by a compliance-reviewed relinking package or the runtime is migrated to direct STM32Cube HAL/LL + CMSIS. The manual ODT/PDF are documentation artifacts and are published independently of that firmware-binary restriction. See `docs/LICENSING.md`.
+GitHub supplies the source archive for the tagged commit. Firmware binaries are now eligible for release packaging because the embedded runtime uses STM32CubeF4/CMSIS without the former STM32duino LGPL dependency. See `docs/LICENSING.md`.
 
 ## Versioning
 

@@ -46,6 +46,9 @@ jobs:
       - name: Enforce architecture policy
         run: python scripts/check_architecture.py
 
+      - name: Enforce embedded dependency policy
+        run: python scripts/check_embedded_dependencies.py
+
       - name: Validate repository documentation
         run: python scripts/check_documentation.py
 
@@ -158,7 +161,7 @@ jobs:
       - name: Compile-check SPI display variant
         run: pio run -e blackpill_f401cc_spi_ssd1315
 
-      - name: Confirm binary artifacts are not distributed
+      - name: Confirm STM32Cube firmware builds
         run: |
-          echo "I2C and SPI firmware compiled successfully."
-          echo "BIN/ELF upload is intentionally disabled pending LGPL static-link compliance."
+          echo "I2C and SPI STM32Cube firmware compiled successfully."
+          python scripts/check_embedded_dependencies.py

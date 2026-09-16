@@ -181,16 +181,10 @@ class ReleaseNotesTests(unittest.TestCase):
 
 
 class PackageReleaseTests(unittest.TestCase):
-    def test_binary_packaging_requires_explicit_compliance_acknowledgement(self) -> None:
-        result = subprocess.run(
-            [PYTHON, str(ROOT / "scripts/package_release.py")],
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("Binary packaging is intentionally disabled", result.stderr + result.stdout)
+    def test_binary_packaging_is_enabled_after_stm32cube_migration(self) -> None:
+        script = (ROOT / "scripts/package_release.py").read_text(encoding="utf-8")
+        self.assertNotIn("acknowledge-lgpl-static-link", script)
+        self.assertNotIn("Binary packaging is intentionally disabled", script)
 
     def test_packages_firmware_license_and_checksums(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -207,7 +201,6 @@ class PackageReleaseTests(unittest.TestCase):
                 [
                     PYTHON,
                     str(ROOT / "scripts/package_release.py"),
-                    "--acknowledge-lgpl-static-link",
                     "--build-dir",
                     str(build),
                     "--out-dir",
@@ -271,7 +264,6 @@ class PackageReleaseTests(unittest.TestCase):
                 [
                     PYTHON,
                     str(ROOT / "scripts/package_release.py"),
-                    "--acknowledge-lgpl-static-link",
                     "--build-dir",
                     str(build),
                     "--out-dir",
@@ -297,7 +289,6 @@ class PackageReleaseTests(unittest.TestCase):
                 [
                     PYTHON,
                     str(ROOT / "scripts/package_release.py"),
-                    "--acknowledge-lgpl-static-link",
                     "--build-dir",
                     str(build),
                     "--out-dir",
@@ -326,7 +317,6 @@ class PackageReleaseTests(unittest.TestCase):
                 [
                     PYTHON,
                     str(ROOT / "scripts/package_release.py"),
-                    "--acknowledge-lgpl-static-link",
                     "--build-dir",
                     str(build),
                     "--out-dir",
@@ -500,8 +490,9 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertTrue(notice.startswith(required_notice))
         self.assertIn("PolyForm-Noncommercial-1.0.0", readme)
         third_party = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
-        self.assertIn("STM32duino", third_party)
-        self.assertIn("LGPL", third_party)
+        self.assertNotIn("STM32duino / Arduino Core", third_party)
+        self.assertNotIn("## STM32duino / Arduino Core", third_party)
+        self.assertIn("framework = stm32cube", third_party)
         self.assertIn("STM32CubeF4", third_party)
         self.assertIn("BSD-3-Clause", third_party)
         self.assertIn("CMSIS", third_party)
@@ -510,7 +501,6 @@ class RepositoryPolicyTests(unittest.TestCase):
         for filename in (
             "LICENSE-Apache-2.0.txt",
             "LICENSE-BSD-3-Clause.txt",
-            "LICENSE-LGPL-2.1.txt",
         ):
             self.assertTrue((ROOT / "third_party" / filename).is_file())
 

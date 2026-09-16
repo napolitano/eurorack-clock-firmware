@@ -1,6 +1,6 @@
 /**
  * @file system_clock.h
- * @brief Thin HAL wrapper around Arduino monotonic time and delay primitives.
+ * @brief Thin HAL wrapper around framework-independent monotonic time and delay primitives.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -12,7 +12,7 @@
 
 namespace clockfw::hal {
 
-/** @brief Provides monotonic timing services without exposing Arduino calls to higher layers. */
+/** @brief Provides monotonic timing services without exposing MCU/framework calls to higher layers. */
 class SystemClock final {
 public:
     /** @brief Returns milliseconds elapsed since MCU startup. */

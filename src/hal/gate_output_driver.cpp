@@ -8,7 +8,7 @@
 
 #include "hal/gate_output_driver.h"
 
-#include <Arduino.h>
+#include "hal/platform_io.h"
 
 #include "domain/clock_types.h"
 #include "pin_map.h"
@@ -16,26 +16,26 @@
 namespace clockfw::hal {
 
 void GateOutputDriver::beginDisabled() {
-    pinMode(pinmap::kGateBufferOutputEnablePin, OUTPUT);
+    platform::configureOutput(pinmap::kGateBufferOutputEnablePin);
     disableOutputStage();
 
     for (const std::uint32_t pin : pinmap::kGateChannelPins) {
-        pinMode(pin, OUTPUT);
-        digitalWrite(pin, LOW);
+        platform::configureOutput(pin);
+        platform::write(pin, false);
     }
 }
 
 void GateOutputDriver::enableOutputStage() {
-    digitalWrite(pinmap::kGateBufferOutputEnablePin, pinmap::kGateBufferEnabledLevel);
+    platform::write(pinmap::kGateBufferOutputEnablePin, pinmap::kGateBufferEnabledLevel);
 }
 
 void GateOutputDriver::disableOutputStage() {
-    digitalWrite(pinmap::kGateBufferOutputEnablePin, pinmap::kGateBufferDisabledLevel);
+    platform::write(pinmap::kGateBufferOutputEnablePin, pinmap::kGateBufferDisabledLevel);
 }
 
 void GateOutputDriver::setAllChannelsLow() {
     for (const std::uint32_t pin : pinmap::kGateChannelPins) {
-        digitalWrite(pin, LOW);
+        platform::write(pin, false);
     }
 }
 
@@ -44,7 +44,7 @@ void GateOutputDriver::setChannelState(const std::size_t channelIndex, const boo
         return;
     }
 
-    digitalWrite(pinmap::kGateChannelPins[channelIndex], high ? HIGH : LOW);
+    platform::write(pinmap::kGateChannelPins[channelIndex], high);
 }
 
 }  // namespace clockfw::hal
