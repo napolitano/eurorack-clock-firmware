@@ -122,6 +122,10 @@ class PersistenceUploadTests(unittest.TestCase):
         self.assertIn("upload_preserving_persistence.py", config)
         self.assertIn("board_upload.maximum_size = 229376", config)
         self.assertIn("board_build.ldscript = ld/stm32f401cc_clock.ld", config)
+        linker = (ROOT / "ld" / "stm32f401cc_clock.ld").read_text(encoding="utf-8")
+        self.assertIn("ORIGIN = 0x20000000, LENGTH = 64K", linker)
+        self.assertNotIn("LD_MAX_DATA_SIZE", linker)
+        self.assertNotIn("(READONLY)", linker)
 
 
 if __name__ == "__main__":

@@ -16,6 +16,8 @@ This project is still in active development. Until the first stable release, ver
 - PAUSE now preserves the remaining interval to the next sixteenth-note step, so resuming continues the pattern phase instead of jumping or retriggering.
 - TAP is now exclusively the BEATKNECHT style selector and the encoder remains exclusively the tempo control; TAP no longer doubles as the intro-start gesture.
 - Added a compact PLAY/PAUSE/STOP state glyph to the BEATKNECHT performance display.
+- Corrected the custom STM32Cube linker script for the real ARM target: RAM is now declared explicitly as 64 KiB instead of relying on the Arduino-only `LD_MAX_DATA_SIZE` symbol, and output-section syntax remains compatible with the pinned GCC 7.2.1/binutils toolchain.
+- Removed a misleading-indentation warning from the BEATKNECHT shutdown path without changing its STOP/output-stage behavior.
 
 ### Tests
 

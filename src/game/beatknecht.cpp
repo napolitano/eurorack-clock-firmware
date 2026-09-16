@@ -78,7 +78,10 @@ void Beatknecht::run() {
         (void)display_.service();
         hal::SystemClock::delayMilliseconds(1U);
     }
-    if (outputsEnabled) stopOutputs(); gateOutputs_.disableOutputStage();
+    if (outputsEnabled) {
+        stopOutputs();
+    }
+    gateOutputs_.disableOutputStage();
 #endif
 }
 

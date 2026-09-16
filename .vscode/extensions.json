@@ -12,6 +12,7 @@
         "streetsidesoftware.code-spell-checker"
     ],
     "unwantedRecommendations": [
-        "ms-vscode.cpptools-extension-pack"
+        "ms-vscode.cpptools-extension-pack",
+        "pioarduino.pioarduino-ide"
     ]
 }

@@ -33,6 +33,14 @@ def main() -> int:
     if (ROOT / "third_party" / "LICENSE-LGPL-2.1.txt").exists():
         errors.append("retired LGPL license file is still bundled")
 
+    linker = (ROOT / "ld" / "stm32f401cc_clock.ld").read_text(encoding="utf-8")
+    if "ORIGIN = 0x20000000, LENGTH = 64K" not in linker:
+        errors.append("custom STM32Cube linker script must declare the F401CC 64K RAM explicitly")
+    if "LD_MAX_DATA_SIZE" in linker:
+        errors.append("custom STM32Cube linker script must not depend on Arduino-only LD_MAX_DATA_SIZE")
+    if "(READONLY)" in linker:
+        errors.append("custom linker script uses READONLY output-section syntax unsupported by the pinned GCC 7.2.1 toolchain")
+
     production = "\n".join(
         path.read_text(encoding="utf-8")
         for root in (ROOT / "src", ROOT / "lib")
