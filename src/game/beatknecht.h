@@ -49,6 +49,12 @@ private:
     void stop();
     /** @brief Drives all eight gate sources low immediately. */
     void stopOutputs();
+    /** @brief Opens the guarded exit confirmation and temporarily silences active playback. */
+    void beginExitConfirmation(std::uint32_t nowMs);
+    /** @brief Services NO/YES selection while the exit confirmation is active. */
+    void updateExitConfirmation(const hal::ControlSample& controls, std::uint32_t nowMs);
+    /** @brief Draws the shared arcade-style exit confirmation dialog. */
+    void renderExitConfirmation();
     /** @brief Returns the current sixteenth-note duration in milliseconds. */
     std::uint32_t stepDurationMs() const;
 
@@ -65,11 +71,15 @@ private:
     std::uint32_t encoderPressedAtMs_ = 0U;
     std::uint32_t pausedStepRemainingMs_ = 0U;
     TransportState transport_ = TransportState::Stopped;
+    TransportState transportBeforeExitConfirmation_ = TransportState::Stopped;
 #ifdef CLOCK_SIMULATOR
     std::uint32_t lastSimulatorFrameAtMs_ = 0U;
 #endif
     bool gatesHigh_ = false;
     bool exitRequested_ = false;
+    bool exitConfirmationActive_ = false;
+    bool exitYesSelected_ = false;
+    bool exitWaitForRelease_ = false;
 };
 
 }  // namespace clockfw::game

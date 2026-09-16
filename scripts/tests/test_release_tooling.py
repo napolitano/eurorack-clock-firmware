@@ -172,12 +172,12 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertIn("test_swing=22", result.stdout)
         self.assertIn("test_humanize=12", result.stdout)
         self.assertIn("test_tap_tempo=24", result.stdout)
-        self.assertIn("test_controls=44", result.stdout)
+        self.assertIn("test_controls=49", result.stdout)
         self.assertIn("test_settings=56", result.stdout)
         self.assertIn("test_screensavers=15", result.stdout)
-        self.assertIn("test_easter_eggs=28", result.stdout)
+        self.assertIn("test_easter_eggs=34", result.stdout)
         self.assertIn("test_host_firmware=27", result.stdout)
-        self.assertIn("total=379", result.stdout)
+        self.assertIn("total=390", result.stdout)
 
 
 

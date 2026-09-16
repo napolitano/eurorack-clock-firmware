@@ -240,7 +240,7 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **379 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **390 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
@@ -250,11 +250,11 @@ Current inventory: **379 explicitly named Native test cases**. PlatformIO expose
 | `test_swing` | 22 | atomic swing mathematics plus observed engine edge spacing and pair-duration conservation |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
-| `test_controls` | 44 | TIM2 quadrature counting, detent-phase resynchronization after missed/coalesced edges, first-detent and direction-reversal recovery, NORMAL/REVERSED semantic direction, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
+| `test_controls` | 49 | TIM2 quadrature counting, detent-phase resynchronization after missed/coalesced edges, first-detent and direction-reversal recovery, counter wraparound, NORMAL/REVERSED recovery, alternating single-detent stress, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
 | `test_settings` | 56 | settings limits, device-local encoder/display preferences, enum transitions, timing invariants, channel/Euclid/Sequencer edits and invalid-input behavior |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
-| `test_easter_eggs` | 23 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
-| `test_host_firmware` | 26 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
+| `test_easter_eggs` | 34 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
+| `test_host_firmware` | 27 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
 
 The default Native run executes more than **223,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
 

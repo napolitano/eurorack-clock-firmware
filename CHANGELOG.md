@@ -31,7 +31,8 @@ This project is still in active development. Until the first stable release, ver
 - Changed `ORIENTATION = 180 DEG` from SSD1306/SSD1315 scan-remap commands to deterministic framebuffer-transfer rotation. The controller stays in the proven `A1/C8` orientation while firmware reverses columns, pages, and page-bit order, preventing mirrored text on interchangeable OLED modules.
 - Kept the canonical renderer framebuffer unchanged so the simulator, screenshots, drawing coordinates, and UI layout remain independent of mounting orientation.
 - Restored the beta.6 electrical-cycle resynchronization contract on top of the TIM2 hardware encoder backend. The free-running x4 remainder introduced with TIM2 could again retain a quarter-cycle phase error, consuming the first detent and the first detent after a reversal. Each return to the startup detent phase is now a hard boundary: a one-transition count error is rounded to the nearest complete PEC11L cycle and any remaining ambiguous residue is discarded before the next direction.
-- Added four hardware-model regressions for a missing first transition, immediate reversal after recovery, half-cycle corruption, and an extra transition at the detent boundary. `test_controls` now contains 44 named cases and the public Native inventory is 379.
+- Added four hardware-model regressions for a missing first transition, immediate reversal after recovery, half-cycle corruption, and an extra transition at the detent boundary.
+- Added five additional encoder regression cases for 32-bit TIM2 counter wraparound, recovery with NORMAL/REVERSED enabled, 100 alternating single-detent reversals, one-edge residue before a reverse detent, and fast-turn immediately after a reversal. `test_controls` now contains 49 named cases.
 
 ### Changed
 
@@ -39,6 +40,7 @@ This project is still in active development. Until the first stable release, ver
 - PAUSE now preserves the remaining interval to the next sixteenth-note step, so resuming continues the pattern phase instead of jumping or retriggering.
 - TAP is now exclusively the BEATKNECHT style selector and the encoder remains exclusively the tempo control; TAP no longer doubles as the intro-start gesture.
 - Added a compact PLAY/PAUSE/STOP state glyph to the BEATKNECHT performance display.
+- Guarded BEATKNECHT exit with the same NO/YES confirmation model used by the arcade flow. Opening the prompt silences active gates; cancelling restores the previous transport state, while confirmation stops and disables the output stage before returning to normal firmware.
 - Corrected the custom STM32Cube linker script for the real ARM target: RAM is now declared explicitly as 64 KiB instead of relying on the Arduino-only `LD_MAX_DATA_SIZE` symbol, and output-section syntax remains compatible with the pinned GCC 7.2.1/binutils toolchain.
 - Removed a misleading-indentation warning from the BEATKNECHT shutdown path without changing its STOP/output-stage behavior.
 - Forced the embedded STM32Cube target into GCC-7-compatible C++17 mode (`-std=gnu++1z`) after the real ARM build exposed that the PlatformIO toolchain was compiling project sources as C++14; this restores `inline constexpr` variables and C++17 library facilities such as `std::clamp`.
@@ -46,7 +48,9 @@ This project is still in active development. Until the first stable release, ver
 ### Tests
 
 - Added regressions for PLAY start, phase-preserving pause/resume, STOP phase reset/output disable, restart from step 1, and STOP priority over simultaneous transport input.
-- Expanded `test_easter_eggs` from 25 to **28** named cases and the public Native inventory from 372 to **375** tests.
+- Expanded `test_easter_eggs` from 25 to **28** named cases for the transport work.
+- Added six BEATKNECHT exit-confirmation regressions covering safe gate silencing, default-NO cancellation, confirmed exit, paused-state restoration, long-press release gating, and dialog rendering. `test_easter_eggs` now contains **34** named cases.
+- With the additional encoder regressions, the public Native inventory is now **390** named tests.
 - Updated the simulator boot-Easter-egg contract to launch the default BEATKNECHT build through the physical PLAY control.
 
 ## [0.19.0-beta.13] - 2026-09-16

@@ -11,6 +11,7 @@ CLOCK is an eight-output Eurorack master clock, divider, Euclidean rhythm source
 - **Safer stop behavior:** STOP disables the external gate-output stage until PLAY is pressed again.
 - **Cleaner controls:** TAP is now only the rhythm-style selector and the encoder remains the tempo control; the intro is started with the dedicated PLAY button.
 - **Clear state feedback:** the BEATKNECHT display now shows a compact PLAY, PAUSE, or STOP symbol.
+- **Guarded BEATKNECHT exit:** a long encoder push now opens a NO/YES confirmation. The prompt silences active gates; NO restores the previous transport state and YES exits safely with the output stage disabled.
 
 ## Compatibility
 

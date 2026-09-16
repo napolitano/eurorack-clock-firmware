@@ -52,10 +52,16 @@ struct EggJourneyGameTestAccess {
 struct BeatknechtTestAccess {
     static void reset(Beatknecht& game,std::uint32_t nowMs){ game.resetSession(nowMs); }
     static void update(Beatknecht& game,const hal::ControlSample& controls,std::uint32_t nowMs){ game.update(controls,nowMs); }
+    static void beginExit(Beatknecht& game,std::uint32_t nowMs){ game.beginExitConfirmation(nowMs); }
+    static void updateExit(Beatknecht& game,const hal::ControlSample& controls,std::uint32_t nowMs){ game.updateExitConfirmation(controls,nowMs); }
+    static void renderExit(Beatknecht& game){ game.renderExitConfirmation(); }
     static std::uint16_t bpm(const Beatknecht& game){ return game.bpm_; }
     static std::uint8_t style(const Beatknecht& game){ return game.styleIndex_; }
     static std::uint8_t step(const Beatknecht& game){ return game.displayStep_; }
     static TransportState transport(const Beatknecht& game){ return game.transport_; }
+    static bool exitConfirmationActive(const Beatknecht& game){ return game.exitConfirmationActive_; }
+    static bool exitYesSelected(const Beatknecht& game){ return game.exitYesSelected_; }
+    static bool exitRequested(const Beatknecht& game){ return game.exitRequested_; }
 };
 }
 
@@ -67,6 +73,8 @@ namespace {
 hal::ControlSample tapPress(){ hal::ControlSample c{}; c.tapButton={hal::ButtonEdge::Pressed,true}; return c; }
 hal::ControlSample playPress(){ hal::ControlSample c{}; c.transportButton={hal::ButtonEdge::Pressed,true}; return c; }
 hal::ControlSample stopPress(){ hal::ControlSample c{}; c.resetButton={hal::ButtonEdge::Pressed,true}; return c; }
+hal::ControlSample encoderPushPress(){ hal::ControlSample c{}; c.encoderButton={hal::ButtonEdge::Pressed,true}; return c; }
+hal::ControlSample encoderPushRelease(){ hal::ControlSample c{}; c.encoderButton={hal::ButtonEdge::Released,false}; return c; }
 bool hasPixels(const hal::OledDisplay& d){ const auto& fb=d.framebufferForTest(); return std::any_of(fb.begin(),fb.end(),[](std::uint8_t v){return v!=0U;}); }
 
 struct Fixture {
@@ -165,6 +173,77 @@ void testBeatknechtStopWinsOverSimultaneousPlay(){
     TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
 }
 
+void testBeatknechtExitConfirmationPausesPlayingAndSilencesGates(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::update(g,playPress(),100U);
+    TEST_ASSERT_EQUAL(HIGH,fakefw::pinValues[pinmap::kChannel1GateLedPin]);
+    game::BeatknechtTestAccess::beginExit(g,120U);
+    TEST_ASSERT_TRUE(game::BeatknechtTestAccess::exitConfirmationActive(g));
+    TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitYesSelected(g));
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Paused),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]);
+}
+
+void testBeatknechtExitConfirmationDefaultsToNoAndCancelResumesPlayback(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::update(g,playPress(),100U);
+    game::BeatknechtTestAccess::beginExit(g,150U);
+    game::BeatknechtTestAccess::updateExit(g,encoderPushRelease(),151U);
+    game::BeatknechtTestAccess::updateExit(g,encoderPushPress(),152U);
+    TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitConfirmationActive(g));
+    TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitRequested(g));
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Playing),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferEnabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
+}
+
+void testBeatknechtExitConfirmationYesStopsAndDisablesOutputs(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::update(g,playPress(),100U);
+    game::BeatknechtTestAccess::beginExit(g,150U);
+    game::BeatknechtTestAccess::updateExit(g,encoderPushRelease(),151U);
+    hal::ControlSample selectYes{}; selectYes.encoderDelta=1;
+    game::BeatknechtTestAccess::updateExit(g,selectYes,152U);
+    TEST_ASSERT_TRUE(game::BeatknechtTestAccess::exitYesSelected(g));
+    game::BeatknechtTestAccess::updateExit(g,encoderPushPress(),153U);
+    TEST_ASSERT_TRUE(game::BeatknechtTestAccess::exitRequested(g));
+    TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitConfirmationActive(g));
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Stopped),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
+    for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]);
+}
+
+void testBeatknechtExitConfirmationCancelPreservesPausedState(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::update(g,playPress(),100U);
+    game::BeatknechtTestAccess::update(g,playPress(),120U);
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Paused),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    game::BeatknechtTestAccess::beginExit(g,150U);
+    game::BeatknechtTestAccess::updateExit(g,encoderPushRelease(),151U);
+    game::BeatknechtTestAccess::updateExit(g,encoderPushPress(),152U);
+    TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitRequested(g));
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Paused),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+}
+
+void testBeatknechtExitConfirmationWaitsForLongPressReleaseBeforeAcceptingChoice(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::update(g,playPress(),100U);
+    game::BeatknechtTestAccess::beginExit(g,150U);
+    hal::ControlSample stillHeld{}; stillHeld.encoderButton={hal::ButtonEdge::None,true}; stillHeld.encoderDelta=1;
+    game::BeatknechtTestAccess::updateExit(g,stillHeld,151U);
+    TEST_ASSERT_TRUE(game::BeatknechtTestAccess::exitConfirmationActive(g));
+    TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitYesSelected(g));
+    TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitRequested(g));
+    game::BeatknechtTestAccess::updateExit(g,encoderPushRelease(),152U);
+    TEST_ASSERT_TRUE(game::BeatknechtTestAccess::exitConfirmationActive(g));
+}
+
+void testBeatknechtExitConfirmationRendersDialog(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::beginExit(g,10U);
+    game::BeatknechtTestAccess::renderExit(g);
+    TEST_ASSERT_TRUE(hasPixels(f.display));
+}
+
 }  // namespace
 
 int main(){ UNITY_BEGIN();
@@ -173,5 +252,5 @@ RUN_TEST(testLeaderboardRecordAppearsOnlyAfterFirstLaunchMarker);RUN_TEST(testLe
 RUN_TEST(testPixelRaidIntroNeverAutoStarts);RUN_TEST(testFormula1IntroNeverAutoStarts);RUN_TEST(testBreakoutIntroNeverAutoStarts);RUN_TEST(testEggJourneyIntroNeverAutoStarts);RUN_TEST(testBeatknechtIntroNeverAutoStarts);
 RUN_TEST(testPixelRaidIntroStartsOnTap);RUN_TEST(testFormula1IntroStartsOnTap);RUN_TEST(testBreakoutIntroStartsOnTap);RUN_TEST(testEggJourneyIntroStartsOnTap);RUN_TEST(testBeatknechtIntroUsesPlayInsteadOfTap);
 RUN_TEST(testPixelRaidHostRunKeepsRackOutputStageDisabled);RUN_TEST(testFormula1HostRunKeepsRackOutputStageDisabled);RUN_TEST(testBreakoutHostRunKeepsRackOutputStageDisabled);RUN_TEST(testEggJourneyHostRunKeepsRackOutputStageDisabled);RUN_TEST(testBeatknechtHostRunStartsWithRackOutputStageDisabled);
-RUN_TEST(testPixelRaidResetStartsWithThreeLives);RUN_TEST(testPixelRaidInitialAlienFieldHasExpectedCollision);RUN_TEST(testFormula1AcceleratesDuringNormalPlay);RUN_TEST(testBreakoutResetWaitsForExplicitLaunch);RUN_TEST(testEggJourneyResetStartsAliveWithThreeLives);RUN_TEST(testBeatknechtEncoderChangesTempoWithoutChangingStyle);RUN_TEST(testBeatknechtTapChangesStyleWithoutResettingTempo);RUN_TEST(testBeatknechtPlayPausePreservesStepPhaseAndForcesGatesLow);RUN_TEST(testBeatknechtStopResetsPhaseDisablesOutputsAndPlayRestartsStepZero);RUN_TEST(testBeatknechtStopWinsOverSimultaneousPlay);
+RUN_TEST(testPixelRaidResetStartsWithThreeLives);RUN_TEST(testPixelRaidInitialAlienFieldHasExpectedCollision);RUN_TEST(testFormula1AcceleratesDuringNormalPlay);RUN_TEST(testBreakoutResetWaitsForExplicitLaunch);RUN_TEST(testEggJourneyResetStartsAliveWithThreeLives);RUN_TEST(testBeatknechtEncoderChangesTempoWithoutChangingStyle);RUN_TEST(testBeatknechtTapChangesStyleWithoutResettingTempo);RUN_TEST(testBeatknechtPlayPausePreservesStepPhaseAndForcesGatesLow);RUN_TEST(testBeatknechtStopResetsPhaseDisablesOutputsAndPlayRestartsStepZero);RUN_TEST(testBeatknechtStopWinsOverSimultaneousPlay);RUN_TEST(testBeatknechtExitConfirmationPausesPlayingAndSilencesGates);RUN_TEST(testBeatknechtExitConfirmationDefaultsToNoAndCancelResumesPlayback);RUN_TEST(testBeatknechtExitConfirmationYesStopsAndDisablesOutputs);RUN_TEST(testBeatknechtExitConfirmationCancelPreservesPausedState);RUN_TEST(testBeatknechtExitConfirmationWaitsForLongPressReleaseBeforeAcceptingChoice);RUN_TEST(testBeatknechtExitConfirmationRendersDialog);
 return UNITY_END(); }

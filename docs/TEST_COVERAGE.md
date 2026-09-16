@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v0.19.0-beta.14
 
-The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 375 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 390 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -73,7 +73,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - ISR-safe external reset with configurable rising-edge TRIGGER or level-sensitive GATE semantics, startup-HIGH handling, queue saturation, deterministic RST-over-SYNC priority, and PLAY-transport preservation
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release
 - channel overview selection, TAP-turn six-function palette, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, and preset overwrite/save/load/name-band workflow
-- 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht PLAY/PAUSE/STOP, launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, first-launch-gated HI-SCORES/CLEAR behavior, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-buffer-disabled LED life-loss effects
+- 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht PLAY/PAUSE/STOP, guarded NO/YES Beatknecht exit confirmation, launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, first-launch-gated HI-SCORES/CLEAR behavior, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-buffer-disabled LED life-loss effects
 
 ## Decision branches versus compiler branches
 

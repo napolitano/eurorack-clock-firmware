@@ -65,7 +65,16 @@ void Beatknecht::run() {
         const hal::ControlSample controls = controls_.sample(nowMs);
         if (controls.encoderButton.edge == hal::ButtonEdge::Pressed) encoderPressedAtMs_ = nowMs;
         if (!controls.encoderButton.pressed) encoderPressedAtMs_ = 0U;
-        else if (encoderPressedAtMs_ != 0U && nowMs - encoderPressedAtMs_ >= kExitLongPressMs) exitRequested_ = true;
+        else if (!exitConfirmationActive_ && encoderPressedAtMs_ != 0U && nowMs - encoderPressedAtMs_ >= kExitLongPressMs) {
+            beginExitConfirmation(nowMs);
+        }
+        if (exitConfirmationActive_) {
+            updateExitConfirmation(controls, nowMs);
+            renderExitConfirmation();
+            (void)display_.service();
+            hal::SystemClock::delayMilliseconds(1U);
+            continue;
+        }
         const ArcadeShell::Action action = shell_.update(controls, nowMs);
         const bool startedThisFrame = action == ArcadeShell::Action::StartRun || action == ArcadeShell::Action::RestartRun;
         if (startedThisFrame) {
@@ -96,7 +105,16 @@ bool Beatknecht::serviceForSimulator(const std::uint32_t nowMs) {
     const hal::ControlSample controls = controls_.sample(nowMs);
     if (controls.encoderButton.edge == hal::ButtonEdge::Pressed) encoderPressedAtMs_ = nowMs;
     if (!controls.encoderButton.pressed) encoderPressedAtMs_ = 0U;
-    else if (encoderPressedAtMs_ != 0U && nowMs - encoderPressedAtMs_ >= kExitLongPressMs) exitRequested_ = true;
+    else if (!exitConfirmationActive_ && encoderPressedAtMs_ != 0U && nowMs - encoderPressedAtMs_ >= kExitLongPressMs) {
+        beginExitConfirmation(nowMs);
+    }
+    if (exitConfirmationActive_) {
+        updateExitConfirmation(controls, nowMs);
+        renderExitConfirmation();
+        (void)display_.service();
+        if (exitRequested_) { stopOutputs(); gateOutputs_.disableOutputStage(); }
+        return !exitRequested_;
+    }
     const ArcadeShell::Action action = shell_.update(controls, nowMs);
     const bool startedThisFrame = action == ArcadeShell::Action::StartRun || action == ArcadeShell::Action::RestartRun;
     if (startedThisFrame) { resetSession(nowMs); startOrResume(nowMs); }
@@ -111,6 +129,73 @@ void Beatknecht::resetSession(const std::uint32_t nowMs) {
     styleIndex_ = 0U; bpm_ = kStyles[0].defaultBpm; nextStep_ = 0U; displayStep_ = 0U;
     nextStepAtMs_ = nowMs; gatesOffAtMs_ = 0U; encoderPressedAtMs_ = 0U; pausedStepRemainingMs_ = 0U;
     gatesHigh_ = false; exitRequested_ = false; transport_ = TransportState::Stopped;
+    transportBeforeExitConfirmation_ = TransportState::Stopped;
+    exitConfirmationActive_ = false; exitYesSelected_ = false; exitWaitForRelease_ = false;
+}
+
+
+void Beatknecht::beginExitConfirmation(const std::uint32_t nowMs) {
+    if (exitConfirmationActive_) return;
+    transportBeforeExitConfirmation_ = transport_;
+    if (transport_ == TransportState::Playing) {
+        pause(nowMs);
+    } else {
+        stopOutputs();
+    }
+    encoderPressedAtMs_ = 0U;
+    exitYesSelected_ = false;
+    exitWaitForRelease_ = true;
+    exitConfirmationActive_ = true;
+}
+
+void Beatknecht::updateExitConfirmation(const hal::ControlSample& controls, const std::uint32_t nowMs) {
+    if (!exitConfirmationActive_) return;
+    if (exitWaitForRelease_) {
+        if (!controls.encoderButton.pressed) {
+            exitWaitForRelease_ = false;
+        }
+        return;
+    }
+    if (controls.encoderDelta != 0) {
+        exitYesSelected_ = !exitYesSelected_;
+    }
+    if (controls.encoderButton.edge != hal::ButtonEdge::Pressed) return;
+
+    const bool confirmExit = exitYesSelected_;
+    exitConfirmationActive_ = false;
+    exitYesSelected_ = false;
+    exitWaitForRelease_ = false;
+    encoderPressedAtMs_ = 0U;
+    if (confirmExit) {
+        stop();
+        exitRequested_ = true;
+        return;
+    }
+    if (transportBeforeExitConfirmation_ == TransportState::Playing) {
+        startOrResume(nowMs);
+    }
+}
+
+void Beatknecht::renderExitConfirmation() {
+    if (!exitConfirmationActive_) return;
+    display_.clear();
+    display_.setFont(hal::DisplayFont::Small);
+    display_.setTextColor(hal::PixelColor::White);
+    display_.drawRectangle(22, 19, 84, 28);
+    display_.drawText(39, 23, text::get(text::TextId::ExitGame));
+    if (!exitYesSelected_) {
+        display_.fillRectangle(37, 35, 20, 9);
+        display_.setTextColor(hal::PixelColor::Black);
+    }
+    display_.drawText(41, 36, text::get(text::TextId::No));
+    display_.setTextColor(hal::PixelColor::White);
+    if (exitYesSelected_) {
+        display_.fillRectangle(68, 35, 24, 9);
+        display_.setTextColor(hal::PixelColor::Black);
+    }
+    display_.drawText(71, 36, text::get(text::TextId::Yes));
+    display_.setTextColor(hal::PixelColor::White);
+    display_.present();
 }
 
 std::uint32_t Beatknecht::stepDurationMs() const {

@@ -418,7 +418,7 @@ The four ranked games — **Pixel Raid, Formula 1, Breakout, and Egg Journey** �
 - **Formula 1** — encoder steers through changing road geometry and traffic; three crashes end the run.
 - **Breakout** — encoder moves the paddle; TAP launches the waiting ball; the run has three lives and scored bricks/board clears.
 - **Egg Journey** — encoder shifts the egg within the scrolling lunar landscape; TAP jumps; craters and asteroids consume one of three lives.
-- **BEATKNECHT** — not a ranked game. **PLAY/PAUSE** starts and pauses the rhythm, **STOP/BACK** stops it and resets the pattern to step 1, TAP cycles curated one-bar rhythm styles, and the encoder changes BPM. OUT 1–8 intentionally emit the displayed eight gate patterns. Pause forces every gate LOW while preserving the remaining step interval; PLAY resumes from that point. STOP additionally disables the output stage until PLAY is pressed again.
+- **BEATKNECHT** — not a ranked game. **PLAY/PAUSE** starts and pauses the rhythm, **STOP/BACK** stops it and resets the pattern to step 1, TAP cycles curated one-bar rhythm styles, and the encoder changes BPM. OUT 1–8 intentionally emit the displayed eight gate patterns. Pause forces every gate LOW while preserving the remaining step interval; PLAY resumes from that point. STOP additionally disables the output stage until PLAY is pressed again. A long encoder push opens an **EXIT GAME? / NO / YES** confirmation instead of leaving immediately. NO returns to the exact previous transport state; if the rhythm was playing it resumes from the preserved phase. YES stops the rhythm, forces all gates LOW, disables the output stage, and returns to the normal clock firmware.
 
 After a ranked Easter egg has been launched at least once, the Settings root gains **HI-SCORES / CLEAR**. The entry is hidden beforehand and is not shown for BEATKNECHT. Clearing uses a guarded **NO / YES** confirmation, stops transport before Flash is written, clears the complete Top 100 for that selected ranked game, and keeps the menu entry available for later resets.
 
@@ -433,7 +433,7 @@ After a ranked Easter egg has been launched at least once, the Settings root gai
 </tr>
 </table>
 
-Pixel Raid, Formula 1, Breakout, and Egg Journey keep the external gate-output stage disabled. BEATKNECHT is the deliberate exception: its intro is started with PLAY, it enables the stage only when transport is PLAYING, drives the rhythm gates, forces all channels LOW on PAUSE, and returns all channels LOW plus disables the stage on STOP or exit. Normal firmware resumes in STOP.
+Pixel Raid, Formula 1, Breakout, and Egg Journey keep the external gate-output stage disabled. BEATKNECHT is the deliberate exception: its intro is started with PLAY, it enables the stage only when transport is PLAYING, drives the rhythm gates, forces all channels LOW on PAUSE, and returns all channels LOW plus disables the stage on STOP or confirmed exit. Opening the exit confirmation also silences the gates; cancelling restores the prior PLAY/PAUSE/STOP state. Normal firmware resumes in STOP.
 
 ## 21. INFO, version, and updates
 
