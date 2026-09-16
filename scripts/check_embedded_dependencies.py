@@ -24,20 +24,12 @@ def main() -> int:
             errors.append("embedded base environment must use framework = stm32cube")
         if re.search(r"^lib_deps\s*=", body, re.M):
             errors.append("embedded base environment must not add lib_deps without review")
-        if "post:scripts/platformio_cpp17.py" not in body:
-            errors.append("embedded base environment must enforce GCC-7 C++17 mode via platformio_cpp17.py")
+        if "platformio/toolchain-gccarmnoneeabi@1.70201.0" not in body:
+            errors.append("embedded base environment must pin ARM GCC 7.2.1")
+        if "-std=gnu++1z" not in body:
+            errors.append("embedded base environment must compile project sources as GCC-7 C++17")
     if "framework = arduino" in platformio:
         errors.append("Arduino framework declaration found in platformio.ini")
-
-    cpp17_script = ROOT / "scripts" / "platformio_cpp17.py"
-    if not cpp17_script.is_file():
-        errors.append("missing scripts/platformio_cpp17.py")
-    else:
-        cpp17 = cpp17_script.read_text(encoding="utf-8")
-        if 'CPP17_FLAG = "-std=gnu++1z"' not in cpp17:
-            errors.append("embedded C++17 policy must use GCC-7-compatible -std=gnu++1z")
-        if 'env.GetLibBuilders()' not in cpp17:
-            errors.append("embedded C++17 policy must also cover isolated PlatformIO library environments")
 
     notice = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
     if "## STM32duino / Arduino Core" in notice:

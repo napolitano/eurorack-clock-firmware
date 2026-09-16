@@ -125,10 +125,8 @@ class ProjectMetadataTests(unittest.TestCase):
 
     def test_embedded_platformio_forces_gcc7_cpp17_mode(self) -> None:
         platformio = (ROOT / "platformio.ini").read_text(encoding="utf-8")
-        self.assertIn("post:scripts/platformio_cpp17.py", platformio)
-        script = (ROOT / "scripts/platformio_cpp17.py").read_text(encoding="utf-8")
-        self.assertIn('CPP17_FLAG = "-std=gnu++1z"', script)
-        self.assertIn('env.GetLibBuilders()', script)
+        self.assertIn("platformio/toolchain-gccarmnoneeabi@1.70201.0", platformio)
+        self.assertIn("-std=gnu++1z", platformio)
         base = re.search(r"\[env:blackpill_f401cc\](.*?)(?=\n\[|\Z)", platformio, re.S).group(1)
         build_flags = re.search(r"(?ms)^build_flags\s*=\s*\n(.*?)(?=^\S|\Z)", base).group(1)
         self.assertNotIn("-std=gnu++17", build_flags)

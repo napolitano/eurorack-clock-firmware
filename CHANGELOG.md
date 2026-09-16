@@ -10,6 +10,12 @@ This project is still in active development. Until the first stable release, ver
 
 ## [0.19.0-beta.14] - 2026-09-16
 
+### Build compatibility follow-up
+
+- pin the STM32 ARM toolchain to GCC 7.2.1 so local and CI builds do not silently fall back to GCC 6.3.1
+- pass `-std=gnu++1z` directly through the shared embedded `build_flags` instead of a late POST script
+- keep all STM32Cube firmware variants on the same deterministic C++17 toolchain
+
 ### Changed
 
 - Gave **BEATKNECHT** a dedicated transport contract: PLAY starts the rhythm from its intro and toggles PLAY/PAUSE thereafter; STOP/BACK immediately forces all eight gates LOW, resets the pattern to step 1, and disables the output stage until PLAY is pressed again.
