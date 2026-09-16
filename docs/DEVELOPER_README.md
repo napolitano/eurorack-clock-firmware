@@ -206,6 +206,9 @@ SPI remains the reference transport because it minimizes display service time. T
 
 ## 12. Windows: upload through DFU
 
+> [!CAUTION]
+> Before connecting the Black Pill USB port, switch the Eurorack system off and preferably unplug CLOCK's Eurorack ribbon cable. Do not power the module from USB and the Eurorack bus at the same time. The user-facing first-install/update/recovery procedure is maintained in [`FIRMWARE_UPDATE.md`](FIRMWARE_UPDATE.md).
+
 The project uses a persistence-preserving custom DFU upload command. The ELF is split into the sector-0 boot/vector image and the sectors-3..5 application image; Flash sectors 1 and 2 are never included in either transfer. Do not replace this with PlatformIO's default contiguous `firmware.bin` upload, because that raw image would span and overwrite the persistent A/B sectors.
 
 When upgrading from the pre-A/B layout, the uploader first checks sectors 1/2. If neither contains a valid A/B generation, it reads the former 4 KiB STM32duino EEPROM image from sector 5 and, when it recognizes schema-v3/v4 CURRENT or preset records, wraps that image in the new slot format and commits it to sector 1 **before** sector 5 is reused by the application. Subsequent A/B-era uploads leave both persistence sectors untouched.

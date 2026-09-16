@@ -9,6 +9,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 | I want to… | Document |
 | --- | --- |
 | learn the module as a musician | [`USER_GUIDE.md`](USER_GUIDE.md) |
+| install or update firmware | [`FIRMWARE_UPDATE.md`](FIRMWARE_UPDATE.md) |
 | run or configure the native simulator | [`SIMULATOR.md`](SIMULATOR.md) |
 | understand the firmware architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | understand timing and real-time/display isolation | [`TIMING.md`](TIMING.md) |
@@ -32,6 +33,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 ```mermaid
 flowchart LR
     Root[README.md\nproject overview] --> User[USER_GUIDE.md\noperation]
+    User --> Update[FIRMWARE_UPDATE.md\ninstall / update / recovery]
     Root --> Dev[DEVELOPER_README.md\nworkstation]
     Root --> Arch[ARCHITECTURE.md\ndesign]
     User --> Manual[manual/\nODT source + publication assets]

@@ -28,7 +28,7 @@ This matters architecturally: the timing core should not acquire dependencies on
 
 ```mermaid
 flowchart TB
-    Entry[Arduino setup / loop] --> App[ClockApplication]
+    Entry[STM32Cube main] --> App[ClockApplication]
     App --> Engine[ClockEngine]
     App --> UI[UI Controller]
     App --> Services[Services]
@@ -54,7 +54,7 @@ src/
 ├── pin_map.h         physical MCU/peripheral wiring
 ├── ui_text.h/.cpp    static user-visible text catalogue
 ├── version.h         firmware version source of truth
-├── main.cpp          Arduino composition entry
+├── main.cpp          STM32Cube composition entry
 ├── app/              application lifecycle / composition root
 ├── domain/           persistent and runtime domain types
 ├── engine/           real-time scheduler and output timing
@@ -73,7 +73,7 @@ Headers are colocated with their implementation files. There is no global `inclu
 
 ## Composition root
 
-`ClockApplication` owns startup order and connects HAL, engine, services, and UI. `src/main.cpp` remains a minimal Arduino adapter.
+`ClockApplication` owns the application lifecycle and connects HAL, engine, services, and UI. `src/main.cpp` is the minimal STM32Cube composition root: it initializes the MCU/HAL first, constructs the application only after clocks/timers are valid, calls `begin()`, then repeatedly calls `runOnce()` from the foreground loop.
 
 Boot safety is part of architecture, not UI policy:
 
@@ -174,7 +174,7 @@ HAL is the only production implementation layer allowed to call STM32CubeF4 hard
 
 | Component | Responsibility |
 | --- | --- |
-| `ControlPanel` | active-low inputs, debounce, quadrature decoding |
+| `ControlPanel` | active-low button debounce plus TIM2-backed quadrature-to-detent decoding |
 | `GateOutputDriver` | eight gate/LED source signals and 74HCT244 `/OE`; planned jack domain is nominal 0/+5 V |
 | `OledDisplay` | 1-bit framebuffer, primitives, fonts, SSD1306/SSD1315 protocol |
 | `PeriodicTimer` | current scheduler timer adapter |
@@ -202,7 +202,9 @@ The display driver maintains a 128×64 1-bit framebuffer, but transport scheduli
 - **SPI:** `present()` immediately transfers dirty pages.
 - **I2C:** `present()` publishes the newest frame only; `service()` performs at most one bounded transaction per foreground pass, with at most 24 display-data bytes per transaction. A newer frame may replace an unfinished stale frame.
 
-The 20 kHz scheduler has higher interrupt priority than EXTI and I2C, so display service is never the musical timing owner. See [`TIMING.md`](TIMING.md) for the explicit timing contract.
+Display mounting orientation is handled at the transport boundary, not by renderer coordinates or controller scan remapping. At `0 DEG`, the canonical framebuffer is transferred unchanged. At `180 DEG`, the transfer buffer applies `(x,y) -> (127-x,63-y)` by reversing columns, page order, and bit order within each page byte. SSD1306/SSD1315 stay in the proven `A1/C8` scan orientation. The canonical renderer framebuffer therefore remains identical in both mounting orientations.
+
+The 20 kHz scheduler has higher interrupt priority than SYNC/RST EXTI and I2C, so display service is never the musical timing owner. The front-panel encoder does not consume GPIO EXTI bandwidth on STM32: PA0/PA1 are decoded by TIM2 encoder mode and sampled as a wrapping hardware transition count in foreground control processing. See [`TIMING.md`](TIMING.md) for the explicit timing contract.
 
 ## UI architecture
 

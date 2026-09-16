@@ -201,11 +201,14 @@ Run channels using both `RESET=GLOBAL` and `RESET=FREE`, then inject RST while t
 
 ### HIL-CTRL-001 — Encoder
 
-Exercise slow and fast rotation in both directions plus push operation.
+Exercise slow and fast rotation in both directions plus push operation. Include these explicit regression sequences on real hardware: power-up then one detent, one detent clockwise then one counter-clockwise, at least 100 alternating single-detent reversals, and a fast turn immediately after a reversal. Repeat with `ENCODER DIR = NORMAL` and `REVERSED`.
 
 **Pass criteria**
 
-- no missing or duplicate user-visible detents outside the accepted debounce policy
+- the very first mechanical detent after boot changes the selected value exactly once
+- the first detent after every direction reversal changes the selected value exactly once
+- repeated single-detent left/right alternation never deadbands
+- no missing or duplicate user-visible detents during slow or fast rotation
 - the game-only encoder long-press does not create a short-press action on release
 
 ### HIL-CTRL-002 — Buttons
@@ -259,7 +262,7 @@ Temporarily disconnect the OLED or hold the bus in an error condition that exerc
 
 - gate scheduling continues without missing events
 - SYNC/RST capture remains functional
-- encoder edges continue to accumulate even if visual response is delayed
+- the TIM2 encoder transition count continues to advance even if visual response is delayed
 - recovery behavior is documented; a display failure must never enable or corrupt gate outputs
 
 ## 9. Long-duration timing

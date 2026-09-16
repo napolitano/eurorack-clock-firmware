@@ -100,7 +100,7 @@ The catalog currently covers:
 
 The catalog is intentionally finite and representative. It covers every distinct user-visible operating/UI state rather than attempting the meaningless Cartesian product of every parameter value.
 
-The shipped/default boot Easter egg is **BEATKNECHT** (`CLOCK_EASTER_EGG=5`). Egg Journey is named consistently in both user-facing material and its `egg_journey_*` firmware sources.
+The shipped/default boot Easter egg is **BEATKNECHT** (`CLOCK_EASTER_EGG=5`). PLAY starts it, PLAY/PAUSE controls transport, STOP resets to step 1 and disables the output stage, TAP changes style, and a long encoder push opens a guarded `EXIT GAME? / NO / YES` confirmation. Egg Journey is named consistently in both user-facing material and its `egg_journey_*` firmware sources.
 
 The ODT publication manual contains generated **two-across** mini-galleries for Screensavers and Easter eggs, with one short caption below each individual screenshot. After regenerating screenshot assets, run `python scripts/update_manual_galleries.py` before freezing a release manual; the postprocessor preserves the narrow manual page geometry and keeps each screenshot pair with its captions.
 
@@ -122,8 +122,10 @@ The maintained manual follows this user-oriented publication structure:
 12. Display and screensavers
 13. Configuration reference
 14. Troubleshooting
-15. Firmware update / recovery
-16. Technical appendix
+15. Hidden boot features and BEATKNECHT
+16. Practical recipes
+17. Firmware installation / update / recovery
+18. Technical appendix
 
 The editable manual follows development continuously. A release-frozen manual must not be treated as final hardware documentation until External Sync comparator/Input-Capture HIL, SPI/I2C timing HIL, and the final scheduler implementation are validated.
 

@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v0.19.0-beta.14
 
-The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 390 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 392 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -58,7 +58,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - performance, pictographic 2×4 channel overview, six-function 2×3 mode palette, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Fractal/Orbit screensaver effects, preset overwrite/name-band, templates and sequencer render paths
 - I2C auto-probe success/fallback/failure, fixed-address mode, deferred 24-byte-chunk refresh, NACK retry/latest-frame-wins behavior, SPI transport and optional reset-pin path
 - framebuffer text/primitives, all font roles, pixel clipping, dirty-page updates, unchanged-frame suppression and black/white drawing
-- interrupt-driven encoder quadrature accumulation across foreground/display stalls and button debounce edges
+- TIM2 hardware quadrature accumulation on PA0/PA1, detent-phase resynchronization, first-detent/reversal recovery, counter wraparound, fast-turn backlog handling, and button debounce edges
 - gate-output enable/disable and channel bounds
 - periodic timer, interrupt lock and system clock wrappers
 - complete deterministic timing/pattern core invariants
@@ -68,7 +68,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - external-sync regression cases for 20/120/999 BPM, 1/2/4/24 PPQN, jitter, adaptive lock timeout, queue overflow/reacquisition, timestamp wraparound, effective-tempo gate release, monotonic scheduler time, phase alignment, ISR-safe pulse entry, and PPQN interpretation
 - atomic external-SYNC behavior at 1/20/30/60/120/240/300/600/900/999 BPM, strong deterministic jitter, alternating/chaotic periods, abrupt tempo changes, duplicate timestamps, glitch storms, runtime PPQN/edge changes, lock-loss policies and continuity recovery
 - continuous external-tempo movement including 60->180 and 180->60 ramps, slow drift, repeated tempo steps, ramp-plus-jitter and 24-PPQN acceleration; permanently asserted SYNC is checked for one-edge behavior and natural lock timeout rather than a synthetic pulse train
-- dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, encoder NORMAL/REVERSED plus fast-turn backlog/saturation behavior, OLED 0°/180° controller-command coverage, and atomic button debounce/queue behavior
+- dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, encoder NORMAL/REVERSED plus TIM2 detent-recovery/fast-turn backlog behavior, exact OLED 0°/180° transfer-frame rotation, and atomic button debounce/queue behavior
 - nominal LM393-front-end design-model checks for the documented resistor/hysteresis network, including end-to-end modeled 2.5 V, 3 V and 4 V clocks at low/nominal/maximum supported tempo; this remains explicitly separate from physical comparator HIL
 - ISR-safe external reset with configurable rising-edge TRIGGER or level-sensitive GATE semantics, startup-HIGH handling, queue saturation, deterministic RST-over-SYNC priority, and PLAY-transport preservation
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release

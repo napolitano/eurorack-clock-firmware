@@ -352,7 +352,7 @@ Factory templates currently include `ALL MASTER`, `CLOCK TREE`, `DIVIDERS`, `POL
 `SETTINGS → GENERAL SETTINGS` contains two persistent installation preferences in addition to the CLOCK, SYNC and SCREENSAVER subpages:
 
 - **ENCODER DIR** — `NORMAL / REVERSED`. `REVERSED` flips the user-facing rotary direction after quadrature decoding; detent recovery, bounce handling and Fast Turn buffering are unchanged.
-- **ORIENTATION** — `0 DEG / 180 DEG`. The OLED controller flips both axes in hardware, so the entire interface including boot screen, settings, screensavers and Easter eggs can be read with the module mounted upside down.
+- **ORIENTATION** — `0 DEG / 180 DEG`. Firmware rotates the complete 128×64 transfer framebuffer before sending it to the OLED, so the boot screen, settings, screensavers and Easter eggs remain readable with the module mounted upside down. The controller itself stays in the proven `A1/C8` scan orientation; this avoids the mirrored-text behavior seen with controller-remap rotation on interchangeable SSD1306/SSD1315 modules.
 
 Both preferences take effect immediately and survive power cycling. They are device-local: loading a named preset or applying a factory template does not change them. Factory defaults are `NORMAL` and `0 DEG`.
 
@@ -453,15 +453,32 @@ Pixel Raid, Formula 1, Breakout, and Egg Journey keep the external gate-output s
 </tr>
 </table>
 
-## 22. Current technical limits
+## 22. Firmware installation and updates
 
-The current firmware uses a deterministic **20 kHz scheduler**, giving a 50 µs service quantum. UI rendering and I/O transport do not decide musical gate timing. SPI remains the preferred/reference display path; I2C uses deferred, bounded foreground transactions so display work is deliberately subordinate to musical timing.
+CLOCK supports two firmware-programming paths: **ST-LINK / SWD** for first installation, recovery and debugging, and **USB DFU via PlatformIO** for routine updates.
+
+> [!CAUTION]
+> **Before connecting USB, switch the Eurorack system off and preferably unplug CLOCK's Eurorack ribbon cable. Do not power CLOCK from USB and the Eurorack bus at the same time.** After a USB update, the module can be booted and its display/controls tested directly from USB while the Eurorack cable remains disconnected.
+
+For a routine update, enter the STM32 system-memory DFU bootloader with BOOT0/RESET and run the matching release environment, for example:
+
+```bash
+pio run -e release_default -t upload
+```
+
+The project upload helper writes the application and vector-table regions separately and preserves Flash sectors 1 and 2, which hold settings, presets and arcade high scores. Do not replace the supported update path with a flat contiguous `firmware.bin`.
+
+The complete step-by-step procedure, including ST-LINK wiring, STM32CubeProgrammer, alternate Easter-egg variants, PlatformIO installation links, USB-only post-update testing and troubleshooting, is maintained in [`FIRMWARE_UPDATE.md`](FIRMWARE_UPDATE.md).
+
+## 23. Current technical limits
+
+The current firmware uses a deterministic **20 kHz scheduler**, giving a 50 µs service quantum. UI rendering and I/O transport do not decide musical gate timing. SPI remains the preferred/reference display path; I2C uses deferred, bounded foreground transactions so display work is deliberately subordinate to musical timing. The physical encoder uses PA0/PA1 in STM32 TIM2 encoder mode; SYNC/RST remain interrupt-captured inputs.
 
 Persistence uses internal STM32 Flash A/B records. Large persistence staging buffers are static rather than runtime-stack allocations, embedded production code is guarded against dynamic heap allocation, and the build includes a production stack-frame gate.
 
 These software safeguards do not replace physical validation. Representative hardware still needs oscilloscope/logic-analyzer proof for gate jitter and pulse widths, boot/reset behavior, SYNC/RST comparator behavior, final timer capture, and SPI/I2C display stress. Until 1.5.0 this evidence is tracked but does not block the automated release build. See [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).
 
-## 23. License
+## 24. License
 
 Firmware source is licensed under the **PolyForm Noncommercial License 1.0.0**. The Required Notice is `Required Notice: Copyright © 2026 Axel Napolitano.` See [`../LICENSE.md`](../LICENSE.md), [`../NOTICE.txt`](../NOTICE.txt), and [`LICENSING.md`](LICENSING.md). The publication manual and documentation artwork use the documentation license described in [`manual/LICENSE.md`](manual/LICENSE.md). Third-party components retain their upstream licenses and notices.
 

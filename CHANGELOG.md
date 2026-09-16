@@ -50,8 +50,9 @@ This project is still in active development. Until the first stable release, ver
 - Added regressions for PLAY start, phase-preserving pause/resume, STOP phase reset/output disable, restart from step 1, and STOP priority over simultaneous transport input.
 - Expanded `test_easter_eggs` from 25 to **28** named cases for the transport work.
 - Added six BEATKNECHT exit-confirmation regressions covering safe gate silencing, default-NO cancellation, confirmed exit, paused-state restoration, long-press release gating, and dialog rendering. `test_easter_eggs` now contains **34** named cases.
-- With the additional encoder regressions, the public Native inventory is now **390** named tests.
+- With the additional encoder regressions and BEATKNECHT rendering/exit coverage, the public Native inventory is now **392** named tests.
 - Updated the simulator boot-Easter-egg contract to launch the default BEATKNECHT build through the physical PLAY control.
+- Added BEATKNECHT rendering coverage for both NO/YES exit selections and all PLAY/PAUSE/STOP transport glyph branches, restoring the repository decision-branch gate above 90% without lowering the threshold.
 
 ## [0.19.0-beta.13] - 2026-09-16
 

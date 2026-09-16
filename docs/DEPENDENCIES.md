@@ -11,14 +11,14 @@ The embedded target uses:
 
 | Component | Use | License |
 | --- | --- | --- |
-| STM32CubeF4 HAL/device support | GPIO, EXTI, TIM3/TIM5, I2C1, SPI1, flash/startup | BSD-3-Clause |
+| STM32CubeF4 HAL/device support | GPIO, SYNC/RST EXTI, TIM2 encoder mode, TIM3/TIM5, I2C1, SPI1, flash/startup, SYSCFG/PWR | BSD-3-Clause |
 | CMSIS / CMSIS Device | Cortex-M4 and STM32F401 definitions | Apache-2.0 |
 
 Project-owned HAL wrappers isolate those facilities from the timing engine, UI, domain model and persistence services.
 
 ## Project-owned peripheral layer
 
-`src/hal/platform_io.*` owns MCU initialization, the 84 MHz system clock, GPIO, EXTI, critical sections, the millisecond timebase and the free-running 1 MHz TIM5 microsecond counter.
+`src/hal/platform_io.*` owns MCU initialization, VTOR/MSP setup, the 84 MHz system clock, GPIO, SYNC/RST EXTI, TIM2 hardware encoder mode, critical sections, the millisecond timebase and the free-running 1 MHz TIM5 microsecond counter.
 
 `PeriodicTimer` configures TIM3 directly through STM32Cube for the scheduler. `OledDisplay` uses STM32Cube I2C1 or SPI1 directly. The application therefore no longer depends on Arduino GPIO, `Wire`, `SPI`, or `HardwareTimer`.
 

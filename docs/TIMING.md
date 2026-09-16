@@ -13,7 +13,7 @@ The target interrupt hierarchy is deliberately asymmetric:
 | Layer | Target priority | Responsibility |
 | --- | ---: | --- |
 | TIM3 scheduler | 0 | gate edges, pulse termination, phase, SYNC/RST consumption |
-| GPIO EXTI | 4 | encoder A/B, conditioned SYNC/RST edge capture |
+| GPIO EXTI | 4 | conditioned SYNC/RST edge capture |
 | I2C peripheral | 8 | OLED transport only |
 | Foreground | n/a | UI, rendering, display service, persistence scheduling |
 
@@ -23,11 +23,11 @@ The current scheduler is service-tick based rather than final output-compare sch
 
 ## Encoder and external inputs
 
-Encoder phase A/B and conditioned SYNC/RST inputs are captured by GPIO interrupts. They are not polled from the foreground loop.
+The physical encoder and the external timing inputs deliberately use different capture paths.
 
-Encoder ISR work is intentionally limited to Gray-code decoding and accumulation of complete detents. The foreground consumes accumulated detents later, so OLED traffic cannot make a valid quadrature transition disappear merely because `loop()` is busy.
+The PEC11L A/B contacts are wired to PA0/PA1 and decoded by **TIM2 encoder mode**. The timer counts quadrature transitions in hardware; foreground control processing converts the wrapping transition count into mechanical detents and applies detent-phase resynchronization plus the user `NORMAL / REVERSED` semantic direction. The encoder therefore does not depend on GPIO EXTI delivery or display-loop latency.
 
-SYNC/RST ISR work is limited to timestamping/queuing conditioned levels. The 20 kHz scheduler consumes those queues. RST has precedence over SYNC when both are pending at the same scheduler service boundary.
+Conditioned SYNC/RST inputs remain GPIO-interrupt driven. Their ISR work is limited to timestamping/queuing conditioned levels. The 20 kHz scheduler consumes those queues. RST has precedence over SYNC when both are pending at the same scheduler service boundary.
 
 The V1 baseline timestamps conditioned SYNC edges through GPIO EXTI. Final hardware qualification must measure the resulting capture and output jitter under representative worst-case load. Routing to a timer Input Capture capable pin remains a useful design option because hardware capture removes software IRQ-entry latency from the period measurement, but adopting it is required only if the measured EXTI path fails the V1 timing target.
 
@@ -70,14 +70,14 @@ The following invariants are release requirements:
 - display transport must not change generated clock frequency;
 - no gate edge may be omitted because a display transfer is active;
 - configured gate lengths remain scheduler-quantized but transport-independent;
-- encoder detents must accumulate while foreground display work is active;
+- TIM2 encoder transitions must continue accumulating while foreground display work is active, and foreground detent conversion must not lose a complete mechanical detent;
 - conditioned SYNC/RST edges must remain capturable while OLED traffic is active;
 - I2C is allowed to lower visual frame rate or skip stale frames under load;
 - persistence writes remain prohibited while PLAYING because STM32F4 Flash programming can stall instruction/data fetches.
 
 ## Verification layers
 
-Host tests prove the state-machine and scheduling contract: fixed-point timing, gate lengths, SYNC/RST semantics, encoder accumulation, I2C transaction bounds, latest-frame-wins behavior, and SPI/I2C build equivalence.
+Host tests prove the state-machine and scheduling contract: fixed-point timing, gate lengths, SYNC/RST semantics, TIM2-style wrapping encoder accumulation/detent recovery, I2C transaction bounds, latest-frame-wins behavior, and SPI/I2C build equivalence. Physical encoder contact behavior remains a HIL concern.
 
 Only HIL can establish actual edge jitter, IRQ latency, I2C/SPI electrical behavior, comparator thresholds, and the final timing distribution at the jacks. The required bench matrix is defined in [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).
 

@@ -54,6 +54,7 @@ struct BeatknechtTestAccess {
     static void update(Beatknecht& game,const hal::ControlSample& controls,std::uint32_t nowMs){ game.update(controls,nowMs); }
     static void beginExit(Beatknecht& game,std::uint32_t nowMs){ game.beginExitConfirmation(nowMs); }
     static void updateExit(Beatknecht& game,const hal::ControlSample& controls,std::uint32_t nowMs){ game.updateExitConfirmation(controls,nowMs); }
+    static void render(Beatknecht& game){ game.render(); }
     static void renderExit(Beatknecht& game){ game.renderExitConfirmation(); }
     static std::uint16_t bpm(const Beatknecht& game){ return game.bpm_; }
     static std::uint8_t style(const Beatknecht& game){ return game.styleIndex_; }
@@ -244,6 +245,29 @@ void testBeatknechtExitConfirmationRendersDialog(){
     TEST_ASSERT_TRUE(hasPixels(f.display));
 }
 
+void testBeatknechtExitConfirmationRendersYesSelection(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::beginExit(g,10U);
+    game::BeatknechtTestAccess::updateExit(g,encoderPushRelease(),11U);
+    hal::ControlSample selectYes{}; selectYes.encoderDelta=1;
+    game::BeatknechtTestAccess::updateExit(g,selectYes,12U);
+    TEST_ASSERT_TRUE(game::BeatknechtTestAccess::exitYesSelected(g));
+    game::BeatknechtTestAccess::renderExit(g);
+    TEST_ASSERT_TRUE(hasPixels(f.display));
+}
+
+void testBeatknechtTransportGlyphsRenderForStopPlayAndPause(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::render(g);
+    TEST_ASSERT_TRUE(hasPixels(f.display));
+    game::BeatknechtTestAccess::update(g,playPress(),100U);
+    game::BeatknechtTestAccess::render(g);
+    TEST_ASSERT_TRUE(hasPixels(f.display));
+    game::BeatknechtTestAccess::update(g,playPress(),120U);
+    game::BeatknechtTestAccess::render(g);
+    TEST_ASSERT_TRUE(hasPixels(f.display));
+}
+
 }  // namespace
 
 int main(){ UNITY_BEGIN();
@@ -252,5 +276,5 @@ RUN_TEST(testLeaderboardRecordAppearsOnlyAfterFirstLaunchMarker);RUN_TEST(testLe
 RUN_TEST(testPixelRaidIntroNeverAutoStarts);RUN_TEST(testFormula1IntroNeverAutoStarts);RUN_TEST(testBreakoutIntroNeverAutoStarts);RUN_TEST(testEggJourneyIntroNeverAutoStarts);RUN_TEST(testBeatknechtIntroNeverAutoStarts);
 RUN_TEST(testPixelRaidIntroStartsOnTap);RUN_TEST(testFormula1IntroStartsOnTap);RUN_TEST(testBreakoutIntroStartsOnTap);RUN_TEST(testEggJourneyIntroStartsOnTap);RUN_TEST(testBeatknechtIntroUsesPlayInsteadOfTap);
 RUN_TEST(testPixelRaidHostRunKeepsRackOutputStageDisabled);RUN_TEST(testFormula1HostRunKeepsRackOutputStageDisabled);RUN_TEST(testBreakoutHostRunKeepsRackOutputStageDisabled);RUN_TEST(testEggJourneyHostRunKeepsRackOutputStageDisabled);RUN_TEST(testBeatknechtHostRunStartsWithRackOutputStageDisabled);
-RUN_TEST(testPixelRaidResetStartsWithThreeLives);RUN_TEST(testPixelRaidInitialAlienFieldHasExpectedCollision);RUN_TEST(testFormula1AcceleratesDuringNormalPlay);RUN_TEST(testBreakoutResetWaitsForExplicitLaunch);RUN_TEST(testEggJourneyResetStartsAliveWithThreeLives);RUN_TEST(testBeatknechtEncoderChangesTempoWithoutChangingStyle);RUN_TEST(testBeatknechtTapChangesStyleWithoutResettingTempo);RUN_TEST(testBeatknechtPlayPausePreservesStepPhaseAndForcesGatesLow);RUN_TEST(testBeatknechtStopResetsPhaseDisablesOutputsAndPlayRestartsStepZero);RUN_TEST(testBeatknechtStopWinsOverSimultaneousPlay);RUN_TEST(testBeatknechtExitConfirmationPausesPlayingAndSilencesGates);RUN_TEST(testBeatknechtExitConfirmationDefaultsToNoAndCancelResumesPlayback);RUN_TEST(testBeatknechtExitConfirmationYesStopsAndDisablesOutputs);RUN_TEST(testBeatknechtExitConfirmationCancelPreservesPausedState);RUN_TEST(testBeatknechtExitConfirmationWaitsForLongPressReleaseBeforeAcceptingChoice);RUN_TEST(testBeatknechtExitConfirmationRendersDialog);
+RUN_TEST(testPixelRaidResetStartsWithThreeLives);RUN_TEST(testPixelRaidInitialAlienFieldHasExpectedCollision);RUN_TEST(testFormula1AcceleratesDuringNormalPlay);RUN_TEST(testBreakoutResetWaitsForExplicitLaunch);RUN_TEST(testEggJourneyResetStartsAliveWithThreeLives);RUN_TEST(testBeatknechtEncoderChangesTempoWithoutChangingStyle);RUN_TEST(testBeatknechtTapChangesStyleWithoutResettingTempo);RUN_TEST(testBeatknechtPlayPausePreservesStepPhaseAndForcesGatesLow);RUN_TEST(testBeatknechtStopResetsPhaseDisablesOutputsAndPlayRestartsStepZero);RUN_TEST(testBeatknechtStopWinsOverSimultaneousPlay);RUN_TEST(testBeatknechtExitConfirmationPausesPlayingAndSilencesGates);RUN_TEST(testBeatknechtExitConfirmationDefaultsToNoAndCancelResumesPlayback);RUN_TEST(testBeatknechtExitConfirmationYesStopsAndDisablesOutputs);RUN_TEST(testBeatknechtExitConfirmationCancelPreservesPausedState);RUN_TEST(testBeatknechtExitConfirmationWaitsForLongPressReleaseBeforeAcceptingChoice);RUN_TEST(testBeatknechtExitConfirmationRendersDialog);RUN_TEST(testBeatknechtExitConfirmationRendersYesSelection);RUN_TEST(testBeatknechtTransportGlyphsRenderForStopPlayAndPause);
 return UNITY_END(); }
