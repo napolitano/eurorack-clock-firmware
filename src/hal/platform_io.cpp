@@ -91,7 +91,20 @@ void configureMicrosTimer() {
 }
 }
 
-void initializeMcu() { HAL_Init(); configureSystemClock(); configureMicrosTimer(); }
+void initializeMcu() {
+    // ROM DFU may leave VTOR pointing away from user Flash. The Arduino core
+    // established the board runtime before setup(); make the Cube boundary
+    // deterministic for both cold boot and bootloader-to-application handoff.
+    SCB->VTOR = FLASH_BASE;
+    __DSB();
+    __ISB();
+    if (HAL_Init() != HAL_OK) { while (true) {} }
+    configureSystemClock();
+    SCB->VTOR = FLASH_BASE;
+    __DSB();
+    __ISB();
+    configureMicrosTimer();
+}
 void configureInputPullup(const mcu::Pin pin) {
     enablePortClock(pin); GPIO_TypeDef* const port = portFor(pin); if (port == nullptr) return;
     GPIO_InitTypeDef init{}; init.Pin=maskFor(pin); init.Mode=GPIO_MODE_INPUT; init.Pull=GPIO_PULLUP; init.Speed=GPIO_SPEED_FREQ_LOW; HAL_GPIO_Init(port,&init);
@@ -122,6 +135,12 @@ extern "C" void HAL_GPIO_EXTI_Callback(const std::uint16_t gpioPin) {
 } // namespace clockfw::hal::platform
 
 #if !defined(CLOCK_HOST_TEST) && !defined(CLOCK_SIMULATOR)
+extern "C" void HAL_MspInit(){
+    // STM32duino previously supplied the global MSP boundary. Cube projects
+    // must enable SYSCFG explicitly before HAL_GPIO_Init configures EXTI muxes.
+    __HAL_RCC_SYSCFG_CLK_ENABLE();
+    __HAL_RCC_PWR_CLK_ENABLE();
+}
 extern "C" void SysTick_Handler(){ HAL_IncTick(); }
 extern "C" void EXTI0_IRQHandler(){HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_0);} extern "C" void EXTI1_IRQHandler(){HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_1);} extern "C" void EXTI2_IRQHandler(){HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_2);} extern "C" void EXTI3_IRQHandler(){HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_3);} extern "C" void EXTI4_IRQHandler(){HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_4);}
 extern "C" void EXTI9_5_IRQHandler(){for(std::uint16_t p=GPIO_PIN_5;p<=GPIO_PIN_9;p<<=1U) if(__HAL_GPIO_EXTI_GET_IT(p)!=RESET) HAL_GPIO_EXTI_IRQHandler(p);}

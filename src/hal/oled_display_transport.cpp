@@ -125,12 +125,18 @@ bool OledDisplay::beginSpi() {
     __HAL_RCC_SPI1_CLK_ENABLE();
     GPIO_TypeDef* const sckPort = portFor(pinmap::kDisplaySpiClockPin);
     GPIO_TypeDef* const mosiPort = portFor(pinmap::kDisplaySpiDataPin);
-    if (sckPort == nullptr || mosiPort == nullptr) return false;
-    enableGpioClock(sckPort); enableGpioClock(mosiPort);
+    GPIO_TypeDef* const misoPort = portFor(pinmap::kDisplaySpiMisoPin);
+    if (sckPort == nullptr || mosiPort == nullptr || misoPort == nullptr) return false;
+    enableGpioClock(sckPort); enableGpioClock(mosiPort); enableGpioClock(misoPort);
     GPIO_InitTypeDef gpio{}; gpio.Mode = GPIO_MODE_AF_PP; gpio.Pull = GPIO_NOPULL; gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH; gpio.Alternate = GPIO_AF5_SPI1;
     gpio.Pin = maskFor(pinmap::kDisplaySpiClockPin); HAL_GPIO_Init(sckPort, &gpio);
     gpio.Pin = maskFor(pinmap::kDisplaySpiDataPin); HAL_GPIO_Init(mosiPort, &gpio);
-    gDisplaySpi.Instance = SPI1; gDisplaySpi.Init.Mode = SPI_MODE_MASTER; gDisplaySpi.Init.Direction = SPI_DIRECTION_1LINE; gDisplaySpi.Init.DataSize = SPI_DATASIZE_8BIT; gDisplaySpi.Init.CLKPolarity = SPI_POLARITY_LOW; gDisplaySpi.Init.CLKPhase = SPI_PHASE_1EDGE; gDisplaySpi.Init.NSS = SPI_NSS_SOFT; gDisplaySpi.Init.BaudRatePrescaler = spiPrescalerFor(HAL_RCC_GetPCLK2Freq(), config::kDisplaySpiFrequencyHz); gDisplaySpi.Init.FirstBit = SPI_FIRSTBIT_MSB; gDisplaySpi.Init.TIMode = SPI_TIMODE_DISABLE; gDisplaySpi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE; gDisplaySpi.Init.CRCPolynomial = 7U;
+    // STM32duino's dedicated SPIClass was constructed with PA6 as MISO and
+    // therefore ran SPI1 in the ordinary 2-line master configuration even
+    // though the OLED itself is write-only. Keep the production HAL equivalent
+    // electrically and register-compatible with that proven hardware path.
+    gpio.Pin = maskFor(pinmap::kDisplaySpiMisoPin); HAL_GPIO_Init(misoPort, &gpio);
+    gDisplaySpi.Instance = SPI1; gDisplaySpi.Init.Mode = SPI_MODE_MASTER; gDisplaySpi.Init.Direction = SPI_DIRECTION_2LINES; gDisplaySpi.Init.DataSize = SPI_DATASIZE_8BIT; gDisplaySpi.Init.CLKPolarity = SPI_POLARITY_LOW; gDisplaySpi.Init.CLKPhase = SPI_PHASE_1EDGE; gDisplaySpi.Init.NSS = SPI_NSS_SOFT; gDisplaySpi.Init.BaudRatePrescaler = spiPrescalerFor(HAL_RCC_GetPCLK2Freq(), config::kDisplaySpiFrequencyHz); gDisplaySpi.Init.FirstBit = SPI_FIRSTBIT_MSB; gDisplaySpi.Init.TIMode = SPI_TIMODE_DISABLE; gDisplaySpi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE; gDisplaySpi.Init.CRCPolynomial = 7U;
     if (HAL_SPI_Init(&gDisplaySpi) != HAL_OK) return false;
 #endif
     platform::configureOutput(pinmap::kDisplaySpiChipSelectPin); platform::configureOutput(pinmap::kDisplaySpiDataCommandPin); platform::write(pinmap::kDisplaySpiChipSelectPin,true); platform::write(pinmap::kDisplaySpiDataCommandPin,false); platform::delayMilliseconds(1U); return true;

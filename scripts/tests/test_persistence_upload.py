@@ -54,10 +54,28 @@ class PersistenceUploadTests(unittest.TestCase):
 
     def test_dfu_commands_use_explicit_nonpersistent_addresses(self) -> None:
         tool = Path("dfu-util")
-        boot = UPLOAD.dfu_command(tool, Path("boot.bin"), UPLOAD.BOOT_ADDRESS, False, "0483:df11")
-        app = UPLOAD.dfu_command(tool, Path("app.bin"), UPLOAD.APP_ADDRESS, True, "0483:df11")
-        self.assertIn("0x08000000", boot)
-        self.assertIn("0x0800C000:leave", app)
+        app = UPLOAD.dfu_command(tool, Path("app.bin"), UPLOAD.APP_ADDRESS, False, "0483:df11")
+        boot = UPLOAD.dfu_command(tool, Path("boot.bin"), UPLOAD.BOOT_ADDRESS, True, "0483:df11")
+        self.assertIn("0x0800C000", app)
+        self.assertNotIn(":leave", " ".join(app))
+        self.assertIn("0x08000000:leave", boot)
+
+
+    def test_cube_runtime_preserves_pre_arduino_hardware_contract(self) -> None:
+        main = (ROOT / "src" / "main.cpp").read_text(encoding="utf-8")
+        init_pos = main.index("clockfw::hal::platform::initializeMcu();")
+        app_pos = main.index("static clockfw::app::ClockApplication application;")
+        self.assertLess(init_pos, app_pos)
+
+        platform = (ROOT / "src" / "hal" / "platform_io.cpp").read_text(encoding="utf-8")
+        self.assertGreaterEqual(platform.count("SCB->VTOR = FLASH_BASE;"), 2)
+        self.assertIn("extern \"C\" void HAL_MspInit()", platform)
+        self.assertIn("__HAL_RCC_SYSCFG_CLK_ENABLE();", platform)
+
+        oled = (ROOT / "src" / "hal" / "oled_display_transport.cpp").read_text(encoding="utf-8")
+        self.assertIn("SPI_DIRECTION_2LINES", oled)
+        self.assertIn("kDisplaySpiMisoPin", oled)
+        self.assertNotIn("SPI_DIRECTION_1LINE", oled)
 
     def test_region_size_guard_rejects_empty_and_oversized_images(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

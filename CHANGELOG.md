@@ -16,6 +16,14 @@ This project is still in active development. Until the first stable release, ver
 - pass `-std=gnu++1z` directly through the shared embedded `build_flags` instead of a late POST script
 - keep all STM32Cube firmware variants on the same deterministic C++17 toolchain
 
+### STM32Cube hardware compatibility follow-up
+
+- Restored the STM32duino startup-order contract without restoring the Arduino/LGPL runtime: MCU/HAL initialization now completes before the top-level `ClockApplication` object is constructed.
+- Explicitly restores `SCB->VTOR` to user Flash for both cold boot and ROM-DFU handoff before interrupts are relied upon.
+- Added the Cube `HAL_MspInit()` boundary that STM32duino previously supplied, including the SYSCFG/PWR clocks required for reliable EXTI routing.
+- Changed the direct Cube OLED SPI1 setup back to the proven full-duplex peripheral configuration used by STM32duino, including PA6/MISO and `SPI_DIRECTION_2LINES`; the OLED remains physically write-only.
+- Corrected persistence-preserving USB DFU sequencing: the application region is written first, sector 0/vector table last, and DfuSe `:leave` now targets `0x08000000` rather than `0x0800C000`.
+
 ### Changed
 
 - Gave **BEATKNECHT** a dedicated transport contract: PLAY starts the rhythm from its intro and toggles PLAY/PAUSE thereafter; STOP/BACK immediately forces all eight gates LOW, resets the pattern to step 1, and disables the output stage until PLAY is pressed again.
@@ -25,7 +33,6 @@ This project is still in active development. Until the first stable release, ver
 - Corrected the custom STM32Cube linker script for the real ARM target: RAM is now declared explicitly as 64 KiB instead of relying on the Arduino-only `LD_MAX_DATA_SIZE` symbol, and output-section syntax remains compatible with the pinned GCC 7.2.1/binutils toolchain.
 - Removed a misleading-indentation warning from the BEATKNECHT shutdown path without changing its STOP/output-stage behavior.
 - Forced the embedded STM32Cube target into GCC-7-compatible C++17 mode (`-std=gnu++1z`) after the real ARM build exposed that the PlatformIO toolchain was compiling project sources as C++14; this restores `inline constexpr` variables and C++17 library facilities such as `std::clamp`.
-- Added a PlatformIO post-build policy that applies the same C++17 dialect to project sources and isolated project libraries, preventing framework defaults from silently downgrading the language mode.
 
 ### Tests
 

@@ -251,8 +251,13 @@ def main() -> int:
                 "-a", str(image),
             ])
 
-        run_checked(dfu_command(dfu_util, boot_bin, BOOT_ADDRESS, False, args.usb_id))
-        run_checked(dfu_command(dfu_util, app_bin, APP_ADDRESS, True, args.usb_id))
+        # Program the application region first and the vector-table sector last.
+        # DfuSe :leave must point at the image that contains the initial SP and
+        # Reset_Handler vector, not at the application code region. This also
+        # avoids exposing a newly written vector table before its target code is
+        # present when an update is interrupted.
+        run_checked(dfu_command(dfu_util, app_bin, APP_ADDRESS, False, args.usb_id))
+        run_checked(dfu_command(dfu_util, boot_bin, BOOT_ADDRESS, True, args.usb_id))
     except (FileNotFoundError, RuntimeError, subprocess.CalledProcessError, ValueError) as exc:
         print(f"Persistence-preserving DFU upload failed: {exc}", file=sys.stderr)
         return 1

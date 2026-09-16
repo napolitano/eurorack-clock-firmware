@@ -127,7 +127,7 @@ inline constexpr std::uint32_t kDisplaySpiClockPin = CLOCK_DISPLAY_SPI_SCK_PIN;
 /** SPI MOSI/DIN peripheral pin for the selected OLED wiring profile. */
 inline constexpr std::uint32_t kDisplaySpiDataPin = CLOCK_DISPLAY_SPI_MOSI_PIN;
 
-/** SPI MISO pin identifier retained for wiring documentation; it is electrically unused by the write-only OLED. */
+/** SPI1 MISO pin used to preserve the proven full-duplex peripheral configuration; the OLED does not drive it. */
 inline constexpr std::uint32_t kDisplaySpiMisoPin = CLOCK_DISPLAY_SPI_MISO_PIN;
 
 /** SPI OLED chip-select GPIO. */
