@@ -240,7 +240,7 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **375 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **379 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
@@ -250,7 +250,7 @@ Current inventory: **375 explicitly named Native test cases**. PlatformIO expose
 | `test_swing` | 22 | atomic swing mathematics plus observed engine edge spacing and pair-duration conservation |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
-| `test_controls` | 40 | encoder Gray-code decoding, cycle resynchronization after missed/coalesced edges, NORMAL/REVERSED semantic direction, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
+| `test_controls` | 44 | TIM2 quadrature counting, detent-phase resynchronization after missed/coalesced edges, first-detent and direction-reversal recovery, NORMAL/REVERSED semantic direction, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
 | `test_settings` | 56 | settings limits, device-local encoder/display preferences, enum transitions, timing invariants, channel/Euclid/Sequencer edits and invalid-input behavior |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 23 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |

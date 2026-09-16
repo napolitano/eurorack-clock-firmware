@@ -18,12 +18,12 @@ This is the developer-facing Native entry point. Beta.4 deliberately makes timin
 | `test_swing` | 22 | swing pair mathematics and observable scheduler edge spacing |
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
 | `test_tap_tempo` | 24 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
-| `test_controls` | 40 | encoder quadrature, recovery after missed/coalesced transitions, NORMAL/REVERSED direction mapping, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
+| `test_controls` | 44 | TIM2 encoder quadrature, detent-phase recovery after missed/coalesced transitions, first-detent and immediate direction-reversal behavior, NORMAL/REVERSED direction mapping, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
 | `test_settings` | 56 | settings boundaries, encoder/display device preferences, enum transitions, invariants and channel/mode editor contracts |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 28 | intro launch gating, reset state, output safety and game-specific controls |
 | `test_host_firmware` | 27 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
-| **Total** | **375** | public Native inventory |
+| **Total** | **379** | public Native inventory |
 
 The default Native configuration executes more than **223,000 assertions**. `scripts/check_test_inventory.py` rejects a total regression below 340 cases and also enforces minimum sizes for every visible suite.
 

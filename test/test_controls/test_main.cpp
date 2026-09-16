@@ -16,6 +16,10 @@
 
 using namespace clockfw;
 
+namespace clockfw::hal::platform {
+void setQuadratureEncoderCountForTest(std::uint32_t count);
+}
+
 void setUp(){ fakefw::resetArduino(); }
 void tearDown(){}
 
@@ -154,8 +158,46 @@ void testMidCycleDirectionReversalDoesNotPoisonNextDetent(){
     TEST_ASSERT_EQUAL(-forwardSign,c.sample(3U).encoderDelta);
 }
 
+void testMissedTransitionAtDetentStillReportsFirstClick(){
+    setEncoder(1,1);
+    hal::ControlPanel c; c.begin();
+    hal::platform::setQuadratureEncoderCountForTest(3U);
+    TEST_ASSERT_EQUAL(1,c.sample(1U).encoderDelta);
+    TEST_ASSERT_EQUAL(0,c.sample(2U).encoderDelta);
+}
+
+void testMissedTransitionRecoveryDoesNotPoisonImmediateReverse(){
+    setEncoder(1,1);
+    hal::ControlPanel c; c.begin();
+    hal::platform::setQuadratureEncoderCountForTest(3U);
+    TEST_ASSERT_EQUAL(1,c.sample(1U).encoderDelta);
+    hal::platform::setQuadratureEncoderCountForTest(0xFFFFFFFFU);
+    TEST_ASSERT_EQUAL(-1,c.sample(2U).encoderDelta);
+}
+
+void testHalfCycleCorruptionIsDiscardedAtDetentBoundary(){
+    setEncoder(1,1);
+    hal::ControlPanel c; c.begin();
+    hal::platform::setQuadratureEncoderCountForTest(2U);
+    TEST_ASSERT_EQUAL(0,c.sample(1U).encoderDelta);
+    hal::platform::setQuadratureEncoderCountForTest(0xFFFFFFFEU);
+    TEST_ASSERT_EQUAL(-1,c.sample(2U).encoderDelta);
+}
+
+void testExtraTransitionAtDetentDoesNotCreatePersistentPhaseError(){
+    setEncoder(1,1);
+    hal::ControlPanel c; c.begin();
+    hal::platform::setQuadratureEncoderCountForTest(5U);
+    TEST_ASSERT_EQUAL(1,c.sample(1U).encoderDelta);
+    hal::platform::setQuadratureEncoderCountForTest(9U);
+    TEST_ASSERT_EQUAL(1,c.sample(2U).encoderDelta);
+    hal::platform::setQuadratureEncoderCountForTest(5U);
+    TEST_ASSERT_EQUAL(-1,c.sample(3U).encoderDelta);
+}
+
 int main(){UNITY_BEGIN();
 RUN_TEST(testIdleSampleDoesNotMaskInterrupts);RUN_TEST(testGrayCycleAProducesOneDetent);RUN_TEST(testGrayCycleBProducesOppositeDetent);RUN_TEST(testPartialGrayCycleProducesNoDetent);RUN_TEST(testEncoderBounceReturnsToSameStateWithoutDetent);RUN_TEST(testSixFastDetentsAccumulateWithoutForegroundPoll);RUN_TEST(testEncoderDrainIsEmptyAfterSample);RUN_TEST(testEncoderDrainCapsAt127AndPreservesRemainderForCycleA);RUN_TEST(testEncoderDrainCapsAt127AndPreservesRemainderForCycleB);RUN_TEST(testDirectionReversalCancelsPendingMovement);RUN_TEST(testEncoderLowAtStartupDoesNotManufactureDetent);RUN_TEST(testAllEncoderPinsUsePullups);
 RUN_TEST(testEncoderDirectionReversalInvertsCompletedDetentWithoutChangingDecoder);RUN_TEST(testEncoderDirectionReversalPreservesFastTurnBacklog);RUN_TEST(testFastTurnThousandDetentsAreNotLostForward);RUN_TEST(testFastTurnThousandDetentsAreNotLostReverse);RUN_TEST(testFastTurnRepeatedForegroundDrainsPreserveTotal);RUN_TEST(testFastTurnDirectionReversalCancelsLargeBacklog);RUN_TEST(testFastTurnBacklogSaturatesWithoutSignedOverflow);RUN_TEST(testFastTurnDuringButtonBouncePreservesAllDetents);RUN_TEST(testFirstDetentCountsImmediatelyFromEveryElectricalPhase);RUN_TEST(testFirstReverseDetentCountsImmediatelyFromEveryElectricalPhase);RUN_TEST(testEverySingleDetentAfterDirectionChangeIsReported);RUN_TEST(testMidCycleDirectionReversalDoesNotPoisonNextDetent);
+RUN_TEST(testMissedTransitionAtDetentStillReportsFirstClick);RUN_TEST(testMissedTransitionRecoveryDoesNotPoisonImmediateReverse);RUN_TEST(testHalfCycleCorruptionIsDiscardedAtDetentBoundary);RUN_TEST(testExtraTransitionAtDetentDoesNotCreatePersistentPhaseError);
 RUN_TEST(testEncoderPushDebouncesPress);RUN_TEST(testPlayPauseDebouncesPress);RUN_TEST(testTapDebouncesPress);RUN_TEST(testResetBackDebouncesPress);RUN_TEST(testEncoderPushDebouncesRelease);RUN_TEST(testPlayPauseDebouncesRelease);RUN_TEST(testTapDebouncesRelease);RUN_TEST(testResetBackDebouncesRelease);RUN_TEST(testEncoderPushHoldDoesNotRepeat);RUN_TEST(testPlayPauseHoldDoesNotRepeat);RUN_TEST(testTapHoldDoesNotRepeat);RUN_TEST(testResetBackHoldDoesNotRepeat);RUN_TEST(testButtonBounceBeforeDebounceDoesNotPress);RUN_TEST(testSimultaneousButtonsReportIndependentEdges);RUN_TEST(testButtonActivityDoesNotLoseEncoderDetent);RUN_TEST(testInitiallyPressedButtonIsStableWithoutSyntheticEdge);
 return UNITY_END();}

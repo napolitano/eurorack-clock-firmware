@@ -30,6 +30,8 @@ This project is still in active development. Until the first stable release, ver
 - Added first-detent regressions from every electrical phase, immediate reverse-detent coverage, and repeated single-detent direction-change coverage while preserving fast-turn backlog handling and the NORMAL/REVERSED setting.
 - Changed `ORIENTATION = 180 DEG` from SSD1306/SSD1315 scan-remap commands to deterministic framebuffer-transfer rotation. The controller stays in the proven `A1/C8` orientation while firmware reverses columns, pages, and page-bit order, preventing mirrored text on interchangeable OLED modules.
 - Kept the canonical renderer framebuffer unchanged so the simulator, screenshots, drawing coordinates, and UI layout remain independent of mounting orientation.
+- Restored the beta.6 electrical-cycle resynchronization contract on top of the TIM2 hardware encoder backend. The free-running x4 remainder introduced with TIM2 could again retain a quarter-cycle phase error, consuming the first detent and the first detent after a reversal. Each return to the startup detent phase is now a hard boundary: a one-transition count error is rounded to the nearest complete PEC11L cycle and any remaining ambiguous residue is discarded before the next direction.
+- Added four hardware-model regressions for a missing first transition, immediate reversal after recovery, half-cycle corruption, and an extra transition at the detent boundary. `test_controls` now contains 44 named cases and the public Native inventory is 379.
 
 ### Changed
 

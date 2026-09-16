@@ -141,6 +141,9 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertIn("phaseA != mcu::PA0 || phaseB != mcu::PA1", platform)
         self.assertIn("beginQuadratureEncoder", controls)
         self.assertIn("quadratureEncoderCount", controls)
+        self.assertIn("quadratureEncoderState", controls)
+        self.assertIn("encoderDetentPhase_", controls)
+        self.assertIn("atDetentPhase", controls)
         self.assertNotIn("encoderInterruptThunk", controls)
 
     def test_oled_180_degree_mode_rotates_transfer_bytes_not_scan_commands(self) -> None:
@@ -169,12 +172,12 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertIn("test_swing=22", result.stdout)
         self.assertIn("test_humanize=12", result.stdout)
         self.assertIn("test_tap_tempo=24", result.stdout)
-        self.assertIn("test_controls=40", result.stdout)
+        self.assertIn("test_controls=44", result.stdout)
         self.assertIn("test_settings=56", result.stdout)
         self.assertIn("test_screensavers=15", result.stdout)
         self.assertIn("test_easter_eggs=28", result.stdout)
         self.assertIn("test_host_firmware=27", result.stdout)
-        self.assertIn("total=375", result.stdout)
+        self.assertIn("total=379", result.stdout)
 
 
 

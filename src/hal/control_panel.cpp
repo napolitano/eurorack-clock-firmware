@@ -60,6 +60,12 @@ void ControlPanel::begin() {
         pinmap::kEncoderPhaseAPin,
         pinmap::kEncoderPhaseBPin);
     encoderLastTransitionCount_ = platform::quadratureEncoderCount();
+    // PEC11L-4120K-S0020 is a 20-detent / 20-PPR full-cycle encoder. Capture
+    // the electrical phase of the mechanical detent at startup and use each
+    // return to that phase as a cycle anchor. This removes the arbitrary
+    // quarter-cycle offset that can otherwise consume the first detent and the
+    // first detent after a direction reversal.
+    encoderDetentPhase_ = platform::quadratureEncoderState();
     encoderTransitionRemainder_ = 0;
     pendingEncoderDetents_ = 0;
 
@@ -103,11 +109,31 @@ std::int8_t ControlPanel::sampleEncoder() {
     if (transitionDelta != 0) {
         const std::int64_t accumulatedTransitions =
             static_cast<std::int64_t>(encoderTransitionRemainder_) + transitionDelta;
-        const std::int32_t newDetents = static_cast<std::int32_t>(
-            accumulatedTransitions / kTransitionsPerDetent);
-        encoderTransitionRemainder_ = static_cast<std::int8_t>(
-            accumulatedTransitions -
-            static_cast<std::int64_t>(newDetents) * kTransitionsPerDetent);
+        const bool atDetentPhase =
+            platform::quadratureEncoderState() == encoderDetentPhase_;
+
+        std::int32_t newDetents = 0;
+        if (atDetentPhase) {
+            // PEC11L-4120K-S0020 has one full quadrature cycle per mechanical
+            // detent (20 detents / 20 PPR). Returning to the startup phase is
+            // therefore a hard resynchronization boundary. Round a one-edge
+            // count error to the nearest complete cycle and discard any
+            // remaining half-cycle corruption instead of carrying it across a
+            // later direction reversal. Ties (two transitions) round toward
+            // zero because they are electrically ambiguous.
+            const std::int64_t magnitude =
+                accumulatedTransitions < 0 ? -accumulatedTransitions : accumulatedTransitions;
+            const std::int32_t completedCycles = static_cast<std::int32_t>(
+                (magnitude + 1) / kTransitionsPerDetent);
+            newDetents = accumulatedTransitions < 0 ? -completedCycles : completedCycles;
+            encoderTransitionRemainder_ = 0;
+        } else {
+            newDetents = static_cast<std::int32_t>(
+                accumulatedTransitions / kTransitionsPerDetent);
+            encoderTransitionRemainder_ = static_cast<std::int8_t>(
+                accumulatedTransitions -
+                static_cast<std::int64_t>(newDetents) * kTransitionsPerDetent);
+        }
 
         const std::int32_t pending =
             static_cast<std::int32_t>(pendingEncoderDetents_) + newDetents;

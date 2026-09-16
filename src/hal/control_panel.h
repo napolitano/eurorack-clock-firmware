@@ -81,6 +81,7 @@ private:
     DebouncedButton tapButton_;
     DebouncedButton resetButton_;
     std::uint32_t encoderLastTransitionCount_ = 0U;
+    std::uint8_t encoderDetentPhase_ = 0U;
     std::int8_t encoderTransitionRemainder_ = 0;
     std::int16_t pendingEncoderDetents_ = 0;
     bool encoderDirectionReversed_ = false;

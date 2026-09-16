@@ -61,6 +61,16 @@ bool beginQuadratureEncoder(const mcu::Pin phaseA, const mcu::Pin phaseB) {
     return true;
 }
 std::uint32_t quadratureEncoderCount() { return gQuadratureCount; }
+#if defined(CLOCK_HOST_TEST)
+void setQuadratureEncoderCountForTest(const std::uint32_t count) {
+    gQuadratureCount = count;
+}
+#endif
+std::uint8_t quadratureEncoderState() {
+    return static_cast<std::uint8_t>(
+        (digitalRead(gQuadraturePhaseA) == HIGH ? 2U : 0U) |
+        (digitalRead(gQuadraturePhaseB) == HIGH ? 1U : 0U));
+}
 std::uint32_t milliseconds() { return millis(); }
 std::uint32_t microseconds() { return micros(); }
 void delayMilliseconds(const std::uint32_t durationMs) { delay(durationMs); }
@@ -206,6 +216,12 @@ bool beginQuadratureEncoder(const mcu::Pin phaseA, const mcu::Pin phaseB) {
 }
 std::uint32_t quadratureEncoderCount() {
     return __HAL_TIM_GET_COUNTER(&gEncoderTimer);
+}
+std::uint8_t quadratureEncoderState() {
+    const std::uint32_t idr = GPIOA->IDR;
+    return static_cast<std::uint8_t>(
+        ((idr & GPIO_PIN_0) != 0U ? 2U : 0U) |
+        ((idr & GPIO_PIN_1) != 0U ? 1U : 0U));
 }
 std::uint32_t milliseconds() { return HAL_GetTick(); }
 std::uint32_t microseconds() { return __HAL_TIM_GET_COUNTER(&gMicrosTimer); }

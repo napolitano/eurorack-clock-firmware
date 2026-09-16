@@ -36,6 +36,8 @@ void attachInterrupt(mcu::Pin pin, InterruptCallback callback, InterruptEdge edg
 bool beginQuadratureEncoder(mcu::Pin phaseA, mcu::Pin phaseB);
 /** @brief Returns the wrapping signed-position counter in raw quadrature transitions. */
 std::uint32_t quadratureEncoderCount();
+/** @brief Returns the current A/B electrical phase as bit1=A and bit0=B. */
+std::uint8_t quadratureEncoderState();
 /** @brief Returns milliseconds elapsed since MCU initialization. */
 std::uint32_t milliseconds();
 /** @brief Returns the wrapping 32-bit TIM5 microsecond counter. */
