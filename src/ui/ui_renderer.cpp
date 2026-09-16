@@ -87,6 +87,9 @@ void UiRenderer::render(
         case Screen::OverwriteConfirm:
             settingsRenderer_.renderOverwriteConfirm(navigation, persistentState_);
             break;
+        case Screen::HighScoreClearConfirm:
+            settingsRenderer_.renderHighScoreClearConfirm(navigation);
+            break;
         case Screen::NameEntry:
             settingsRenderer_.renderNameEntry(navigation);
             break;

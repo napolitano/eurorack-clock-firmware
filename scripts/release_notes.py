@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Extract the matching version section from CHANGELOG.md for a GitHub Release.
+"""Build GitHub release notes from the user summary plus the matching changelog section.
 
 Author: Axel Napolitano
 License: PolyForm-Noncommercial-1.0.0
@@ -10,28 +10,45 @@ import argparse
 import re
 from pathlib import Path
 
+ROOT = Path(__file__).resolve().parents[1]
 
-def main() -> int:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("version")
-    parser.add_argument("--changelog", default="CHANGELOG.md")
-    parser.add_argument("--output", default="dist/RELEASE_NOTES.md")
-    args = parser.parse_args()
 
-    text = Path(args.changelog).read_text(encoding="utf-8")
-    # Accept headings such as ## [1.2.3] or ## 1.2.3.
-    heading = re.compile(rf"^##\s+(?:\[)?{re.escape(args.version)}(?:\])?.*$", re.MULTILINE)
+def changelog_section(version: str, changelog: Path) -> str:
+    text = changelog.read_text(encoding="utf-8")
+    heading = re.compile(rf"^##\s+(?:\[)?{re.escape(version)}(?:\])?.*$", re.MULTILINE)
     match = heading.search(text)
     if not match:
-        raise SystemExit(f"No CHANGELOG section found for {args.version}")
-
+        raise RuntimeError(f"No CHANGELOG section found for {version}")
     next_heading = re.compile(r"^##\s+", re.MULTILINE).search(text, match.end())
     end = next_heading.start() if next_heading else len(text)
-    body = text[match.start():end].strip() + "\n"
+    return text[match.start():end].strip()
 
-    output = Path(args.output)
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("version")
+    parser.add_argument("--changelog", type=Path, default=Path("CHANGELOG.md"))
+    parser.add_argument("--summary", type=Path)
+    parser.add_argument("--output", type=Path, default=Path("dist/RELEASE_NOTES.md"))
+    args = parser.parse_args()
+
+    summary = args.summary or ROOT / "docs" / "releases" / args.version / "RELEASE_SUMMARY.md"
+    if not summary.is_file():
+        raise SystemExit(f"Release summary missing: {summary}")
+    try:
+        details = changelog_section(args.version, args.changelog)
+    except RuntimeError as exc:
+        raise SystemExit(str(exc)) from exc
+
+    output = args.output
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(body, encoding="utf-8")
+    output.write_text(
+        summary.read_text(encoding="utf-8").strip()
+        + "\n\n---\n\n## Detailed changelog\n\n"
+        + details
+        + "\n",
+        encoding="utf-8",
+    )
     print(output)
     return 0
 

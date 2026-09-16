@@ -140,14 +140,14 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertIn("test_controls=40", result.stdout)
         self.assertIn("test_settings=56", result.stdout)
         self.assertIn("test_screensavers=15", result.stdout)
-        self.assertIn("test_easter_eggs=23", result.stdout)
-        self.assertIn("test_host_firmware=26", result.stdout)
-        self.assertIn("total=369", result.stdout)
+        self.assertIn("test_easter_eggs=25", result.stdout)
+        self.assertIn("test_host_firmware=27", result.stdout)
+        self.assertIn("total=372", result.stdout)
 
 
 
 class ReleaseNotesTests(unittest.TestCase):
-    def test_extracts_only_requested_changelog_section(self) -> None:
+    def test_combines_user_summary_with_requested_changelog_section(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / "notes.md"
             result = subprocess.run(
@@ -163,48 +163,128 @@ class ReleaseNotesTests(unittest.TestCase):
                 capture_output=True,
                 check=False,
             )
-            self.assertEqual(result.returncode, 0)
+            self.assertEqual(result.returncode, 0, result.stderr)
             text = output.read_text(encoding="utf-8")
+            self.assertIn(f"# CLOCK {current_version()}", text)
+            self.assertIn("## Highlights", text)
+            self.assertIn("## Detailed changelog", text)
             self.assertIn(f"## [{current_version()}]", text)
             self.assertNotIn("## [0.19.0-alpha.3]", text)
 
     def test_missing_changelog_version_fails(self) -> None:
-        result = subprocess.run(
-            [PYTHON, str(ROOT / "scripts/release_notes.py"), "99.99.99"],
-            cwd=ROOT,
-            text=True,
-            capture_output=True,
-            check=False,
-        )
+        with tempfile.TemporaryDirectory() as tmp:
+            summary = Path(tmp) / "summary.md"
+            summary.write_text("# Missing version test\n", encoding="utf-8")
+            result = subprocess.run(
+                [
+                    PYTHON,
+                    str(ROOT / "scripts/release_notes.py"),
+                    "99.99.99",
+                    "--summary",
+                    str(summary),
+                ],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("No CHANGELOG section", result.stderr + result.stdout)
 
 
 class PackageReleaseTests(unittest.TestCase):
+    @staticmethod
+    def release_module() -> dict[str, object]:
+        scripts = str(ROOT / "scripts")
+        sys.path.insert(0, scripts)
+        try:
+            return runpy.run_path(str(ROOT / "scripts/package_release.py"))
+        finally:
+            sys.path.remove(scripts)
+
     def test_binary_packaging_is_enabled_after_stm32cube_migration(self) -> None:
         script = (ROOT / "scripts/package_release.py").read_text(encoding="utf-8")
         self.assertNotIn("acknowledge-lgpl-static-link", script)
         self.assertNotIn("Binary packaging is intentionally disabled", script)
 
-    def test_packages_firmware_license_and_checksums(self) -> None:
+    def test_dfuse_round_trip_preserves_sparse_flash_elements(self) -> None:
+        module = self.release_module()
+        upload = runpy.run_path(str(ROOT / "scripts/upload_preserving_persistence.py"))
+        boot_address = upload["BOOT_ADDRESS"]
+        app_address = upload["APP_ADDRESS"]
+        boot = b"BOOT" + bytes(range(32))
+        app = b"APP" + bytes(range(64))
+        image = module["build_dfuse"]([(boot_address, boot), (app_address, app)])
+        self.assertEqual(module["parse_dfuse"](image), [(boot_address, boot), (app_address, app)])
+        # The persistence sectors are represented by no image element at all.
+        addresses = [address for address, _ in module["parse_dfuse"](image)]
+        self.assertNotIn(upload["PERSIST_A_ADDRESS"], addresses)
+        self.assertNotIn(upload["PERSIST_B_ADDRESS"], addresses)
+
+    def test_firmware_cli_writes_default_and_variant_names(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            build = tmp_path / "build"
             dist = tmp_path / "dist"
-            build.mkdir()
-            firmware_bin = b"firmware-bin-test\x00\x01"
-            firmware_elf = b"firmware-elf-test\x02\x03"
-            (build / "firmware.bin").write_bytes(firmware_bin)
-            (build / "firmware.elf").write_bytes(firmware_elf)
+            boot = tmp_path / "boot.bin"
+            app = tmp_path / "app.bin"
+            boot.write_bytes(b"B" * 128)
+            app.write_bytes(b"A" * 256)
+            for variant, suffix in (("", ""), ("egg-journey", "-egg-journey")):
+                result = subprocess.run(
+                    [
+                        PYTHON,
+                        str(ROOT / "scripts/package_release.py"),
+                        "firmware",
+                        "--out-dir",
+                        str(dist),
+                        "--boot-bin",
+                        str(boot),
+                        "--app-bin",
+                        str(app),
+                        "--variant",
+                        variant,
+                    ],
+                    cwd=ROOT,
+                    text=True,
+                    capture_output=True,
+                    check=False,
+                )
+                self.assertEqual(result.returncode, 0, result.stderr)
+                expected = dist / f"clock-v{current_version()}-stm32f401cc{suffix}.dfu"
+                self.assertTrue(expected.is_file())
+                elements = self.release_module()["parse_dfuse"](expected.read_bytes())
+                self.assertEqual(elements[0][1], boot.read_bytes())
+                self.assertEqual(elements[1][1], app.read_bytes())
 
+    def test_finalize_packages_manual_changelog_summary_and_checksums(self) -> None:
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp_path = Path(tmp)
+            dist = tmp_path / "dist"
+            dist.mkdir()
+            (dist / f"clock-v{current_version()}-stm32f401cc.dfu").write_bytes(b"dfu")
+            odt = tmp_path / f"clock-user-manual.{current_version()}.odt"
+            pdf = tmp_path / f"clock-user-manual.{current_version()}.pdf"
+            changelog = tmp_path / "CHANGELOG.md"
+            summary = tmp_path / "RELEASE_SUMMARY.md"
+            odt.write_bytes(b"odt-test")
+            pdf.write_bytes(b"pdf-test")
+            changelog.write_text("# Changelog\n", encoding="utf-8")
+            summary.write_text("# Summary\n", encoding="utf-8")
             result = subprocess.run(
                 [
                     PYTHON,
                     str(ROOT / "scripts/package_release.py"),
-                    "--build-dir",
-                    str(build),
+                    "finalize",
                     "--out-dir",
                     str(dist),
+                    "--manual-odt",
+                    str(odt),
+                    "--manual-pdf",
+                    str(pdf),
+                    "--changelog",
+                    str(changelog),
+                    "--summary",
+                    str(summary),
                 ],
                 cwd=ROOT,
                 text=True,
@@ -212,89 +292,43 @@ class PackageReleaseTests(unittest.TestCase):
                 check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-
-            stem = f"clock-v{current_version()}-stm32f401cc"
-            bin_out = dist / f"{stem}.bin"
-            elf_out = dist / f"{stem}.elf"
-            license_out = dist / "LICENSE.md"
-            notice_out = dist / "NOTICE.txt"
-            third_party_notice_out = dist / "THIRD_PARTY_NOTICES.md"
-            citation_out = dist / "CITATION.cff"
-            codemeta_out = dist / "codemeta.json"
-            third_party_dir_out = dist / "third_party"
-            checksums = dist / "SHA256SUMS.txt"
-            self.assertEqual(bin_out.read_bytes(), firmware_bin)
-            self.assertEqual(elf_out.read_bytes(), firmware_elf)
-            self.assertEqual(license_out.read_text(encoding="utf-8"), (ROOT / "LICENSE.md").read_text(encoding="utf-8"))
-            self.assertEqual(notice_out.read_text(encoding="utf-8"), (ROOT / "NOTICE.txt").read_text(encoding="utf-8"))
+            self.assertEqual((dist / odt.name).read_bytes(), odt.read_bytes())
+            self.assertEqual((dist / pdf.name).read_bytes(), pdf.read_bytes())
+            self.assertEqual((dist / "CHANGELOG.md").read_text(), "# Changelog\n")
+            self.assertEqual((dist / "RELEASE_SUMMARY.md").read_text(), "# Summary\n")
+            lines = (dist / "SHA256SUMS.txt").read_text(encoding="utf-8").splitlines()
+            names = {line.split("  ", 1)[1] for line in lines}
             self.assertEqual(
-                third_party_notice_out.read_text(encoding="utf-8"),
-                (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8"),
+                names,
+                {
+                    f"clock-v{current_version()}-stm32f401cc.dfu",
+                    odt.name,
+                    pdf.name,
+                    "CHANGELOG.md",
+                    "RELEASE_SUMMARY.md",
+                },
             )
-            self.assertEqual(citation_out.read_text(encoding="utf-8"), (ROOT / "CITATION.cff").read_text(encoding="utf-8"))
-            self.assertEqual(codemeta_out.read_text(encoding="utf-8"), (ROOT / "codemeta.json").read_text(encoding="utf-8"))
-            for source in sorted((ROOT / "third_party").iterdir()):
-                if source.is_file():
-                    self.assertEqual((third_party_dir_out / source.name).read_bytes(), source.read_bytes())
 
-            lines = checksums.read_text(encoding="utf-8").splitlines()
-            expected = {
-                bin_out.name: hashlib.sha256(firmware_bin).hexdigest(),
-                elf_out.name: hashlib.sha256(firmware_elf).hexdigest(),
-                license_out.name: hashlib.sha256(license_out.read_bytes()).hexdigest(),
-                notice_out.name: hashlib.sha256(notice_out.read_bytes()).hexdigest(),
-                third_party_notice_out.name: hashlib.sha256(third_party_notice_out.read_bytes()).hexdigest(),
-                citation_out.name: hashlib.sha256(citation_out.read_bytes()).hexdigest(),
-                codemeta_out.name: hashlib.sha256(codemeta_out.read_bytes()).hexdigest(),
-            }
-            expected.update({
-                f"third_party/{path.name}": hashlib.sha256(path.read_bytes()).hexdigest()
-                for path in sorted(third_party_dir_out.iterdir()) if path.is_file()
-            })
-            parsed = {line.split("  ", 1)[1]: line.split("  ", 1)[0] for line in lines}
-            self.assertEqual(parsed, expected)
-
-    def test_missing_build_artifact_fails(self) -> None:
-        with tempfile.TemporaryDirectory() as tmp:
-            build = Path(tmp) / "build"
-            dist = Path(tmp) / "dist"
-            build.mkdir()
-            (build / "firmware.bin").write_bytes(b"only bin")
-            result = subprocess.run(
-                [
-                    PYTHON,
-                    str(ROOT / "scripts/package_release.py"),
-                    "--build-dir",
-                    str(build),
-                    "--out-dir",
-                    str(dist),
-                ],
-                cwd=ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
-            )
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("Build artifact missing", result.stderr + result.stdout)
-
-    def test_missing_license_fails(self) -> None:
+    def test_finalize_rejects_release_without_firmware_image(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            build = tmp_path / "build"
-            dist = tmp_path / "dist"
-            build.mkdir()
-            (build / "firmware.bin").write_bytes(b"bin")
-            (build / "firmware.elf").write_bytes(b"elf")
+            for name in ("manual.odt", "manual.pdf", "CHANGELOG.md", "RELEASE_SUMMARY.md"):
+                (tmp_path / name).write_bytes(b"x")
             result = subprocess.run(
                 [
                     PYTHON,
                     str(ROOT / "scripts/package_release.py"),
-                    "--build-dir",
-                    str(build),
+                    "finalize",
                     "--out-dir",
-                    str(dist),
-                    "--license-file",
-                    str(tmp_path / "missing-license.md"),
+                    str(tmp_path / "dist"),
+                    "--manual-odt",
+                    str(tmp_path / "manual.odt"),
+                    "--manual-pdf",
+                    str(tmp_path / "manual.pdf"),
+                    "--changelog",
+                    str(tmp_path / "CHANGELOG.md"),
+                    "--summary",
+                    str(tmp_path / "RELEASE_SUMMARY.md"),
                 ],
                 cwd=ROOT,
                 text=True,
@@ -302,35 +336,58 @@ class PackageReleaseTests(unittest.TestCase):
                 check=False,
             )
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("License file missing", result.stderr + result.stdout)
+            self.assertIn("No firmware .dfu images", result.stderr + result.stdout)
 
+    def test_release_workflow_declares_exact_firmware_matrix_and_excludes_simulator(self) -> None:
+        workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
+        for environment in (
+            "release_default|",
+            "release_pixel_raid|pixel-raid",
+            "release_formula_1|formula-1",
+            "release_breakout|breakout",
+            "release_egg_journey|egg-journey",
+        ):
+            self.assertIn(environment, workflow)
+        self.assertIn("Simulator binaries are deliberately not release assets", workflow)
+        self.assertIn("dist/vcv/*", workflow)
+        self.assertNotRegex(workflow, r'ASSETS=\([^)]*simulator')
 
-    def test_missing_required_notice_fails(self) -> None:
+    def test_release_summary_is_complete_and_scaffold_requires_editing(self) -> None:
+        summary = ROOT / "docs" / "releases" / current_version() / "RELEASE_SUMMARY.md"
+        result = subprocess.run(
+            [PYTHON, str(ROOT / "scripts/check_release_summary.py"), str(summary), "--version", current_version()],
+            cwd=ROOT,
+            text=True,
+            capture_output=True,
+            check=False,
+        )
+        self.assertEqual(result.returncode, 0, result.stderr)
         with tempfile.TemporaryDirectory() as tmp:
-            tmp_path = Path(tmp)
-            build = tmp_path / "build"
-            dist = tmp_path / "dist"
-            build.mkdir()
-            (build / "firmware.bin").write_bytes(b"bin")
-            (build / "firmware.elf").write_bytes(b"elf")
+            output = Path(tmp) / "scaffold.md"
             result = subprocess.run(
                 [
                     PYTHON,
-                    str(ROOT / "scripts/package_release.py"),
-                    "--build-dir",
-                    str(build),
-                    "--out-dir",
-                    str(dist),
-                    "--notice-file",
-                    str(tmp_path / "missing-notice.txt"),
+                    str(ROOT / "scripts/prepare_release_summary.py"),
+                    "--version",
+                    current_version(),
+                    "--output",
+                    str(output),
                 ],
                 cwd=ROOT,
                 text=True,
                 capture_output=True,
                 check=False,
             )
-            self.assertNotEqual(result.returncode, 0)
-            self.assertIn("Required notice file missing", result.stderr + result.stdout)
+            self.assertEqual(result.returncode, 0, result.stderr)
+            check = subprocess.run(
+                [PYTHON, str(ROOT / "scripts/check_release_summary.py"), str(output), "--version", current_version()],
+                cwd=ROOT,
+                text=True,
+                capture_output=True,
+                check=False,
+            )
+            self.assertNotEqual(check.returncode, 0)
+            self.assertIn("unfinished placeholder", check.stderr + check.stdout)
 
 
 class PlatformioMemoryGateTests(unittest.TestCase):

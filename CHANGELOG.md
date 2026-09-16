@@ -8,6 +8,31 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.13] - 2026-09-16
+
+### Release pipeline
+
+- Added five release firmware environments: the default **BEATKNECHT** build plus Pixel Raid, Formula 1, Breakout, and Egg Journey variants. Variant names are carried in the public firmware filename.
+- Replaced unsafe flat firmware release binaries with persistence-safe **DfuSe `.dfu` images** containing only the boot region at `0x08000000` and application region at `0x0800C000`, leaving persistence sectors 1/2 untouched.
+- Added frozen, user-facing `RELEASE_SUMMARY.md` validation and GitHub release notes that combine the concise summary with the matching detailed changelog section.
+- Defined the release artifact contract as firmware variants, versioned ODT/PDF manual, full changelog, release summary, and checksums. Simulator executables are deliberately excluded; future VCV Rack packages can be added from `dist/vcv/` without becoming a release prerequisite.
+
+### User interface and arcade persistence
+
+- Moved the 8x8 Tap Tempo feedback indicator to a fixed right-aligned slot at the edge of the Performance display while keeping the BPM value centered.
+- Added a guarded **HI-SCORES / CLEAR** Settings entry for ranked arcade Easter eggs. The entry appears only after the selected ranked game has been launched at least once; BEATKNECHT does not expose it because it has no leaderboard.
+- High-score clearing requires explicit NO/YES confirmation and stops transport before the immediate persistence commit.
+
+### Documentation
+
+- Expanded the user manual Screensaver and Easter-egg sections with compact two-across screenshot galleries and short captions.
+- Updated release, configuration, and user documentation to describe the firmware-variant matrix and persistence-safe update format.
+
+### Compatibility
+
+- No persistence schema, musical clock-engine behavior, panel wiring, preset format, or OLED hardware contract change is intended.
+
+
 ## [0.19.0-beta.12] - 2026-09-15
 
 ### STM32CubeF4 runtime migration

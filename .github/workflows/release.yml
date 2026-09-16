@@ -87,11 +87,25 @@ jobs:
       - name: Run simulator integration tests
         run: ctest --test-dir build/simulator-headless -C Debug --output-on-failure
 
-      - name: Build firmware
-        run: pio run -e blackpill_f401cc
-
-      - name: Compile-check SPI display variant
-        run: pio run -e blackpill_f401cc_spi_ssd1315
+      - name: Build and package firmware variants
+        run: |
+          rm -rf dist
+          mkdir -p dist
+          while IFS='|' read -r ENVIRONMENT VARIANT; do
+            echo "Building ${ENVIRONMENT} (${VARIANT:-default / BEATKNECHT})"
+            pio run -e "${ENVIRONMENT}"
+            ARGS=(firmware --build-dir ".pio/build/${ENVIRONMENT}" --out-dir dist)
+            if [[ -n "${VARIANT}" ]]; then
+              ARGS+=(--variant "${VARIANT}")
+            fi
+            python scripts/package_release.py "${ARGS[@]}"
+          done <<'EOF'
+          release_default|
+          release_pixel_raid|pixel-raid
+          release_formula_1|formula-1
+          release_breakout|breakout
+          release_egg_journey|egg-journey
+          EOF
 
       - name: Build versioned user manual artifacts
         run: |
@@ -114,35 +128,69 @@ jobs:
             --version "${VERSION}" \
             --require-ubuntu-fonts
 
-      - name: Create release notes from changelog
+      - name: Validate release summary and build notes
         run: |
           VERSION="$(python scripts/version.py)"
-          python scripts/release_notes.py "$VERSION"
-          {
-            echo
-            echo "### Documentation artifacts"
-            echo
-            echo "- \`clock-user-manual.${VERSION}.odt\` - editable, version-frozen user manual source"
-            echo "- \`clock-user-manual.${VERSION}.pdf\` - release PDF generated from that ODT"
-          } >> dist/RELEASE_NOTES.md
+          SUMMARY="docs/releases/${VERSION}/RELEASE_SUMMARY.md"
+          python scripts/check_release_summary.py "${SUMMARY}" --version "${VERSION}"
+          python scripts/release_notes.py "${VERSION}" --summary "${SUMMARY}" --output dist/RELEASE_NOTES.md
+          python scripts/package_release.py finalize \
+            --out-dir dist \
+            --manual-odt "dist/clock-user-manual.${VERSION}.odt" \
+            --manual-pdf "dist/clock-user-manual.${VERSION}.pdf" \
+            --summary "${SUMMARY}" \
+            --changelog CHANGELOG.md
+
+      - name: Verify release artifact contract
+        run: |
+          VERSION="$(python scripts/version.py)"
+          test -f "dist/clock-v${VERSION}-stm32f401cc.dfu"
+          test -f "dist/clock-v${VERSION}-stm32f401cc-pixel-raid.dfu"
+          test -f "dist/clock-v${VERSION}-stm32f401cc-formula-1.dfu"
+          test -f "dist/clock-v${VERSION}-stm32f401cc-breakout.dfu"
+          test -f "dist/clock-v${VERSION}-stm32f401cc-egg-journey.dfu"
+          test -f "dist/clock-user-manual.${VERSION}.odt"
+          test -f "dist/clock-user-manual.${VERSION}.pdf"
+          test -f dist/CHANGELOG.md
+          test -f dist/RELEASE_SUMMARY.md
+          test -f dist/RELEASE_NOTES.md
+          test -f dist/SHA256SUMS.txt
+          # Simulator binaries are deliberately not release assets.
+          if compgen -G 'dist/*simulator*' > /dev/null; then
+            echo "Simulator artifact unexpectedly present in dist/" >&2
+            exit 1
+          fi
 
       - name: Publish GitHub Release
         if: github.ref_type == 'tag'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          EXTRA_FLAGS=""
+          EXTRA_FLAGS=()
           if [[ "${GITHUB_REF_NAME}" == *-* ]]; then
-            EXTRA_FLAGS="--prerelease"
+            EXTRA_FLAGS+=(--prerelease)
           fi
           VERSION="$(python scripts/version.py)"
-          # GitHub automatically exposes source archives for the tag. Firmware
-          # artifacts are packaged separately by the release pipeline; the manual
-          # ODT/PDF remain explicit release documentation assets.
+          ASSETS=(
+            "dist/clock-v${VERSION}-stm32f401cc.dfu"
+            "dist/clock-v${VERSION}-stm32f401cc-pixel-raid.dfu"
+            "dist/clock-v${VERSION}-stm32f401cc-formula-1.dfu"
+            "dist/clock-v${VERSION}-stm32f401cc-breakout.dfu"
+            "dist/clock-v${VERSION}-stm32f401cc-egg-journey.dfu"
+            "dist/clock-user-manual.${VERSION}.odt"
+            "dist/clock-user-manual.${VERSION}.pdf"
+            "dist/CHANGELOG.md"
+            "dist/RELEASE_SUMMARY.md"
+            "dist/SHA256SUMS.txt"
+          )
+          # Future VCV Rack builds can drop versioned archives below dist/vcv/.
+          # They are included automatically without making VCV a release prerequisite.
+          shopt -s nullglob
+          VCV_ASSETS=(dist/vcv/*)
+          ASSETS+=("${VCV_ASSETS[@]}")
           gh release create "${GITHUB_REF_NAME}" \
-            "dist/clock-user-manual.${VERSION}.odt" \
-            "dist/clock-user-manual.${VERSION}.pdf" \
+            "${ASSETS[@]}" \
             --title "CLOCK ${GITHUB_REF_NAME}" \
             --notes-file dist/RELEASE_NOTES.md \
             --verify-tag \
-            ${EXTRA_FLAGS}
+            "${EXTRA_FLAGS[@]}"

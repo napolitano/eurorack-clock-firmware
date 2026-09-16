@@ -78,6 +78,8 @@ void assertIntroDoesNotAutoStart(game::ArcadeTitle title){ Fixture f; game::Arca
 void assertIntroStartsOnTap(game::ArcadeTitle title){ Fixture f; game::ArcadeShell shell(f.display,title,title==game::ArcadeTitle::Beatknecht?nullptr:&f.leaderboard); shell.begin(0U); const auto c=tapPress(); TEST_ASSERT_EQUAL(game::ArcadeShell::Action::StartRun,shell.update(c,1U)); TEST_ASSERT_TRUE(shell.playing()); }
 
 void testDefaultEasterEggIsBeatknecht(){ TEST_ASSERT_EQUAL(static_cast<int>(config::EasterEgg::Beatknecht), static_cast<int>(config::kEasterEgg)); }
+void testLeaderboardRecordAppearsOnlyAfterFirstLaunchMarker(){ Fixture f; TEST_ASSERT_FALSE(f.leaderboard.hasPersistentRecord()); TEST_ASSERT_TRUE(f.leaderboard.markStarted()); TEST_ASSERT_TRUE(f.leaderboard.hasPersistentRecord()); TEST_ASSERT_EQUAL_UINT8(0U,f.leaderboard.load().count); }
+void testLeaderboardClearRemovesScoresButRetainsStartedMarker(){ Fixture f; TEST_ASSERT_TRUE(f.leaderboard.markStarted()); const std::array<char,4U> initials{{'A','X','L','\0'}}; TEST_ASSERT_EQUAL_UINT32(0U,static_cast<std::uint32_t>(f.leaderboard.insertAndSave(1234U,initials))); TEST_ASSERT_EQUAL_UINT8(1U,f.leaderboard.load().count); TEST_ASSERT_TRUE(f.leaderboard.clear()); TEST_ASSERT_TRUE(f.leaderboard.hasPersistentRecord()); TEST_ASSERT_EQUAL_UINT8(0U,f.leaderboard.load().count); }
 void testPixelRaidIntroNeverAutoStarts(){ assertIntroDoesNotAutoStart(game::ArcadeTitle::PixelRaid); }
 void testFormula1IntroNeverAutoStarts(){ assertIntroDoesNotAutoStart(game::ArcadeTitle::Formula1); }
 void testBreakoutIntroNeverAutoStarts(){ assertIntroDoesNotAutoStart(game::ArcadeTitle::Breakout); }
@@ -107,6 +109,7 @@ void testBeatknechtTapChangesStyleWithoutResettingTempo(){ Fixture f; game::Beat
 
 int main(){ UNITY_BEGIN();
 RUN_TEST(testDefaultEasterEggIsBeatknecht);
+RUN_TEST(testLeaderboardRecordAppearsOnlyAfterFirstLaunchMarker);RUN_TEST(testLeaderboardClearRemovesScoresButRetainsStartedMarker);
 RUN_TEST(testPixelRaidIntroNeverAutoStarts);RUN_TEST(testFormula1IntroNeverAutoStarts);RUN_TEST(testBreakoutIntroNeverAutoStarts);RUN_TEST(testEggJourneyIntroNeverAutoStarts);RUN_TEST(testBeatknechtIntroNeverAutoStarts);
 RUN_TEST(testPixelRaidIntroStartsOnTap);RUN_TEST(testFormula1IntroStartsOnTap);RUN_TEST(testBreakoutIntroStartsOnTap);RUN_TEST(testEggJourneyIntroStartsOnTap);RUN_TEST(testBeatknechtIntroStartsOnTap);
 RUN_TEST(testPixelRaidHostRunKeepsRackOutputStageDisabled);RUN_TEST(testFormula1HostRunKeepsRackOutputStageDisabled);RUN_TEST(testBreakoutHostRunKeepsRackOutputStageDisabled);RUN_TEST(testEggJourneyHostRunKeepsRackOutputStageDisabled);RUN_TEST(testBeatknechtHostRunStartsWithRackOutputStageDisabled);

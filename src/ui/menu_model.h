@@ -26,7 +26,10 @@ struct MenuRow {
 const char* settingsPageTitle(SettingsPage page);
 
 /** @brief Returns the number of selectable rows on a settings page. */
-std::uint8_t settingsPageItemCount(SettingsPage page, ChannelMode mode = ChannelMode::Clock);
+std::uint8_t settingsPageItemCount(
+    SettingsPage page,
+    ChannelMode mode = ChannelMode::Clock,
+    bool highScoreResetAvailable = false);
 
 /** @brief Returns true when the page is scoped to the currently selected channel. */
 bool isChannelSettingsPage(SettingsPage page);
@@ -43,7 +46,8 @@ MenuRow buildMenuRow(
     SettingsPage page,
     std::uint8_t rowIndex,
     std::uint8_t selectedChannel,
-    const ClockState& state);
+    const ClockState& state,
+    bool highScoreResetAvailable = false);
 
 /** @brief Returns the index of the current integer rate option. */
 std::size_t findRateOptionIndex(const CommonChannelSettings& settings);

@@ -114,7 +114,7 @@ The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly b
 pio test -e native
 ```
 
-The Native entry point contains **369 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 40 `test_controls`, 56 `test_settings`, 15 `test_screensavers`, 23 `test_easter_eggs`, and 26 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite also locks down recovery from missed/coalesced quadrature transitions so a partial cycle cannot create a persistent one-detent direction deadband; device-level encoder inversion is applied only after decoding so that recovery logic remains unchanged. The Settings/host suites additionally cover OLED 0°/180° controller rotation and schema-v6 to schema-v7 migration for the two device-local preferences.
+The Native entry point contains **372 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 40 `test_controls`, 56 `test_settings`, 15 `test_screensavers`, 25 `test_easter_eggs`, and 27 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite also locks down recovery from missed/coalesced quadrature transitions so a partial cycle cannot create a persistent one-detent direction deadband; device-level encoder inversion is applied only after decoding so that recovery logic remains unchanged. The Settings/host suites additionally cover OLED 0°/180° controller rotation and schema-v6 to schema-v7 migration for the two device-local preferences.
 
 Covered areas include:
 
@@ -226,19 +226,22 @@ The STM32 firmware build only runs after host coverage and both native-simulator
 A release tag must exactly match `src/version.h`:
 
 ```text
-firmware: 0.19.0-beta.12
-Git tag:   v0.19.0-beta.12
+firmware: 0.19.0-beta.13
+Git tag:   v0.19.0-beta.13
 ```
 
 A mismatch fails before publication.
 
-Before tagging, freeze the maintained user manual for the current firmware version:
+Before tagging, prepare the user-facing release summary and freeze the maintained user manual for the current firmware version:
 
 ```bash
+python scripts/prepare_release_summary.py
+# edit docs/releases/<version>/RELEASE_SUMMARY.md until the review placeholders are gone
+python scripts/check_release_summary.py docs/releases/<version>/RELEASE_SUMMARY.md --version <version>
 python scripts/prepare_release_manual.py
 ```
 
-This creates `docs/manual/releases/<version>/clock-user-manual.<version>.odt`. The tag workflow requires that exact versioned manual source; a missing or stale manual blocks publication.
+The summary explains what CLOCK is and the important changes from a user perspective; the detailed engineering history remains in `CHANGELOG.md`. Manual preparation creates `docs/manual/releases/<version>/clock-user-manual.<version>.odt`. The tag workflow requires both version-matched sources and blocks publication when either is missing or stale.
 
 For a tag build the workflow:
 

@@ -2642,6 +2642,7 @@ void testRenderEveryScreenAndState() {
     nav.screen=ui::Screen::Templates; for(std::uint8_t i=0;i<services::TemplateService::kTemplateCount;++i){nav.cursor=i;nav.scrollOffset=i>3U?static_cast<std::uint8_t>(i-3U):0U;renderer.render(state,nav,engine.snapshot());}
     nav.screen=ui::Screen::PresetSlots; for(auto action:{ui::PresetSlotAction::Load,ui::PresetSlotAction::Save}){nav.presetSlotAction=action;for(std::uint8_t i=0;i<8U;++i){nav.cursor=i;nav.scrollOffset=i>4U?static_cast<std::uint8_t>(i-4U):0U;renderer.render(state,nav,engine.snapshot());}}
     nav.screen=ui::Screen::OverwriteConfirm; nav.selectedPresetSlot=0U; for(std::uint8_t choice=0U;choice<2U;++choice){nav.cursor=choice;renderer.render(state,nav,engine.snapshot());}
+    nav.screen=ui::Screen::HighScoreClearConfirm; for(std::uint8_t choice=0U;choice<2U;++choice){nav.cursor=choice;renderer.render(state,nav,engine.snapshot());}
     nav.screen=ui::Screen::NameEntry; nav.presetNameBuffer.fill(' '); nav.presetNameBuffer.back()='\0'; nav.presetNameBuffer[0]='A'; for(std::uint8_t i=0;i<16U;++i){nav.nameCharacterIndex=i;renderer.render(state,nav,engine.snapshot());}
     nav.cursor=5U; nav.scrollOffset=5U; renderer.render(state,nav,engine.snapshot());
     renderer.renderBootScreen(0U); renderer.renderBootScreen(config::kBootDurationMs/2U); renderer.renderBootScreen(config::kBootDurationMs+100U);
@@ -2734,9 +2735,7 @@ void testTapIndicatorRendersFourShrinkingEightPixelFramesThenClears() {
 
     display.setFont(hal::DisplayFont::TempoLarge);
     const hal::TextBounds tempoBounds = display.measureText("120", 0, 20);
-    const std::int16_t tapX = static_cast<std::int16_t>(
-        (static_cast<int>(hal::OledDisplay::kWidth) - static_cast<int>(tempoBounds.width)) / 2 +
-        static_cast<int>(tempoBounds.width) + 5);
+    const std::int16_t tapX = static_cast<std::int16_t>(hal::OledDisplay::kWidth - 8 - 1);
     const std::int16_t tapY = static_cast<std::int16_t>(20 + (static_cast<int>(tempoBounds.height) - 8) / 2);
 
     std::array<std::size_t, 4U> pixelCounts{};
@@ -3445,6 +3444,54 @@ void testUiControllerFlows() {
     sample = {};
     controller.processControls(sample, now++);
     controller.serviceRendering(now);
+}
+
+void testHighScoreResetAppearsAfterStartAndClearsSafely() {
+    resetFakes();
+    prepareDisplaySuccess();
+    hal::OledDisplay display;
+    CHECK(display.begin());
+    ClockState state = makeDefaultState();
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    engine::ClockEngine engine(gates);
+    engine.begin(state);
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    services::PersistentStateService persistentState(storage);
+    persistentState.begin();
+    game::ArcadeLeaderboardStore leaderboard(storage, game::ArcadeGameId::PixelRaid);
+    ui::UiRenderer renderer(display, persistentState);
+    ui::UiController controller(state, engine, renderer, persistentState, &leaderboard);
+    std::uint32_t now = 100U;
+
+    controllerOpenSettingsChord(controller, now);
+    CHECK(!controller.navigation().highScoreResetAvailable);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Root, ChannelMode::Clock, false), 5U);
+    controllerReset(controller, now);
+
+    CHECK(leaderboard.markStarted());
+    const std::array<char,4U> initials{{'A','X','L','\0'}};
+    CHECK_EQ(leaderboard.insertAndSave(4321U, initials), 0);
+    state.transport = TransportState::Playing;
+    engine.updateConfiguration(state, true);
+
+    controllerOpenSettingsChord(controller, now);
+    CHECK(controller.navigation().highScoreResetAvailable);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Root, ChannelMode::Clock, true), 6U);
+    controllerTurn(controller, 4, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::HighScoreClearConfirm);
+    CHECK_EQ(controller.navigation().cursor, 0U);
+
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(state.transport, TransportState::Stopped);
+    CHECK(leaderboard.hasPersistentRecord());
+    CHECK_EQ(leaderboard.load().count, 0U);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Root);
+    CHECK(controller.navigation().highScoreResetAvailable);
 }
 
 void testEasterEggGameAndHighScore() {
@@ -4169,6 +4216,7 @@ int main() {
     RUN_TEST(testTapIndicatorIsExclusiveToPerformanceTapTempo);
     RUN_TEST(testScreensaverRenderingAndPolicy);
     RUN_TEST(testUiControllerFlows);
+    RUN_TEST(testHighScoreResetAppearsAfterStartAndClearsSafely);
     RUN_TEST(testEasterEggGameAndHighScore);
     RUN_TEST(testApplicationAndEntryPoints);
     std::cout << "Host firmware assertions: " << gChecks << "\n";

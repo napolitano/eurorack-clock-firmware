@@ -12,6 +12,7 @@
 
 #include "domain/clock_types.h"
 #include "engine/clock_engine.h"
+#include "game/arcade_leaderboard_store.h"
 #include "hal/control_panel.h"
 #include "services/persistent_state_service.h"
 #include "services/tap_tempo.h"
@@ -36,12 +37,14 @@ public:
      * @param engine Real-time timing engine receiving committed configuration changes.
      * @param renderer Stateless screen renderer.
      * @param persistentState Wear-aware persistence service for user transport changes.
+     * @param leaderboard Optional ranked Easter-egg leaderboard exposed for user reset.
      */
     UiController(
         ClockState& state,
         engine::ClockEngine& engine,
         UiRenderer& renderer,
-        services::PersistentStateService& persistentState);
+        services::PersistentStateService& persistentState,
+        game::ArcadeLeaderboardStore* leaderboard = nullptr);
 
     /** @brief Marks the current frame as requiring a redraw. */
     void invalidate();
@@ -126,6 +129,9 @@ private:
     /** @brief Applies the highlighted factory template and returns to performance view. */
     void applySelectedTemplate(std::uint32_t nowMs);
 
+    /** @brief Executes or cancels the guarded Top-100 clear action. */
+    void confirmHighScoreClear(std::uint32_t nowMs);
+
     /** @brief Opens the named-preset slot list for an explicit load or save operation. */
     void openPresetSlots(PresetSlotAction action);
 
@@ -157,6 +163,7 @@ private:
     engine::ClockEngine& engine_;
     UiRenderer& renderer_;
     services::PersistentStateService& persistentState_;
+    game::ArcadeLeaderboardStore* leaderboard_ = nullptr;
     SettingsEditor settingsEditor_;
     services::TapTempo tapTempo_{};
     NavigationState navigation_{};

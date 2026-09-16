@@ -42,9 +42,6 @@ constexpr std::int16_t kChannelStatusMasterX = 15;
 /** X position after the role/lock area when the slave lock icon is present. */
 constexpr std::int16_t kChannelStatusLockedSlaveX = 21;
 
-/** Horizontal gap between the centered BPM numerals and the Tap Tempo animation. */
-constexpr std::int16_t kTapIndicatorGapX = 5;
-
 /** Width/height of the Tap Tempo feedback bitmap. */
 constexpr std::int16_t kTapIndicatorSize = 8;
 
@@ -162,8 +159,10 @@ void PerformanceRenderer::render(
     display_.setFont(hal::DisplayFont::Small);
 
     if (navigation.tapIndicatorFrame > 0U) {
+        // Keep the feedback slot anchored to the right display edge. The BPM stays
+        // mathematically centered while all four shrinking frames share one stable box.
         const std::int16_t tapX = static_cast<std::int16_t>(
-            tempoX + static_cast<std::int16_t>(tempoBounds.width) + kTapIndicatorGapX);
+            hal::OledDisplay::kWidth - kTapIndicatorSize - 1);
         const std::int16_t tapY = static_cast<std::int16_t>(
             tempoTopY +
             (static_cast<std::int16_t>(tempoBounds.height) - kTapIndicatorSize) / 2);

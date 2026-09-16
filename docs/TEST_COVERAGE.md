@@ -1,8 +1,8 @@
 <!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
-# South Signal Lab CLOCK Test Coverage — v0.19.0-beta.12
+# South Signal Lab CLOCK Test Coverage — v0.19.0-beta.13
 
-The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 369 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 372 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -14,13 +14,13 @@ The following are mandatory:
 
 The prerelease gates remain stringent without requiring synthetic tests for every defensive/error path. The coverage report still lists every uncovered production function and source decision so regressions remain visible during review.
 
-Current repository-wide validated baseline (`0.19.0-beta.12`):
+Current repository-wide validated baseline (`0.19.0-beta.13`):
 
 ```text
-Executable lines:   6424/6682 (96.14%)
-Functions:           544/553  (98.37%)
-Decision branches:  3857/4265 (90.43%)
-Compiler branches:  3858/4959 (77.80%, informational only)
+Executable lines:   6466/6729 (96.09%)
+Functions:           563/573  (98.25%)
+Decision branches:  3913/4343 (90.10%)
+Compiler branches:  3914/5054 (77.44%, informational only)
 ```
 
 ## Full host matrix
@@ -45,11 +45,11 @@ Compiler branches:  3858/4959 (77.80%, informational only)
 16. complete firmware with fixed I2C address and configured OLED reset pin
 17. the PlatformIO native-smoke entry point
 
-The complete firmware variants compile the real production `.cpp` files against deterministic host fakes for Arduino GPIO/time, Wire, SPI and HardwareTimer. This tests firmware logic and HAL contracts without pretending to measure real electrical timing.
+The complete firmware variants compile the real production `.cpp` files against deterministic host fakes at the project-owned platform-I/O boundary. The embedded build itself uses STM32CubeF4/CMSIS; host fakes replace GPIO/time, I2C, SPI, interrupts and timers without pretending to measure real electrical timing.
 
 ## Areas executed by host tests
 
-- application boot lifecycle, safe display-failure path, scheduler callback and Arduino `setup()`/`loop()` glue
+- application boot lifecycle, safe display-failure path, scheduler callback and STM32Cube entry-point/platform-I/O glue
 - all `ClockEngine` public methods and OFF/CLOCK/EUC/SEQ behavior
 - pause/stop, external-loss STOP/FREE behavior, bar progression/wrap and GLOBAL/FREE reset handling
 - all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 56-case Settings suite also locks down min/max coupling, enum boundaries and cross-setting invariants
@@ -73,7 +73,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - ISR-safe external reset with configurable rising-edge TRIGGER or level-sensitive GATE semantics, startup-HIGH handling, queue saturation, deterministic RST-over-SYNC priority, and PLAY-transport preservation
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release
 - channel overview selection, TAP-turn six-function palette, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, and preset overwrite/save/load/name-band workflow
-- 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-buffer-disabled LED life-loss effects
+- 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, first-launch-gated HI-SCORES/CLEAR behavior, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-buffer-disabled LED life-loss effects
 
 ## Decision branches versus compiler branches
 

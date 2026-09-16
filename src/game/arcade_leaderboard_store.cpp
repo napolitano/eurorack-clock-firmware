@@ -71,30 +71,49 @@ LeaderboardTable ArcadeLeaderboardStore::loadLegacyFallback() const {
     return table;
 }
 
-LeaderboardTable ArcadeLeaderboardStore::load() const {
+bool ArcadeLeaderboardStore::loadCurrentRecord(LeaderboardTable& table) const {
     std::array<std::uint8_t, kRecordBytes> record{};
-    if (!storage_.readBytes(storageOffset(), record.data(), record.size())) return loadLegacyFallback();
+    if (!storage_.readBytes(storageOffset(), record.data(), record.size())) return false;
     const std::uint32_t expectedCrc = read32(record.data() + kRecordBytes - kCrcBytes);
     if (record[0] != static_cast<std::uint8_t>('A') || record[1] != static_cast<std::uint8_t>('R') ||
         record[2] != gameMagic() || record[3] != static_cast<std::uint8_t>('1') || record[4] != kVersion ||
         record[5] > LeaderboardTable::kMaximumEntries ||
         expectedCrc != calculateCrc32(record.data(), kRecordBytes - kCrcBytes)) {
-        return loadLegacyFallback();
+        return false;
     }
 
-    LeaderboardTable table{};
+    table = LeaderboardTable{};
     table.count = record[5];
     for (std::size_t index = 0U; index < table.count; ++index) {
         const std::size_t offset = kHeaderBytes + index * kEntryBytes;
         const char a = static_cast<char>(record[offset + 4U]);
         const char b = static_cast<char>(record[offset + 5U]);
         const char c = static_cast<char>(record[offset + 6U]);
-        if (!validInitial(a) || !validInitial(b) || !validInitial(c)) return loadLegacyFallback();
+        if (!validInitial(a) || !validInitial(b) || !validInitial(c)) return false;
         table.entries[index].score = read32(record.data() + offset);
         table.entries[index].initials = {{a, b, c, '\0'}};
-        if (index > 0U && table.entries[index].score > table.entries[index - 1U].score) return loadLegacyFallback();
+        if (index > 0U && table.entries[index].score > table.entries[index - 1U].score) return false;
     }
-    return table;
+    return true;
+}
+
+LeaderboardTable ArcadeLeaderboardStore::load() const {
+    LeaderboardTable table{};
+    return loadCurrentRecord(table) ? table : loadLegacyFallback();
+}
+
+bool ArcadeLeaderboardStore::hasPersistentRecord() const {
+    LeaderboardTable table{};
+    return loadCurrentRecord(table);
+}
+
+bool ArcadeLeaderboardStore::markStarted() {
+    if (hasPersistentRecord()) return true;
+    return save(loadLegacyFallback());
+}
+
+bool ArcadeLeaderboardStore::clear() {
+    return save(LeaderboardTable{});
 }
 
 std::int16_t ArcadeLeaderboardStore::qualifyingRank(const std::uint32_t score, const LeaderboardTable& table) const {

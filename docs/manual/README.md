@@ -102,6 +102,8 @@ The catalog is intentionally finite and representative. It covers every distinct
 
 The shipped/default boot Easter egg is **BEATKNECHT** (`CLOCK_EASTER_EGG=5`). Egg Journey is named consistently in both user-facing material and its `egg_journey_*` firmware sources.
 
+The ODT publication manual contains generated **two-across** mini-galleries for Screensavers and Easter eggs, with one short caption below each individual screenshot. After regenerating screenshot assets, run `python scripts/update_manual_galleries.py` before freezing a release manual; the postprocessor preserves the narrow manual page geometry and keeps each screenshot pair with its captions.
+
 ## Manual structure
 
 The maintained manual follows this user-oriented publication structure:

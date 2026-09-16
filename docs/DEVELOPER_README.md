@@ -703,13 +703,15 @@ CI runs automatically on pushes and pull requests. It checks architecture, Pytho
 Release tags must exactly match `src/version.h`:
 
 ```text
-Firmware: 0.19.0-beta.12
-Tag:      v0.19.0-beta.12
+Firmware: 0.19.0-beta.13
+Tag:      v0.19.0-beta.13
 ```
 
 Prerelease tags containing `-` are published as GitHub prereleases.
 
-`scripts/package_release.py` derives deterministic binary filenames from the version source of truth and packages firmware together with the applicable notices and third-party license texts.
+Release preparation freezes two human-authored sources: the versioned ODT manual and `docs/releases/<version>/RELEASE_SUMMARY.md`. The summary is intentionally user-facing; `CHANGELOG.md` remains the detailed engineering history.
+
+`scripts/package_release.py firmware` turns each release ELF into a persistence-safe sparse DfuSe image with the boot and application Flash elements only. The default BEATKNECHT build is `clock-v<version>-stm32f401cc.dfu`; the Pixel Raid, Formula 1, Breakout, and Egg Journey builds add the corresponding variant suffix before `.dfu`. `finalize` adds the versioned ODT/PDF manual, full changelog, user summary, and SHA256 checksums. The simulator is explicitly excluded from release assets. A future VCV Rack build can publish versioned packages through `dist/vcv/`.
 
 ## 32. Recommended first-day validation
 

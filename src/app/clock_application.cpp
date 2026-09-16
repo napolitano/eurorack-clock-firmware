@@ -16,6 +16,27 @@
 
 namespace clockfw::app {
 
+namespace {
+
+game::ArcadeLeaderboardStore* selectedLeaderboardFor(
+    const config::EasterEgg selected,
+    game::ArcadeLeaderboardStore& pixelRaid,
+    game::ArcadeLeaderboardStore& formula1,
+    game::ArcadeLeaderboardStore& breakout,
+    game::ArcadeLeaderboardStore& eggJourney) {
+    switch (selected) {
+        case config::EasterEgg::PixelRaid: return &pixelRaid;
+        case config::EasterEgg::Formula1: return &formula1;
+        case config::EasterEgg::Breakout: return &breakout;
+        case config::EasterEgg::EggJourney: return &eggJourney;
+        case config::EasterEgg::Beatknecht:
+        default: return nullptr;
+    }
+}
+
+}  // namespace
+
+
 ClockApplication* ClockApplication::activeInstance_ = nullptr;
 
 ClockApplication::ClockApplication()
@@ -23,6 +44,12 @@ ClockApplication::ClockApplication()
       formula1Leaderboard_(persistentStorage_, game::ArcadeGameId::Formula1),
       breakoutLeaderboard_(persistentStorage_, game::ArcadeGameId::Breakout),
       eggJourneyLeaderboard_(persistentStorage_, game::ArcadeGameId::EggJourney),
+      selectedLeaderboard_(selectedLeaderboardFor(
+          config::kEasterEgg,
+          pixelRaidLeaderboard_,
+          formula1Leaderboard_,
+          breakoutLeaderboard_,
+          eggJourneyLeaderboard_)),
       pixelRaidGame_(display_, controlPanel_, gateOutputs_, pixelRaidLeaderboard_),
       formula1Game_(display_, controlPanel_, gateOutputs_, formula1Leaderboard_),
       breakoutGame_(display_, controlPanel_, gateOutputs_, breakoutLeaderboard_),
@@ -32,7 +59,7 @@ ClockApplication::ClockApplication()
       engine_(gateOutputs_),
       externalSyncController_(externalInputs_, engine_),
       renderer_(display_, persistentState_),
-      uiController_(state_, engine_, renderer_, persistentState_) {}
+      uiController_(state_, engine_, renderer_, persistentState_, selectedLeaderboard_) {}
 
 void ClockApplication::begin() {
     ClockState initialState{};
@@ -74,6 +101,11 @@ void ClockApplication::begin(const ClockState& initialState) {
 #else
     const bool launchEasterEgg = runBootSequence();
     if (launchEasterEgg) {
+        // Ranked games create their durable leaderboard record on first launch.
+        // This marker later exposes the guarded HI-SCORES reset in Settings.
+        if (selectedLeaderboard_ != nullptr) {
+            (void)selectedLeaderboard_->markStarted();
+        }
         // Boot Easter eggs run before the scheduler. Games keep /OE disabled; the
         // BEATKNECHT deliberately enables it only while producing its eight gate patterns.
         runSelectedEasterEgg();
@@ -192,6 +224,9 @@ void ClockApplication::serviceSimulatorStartup(const std::uint32_t nowMs) {
     }
 
     if (simulatorEncoderHeldForEntireBoot_) {
+        if (selectedLeaderboard_ != nullptr) {
+            (void)selectedLeaderboard_->markStarted();
+        }
         simulatorLifecycle_ = SimulatorLifecycle::EasterEgg;
         beginSelectedEasterEggForSimulator();
         return;

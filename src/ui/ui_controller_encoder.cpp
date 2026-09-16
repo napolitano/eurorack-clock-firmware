@@ -97,6 +97,8 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
             navigation_.screen = Screen::NameEntry;
             invalidate();
         }
+    } else if (navigation_.screen == Screen::HighScoreClearConfirm) {
+        confirmHighScoreClear(nowMs);
     } else if (navigation_.screen == Screen::NameEntry) {
         if (navigation_.nameCharacterIndex < services::PersistentStateService::kPresetNameLength - 1U) {
             ++navigation_.nameCharacterIndex;

@@ -234,6 +234,8 @@ enum class TextId : std::uint16_t {
     Orientation,
     Degrees0,
     Degrees180,
+    HighScores,
+    ClearHighScores,
     Count
 };
 
@@ -275,7 +277,8 @@ inline constexpr TextCatalog kEnglishUs{{
     "CHANGE MODE?", "GLOBAL MODE", "ONE CLOCK / 8 OUTS", "FIXED DIVIDER BANK",
     "PRESETS", "DISPLAY", "SYSTEM", "GENERAL SETTINGS", "CHANNEL SETTINGS", "LICENSES", "UPDATES",
     "RST MODE", "TRIGGER", "GATE",
-    "ENCODER DIR", "NORMAL", "REVERSED", "ORIENTATION", "0 DEG", "180 DEG"
+    "ENCODER DIR", "NORMAL", "REVERSED", "ORIENTATION", "0 DEG", "180 DEG",
+    "HI-SCORES", "CLEAR HI-SCORES?"
 }};
 
 /**

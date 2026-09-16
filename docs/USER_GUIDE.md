@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Beta documentation — v0.19.0-beta.12 · V1 feature freeze**
+> **Beta documentation — v0.19.0-beta.13 · V1 feature freeze**
 >
 > CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation and physical HIL timing sign-off remain open. Timer Input Capture or compare-event scheduling are implementation options only if measured V1 timing requires them.
 
@@ -292,7 +292,7 @@ Transport has three states: **PLAY, PAUSE, STOP**.
 - PLAY/PAUSE toggles running and paused states without an implicit phase reset.
 - STOP/BACK from Performance enters STOP and applies the global reset policy.
 - Tap Tempo adjusts the master tempo from a sequence of TAP presses within the supported 1–999 BPM technical range and the configured user MIN/MAX boundaries.
-- The first TAP starts a new measurement sequence without an indicator. The second and every following TAP in that sequence triggers a four-frame **8×8 shrinking-dot animation** immediately to the right of the BPM numerals, vertically centered on the tempo display.
+- The first TAP starts a new measurement sequence without an indicator. The second and every following TAP in that sequence triggers a four-frame **8×8 shrinking-dot animation** in a fixed right-aligned slot at the display edge, vertically centered on the tempo display. The BPM numerals remain centered and do not move.
 - The Tap Tempo sequence expires after one beat at the configured **MIN BPM**. At the factory minimum of 20 BPM this is 3000 ms; after a longer pause the next TAP is again the silent first tap and the following TAP resumes visual feedback.
 
 CLOCK persists the working configuration but never restores PLAY on power-up. Flash commits are also deferred while transport is PLAYING so erase/program work cannot block the live gate path.
@@ -368,24 +368,28 @@ The configured order is constrained to `START <= DIM <= OFF`. Any front-panel ac
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-clock.png" alt="CLOCK screensaver with eight independently phased oscilloscope-style digital traces." width="170"><br><sub>CLOCK</sub></td>
-<td align="center"><img src="manual/assets/screensaver-plug.png" alt="PLUG screensaver showing a damped plucked string between fixed endpoints." width="170"><br><sub>PLUG</sub></td>
-<td align="center"><img src="manual/assets/screensaver-heartbeat.png" alt="HEARTBEAT screensaver showing the animated heart pulse." width="170"><br><sub>HEARTBEAT</sub></td>
+<td align="center"><img src="manual/assets/screensaver-clock.png" alt="CLOCK screensaver with eight independently phased oscilloscope-style digital traces." width="220"><br><sub>CLOCK — eight phased digital traces</sub></td>
+<td align="center"><img src="manual/assets/screensaver-plug.png" alt="PLUG screensaver showing a damped plucked string between fixed endpoints." width="220"><br><sub>PLUG — damped plucked string</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-acid.png" alt="ACID screensaver showing the rotating gravity-driven bouncing smiley." width="170"><br><sub>ACID</sub></td>
-<td align="center"><img src="manual/assets/screensaver-spectrum.png" alt="SPECTRUM screensaver showing the synthetic segmented spectrum bars and peak markers." width="170"><br><sub>SPECTRUM</sub></td>
-<td align="center"><img src="manual/assets/screensaver-field.png" alt="FIELD screensaver showing dense moving monochrome scalar-field contours." width="170"><br><sub>FIELD</sub></td>
+<td align="center"><img src="manual/assets/screensaver-heartbeat.png" alt="HEARTBEAT screensaver showing the animated heart pulse." width="220"><br><sub>HEARTBEAT — animated pulse</sub></td>
+<td align="center"><img src="manual/assets/screensaver-acid.png" alt="ACID screensaver showing the rotating gravity-driven bouncing smiley." width="220"><br><sub>ACID — bouncing smiley physics</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-blox.png" alt="BLOX screensaver showing falling triangle-built bodies accumulating on the display." width="170"><br><sub>BLOX</sub></td>
-<td align="center"><img src="manual/assets/screensaver-matrix.png" alt="MATRIX screensaver showing original monochrome procedural digital rain." width="170"><br><sub>MATRIX</sub></td>
-<td align="center"><img src="manual/assets/screensaver-cube-cover.png" alt="CUBE COVER screensaver filling the OLED with small cube tiles." width="170"><br><sub>CUBE COVER</sub></td>
+<td align="center"><img src="manual/assets/screensaver-spectrum.png" alt="SPECTRUM screensaver showing the synthetic segmented spectrum bars and peak markers." width="220"><br><sub>SPECTRUM — 16-band spectrum with peaks</sub></td>
+<td align="center"><img src="manual/assets/screensaver-field.png" alt="FIELD screensaver showing dense moving monochrome scalar-field contours." width="220"><br><sub>FIELD — moving metaball field</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-fractal.png" alt="FRACTAL screensaver progressively revealing a curated Barnsley-fern crop." width="170"><br><sub>FRACTAL</sub></td>
-<td align="center"><img src="manual/assets/screensaver-orbit.png" alt="ORBIT screensaver showing the sparse animated orbital display." width="170"><br><sub>ORBIT</sub></td>
-<td align="center"><sub><b>OFF</b><br>No animation; dim and OLED-off protection can remain active.</sub></td>
+<td align="center"><img src="manual/assets/screensaver-blox.png" alt="BLOX screensaver showing falling triangle-built bodies accumulating on the display." width="220"><br><sub>BLOX — falling geometric bodies</sub></td>
+<td align="center"><img src="manual/assets/screensaver-matrix.png" alt="MATRIX screensaver showing original monochrome procedural digital rain." width="220"><br><sub>MATRIX — procedural digital rain</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="manual/assets/screensaver-cube-cover.png" alt="CUBE COVER screensaver filling the OLED with small cube tiles." width="220"><br><sub>CUBE COVER — tiled cube fill</sub></td>
+<td align="center"><img src="manual/assets/screensaver-fractal.png" alt="FRACTAL screensaver progressively revealing a curated Barnsley-fern crop." width="220"><br><sub>FRACTAL — progressive fern reveal</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="manual/assets/screensaver-orbit.png" alt="ORBIT screensaver showing the sparse animated orbital display." width="220"><br><sub>ORBIT — sparse orbital motion</sub></td>
+<td align="center"><img src="manual/assets/power-off.png" alt="OLED OFF display-protection state with the panel blank." width="220"><br><sub>OLED OFF — final display-protection stage</sub></td>
 </tr>
 </table>
 
@@ -397,14 +401,16 @@ The four ranked games — **Pixel Raid, Formula 1, Breakout, and Egg Journey** �
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/pixel-raid-intro.png" alt="Pixel Raid retro intro with its game-specific pixel motif and scrolling marquee." width="170"><br><sub>Pixel Raid</sub></td>
-<td align="center"><img src="manual/assets/formula-1-intro.png" alt="Formula 1 retro intro with its game-specific pixel motif and scrolling marquee." width="170"><br><sub>Formula 1</sub></td>
-<td align="center"><img src="manual/assets/breakout-intro.png" alt="Breakout retro intro with its game-specific pixel motif and scrolling marquee." width="170"><br><sub>Breakout</sub></td>
+<td align="center"><img src="manual/assets/pixel-raid-intro.png" alt="Pixel Raid retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Pixel Raid — ranked arcade shooter</sub></td>
+<td align="center"><img src="manual/assets/formula-1-intro.png" alt="Formula 1 retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Formula 1 — ranked driving game</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/egg-journey-intro.png" alt="Egg Journey retro intro with its game-specific pixel motif and scrolling marquee." width="170"><br><sub>Egg Journey</sub></td>
-<td align="center"><img src="manual/assets/beatknecht-intro.png" alt="BEATKNECHT retro intro shown before the eight-channel rhythm utility starts." width="170"><br><sub>BEATKNECHT</sub></td>
-<td align="center"><img src="manual/assets/arcade-top-100.png" alt="Shared scrollable Top 100 presentation used by the four ranked arcade games." width="170"><br><sub>Top 100</sub></td>
+<td align="center"><img src="manual/assets/breakout-intro.png" alt="Breakout retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Breakout — ranked brick game</sub></td>
+<td align="center"><img src="manual/assets/egg-journey-intro.png" alt="Egg Journey retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Egg Journey — ranked lunar runner</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="manual/assets/beatknecht-intro.png" alt="BEATKNECHT retro intro shown before the eight-channel rhythm utility starts." width="220"><br><sub>BEATKNECHT — eight-channel rhythm utility</sub></td>
+<td align="center"><img src="manual/assets/arcade-top-100.png" alt="Shared scrollable Top 100 presentation used by the four ranked arcade games." width="220"><br><sub>Top 100 — shared ranked leaderboard</sub></td>
 </tr>
 </table>
 
@@ -414,11 +420,16 @@ The four ranked games — **Pixel Raid, Formula 1, Breakout, and Egg Journey** �
 - **Egg Journey** — encoder shifts the egg within the scrolling lunar landscape; TAP jumps; craters and asteroids consume one of three lives.
 - **BEATKNECHT** — not a ranked game. TAP cycles curated one-bar rhythm styles, encoder changes BPM, and OUT 1–8 intentionally emit the displayed eight gate patterns.
 
+After a ranked Easter egg has been launched at least once, the Settings root gains **HI-SCORES / CLEAR**. The entry is hidden beforehand and is not shown for BEATKNECHT. Clearing uses a guarded **NO / YES** confirmation, stops transport before Flash is written, clears the complete Top 100 for that selected ranked game, and keeps the menu entry available for later resets.
+
 <table>
 <tr>
-<td align="center"><img src="manual/assets/formula-1-crash.png" alt="Formula 1 crash frame showing the visible collision burst used during recovery." width="170"><br><sub>Formula 1 crash</sub></td>
-<td align="center"><img src="manual/assets/breakout-modifier.png" alt="Breakout action frame with the enlarged paddle and a falling speed modifier." width="170"><br><sub>Breakout modifier</sub></td>
-<td align="center"><img src="manual/assets/egg-journey.png" alt="Egg Journey gameplay frame showing the jumping egg, lunar terrain, and an incoming asteroid." width="170"><br><sub>Egg Journey</sub></td>
+<td align="center"><img src="manual/assets/formula-1-crash.png" alt="Formula 1 crash frame showing the visible collision burst used during recovery." width="220"><br><sub>Formula 1 crash recovery</sub></td>
+<td align="center"><img src="manual/assets/breakout-modifier.png" alt="Breakout action frame with the enlarged paddle and a falling speed modifier." width="220"><br><sub>Breakout modifier</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="manual/assets/egg-journey.png" alt="Egg Journey gameplay frame showing the jumping egg, lunar terrain, and an incoming asteroid." width="220"><br><sub>Egg Journey gameplay</sub></td>
+<td align="center"><sub><b>Leaderboard management</b><br>After a ranked Easter egg has been launched once, Settings exposes a guarded HI-SCORES / CLEAR action.</sub></td>
 </tr>
 </table>
 

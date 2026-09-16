@@ -131,6 +131,7 @@ private:
     game::ArcadeLeaderboardStore formula1Leaderboard_;
     game::ArcadeLeaderboardStore breakoutLeaderboard_;
     game::ArcadeLeaderboardStore eggJourneyLeaderboard_;
+    game::ArcadeLeaderboardStore* selectedLeaderboard_ = nullptr;
     game::PixelRaidGame pixelRaidGame_;
     game::Formula1Game formula1Game_;
     game::BreakoutGame breakoutGame_;

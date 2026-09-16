@@ -33,11 +33,13 @@ UiController::UiController(
     ClockState& state,
     engine::ClockEngine& engine,
     UiRenderer& renderer,
-    services::PersistentStateService& persistentState)
+    services::PersistentStateService& persistentState,
+    game::ArcadeLeaderboardStore* const leaderboard)
     : state_(state),
       engine_(engine),
       renderer_(renderer),
       persistentState_(persistentState),
+      leaderboard_(leaderboard),
       settingsEditor_(state, engine) {}
 
 void UiController::invalidate() {
@@ -210,7 +212,8 @@ void UiController::handleEncoderDelta(
         return;
     }
 
-    if (navigation_.screen == Screen::ModeChangeConfirm) {
+    if (navigation_.screen == Screen::ModeChangeConfirm ||
+        navigation_.screen == Screen::HighScoreClearConfirm) {
         navigation_.cursor = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(navigation_.cursor) + delta, 0, 1));
         invalidate();
@@ -231,7 +234,8 @@ void UiController::handleEncoderDelta(
                 0,
                 static_cast<int>(settingsPageItemCount(
                     navigation_.settingsPage,
-                    state_.channels[navigation_.selectedChannel].common.mode)) - 1));
+                    state_.channels[navigation_.selectedChannel].common.mode,
+                    navigation_.highScoreResetAvailable)) - 1));
             normalizeScrollOffset();
             invalidate();
         }
@@ -315,6 +319,8 @@ void UiController::handleResetButton(
         navigation_.screen = Screen::ModeSelect;
         navigation_.cursor = modeFunctionIndexForState(state_, navigation_.selectedChannel);
         invalidate();
+    } else if (navigation_.screen == Screen::HighScoreClearConfirm) {
+        openSettingsPage(SettingsPage::Root, navigation_.highScoreResetAvailable ? 4U : 0U);
     } else if (navigation_.screen == Screen::ModeSelect) {
         modeTapTurnActive_ = false;
         navigation_.screen = navigation_.modeSelectReturnScreen;

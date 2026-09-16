@@ -39,6 +39,12 @@ public:
     std::int16_t qualifyingRank(std::uint32_t score, const LeaderboardTable& table) const;
     /** @brief Inserts one named score in sorted order and commits the updated table atomically. */
     std::int16_t insertAndSave(std::uint32_t score, const std::array<char, 4U>& initials);
+    /** @brief Returns true after this ranked Easter egg has created its durable leaderboard record. */
+    bool hasPersistentRecord() const;
+    /** @brief Creates the durable leaderboard record on first launch, preserving any legacy score. */
+    bool markStarted();
+    /** @brief Clears the complete Top-100 table while retaining the durable started marker. */
+    bool clear();
 
 private:
     static constexpr std::size_t kStorageBaseOffset = hal::persistent_layout::kLeaderboardRegionOffset;
@@ -53,6 +59,8 @@ private:
     std::size_t storageOffset() const;
     /** @brief Returns the compact game identifier embedded in the durable record. */
     std::uint8_t gameMagic() const;
+    /** @brief Reads one validated current Top-100 record without using the legacy fallback. */
+    bool loadCurrentRecord(LeaderboardTable& table) const;
     /** @brief Reads the prerelease single-score slot as a migration fallback. */
     LeaderboardTable loadLegacyFallback() const;
     /** @brief Serializes and commits one complete validated leaderboard record. */

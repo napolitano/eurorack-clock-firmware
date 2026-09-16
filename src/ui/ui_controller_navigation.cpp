@@ -22,7 +22,11 @@ void UiController::openSettingsPage(
     const std::uint8_t initialCursor) {
     navigation_.settingsPage = page;
     const ChannelMode mode = state_.channels[navigation_.selectedChannel].common.mode;
-    const std::uint8_t itemCount = settingsPageItemCount(page, mode);
+    if (page == SettingsPage::Root) {
+        navigation_.highScoreResetAvailable = leaderboard_ != nullptr && leaderboard_->hasPersistentRecord();
+    }
+    const std::uint8_t itemCount = settingsPageItemCount(
+        page, mode, navigation_.highScoreResetAvailable);
     navigation_.cursor = static_cast<std::uint8_t>(std::min<std::uint8_t>(
         initialCursor, static_cast<std::uint8_t>(itemCount - 1U)));
     navigation_.scrollOffset = 0U;
@@ -171,6 +175,11 @@ void UiController::activateCurrentSetting() {
             openSettingsPage(SettingsPage::Preferences);
         } else if (navigation_.cursor == 3U) {
             openSettingsPage(SettingsPage::Info);
+        } else if (navigation_.highScoreResetAvailable && navigation_.cursor == 4U) {
+            navigation_.screen = Screen::HighScoreClearConfirm;
+            navigation_.cursor = 0U;  // Safe default: NO.
+            navigation_.editing = false;
+            invalidate();
         } else {
             engine_.resetGlobalPhase();
             invalidate();
@@ -275,10 +284,26 @@ void UiController::activateCurrentSetting() {
 }
 
 
+void UiController::confirmHighScoreClear(const std::uint32_t nowMs) {
+    if (navigation_.cursor == 0U || leaderboard_ == nullptr) {
+        openSettingsPage(SettingsPage::Root, navigation_.highScoreResetAvailable ? 4U : 0U);
+        return;
+    }
+
+    // Flash erase/program stalls instruction fetch on STM32F4. Force STOP before
+    // the immediate leaderboard commit so this maintenance action can never
+    // disturb active musical timing.
+    stopTransport(nowMs);
+    (void)leaderboard_->clear();
+    navigation_.highScoreResetAvailable = leaderboard_->hasPersistentRecord();
+    openSettingsPage(SettingsPage::Root, navigation_.highScoreResetAvailable ? 4U : 0U);
+}
+
 void UiController::normalizeScrollOffset() {
     constexpr std::uint8_t visibleRows = 5U;
     const ChannelMode mode = state_.channels[navigation_.selectedChannel].common.mode;
-    const std::uint8_t itemCount = settingsPageItemCount(navigation_.settingsPage, mode);
+    const std::uint8_t itemCount = settingsPageItemCount(
+        navigation_.settingsPage, mode, navigation_.highScoreResetAvailable);
     if (navigation_.cursor < navigation_.scrollOffset) {
         navigation_.scrollOffset = navigation_.cursor;
     }

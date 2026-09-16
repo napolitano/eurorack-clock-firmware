@@ -92,7 +92,8 @@ void SettingsRenderer::renderSettings(
     display_.drawHorizontalLine(0, 9, hal::OledDisplay::kWidth);
     const std::uint8_t itemCount = settingsPageItemCount(
         navigation.settingsPage,
-        state.channels[navigation.selectedChannel].common.mode);
+        state.channels[navigation.selectedChannel].common.mode,
+        navigation.highScoreResetAvailable);
 
     for (std::uint8_t visibleRow = 0U; visibleRow < kVisibleSettingsRows; ++visibleRow) {
         const std::uint8_t rowIndex = navigation.scrollOffset + visibleRow;
@@ -104,7 +105,8 @@ void SettingsRenderer::renderSettings(
             navigation.settingsPage,
             rowIndex,
             navigation.selectedChannel,
-            state);
+            state,
+            navigation.highScoreResetAvailable);
         const std::int16_t y = static_cast<std::int16_t>(11 + static_cast<int>(visibleRow) * 10);
         const bool selected = rowIndex == navigation.cursor;
 
@@ -264,6 +266,42 @@ void SettingsRenderer::renderOverwriteConfirm(
         display_.drawText(
             static_cast<std::int16_t>(kChoiceX[index] - static_cast<std::int16_t>(bounds.width / 2)),
             42,
+            choices[index]);
+        display_.setTextColor(hal::PixelColor::White);
+    }
+
+    display_.present();
+}
+
+void SettingsRenderer::renderHighScoreClearConfirm(const NavigationState& navigation) {
+    display_.clear();
+    display_.setFont(hal::DisplayFont::Small);
+    display_.setTextColor(hal::PixelColor::White);
+
+    const char* const title = text::get(text::TextId::ClearHighScores);
+    const hal::TextBounds titleBounds = display_.measureText(title, 0, 0);
+    display_.drawText(
+        static_cast<std::int16_t>((hal::OledDisplay::kWidth - titleBounds.width) / 2),
+        13,
+        title);
+
+    const char* const choices[2] = {
+        text::get(text::TextId::No),
+        text::get(text::TextId::Yes)};
+    constexpr std::int16_t kChoiceX[2] = {25, 79};
+    for (std::uint8_t index = 0U; index < 2U; ++index) {
+        const hal::TextBounds bounds = display_.measureText(choices[index], 0, 0);
+        const std::int16_t boxWidth = static_cast<std::int16_t>(bounds.width + 8U);
+        const std::int16_t boxX = static_cast<std::int16_t>(kChoiceX[index] - boxWidth / 2);
+        if (navigation.cursor == index) {
+            display_.fillRectangle(boxX, 36, boxWidth, 13);
+            display_.setTextColor(hal::PixelColor::Black);
+        } else {
+            display_.drawRectangle(boxX, 36, boxWidth, 13);
+        }
+        display_.drawText(
+            static_cast<std::int16_t>(kChoiceX[index] - static_cast<std::int16_t>(bounds.width / 2)),
+            39,
             choices[index]);
         display_.setTextColor(hal::PixelColor::White);
     }

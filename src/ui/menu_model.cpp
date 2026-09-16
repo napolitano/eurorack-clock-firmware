@@ -52,9 +52,10 @@ const char* settingsPageTitle(const SettingsPage page) {
 
 std::uint8_t settingsPageItemCount(
     const SettingsPage page,
-    const ChannelMode mode) {
+    const ChannelMode mode,
+    const bool highScoreResetAvailable) {
     switch (page) {
-        case SettingsPage::Root: return 5U;
+        case SettingsPage::Root: return highScoreResetAvailable ? 6U : 5U;
         case SettingsPage::General: return 5U;
         case SettingsPage::Master: return 5U;
         case SettingsPage::Sync: return 7U;
@@ -86,20 +87,25 @@ MenuRow buildMenuRow(
     const SettingsPage page,
     const std::uint8_t rowIndex,
     const std::uint8_t selectedChannel,
-    const ClockState& state) {
+    const ClockState& state,
+    const bool highScoreResetAvailable) {
     MenuRow row{};
     const ChannelConfig& channel = state.channels[selectedChannel];
 
     if (page == SettingsPage::Root) {
-        constexpr text::TextId kLabels[] = {
-            text::TextId::GeneralSettings,
-            text::TextId::ChannelSettings,
-            text::TextId::Presets,
-            text::TextId::Info,
-            text::TextId::Reset};
-        copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
         if (rowIndex < 4U) {
+            constexpr text::TextId kLabels[] = {
+                text::TextId::GeneralSettings,
+                text::TextId::ChannelSettings,
+                text::TextId::Presets,
+                text::TextId::Info};
+            copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
             copyText(row.value, sizeof(row.value), text::TextId::Arrow);
+        } else if (highScoreResetAvailable && rowIndex == 4U) {
+            copyText(row.label, sizeof(row.label), text::TextId::HighScores);
+            copyText(row.value, sizeof(row.value), text::TextId::Clear);
+        } else {
+            copyText(row.label, sizeof(row.label), text::TextId::Reset);
         }
     } else if (page == SettingsPage::General) {
         constexpr text::TextId kLabels[] = {
