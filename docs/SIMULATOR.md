@@ -16,7 +16,7 @@ flowchart TB
     App --> Tap[TapTempo]
     UI --> FB[Real OledDisplay framebuffer]
     Engine --> Telemetry[Gate transition telemetry]
-    FB --> OLED[SSD1306/SSD1315 command/scan model]
+    FB --> OLED[SSD1306/SSD1315 transfer-orientation model]
     OLED --> SDL[SDL3 front panel]
     Telemetry --> Scope[Developer oscilloscope]
 ```
@@ -30,7 +30,7 @@ This makes the simulator useful for UI work, timing regression checks, persisten
 ## What is simulated today
 
 - the exact 128×64 OLED framebuffer, rendered with configurable **integer-only nearest-neighbour scaling**;
-- an SSD1306/SSD1315 scan-orientation model that consumes the firmware's real `A0/A1` segment-remap and `C0/C8` COM-scan commands, so `ORIENTATION = 180 DEG` rotates the virtual panel through the same controller contract as hardware;
+- the exact SSD1306/SSD1315 transfer-orientation path used by firmware, so `ORIENTATION = 180 DEG` rotates pixels before transport exactly as on hardware while the controller stays in the canonical scan mode;
 - encoder quadrature and encoder push;
 - PLAY, TAP, and STOP/BACK buttons, including the firmware's real debounce code;
 - all eight gate/LED source signals;
@@ -49,7 +49,7 @@ This makes the simulator useful for UI work, timing regression checks, persisten
 - the real timed boot screen and encoder-held configurable Easter-egg boot chord;
 - windowless full-panel BMP screenshot rendering for CI, documentation, and UI regression capture.
 
-The OLED panel is likewise modeled at the controller boundary rather than from the persisted setting. Firmware renderers always draw into the canonical 128×64 framebuffer. The simulator observes the controller command stream: CLOCK's normal `A1/C8` mapping displays the framebuffer unchanged, while `A0/C0` reverses both scan axes for a true 180-degree panel rotation. Segment and COM direction are tracked independently, and parameter bytes are consumed according to the command protocol so values that happen to equal `A0`, `A1`, `C0`, or `C8` do not alter orientation.
+The OLED panel is modeled from the same bytes that firmware would transfer to the physical controller. Firmware renderers always draw into the canonical 128×64 framebuffer. At 0 degrees those bytes are transferred unchanged. At 180 degrees the transport path reverses column order, page order, and the bit order within every page byte, giving the exact mapping `(x,y) -> (127-x,63-y)`. The SSD1306/SSD1315 controller itself remains in CLOCK's canonical `A1/C8` scan orientation. This avoids module-dependent mirroring while keeping renderer coordinates and screenshots canonical.
 
 The virtual input sources model the **conditioned digital boundary** the firmware will see after the analogue frontend. SQUARE, SINE, and TRIANGLE are sampled against an ideal normalized threshold and reduced to `HI` / `LO`. This is useful for checking edge semantics and firmware behavior, but it is deliberately **not** an electrical LM393 model. Real threshold voltages, common-mode limits, open-collector pull-up behavior, hysteresis, noise/glitch susceptibility, propagation delay, protection circuitry, and final STM32 capture timing remain HIL concerns.
 

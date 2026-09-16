@@ -88,10 +88,55 @@ void OledDisplay::setPower(const bool enabled) {
 }
 
 void OledDisplay::setRotation180(const bool rotated) {
-    // The controller performs both axis flips in hardware. The framebuffer stays
-    // unchanged, so renderers, screenshots, and drawing coordinates remain canonical.
-    sendCommand(rotated ? 0xA0U : 0xA1U);  // Segment remap: horizontal axis.
-    sendCommand(rotated ? 0xC0U : 0xC8U);  // COM scan direction: vertical axis.
+    if (rotation180_ == rotated) {
+        return;
+    }
+
+    rotation180_ = rotated;
+
+    // Keep the controller itself in the proven A1/C8 scan orientation. Some
+    // interchangeable SSD1306/SSD1315 modules wire the panel matrix differently,
+    // which made an A0/C0-only flip appear mirrored on real hardware. CLOCK now
+    // rotates the framebuffer bytes before transfer, producing a deterministic
+    // 180-degree image without changing renderer coordinates.
+    sendCommand(0xA1U);
+    sendCommand(0xC8U);
+
+    // Orientation changes alter every physical byte even when the canonical
+    // framebuffer has not changed. Force a complete refresh in the new mapping.
+    hasPresentedFramebuffer_ = false;
+    i2cFrameQueued_ = false;
+    i2cRefreshPhase_ = I2cRefreshPhase::Idle;
+}
+
+void OledDisplay::prepareTransportFramebuffer(
+    const std::array<std::uint8_t, kFramebufferSize>& source,
+    std::array<std::uint8_t, kFramebufferSize>& destination) const {
+    if (!rotation180_) {
+        destination = source;
+        return;
+    }
+
+    const auto reverseBits = [](std::uint8_t value) {
+        value = static_cast<std::uint8_t>((value >> 4U) | (value << 4U));
+        value = static_cast<std::uint8_t>(
+            ((value & 0xCCU) >> 2U) | ((value & 0x33U) << 2U));
+        value = static_cast<std::uint8_t>(
+            ((value & 0xAAU) >> 1U) | ((value & 0x55U) << 1U));
+        return value;
+    };
+
+    constexpr std::size_t kPageWidth = static_cast<std::size_t>(config::kDisplayWidth);
+    constexpr std::size_t kPageCount = config::kDisplayHeight / 8U;
+    for (std::size_t page = 0U; page < kPageCount; ++page) {
+        const std::size_t destinationPage = kPageCount - 1U - page;
+        for (std::size_t x = 0U; x < kPageWidth; ++x) {
+            const std::size_t sourceIndex = page * kPageWidth + x;
+            const std::size_t destinationIndex =
+                destinationPage * kPageWidth + (kPageWidth - 1U - x);
+            destination[destinationIndex] = reverseBits(source[sourceIndex]);
+        }
+    }
 }
 
 

@@ -168,15 +168,6 @@ void OledDisplay::sendCommands(
         return;
     }
 
-#if defined(CLOCK_SIMULATOR)
-    // Feed the same command bytes that go to the transport into the virtual OLED
-    // controller. The simulator therefore follows A0/A1 and C0/C8 exactly like
-    // the physical SSD1306/SSD1315 instead of mirroring application state.
-    for (std::size_t index = 0U; index < size; ++index) {
-        observeControllerCommandForSimulator(commands[index]);
-    }
-#endif
-
     if (config::kDisplayTransport == config::DisplayTransport::I2c) { (void)i2cTransmit(i2cAddress_, kSsd1306CommandControlByte, commands, size); return; }
     spiTransmit(false, commands, size);
 }
@@ -212,6 +203,8 @@ bool OledDisplay::service() {
 }
 
 void OledDisplay::presentImmediate() {
+    prepareTransportFramebuffer(framebuffer_, queuedI2cFramebuffer_);
+
     constexpr std::size_t kPageWidth = static_cast<std::size_t>(config::kDisplayWidth);
     constexpr std::size_t kPageCount = config::kDisplayHeight / 8U;
 
@@ -219,8 +212,8 @@ void OledDisplay::presentImmediate() {
     while (page < kPageCount) {
         const std::size_t pageOffset = page * kPageWidth;
         const bool pageChanged = !hasPresentedFramebuffer_ || !std::equal(
-            framebuffer_.begin() + static_cast<std::ptrdiff_t>(pageOffset),
-            framebuffer_.begin() + static_cast<std::ptrdiff_t>(pageOffset + kPageWidth),
+            queuedI2cFramebuffer_.begin() + static_cast<std::ptrdiff_t>(pageOffset),
+            queuedI2cFramebuffer_.begin() + static_cast<std::ptrdiff_t>(pageOffset + kPageWidth),
             presentedFramebuffer_.begin() + static_cast<std::ptrdiff_t>(pageOffset));
         if (!pageChanged) {
             ++page;
@@ -233,8 +226,8 @@ void OledDisplay::presentImmediate() {
             const std::size_t nextPage = lastDirtyPage + 1U;
             const std::size_t nextOffset = nextPage * kPageWidth;
             const bool nextPageChanged = !hasPresentedFramebuffer_ || !std::equal(
-                framebuffer_.begin() + static_cast<std::ptrdiff_t>(nextOffset),
-                framebuffer_.begin() + static_cast<std::ptrdiff_t>(nextOffset + kPageWidth),
+                queuedI2cFramebuffer_.begin() + static_cast<std::ptrdiff_t>(nextOffset),
+                queuedI2cFramebuffer_.begin() + static_cast<std::ptrdiff_t>(nextOffset + kPageWidth),
                 presentedFramebuffer_.begin() + static_cast<std::ptrdiff_t>(nextOffset));
             if (!nextPageChanged) {
                 break;
@@ -251,9 +244,9 @@ void OledDisplay::presentImmediate() {
 
         const std::size_t firstByte = firstDirtyPage * kPageWidth;
         const std::size_t byteCount = (lastDirtyPage - firstDirtyPage + 1U) * kPageWidth;
-        sendData(framebuffer_.data() + firstByte, byteCount);
+        sendData(queuedI2cFramebuffer_.data() + firstByte, byteCount);
         std::copy_n(
-            framebuffer_.begin() + static_cast<std::ptrdiff_t>(firstByte),
+            queuedI2cFramebuffer_.begin() + static_cast<std::ptrdiff_t>(firstByte),
             byteCount,
             presentedFramebuffer_.begin() + static_cast<std::ptrdiff_t>(firstByte));
         page = lastDirtyPage + 1U;
@@ -263,7 +256,7 @@ void OledDisplay::presentImmediate() {
 }
 
 void OledDisplay::queueI2cPresent() {
-    queuedI2cFramebuffer_ = framebuffer_;
+    prepareTransportFramebuffer(framebuffer_, queuedI2cFramebuffer_);
     i2cFrameQueued_ = true;
     i2cRefreshPage_ = 0U;
     i2cRefreshOffset_ = 0U;

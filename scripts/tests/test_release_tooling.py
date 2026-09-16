@@ -131,6 +131,29 @@ class ProjectMetadataTests(unittest.TestCase):
         build_flags = re.search(r"(?ms)^build_flags\s*=\s*\n(.*?)(?=^\S|\Z)", base).group(1)
         self.assertNotIn("-std=gnu++17", build_flags)
 
+    def test_stm32_encoder_uses_tim2_hardware_quadrature(self) -> None:
+        platform = (ROOT / "src/hal/platform_io.cpp").read_text(encoding="utf-8")
+        controls = (ROOT / "src/hal/control_panel.cpp").read_text(encoding="utf-8")
+        self.assertIn("TIM2", platform)
+        self.assertIn("GPIO_AF1_TIM2", platform)
+        self.assertIn("TIM_ENCODERMODE_TI12", platform)
+        self.assertIn("HAL_TIM_Encoder_Start", platform)
+        self.assertIn("phaseA != mcu::PA0 || phaseB != mcu::PA1", platform)
+        self.assertIn("beginQuadratureEncoder", controls)
+        self.assertIn("quadratureEncoderCount", controls)
+        self.assertNotIn("encoderInterruptThunk", controls)
+
+    def test_oled_180_degree_mode_rotates_transfer_bytes_not_scan_commands(self) -> None:
+        display = (ROOT / "src/hal/oled_display.cpp").read_text(encoding="utf-8")
+        self.assertIn("rotation180_ = rotated", display)
+        self.assertIn("sendCommand(0xA1U)", display)
+        self.assertIn("sendCommand(0xC8U)", display)
+        self.assertNotIn("rotated ? 0xA0U", display)
+        self.assertNotIn("rotated ? 0xC0U", display)
+        self.assertIn("destinationPage = kPageCount - 1U - page", display)
+        self.assertIn("kPageWidth - 1U - x", display)
+        self.assertIn("reverseBits(source[sourceIndex])", display)
+
     def test_native_test_inventory_gate_passes(self) -> None:
         result = subprocess.run(
             [PYTHON, str(ROOT / "scripts/check_test_inventory.py")],

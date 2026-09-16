@@ -108,7 +108,7 @@ cmake --build --preset simulator-headless
 ctest --preset simulator-headless
 ```
 
-These tests boot the complete firmware above the simulator HAL, exercise real debounced controls and scheduler callbacks, verify OLED output and gate edges, verify host-file persistence, power-cycle the application, enter the configured boot Easter egg through the real boot chord, check framebuffer-visible projectiles, drive ideal SYNC/RST comparator sources, and verify scope reset/re-arm semantics. The virtual OLED additionally consumes the real `A0/A1` segment-remap and `C0/C8` COM-scan command stream: regressions prove 0-degree `A1/C8`, 180-degree `A0/C0`, canonical-framebuffer immutability, immediate reversal, and command-parameter isolation. CI executes this layer on Windows, macOS, and Linux.
+These tests boot the complete firmware above the simulator HAL, exercise real debounced controls and scheduler callbacks, verify OLED output and gate edges, verify host-file persistence, power-cycle the application, enter the configured boot Easter egg through the real boot chord, check framebuffer-visible projectiles, drive ideal SYNC/RST comparator sources, and verify scope reset/re-arm semantics. The virtual OLED additionally consumes the same physical transfer framebuffer used by hardware. Regressions prove canonical-framebuffer immutability, exact pixel mapping `(x,y) -> (127-x,63-y)` at 180 degrees, immediate reversal back to 0 degrees, and a fixed controller scan orientation. CI executes this layer on Windows, macOS, and Linux.
 
 ## Hardware-in-the-loop remains mandatory
 

@@ -15,6 +15,29 @@
 
 namespace clockfw::hal::platform {
 #if defined(CLOCK_HOST_TEST) || defined(CLOCK_SIMULATOR)
+namespace {
+std::uint32_t gQuadraturePhaseA = mcu::kUnassigned;
+std::uint32_t gQuadraturePhaseB = mcu::kUnassigned;
+std::uint8_t gQuadraturePreviousState = 0U;
+std::uint32_t gQuadratureCount = 0U;
+constexpr std::int8_t kQuadratureTransitions[16] = {
+    0, -1, 1, 0,
+    1, 0, 0, -1,
+    -1, 0, 0, 1,
+    0, 1, -1, 0
+};
+void quadratureEdgeThunk() {
+    const std::uint8_t currentState =
+        (digitalRead(gQuadraturePhaseA) == HIGH ? 2U : 0U) |
+        (digitalRead(gQuadraturePhaseB) == HIGH ? 1U : 0U);
+    const std::uint8_t transitionIndex = static_cast<std::uint8_t>(
+        (static_cast<std::uint16_t>(gQuadraturePreviousState) << 2U) | currentState);
+    gQuadraturePreviousState = currentState;
+    gQuadratureCount += static_cast<std::uint32_t>(
+        static_cast<std::int32_t>(kQuadratureTransitions[transitionIndex]));
+}
+}  // namespace
+
 void initializeMcu() {}
 void configureInputPullup(const mcu::Pin pin) { pinMode(pin, INPUT_PULLUP); }
 void configureOutput(const mcu::Pin pin) { pinMode(pin, OUTPUT); }
@@ -24,6 +47,20 @@ void attachInterrupt(const mcu::Pin pin, const InterruptCallback callback, const
     const int mode = edge == InterruptEdge::Rising ? RISING : (edge == InterruptEdge::Falling ? FALLING : CHANGE);
     ::attachInterrupt(digitalPinToInterrupt(pin), callback, mode);
 }
+bool beginQuadratureEncoder(const mcu::Pin phaseA, const mcu::Pin phaseB) {
+    gQuadraturePhaseA = phaseA;
+    gQuadraturePhaseB = phaseB;
+    configureInputPullup(phaseA);
+    configureInputPullup(phaseB);
+    gQuadraturePreviousState =
+        (digitalRead(phaseA) == HIGH ? 2U : 0U) |
+        (digitalRead(phaseB) == HIGH ? 1U : 0U);
+    gQuadratureCount = 0U;
+    ::attachInterrupt(digitalPinToInterrupt(phaseA), quadratureEdgeThunk, CHANGE);
+    ::attachInterrupt(digitalPinToInterrupt(phaseB), quadratureEdgeThunk, CHANGE);
+    return true;
+}
+std::uint32_t quadratureEncoderCount() { return gQuadratureCount; }
 std::uint32_t milliseconds() { return millis(); }
 std::uint32_t microseconds() { return micros(); }
 void delayMilliseconds(const std::uint32_t durationMs) { delay(durationMs); }
@@ -32,6 +69,7 @@ void exitCritical(const std::uint32_t) { interrupts(); }
 #else
 namespace {
 TIM_HandleTypeDef gMicrosTimer{};
+TIM_HandleTypeDef gEncoderTimer{};
 InterruptCallback gExtiCallbacks[16]{};
 constexpr std::uint32_t kExtiPreemptPriority = 4U;
 constexpr std::uint32_t kExtiSubPriority = 0U;
@@ -121,6 +159,53 @@ void attachInterrupt(const mcu::Pin pin, const InterruptCallback callback, const
     GPIO_InitTypeDef init{}; init.Pin=maskFor(pin); init.Pull=GPIO_PULLUP; init.Speed=GPIO_SPEED_FREQ_HIGH;
     init.Mode = edge==InterruptEdge::Rising ? GPIO_MODE_IT_RISING : (edge==InterruptEdge::Falling ? GPIO_MODE_IT_FALLING : GPIO_MODE_IT_RISING_FALLING);
     HAL_GPIO_Init(port,&init); const IRQn_Type irq=extiIrq(index); HAL_NVIC_SetPriority(irq,kExtiPreemptPriority,kExtiSubPriority); HAL_NVIC_EnableIRQ(irq);
+}
+bool beginQuadratureEncoder(const mcu::Pin phaseA, const mcu::Pin phaseB) {
+    // CLOCK deliberately routes the PEC11L A/B contacts to PA0/PA1. These pins
+    // are TIM2_CH1/TIM2_CH2 (AF1) on STM32F401, so use the MCU's x4 encoder
+    // interface instead of EXTI callbacks. The peripheral keeps counting while
+    // foreground code or IRQ delivery is delayed, eliminating the lost-edge
+    // condition that could consume the first mechanical detent.
+    if (phaseA != mcu::PA0 || phaseB != mcu::PA1) {
+        return false;
+    }
+    __HAL_RCC_GPIOA_CLK_ENABLE();
+    __HAL_RCC_TIM2_CLK_ENABLE();
+
+    GPIO_InitTypeDef gpio{};
+    gpio.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+    gpio.Mode = GPIO_MODE_AF_PP;
+    gpio.Pull = GPIO_PULLUP;
+    gpio.Speed = GPIO_SPEED_FREQ_LOW;
+    gpio.Alternate = GPIO_AF1_TIM2;
+    HAL_GPIO_Init(GPIOA, &gpio);
+
+    gEncoderTimer.Instance = TIM2;
+    gEncoderTimer.Init.Prescaler = 0U;
+    gEncoderTimer.Init.CounterMode = TIM_COUNTERMODE_UP;
+    gEncoderTimer.Init.Period = 0xFFFFFFFFU;
+    gEncoderTimer.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
+    gEncoderTimer.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
+
+    TIM_Encoder_InitTypeDef encoder{};
+    encoder.EncoderMode = TIM_ENCODERMODE_TI12;
+    encoder.IC1Polarity = TIM_ICPOLARITY_RISING;
+    encoder.IC1Selection = TIM_ICSELECTION_DIRECTTI;
+    encoder.IC1Prescaler = TIM_ICPSC_DIV1;
+    encoder.IC1Filter = 0x0FU;
+    encoder.IC2Polarity = TIM_ICPOLARITY_RISING;
+    encoder.IC2Selection = TIM_ICSELECTION_DIRECTTI;
+    encoder.IC2Prescaler = TIM_ICPSC_DIV1;
+    encoder.IC2Filter = 0x0FU;
+
+    if (HAL_TIM_Encoder_Init(&gEncoderTimer, &encoder) != HAL_OK) {
+        return false;
+    }
+    __HAL_TIM_SET_COUNTER(&gEncoderTimer, 0U);
+    return HAL_TIM_Encoder_Start(&gEncoderTimer, TIM_CHANNEL_ALL) == HAL_OK;
+}
+std::uint32_t quadratureEncoderCount() {
+    return __HAL_TIM_GET_COUNTER(&gEncoderTimer);
 }
 std::uint32_t milliseconds() { return HAL_GetTick(); }
 std::uint32_t microseconds() { return __HAL_TIM_GET_COUNTER(&gMicrosTimer); }

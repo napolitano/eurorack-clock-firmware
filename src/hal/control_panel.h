@@ -73,24 +73,16 @@ private:
         std::uint32_t rawChangedAtMs_ = 0U;
     };
 
-    /** @brief Atomically drains complete detents accumulated by GPIO edge interrupts. */
+    /** @brief Converts the wrapping quadrature transition counter into complete detents. */
     std::int8_t sampleEncoder();
-
-    /** @brief Shared GPIO interrupt thunk for both encoder quadrature phases. */
-    static void encoderInterruptThunk();
-
-    /** @brief Decodes one A/B edge and accumulates completed detents. */
-    void handleEncoderEdgeFromIsr();
 
     DebouncedButton encoderButton_;
     DebouncedButton transportButton_;
     DebouncedButton tapButton_;
     DebouncedButton resetButton_;
-    static ControlPanel* activeInstance_;
-    volatile std::uint8_t previousEncoderState_ = 0U;
-    volatile std::uint8_t encoderCycleAnchorState_ = 0U;
-    volatile std::int8_t encoderAccumulator_ = 0;
-    volatile std::int16_t pendingEncoderDetents_ = 0;
+    std::uint32_t encoderLastTransitionCount_ = 0U;
+    std::int8_t encoderTransitionRemainder_ = 0;
+    std::int16_t pendingEncoderDetents_ = 0;
     bool encoderDirectionReversed_ = false;
 };
 

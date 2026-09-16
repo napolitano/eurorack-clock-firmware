@@ -105,7 +105,7 @@ public:
     /** @brief Switches the OLED panel on or off while preserving display RAM. */
     void setPower(bool enabled);
 
-    /** @brief Selects the controller's native 0-degree or 180-degree scan orientation. */
+    /** @brief Selects 0-degree or deterministic software-rotated 180-degree panel orientation. */
     void setRotation180(bool rotated);
 
 #if defined(CLOCK_HOST_TEST) || defined(CLOCK_SIMULATOR)
@@ -118,10 +118,10 @@ public:
 
 #if defined(CLOCK_SIMULATOR)
     /**
-     * @brief Returns the panel image after applying the simulated SSD1306/SSD1315 scan mapping.
+     * @brief Returns the panel image after applying the same transfer rotation used on hardware.
      *
-     * The simulator deliberately derives orientation from controller commands (A0/A1 and C0/C8),
-     * not from ClockState. This keeps the virtual OLED on the same behavioral boundary as hardware.
+     * The simulator models the bytes that would be written into OLED display RAM while the
+     * controller remains in CLOCK's canonical A1/C8 scan orientation.
      */
     const std::array<std::uint8_t, kFramebufferSize>& panelFramebufferForSimulator() const;
 #endif
@@ -167,10 +167,10 @@ private:
     /** @brief Writes one framebuffer pixel with clipping. */
     void drawPixel(std::int16_t x, std::int16_t y, PixelColor color);
 
-#if defined(CLOCK_SIMULATOR)
-    /** @brief Applies controller scan/remap commands to the native simulator's OLED model. */
-    void observeControllerCommandForSimulator(std::uint8_t command);
-#endif
+    /** @brief Copies the canonical framebuffer into the physical transfer orientation. */
+    void prepareTransportFramebuffer(
+        const std::array<std::uint8_t, kFramebufferSize>& source,
+        std::array<std::uint8_t, kFramebufferSize>& destination) const;
 
     /** @brief Draws one project-owned compact 5x7 glyph at its native resolution. */
     void drawSmallGlyph(std::int16_t x, std::int16_t y, char character);
@@ -194,11 +194,6 @@ private:
     std::array<std::uint8_t, kFramebufferSize> queuedI2cFramebuffer_{};
 #if defined(CLOCK_SIMULATOR)
     mutable std::array<std::uint8_t, kFramebufferSize> simulatorPanelFramebuffer_{};
-    // Power-on controller defaults are A0/C0. begin() then explicitly selects A1/C8
-    // as CLOCK's canonical 0-degree orientation, matching the physical OLED path.
-    bool simulatorSegmentRemapA1_ = false;
-    bool simulatorComScanC8_ = false;
-    std::uint8_t simulatorPendingCommandParameters_ = 0U;
 #endif
     DisplayFont font_ = DisplayFont::Small;
     PixelColor textColor_ = PixelColor::White;
@@ -208,6 +203,7 @@ private:
     I2cRefreshPhase i2cRefreshPhase_ = I2cRefreshPhase::Idle;
     bool i2cFrameQueued_ = false;
     bool hasPresentedFramebuffer_ = false;
+    bool rotation180_ = false;
 };
 
 }  // namespace clockfw::hal

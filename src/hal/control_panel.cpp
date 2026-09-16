@@ -11,7 +11,6 @@
 #include "hal/platform_io.h"
 
 #include "pin_map.h"
-#include "hal/interrupt_lock.h"
 
 namespace clockfw::hal {
 namespace {
@@ -19,17 +18,7 @@ namespace {
 /** Debounce interval applied to active-low button inputs. */
 constexpr std::uint32_t kDebounceMs = 25UL;
 
-/** Gray-code transition lookup used to reject invalid encoder transitions. */
-constexpr std::int8_t kEncoderTransitions[16] = {
-    0, -1, 1, 0,
-    1, 0, 0, -1,
-    -1, 0, 0, 1,
-    0, 1, -1, 0
-};
-
 }  // namespace
-
-ControlPanel* ControlPanel::activeInstance_ = nullptr;
 
 ControlPanel::DebouncedButton::DebouncedButton(const std::uint32_t pin) : pin_(pin) {}
 
@@ -63,18 +52,16 @@ ControlPanel::ControlPanel()
       resetButton_(pinmap::kResetBackButtonPin) {}
 
 void ControlPanel::begin() {
-    platform::configureInputPullup(pinmap::kEncoderPhaseAPin);
-    platform::configureInputPullup(pinmap::kEncoderPhaseBPin);
-
-    previousEncoderState_ =
-        (platform::read(pinmap::kEncoderPhaseAPin) ? 2U : 0U) |
-        (platform::read(pinmap::kEncoderPhaseBPin) ? 1U : 0U);
-    encoderCycleAnchorState_ = previousEncoderState_;
-    encoderAccumulator_ = 0;
+    // PA0/PA1 are handled by the dedicated quadrature backend. On STM32F401 the
+    // production implementation is TIM2 encoder mode (x4), so the first physical
+    // detent and every later direction change are counted independently of EXTI
+    // latency or foreground/display work.
+    (void)platform::beginQuadratureEncoder(
+        pinmap::kEncoderPhaseAPin,
+        pinmap::kEncoderPhaseBPin);
+    encoderLastTransitionCount_ = platform::quadratureEncoderCount();
+    encoderTransitionRemainder_ = 0;
     pendingEncoderDetents_ = 0;
-    activeInstance_ = this;
-    platform::attachInterrupt(pinmap::kEncoderPhaseAPin, encoderInterruptThunk, platform::InterruptEdge::Change);
-    platform::attachInterrupt(pinmap::kEncoderPhaseBPin, encoderInterruptThunk, platform::InterruptEdge::Change);
 
     const std::uint32_t nowMs = platform::milliseconds();
     encoderButton_.begin(nowMs);
@@ -102,64 +89,47 @@ void ControlPanel::setEncoderDirectionReversed(const bool reversed) {
 }
 
 std::int8_t ControlPanel::sampleEncoder() {
-    // A 16-bit aligned load is atomic on Cortex-M4. Avoid globally masking IRQs
-    // on the overwhelmingly common idle path; if an ISR adds a detent just after
-    // this zero check it remains pending for the next foreground iteration.
+    constexpr std::int32_t kTransitionsPerDetent = 4;
+    constexpr std::int16_t kMaximumPendingDetents = 32767;
+    constexpr std::int16_t kMinimumPendingDetents = -32767;
+    constexpr std::int16_t kMaximumReportedDelta = 127;
+    constexpr std::int16_t kMinimumReportedDelta = -127;
+
+    const std::uint32_t currentCount = platform::quadratureEncoderCount();
+    const std::int32_t transitionDelta = static_cast<std::int32_t>(
+        currentCount - encoderLastTransitionCount_);
+    encoderLastTransitionCount_ = currentCount;
+
+    if (transitionDelta != 0) {
+        const std::int64_t accumulatedTransitions =
+            static_cast<std::int64_t>(encoderTransitionRemainder_) + transitionDelta;
+        const std::int32_t newDetents = static_cast<std::int32_t>(
+            accumulatedTransitions / kTransitionsPerDetent);
+        encoderTransitionRemainder_ = static_cast<std::int8_t>(
+            accumulatedTransitions -
+            static_cast<std::int64_t>(newDetents) * kTransitionsPerDetent);
+
+        const std::int32_t pending =
+            static_cast<std::int32_t>(pendingEncoderDetents_) + newDetents;
+        pendingEncoderDetents_ = static_cast<std::int16_t>(
+            pending > kMaximumPendingDetents
+                ? kMaximumPendingDetents
+                : (pending < kMinimumPendingDetents
+                    ? kMinimumPendingDetents
+                    : pending));
+    }
+
     if (pendingEncoderDetents_ == 0) {
         return 0;
     }
 
-    InterruptLock interruptLock;
-    constexpr std::int16_t kMaximumReportedDelta = 127;
-    constexpr std::int16_t kMinimumReportedDelta = -127;
     const std::int16_t bounded = pendingEncoderDetents_ > kMaximumReportedDelta
         ? kMaximumReportedDelta
         : (pendingEncoderDetents_ < kMinimumReportedDelta
             ? kMinimumReportedDelta
             : pendingEncoderDetents_);
-    pendingEncoderDetents_ -= bounded;
+    pendingEncoderDetents_ = static_cast<std::int16_t>(pendingEncoderDetents_ - bounded);
     return static_cast<std::int8_t>(bounded);
-}
-
-void ControlPanel::encoderInterruptThunk() {
-    if (activeInstance_ != nullptr) {
-        activeInstance_->handleEncoderEdgeFromIsr();
-    }
-}
-
-void ControlPanel::handleEncoderEdgeFromIsr() {
-    const std::uint8_t currentState =
-        (platform::read(pinmap::kEncoderPhaseAPin) ? 2U : 0U) |
-        (platform::read(pinmap::kEncoderPhaseBPin) ? 1U : 0U);
-    const std::uint8_t transitionIndex = static_cast<std::uint8_t>(
-        (static_cast<std::uint16_t>(previousEncoderState_) << 2U) | currentState);
-    previousEncoderState_ = currentState;
-    encoderAccumulator_ = static_cast<std::int8_t>(
-        encoderAccumulator_ + kEncoderTransitions[transitionIndex]);
-
-    // Count one user detent only after the quadrature sequence returns to the
-    // electrical phase captured at begin(). The PEC11L-4120K-S0020 has one
-    // quadrature pulse per mechanical detent, so a complete detent is one full
-    // four-transition cycle. If EXTI delivery is briefly masked/coalesced, the
-    // observed path can lose an intermediate state and leave a +/-1..3 residue.
-    // Carrying that residue across later detents creates a persistent one-detent
-    // reversal deadband. Returning to the cycle anchor is therefore also our
-    // resynchronization boundary: accept only a complete +/-4 cycle and discard
-    // every incomplete/corrupted residue there.
-    if (currentState != encoderCycleAnchorState_) {
-        return;
-    }
-
-    if (encoderAccumulator_ == 4) {
-        if (pendingEncoderDetents_ < 32767) {
-            ++pendingEncoderDetents_;
-        }
-    } else if (encoderAccumulator_ == -4) {
-        if (pendingEncoderDetents_ > -32767) {
-            --pendingEncoderDetents_;
-        }
-    }
-    encoderAccumulator_ = 0;
 }
 
 }  // namespace clockfw::hal

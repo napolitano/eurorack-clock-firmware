@@ -1371,8 +1371,8 @@ void testHalBasicsAndDisplay() {
     const std::size_t rotationStart = SPI.transfers.size();
     display.setRotation180(true);
     CHECK_EQ(SPI.transfers.size(), rotationStart + 2U);
-    CHECK_EQ(SPI.transfers[rotationStart], 0xA0U);
-    CHECK_EQ(SPI.transfers[rotationStart + 1U], 0xC0U);
+    CHECK_EQ(SPI.transfers[rotationStart], 0xA1U);
+    CHECK_EQ(SPI.transfers[rotationStart + 1U], 0xC8U);
     display.setRotation180(false);
     CHECK_EQ(SPI.transfers[rotationStart + 2U], 0xA1U);
     CHECK_EQ(SPI.transfers[rotationStart + 3U], 0xC8U);
@@ -1382,13 +1382,40 @@ void testHalBasicsAndDisplay() {
     CHECK_EQ(Wire.transmissions.size(), rotationStart + 2U);
     CHECK_EQ(Wire.transmissions[rotationStart].bytes.size(), 2U);
     CHECK_EQ(Wire.transmissions[rotationStart].bytes[0], 0x00U);
-    CHECK_EQ(Wire.transmissions[rotationStart].bytes[1], 0xA0U);
-    CHECK_EQ(Wire.transmissions[rotationStart + 1U].bytes[1], 0xC0U);
+    CHECK_EQ(Wire.transmissions[rotationStart].bytes[1], 0xA1U);
+    CHECK_EQ(Wire.transmissions[rotationStart + 1U].bytes[1], 0xC8U);
     display.setRotation180(false);
     CHECK_EQ(Wire.transmissions[rotationStart + 2U].bytes[1], 0xA1U);
     CHECK_EQ(Wire.transmissions[rotationStart + 3U].bytes[1], 0xC8U);
 #endif
     CHECK(display.framebufferForTest() == framebufferBeforeRotation);
+
+    // 180-degree mounting is implemented as a byte-level framebuffer rotation
+    // while the OLED controller stays in A1/C8. Verify an asymmetric pair of
+    // pixels maps to the exact opposite coordinates without mirroring glyph data.
+    display.clear();
+    display.setPixel(3, 5);
+    display.setPixel(11, 17);
+    display.setRotation180(true);
+    display.present();
+#if !CLOCK_DISPLAY_USE_SPI
+    while (display.service()) {}
+#endif
+    const auto& rotatedPhysical = display.presentedFramebufferForTest();
+    const auto pixelSet = [](const auto& fb, int x, int y) {
+        const std::size_t index = static_cast<std::size_t>(x) +
+            static_cast<std::size_t>(y / 8) * static_cast<std::size_t>(hal::OledDisplay::kWidth);
+        return (fb[index] & static_cast<std::uint8_t>(1U << (y & 7))) != 0U;
+    };
+    CHECK(pixelSet(rotatedPhysical, 124, 58));
+    CHECK(pixelSet(rotatedPhysical, 116, 46));
+    CHECK(!pixelSet(rotatedPhysical, 3, 5));
+    display.setRotation180(false);
+    display.clear();
+    display.present();
+#if !CLOCK_DISPLAY_USE_SPI
+    while (display.service()) {}
+#endif
 
     display.clear();
     display.setFont(hal::DisplayFont::Small); display.setTextColor(hal::PixelColor::White);

@@ -24,6 +24,18 @@ bool read(mcu::Pin pin);
 void write(mcu::Pin pin, bool high);
 /** @brief Registers an EXTI callback for one encoded GPIO pin. */
 void attachInterrupt(mcu::Pin pin, InterruptCallback callback, InterruptEdge edge);
+/**
+ * @brief Starts the dedicated quadrature-encoder backend for the supplied A/B pins.
+ *
+ * Production uses TIM2 encoder mode on PA0/PA1 so contact transitions continue to
+ * be counted even while foreground code or interrupts are temporarily delayed.
+ * Host/simulator builds provide an equivalent software counter for deterministic tests.
+ *
+ * @return true when the encoder backend was configured successfully.
+ */
+bool beginQuadratureEncoder(mcu::Pin phaseA, mcu::Pin phaseB);
+/** @brief Returns the wrapping signed-position counter in raw quadrature transitions. */
+std::uint32_t quadratureEncoderCount();
 /** @brief Returns milliseconds elapsed since MCU initialization. */
 std::uint32_t milliseconds();
 /** @brief Returns the wrapping 32-bit TIM5 microsecond counter. */

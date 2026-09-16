@@ -32,12 +32,13 @@ int fail(const char* const message) {
 
 int runStaticContracts() {
 
-    // The virtual OLED must follow the same controller commands as hardware.
-    // CLOCK's canonical 0-degree scan mapping is A1/C8; A0/C0 rotates both axes.
+    // The virtual OLED must follow the same transfer transform as hardware.
+    // CLOCK keeps the controller at its proven A1/C8 orientation and rotates the
+    // framebuffer bytes for 180-degree mounting, avoiding module-specific mirrored text.
     {
         hal::OledDisplay display{};
-        display.setRotation180(false);
         display.setPixel(3, 5);
+        display.setPixel(11, 17);
         const auto& canonical = display.framebufferForTest();
         const auto pixelIsSet = [](
             const std::array<std::uint8_t, hal::OledDisplay::kFramebufferSize>& framebuffer,
@@ -48,30 +49,23 @@ int runStaticContracts() {
             return (framebuffer[index] & static_cast<std::uint8_t>(1U << (y & 7))) != 0U;
         };
 
-        if (!pixelIsSet(canonical, 3, 5) ||
+        if (!pixelIsSet(canonical, 3, 5) || !pixelIsSet(canonical, 11, 17) ||
             !pixelIsSet(display.panelFramebufferForSimulator(), 3, 5)) {
-            return fail("A1/C8 must preserve canonical OLED orientation in the simulator");
+            return fail("0-degree OLED transfer must preserve canonical framebuffer coordinates");
         }
 
         display.setRotation180(true);
         const auto& rotated = display.panelFramebufferForSimulator();
-        if (!pixelIsSet(rotated, 124, 58) || pixelIsSet(rotated, 3, 5) ||
+        if (!pixelIsSet(rotated, 124, 58) || !pixelIsSet(rotated, 116, 46) ||
+            pixelIsSet(rotated, 3, 5) || pixelIsSet(rotated, 11, 17) ||
             !pixelIsSet(display.framebufferForTest(), 3, 5)) {
-            return fail("A0/C0 must rotate the simulated OLED 180 degrees without mutating the framebuffer");
-        }
-
-        // Parameter bytes can legally equal remap/scan opcodes. The controller model
-        // must consume them as data rather than accidentally changing orientation.
-        display.setContrast(0xA0U);
-        display.setContrast(0xC0U);
-        const auto& stillRotated = display.panelFramebufferForSimulator();
-        if (!pixelIsSet(stillRotated, 124, 58) || pixelIsSet(stillRotated, 3, 5)) {
-            return fail("OLED command parameters must not be misread as A0/C0 orientation commands");
+            return fail("180-degree OLED transfer must rotate both axes without mirroring the canonical framebuffer");
         }
 
         display.setRotation180(false);
-        if (!pixelIsSet(display.panelFramebufferForSimulator(), 3, 5)) {
-            return fail("A1/C8 must restore the simulated OLED to 0 degrees immediately");
+        const auto& restored = display.panelFramebufferForSimulator();
+        if (!pixelIsSet(restored, 3, 5) || !pixelIsSet(restored, 11, 17)) {
+            return fail("returning to 0 degrees must restore canonical OLED orientation immediately");
         }
     }
     // The developer-scope ruler is a real timeline, not a screen-fixed decoration.

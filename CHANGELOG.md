@@ -24,6 +24,13 @@ This project is still in active development. Until the first stable release, ver
 - Changed the direct Cube OLED SPI1 setup back to the proven full-duplex peripheral configuration used by STM32duino, including PA6/MISO and `SPI_DIRECTION_2LINES`; the OLED remains physically write-only.
 - Corrected persistence-preserving USB DFU sequencing: the application region is written first, sector 0/vector table last, and DfuSe `:leave` now targets `0x08000000` rather than `0x0800C000`.
 
+### Hardware behavior follow-up
+
+- Replaced the PA0/PA1 EXTI rotary-encoder decoder with the STM32F401 TIM2 encoder interface. Quadrature transitions are now counted in hardware and converted to one detent per four transitions in the foreground, eliminating the remaining first-detent loss path caused by delayed or coalesced GPIO edge delivery.
+- Added first-detent regressions from every electrical phase, immediate reverse-detent coverage, and repeated single-detent direction-change coverage while preserving fast-turn backlog handling and the NORMAL/REVERSED setting.
+- Changed `ORIENTATION = 180 DEG` from SSD1306/SSD1315 scan-remap commands to deterministic framebuffer-transfer rotation. The controller stays in the proven `A1/C8` orientation while firmware reverses columns, pages, and page-bit order, preventing mirrored text on interchangeable OLED modules.
+- Kept the canonical renderer framebuffer unchanged so the simulator, screenshots, drawing coordinates, and UI layout remain independent of mounting orientation.
+
 ### Changed
 
 - Gave **BEATKNECHT** a dedicated transport contract: PLAY starts the rhythm from its intro and toggles PLAY/PAUSE thereafter; STOP/BACK immediately forces all eight gates LOW, resets the pattern to step 1, and disables the output stage until PLAY is pressed again.
