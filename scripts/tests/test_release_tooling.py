@@ -122,6 +122,17 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertTrue(allows(ROOT / "test/host_firmware/test_main.cpp"))
         self.assertFalse(allows(ROOT / "src/services/external_sync_controller.cpp"))
 
+
+    def test_embedded_platformio_forces_gcc7_cpp17_mode(self) -> None:
+        platformio = (ROOT / "platformio.ini").read_text(encoding="utf-8")
+        self.assertIn("post:scripts/platformio_cpp17.py", platformio)
+        script = (ROOT / "scripts/platformio_cpp17.py").read_text(encoding="utf-8")
+        self.assertIn('CPP17_FLAG = "-std=gnu++1z"', script)
+        self.assertIn('env.GetLibBuilders()', script)
+        base = re.search(r"\[env:blackpill_f401cc\](.*?)(?=\n\[|\Z)", platformio, re.S).group(1)
+        build_flags = re.search(r"(?ms)^build_flags\s*=\s*\n(.*?)(?=^\S|\Z)", base).group(1)
+        self.assertNotIn("-std=gnu++17", build_flags)
+
     def test_native_test_inventory_gate_passes(self) -> None:
         result = subprocess.run(
             [PYTHON, str(ROOT / "scripts/check_test_inventory.py")],

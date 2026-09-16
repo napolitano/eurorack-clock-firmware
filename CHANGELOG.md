@@ -18,6 +18,8 @@ This project is still in active development. Until the first stable release, ver
 - Added a compact PLAY/PAUSE/STOP state glyph to the BEATKNECHT performance display.
 - Corrected the custom STM32Cube linker script for the real ARM target: RAM is now declared explicitly as 64 KiB instead of relying on the Arduino-only `LD_MAX_DATA_SIZE` symbol, and output-section syntax remains compatible with the pinned GCC 7.2.1/binutils toolchain.
 - Removed a misleading-indentation warning from the BEATKNECHT shutdown path without changing its STOP/output-stage behavior.
+- Forced the embedded STM32Cube target into GCC-7-compatible C++17 mode (`-std=gnu++1z`) after the real ARM build exposed that the PlatformIO toolchain was compiling project sources as C++14; this restores `inline constexpr` variables and C++17 library facilities such as `std::clamp`.
+- Added a PlatformIO post-build policy that applies the same C++17 dialect to project sources and isolated project libraries, preventing framework defaults from silently downgrading the language mode.
 
 ### Tests
 
