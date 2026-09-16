@@ -140,9 +140,9 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertIn("test_controls=40", result.stdout)
         self.assertIn("test_settings=56", result.stdout)
         self.assertIn("test_screensavers=15", result.stdout)
-        self.assertIn("test_easter_eggs=25", result.stdout)
+        self.assertIn("test_easter_eggs=28", result.stdout)
         self.assertIn("test_host_firmware=27", result.stdout)
-        self.assertIn("total=372", result.stdout)
+        self.assertIn("total=375", result.stdout)
 
 
 

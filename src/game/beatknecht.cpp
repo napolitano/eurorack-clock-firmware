@@ -67,10 +67,13 @@ void Beatknecht::run() {
         if (!controls.encoderButton.pressed) encoderPressedAtMs_ = 0U;
         else if (encoderPressedAtMs_ != 0U && nowMs - encoderPressedAtMs_ >= kExitLongPressMs) exitRequested_ = true;
         const ArcadeShell::Action action = shell_.update(controls, nowMs);
-        if (action == ArcadeShell::Action::StartRun || action == ArcadeShell::Action::RestartRun) {
-            resetSession(nowMs); gateOutputs_.enableOutputStage(); outputsEnabled = true;
+        const bool startedThisFrame = action == ArcadeShell::Action::StartRun || action == ArcadeShell::Action::RestartRun;
+        if (startedThisFrame) {
+            resetSession(nowMs);
+            startOrResume(nowMs);
+            outputsEnabled = true;
         }
-        if (shell_.playing()) update(controls, nowMs);
+        if (shell_.playing() && !startedThisFrame) update(controls, nowMs);
         if (nowMs - lastFrameAtMs >= kFrameIntervalMs) { if (shell_.playing()) render(); else shell_.render(nowMs); lastFrameAtMs = nowMs; }
         (void)display_.service();
         hal::SystemClock::delayMilliseconds(1U);
@@ -92,8 +95,9 @@ bool Beatknecht::serviceForSimulator(const std::uint32_t nowMs) {
     if (!controls.encoderButton.pressed) encoderPressedAtMs_ = 0U;
     else if (encoderPressedAtMs_ != 0U && nowMs - encoderPressedAtMs_ >= kExitLongPressMs) exitRequested_ = true;
     const ArcadeShell::Action action = shell_.update(controls, nowMs);
-    if (action == ArcadeShell::Action::StartRun || action == ArcadeShell::Action::RestartRun) { resetSession(nowMs); gateOutputs_.enableOutputStage(); }
-    if (shell_.playing()) update(controls, nowMs);
+    const bool startedThisFrame = action == ArcadeShell::Action::StartRun || action == ArcadeShell::Action::RestartRun;
+    if (startedThisFrame) { resetSession(nowMs); startOrResume(nowMs); }
+    if (shell_.playing() && !startedThisFrame) update(controls, nowMs);
     if (nowMs - lastSimulatorFrameAtMs_ >= kFrameIntervalMs) { if (shell_.playing()) render(); else shell_.render(nowMs); lastSimulatorFrameAtMs_ = nowMs; }
     if (exitRequested_) { stopOutputs(); gateOutputs_.disableOutputStage(); }
     return !exitRequested_;
@@ -102,7 +106,8 @@ bool Beatknecht::serviceForSimulator(const std::uint32_t nowMs) {
 
 void Beatknecht::resetSession(const std::uint32_t nowMs) {
     styleIndex_ = 0U; bpm_ = kStyles[0].defaultBpm; nextStep_ = 0U; displayStep_ = 0U;
-    nextStepAtMs_ = nowMs; gatesOffAtMs_ = 0U; encoderPressedAtMs_ = 0U; gatesHigh_ = false; exitRequested_ = false;
+    nextStepAtMs_ = nowMs; gatesOffAtMs_ = 0U; encoderPressedAtMs_ = 0U; pausedStepRemainingMs_ = 0U;
+    gatesHigh_ = false; exitRequested_ = false; transport_ = TransportState::Stopped;
 }
 
 std::uint32_t Beatknecht::stepDurationMs() const {
@@ -111,6 +116,40 @@ std::uint32_t Beatknecht::stepDurationMs() const {
 
 void Beatknecht::stopOutputs() {
     gateOutputs_.setAllChannelsLow(); gatesHigh_ = false;
+}
+
+void Beatknecht::startOrResume(const std::uint32_t nowMs) {
+    gateOutputs_.enableOutputStage();
+    if (transport_ == TransportState::Paused) {
+        nextStepAtMs_ = nowMs + pausedStepRemainingMs_;
+        pausedStepRemainingMs_ = 0U;
+        transport_ = TransportState::Playing;
+        return;
+    }
+
+    nextStep_ = 0U;
+    displayStep_ = 0U;
+    pausedStepRemainingMs_ = 0U;
+    transport_ = TransportState::Playing;
+    triggerStep(nowMs);
+}
+
+void Beatknecht::pause(const std::uint32_t nowMs) {
+    if (transport_ != TransportState::Playing) return;
+    pausedStepRemainingMs_ = nextStepAtMs_ > nowMs ? nextStepAtMs_ - nowMs : 0U;
+    stopOutputs();
+    transport_ = TransportState::Paused;
+}
+
+void Beatknecht::stop() {
+    stopOutputs();
+    gateOutputs_.disableOutputStage();
+    transport_ = TransportState::Stopped;
+    nextStep_ = 0U;
+    displayStep_ = 0U;
+    nextStepAtMs_ = 0U;
+    gatesOffAtMs_ = 0U;
+    pausedStepRemainingMs_ = 0U;
 }
 
 void Beatknecht::triggerStep(const std::uint32_t nowMs) {
@@ -129,12 +168,23 @@ void Beatknecht::triggerStep(const std::uint32_t nowMs) {
 }
 
 void Beatknecht::update(const hal::ControlSample& controls, const std::uint32_t nowMs) {
+    // STOP wins over every simultaneous control event and always leaves the rack quiet.
+    if (controls.resetButton.edge == hal::ButtonEdge::Pressed) {
+        stop();
+        return;
+    }
+
+    if (controls.transportButton.edge == hal::ButtonEdge::Pressed) {
+        if (transport_ == TransportState::Playing) pause(nowMs);
+        else startOrResume(nowMs);
+    }
     if (controls.tapButton.edge == hal::ButtonEdge::Pressed) {
         styleIndex_ = static_cast<std::uint8_t>((styleIndex_ + 1U) % kStyles.size());
     }
     if (controls.encoderDelta != 0) {
         bpm_ = static_cast<std::uint16_t>(std::clamp<int>(static_cast<int>(bpm_) + controls.encoderDelta, kMinimumBpm, kMaximumBpm));
     }
+    if (transport_ != TransportState::Playing) return;
     if (gatesHigh_ && nowMs >= gatesOffAtMs_) stopOutputs();
     if (nowMs >= nextStepAtMs_) triggerStep(nowMs);
 }
@@ -146,6 +196,16 @@ void Beatknecht::render() {
     char tempoText[10]{}; std::snprintf(tempoText, sizeof(tempoText), "%u", static_cast<unsigned>(bpm_));
     const hal::TextBounds bounds = display_.measureText(tempoText, 0, 0);
     display_.drawText(static_cast<std::int16_t>(127 - bounds.width), 0, tempoText);
+    if (transport_ == TransportState::Playing) {
+        display_.drawLine(62, 1, 62, 6);
+        display_.drawLine(63, 2, 66, 4);
+        display_.drawLine(63, 6, 66, 4);
+    } else if (transport_ == TransportState::Paused) {
+        display_.drawVerticalLine(62, 1, 6);
+        display_.drawVerticalLine(66, 1, 6);
+    } else {
+        display_.drawRectangle(62, 1, 5, 5);
+    }
     for (std::uint8_t row = 0U; row < 8U; ++row) {
         const std::int16_t y = static_cast<std::int16_t>(8 + row * 7U);
         display_.drawCharacter(1, y, kRowLabels[row]);

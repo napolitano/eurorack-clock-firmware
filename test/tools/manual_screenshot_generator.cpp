@@ -61,6 +61,15 @@ struct EggJourneyGameTestAccess {
     }
     static void render(EggJourneyGame& game) { game.render(); }
 };
+struct BeatknechtTestAccess {
+    static void startForScreenshot(Beatknecht& game, const std::uint32_t nowMs) {
+        game.resetSession(nowMs);
+        hal::ControlSample controls{};
+        controls.transportButton = {hal::ButtonEdge::Pressed, true};
+        game.update(controls, nowMs);
+        game.render();
+    }
+};
 struct BreakoutGameTestAccess {
     static void configureActionFrame(BreakoutGame& game) {
         game.ballLaunched_ = true;

@@ -114,7 +114,7 @@ The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly b
 pio test -e native
 ```
 
-The Native entry point contains **372 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 40 `test_controls`, 56 `test_settings`, 15 `test_screensavers`, 25 `test_easter_eggs`, and 27 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite also locks down recovery from missed/coalesced quadrature transitions so a partial cycle cannot create a persistent one-detent direction deadband; device-level encoder inversion is applied only after decoding so that recovery logic remains unchanged. The Settings/host suites additionally cover OLED 0°/180° controller rotation and schema-v6 to schema-v7 migration for the two device-local preferences.
+The Native entry point contains **375 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 40 `test_controls`, 56 `test_settings`, 15 `test_screensavers`, 28 `test_easter_eggs`, and 27 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite also locks down recovery from missed/coalesced quadrature transitions so a partial cycle cannot create a persistent one-detent direction deadband; device-level encoder inversion is applied only after decoding so that recovery logic remains unchanged. The Settings/host suites additionally cover OLED 0°/180° controller rotation and schema-v6 to schema-v7 migration for the two device-local preferences.
 
 Covered areas include:
 
@@ -226,8 +226,8 @@ The STM32 firmware build only runs after host coverage and both native-simulator
 A release tag must exactly match `src/version.h`:
 
 ```text
-firmware: 0.19.0-beta.13
-Git tag:   v0.19.0-beta.13
+firmware: 0.19.0-beta.14
+Git tag:   v0.19.0-beta.14
 ```
 
 A mismatch fails before publication.

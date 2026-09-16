@@ -21,9 +21,9 @@ This is the developer-facing Native entry point. Beta.4 deliberately makes timin
 | `test_controls` | 40 | encoder quadrature, recovery after missed/coalesced transitions, NORMAL/REVERSED direction mapping, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
 | `test_settings` | 56 | settings boundaries, encoder/display device preferences, enum transitions, invariants and channel/mode editor contracts |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
-| `test_easter_eggs` | 25 | intro launch gating, reset state, output safety and game-specific controls |
+| `test_easter_eggs` | 28 | intro launch gating, reset state, output safety and game-specific controls |
 | `test_host_firmware` | 27 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
-| **Total** | **372** | public Native inventory |
+| **Total** | **375** | public Native inventory |
 
 The default Native configuration executes more than **223,000 assertions**. `scripts/check_test_inventory.py` rejects a total regression below 340 cases and also enforces minimum sizes for every visible suite.
 
@@ -61,7 +61,7 @@ The suite also contains a **host-only nominal electrical model** of the document
 
 `test_settings` turns the Settings editor into an explicit behavioral contract rather than relying only on broad UI scenarios. It covers master tempo/min/max coupling, meter limits, persistent encoder direction and OLED orientation, SYNC source/PPQN/edge/loss/reset/filter/timeout settings, screensaver timing invariants, per-channel rate/swing/probability/gate/phase/reset/mute limits, Euclid bounds, Sequencer editing/copy/paste boundaries, One Clock Humanize choices and Divider Bank settings.
 
-`test_screensavers` executes every renderer, checks expected framebuffer activity, deterministic/rewind behavior where applicable, and sweeps frames long enough to exercise stateful animations. `test_easter_eggs` verifies the shipped BEATKNECHT compile-time default, that each boot game waits for explicit launch input, starts in a defined reset state, keeps Eurorack outputs safe in the host path, and obeys its game-specific encoder/TAP/control contracts. These are state-machine tests; graphical appearance is still covered separately by framebuffer/simulator regression assets.
+`test_screensavers` executes every renderer, checks expected framebuffer activity, deterministic/rewind behavior where applicable, and sweeps frames long enough to exercise stateful animations. `test_easter_eggs` verifies the shipped BEATKNECHT compile-time default, that each boot game waits for explicit launch input, starts in a defined reset state, keeps Eurorack outputs safe in the host path, and obeys its game-specific controls, including BEATKNECHT PLAY/PAUSE/STOP transport, encoder tempo, and TAP style selection. These are state-machine tests; graphical appearance is still covered separately by framebuffer/simulator regression assets.
 
 ## Complete firmware host suite
 

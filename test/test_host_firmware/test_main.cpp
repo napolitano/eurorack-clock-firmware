@@ -150,6 +150,7 @@ struct BeatknechtTestAccess {
     static std::uint16_t bpm(const Beatknecht& drummer) { return drummer.bpm_; }
     static std::uint8_t style(const Beatknecht& drummer) { return drummer.styleIndex_; }
     static std::uint8_t step(const Beatknecht& drummer) { return drummer.displayStep_; }
+    static TransportState transport(const Beatknecht& drummer) { return drummer.transport_; }
 };
 
 struct BreakoutGameTestAccess {
@@ -3657,8 +3658,13 @@ void testEasterEggGameAndHighScore() {
         CHECK(introShell.update(idleIntroControls, 60'100U) == game::ArcadeShell::Action::None);
         CHECK(introShell.screen() == game::ArcadeShell::Screen::Intro);
         idleIntroControls.transportButton = pressedEdge();
-        CHECK(introShell.update(idleIntroControls, 60'101U) == game::ArcadeShell::Action::None);
-        CHECK(introShell.screen() == game::ArcadeShell::Screen::Intro);
+        if (title == game::ArcadeTitle::Beatknecht) {
+            CHECK(introShell.update(idleIntroControls, 60'101U) == game::ArcadeShell::Action::StartRun);
+            CHECK(introShell.screen() == game::ArcadeShell::Screen::Playing);
+        } else {
+            CHECK(introShell.update(idleIntroControls, 60'101U) == game::ArcadeShell::Action::None);
+            CHECK(introShell.screen() == game::ArcadeShell::Screen::Intro);
+        }
     }
 
     // Shared arcade shell: individual intro -> play -> qualifying initials -> Top 100 -> restart.
@@ -4037,9 +4043,19 @@ void testEasterEggGameAndHighScore() {
     CHECK_EQ(game::BeatknechtTestAccess::bpm(drummer), 134U);
     game::BeatknechtTestAccess::reset(drummer, 0U);
     drumControls = {};
-    game::BeatknechtTestAccess::update(drummer, drumControls, 0U);
+    drumControls.transportButton = pressedEdge();
+    game::BeatknechtTestAccess::update(drummer, drumControls, 100U);
+    CHECK_EQ(game::BeatknechtTestAccess::transport(drummer), TransportState::Playing);
     CHECK_EQ(game::BeatknechtTestAccess::step(drummer), 0U);
     CHECK_EQ(fakefw::pinValues[pinmap::kChannel1GateLedPin], HIGH);
+    drumControls = {}; drumControls.transportButton = pressedEdge();
+    game::BeatknechtTestAccess::update(drummer, drumControls, 150U);
+    CHECK_EQ(game::BeatknechtTestAccess::transport(drummer), TransportState::Paused);
+    CHECK_EQ(fakefw::pinValues[pinmap::kChannel1GateLedPin], LOW);
+    drumControls = {}; drumControls.resetButton = pressedEdge();
+    game::BeatknechtTestAccess::update(drummer, drumControls, 200U);
+    CHECK_EQ(game::BeatknechtTestAccess::transport(drummer), TransportState::Stopped);
+    CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin], pinmap::kGateBufferDisabledLevel);
 
     // Egg Journey: the terrain auto-scrolls, encoder changes the egg's screen position,
     // TAP jumps, failures consume three lives, TAP RETRY requires a fresh press, and the

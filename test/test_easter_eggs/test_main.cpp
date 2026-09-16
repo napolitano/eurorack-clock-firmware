@@ -54,6 +54,8 @@ struct BeatknechtTestAccess {
     static void update(Beatknecht& game,const hal::ControlSample& controls,std::uint32_t nowMs){ game.update(controls,nowMs); }
     static std::uint16_t bpm(const Beatknecht& game){ return game.bpm_; }
     static std::uint8_t style(const Beatknecht& game){ return game.styleIndex_; }
+    static std::uint8_t step(const Beatknecht& game){ return game.displayStep_; }
+    static TransportState transport(const Beatknecht& game){ return game.transport_; }
 };
 }
 
@@ -63,6 +65,8 @@ void tearDown(){}
 namespace {
 
 hal::ControlSample tapPress(){ hal::ControlSample c{}; c.tapButton={hal::ButtonEdge::Pressed,true}; return c; }
+hal::ControlSample playPress(){ hal::ControlSample c{}; c.transportButton={hal::ButtonEdge::Pressed,true}; return c; }
+hal::ControlSample stopPress(){ hal::ControlSample c{}; c.resetButton={hal::ButtonEdge::Pressed,true}; return c; }
 bool hasPixels(const hal::OledDisplay& d){ const auto& fb=d.framebufferForTest(); return std::any_of(fb.begin(),fb.end(),[](std::uint8_t v){return v!=0U;}); }
 
 struct Fixture {
@@ -89,7 +93,13 @@ void testPixelRaidIntroStartsOnTap(){ assertIntroStartsOnTap(game::ArcadeTitle::
 void testFormula1IntroStartsOnTap(){ assertIntroStartsOnTap(game::ArcadeTitle::Formula1); }
 void testBreakoutIntroStartsOnTap(){ assertIntroStartsOnTap(game::ArcadeTitle::Breakout); }
 void testEggJourneyIntroStartsOnTap(){ assertIntroStartsOnTap(game::ArcadeTitle::EggJourney); }
-void testBeatknechtIntroStartsOnTap(){ assertIntroStartsOnTap(game::ArcadeTitle::Beatknecht); }
+void testBeatknechtIntroUsesPlayInsteadOfTap(){
+    Fixture f; game::ArcadeShell shell(f.display,game::ArcadeTitle::Beatknecht,nullptr); shell.begin(0U);
+    TEST_ASSERT_EQUAL(game::ArcadeShell::Action::None,shell.update(tapPress(),1U));
+    TEST_ASSERT_EQUAL(game::ArcadeShell::Screen::Intro,shell.screen());
+    TEST_ASSERT_EQUAL(game::ArcadeShell::Action::StartRun,shell.update(playPress(),2U));
+    TEST_ASSERT_TRUE(shell.playing());
+}
 
 void testPixelRaidHostRunKeepsRackOutputStageDisabled(){ Fixture f; game::PixelRaidGame g(f.display,f.controls,f.gates,f.leaderboard); g.run(); TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
 void testFormula1HostRunKeepsRackOutputStageDisabled(){ Fixture f; game::ArcadeLeaderboardStore l(f.storage,game::ArcadeGameId::Formula1); game::Formula1Game g(f.display,f.controls,f.gates,l); g.run(); TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
@@ -105,13 +115,63 @@ void testEggJourneyResetStartsAliveWithThreeLives(){ Fixture f; game::ArcadeLead
 void testBeatknechtEncoderChangesTempoWithoutChangingStyle(){ Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U); const auto style=game::BeatknechtTestAccess::style(g); hal::ControlSample c{}; c.encoderDelta=5; game::BeatknechtTestAccess::update(g,c,1U); TEST_ASSERT_TRUE(game::BeatknechtTestAccess::bpm(g)>120U); TEST_ASSERT_EQUAL_UINT8(style,game::BeatknechtTestAccess::style(g)); }
 void testBeatknechtTapChangesStyleWithoutResettingTempo(){ Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U); hal::ControlSample turn{}; turn.encoderDelta=5; game::BeatknechtTestAccess::update(g,turn,1U); const auto bpm=game::BeatknechtTestAccess::bpm(g); auto tap=tapPress(); game::BeatknechtTestAccess::update(g,tap,2U); TEST_ASSERT_EQUAL_UINT32(bpm,game::BeatknechtTestAccess::bpm(g)); TEST_ASSERT_EQUAL_UINT8(1U,game::BeatknechtTestAccess::style(g)); }
 
+void testBeatknechtPlayPausePreservesStepPhaseAndForcesGatesLow(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::update(g,playPress(),100U);
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Playing),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    TEST_ASSERT_EQUAL_UINT8(0U,game::BeatknechtTestAccess::step(g));
+    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferEnabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
+    TEST_ASSERT_EQUAL(HIGH,fakefw::pinValues[pinmap::kChannel1GateLedPin]);
+
+    game::BeatknechtTestAccess::update(g,playPress(),150U);
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Paused),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]);
+    game::BeatknechtTestAccess::update(g,{},500U);
+    TEST_ASSERT_EQUAL_UINT8(0U,game::BeatknechtTestAccess::step(g));
+
+    game::BeatknechtTestAccess::update(g,playPress(),500U);
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Playing),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    game::BeatknechtTestAccess::update(g,{},566U);
+    TEST_ASSERT_EQUAL_UINT8(0U,game::BeatknechtTestAccess::step(g));
+    game::BeatknechtTestAccess::update(g,{},567U);
+    TEST_ASSERT_EQUAL_UINT8(1U,game::BeatknechtTestAccess::step(g));
+}
+
+void testBeatknechtStopResetsPhaseDisablesOutputsAndPlayRestartsStepZero(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::update(g,playPress(),100U);
+    game::BeatknechtTestAccess::update(g,{},217U);
+    TEST_ASSERT_EQUAL_UINT8(1U,game::BeatknechtTestAccess::step(g));
+
+    game::BeatknechtTestAccess::update(g,stopPress(),220U);
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Stopped),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    TEST_ASSERT_EQUAL_UINT8(0U,game::BeatknechtTestAccess::step(g));
+    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
+    for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]);
+
+    game::BeatknechtTestAccess::update(g,playPress(),1000U);
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Playing),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    TEST_ASSERT_EQUAL_UINT8(0U,game::BeatknechtTestAccess::step(g));
+    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferEnabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
+    TEST_ASSERT_EQUAL(HIGH,fakefw::pinValues[pinmap::kChannel1GateLedPin]);
+}
+
+void testBeatknechtStopWinsOverSimultaneousPlay(){
+    Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); game::BeatknechtTestAccess::reset(g,0U);
+    game::BeatknechtTestAccess::update(g,playPress(),100U);
+    auto controls=playPress(); controls.resetButton={hal::ButtonEdge::Pressed,true};
+    game::BeatknechtTestAccess::update(g,controls,120U);
+    TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Stopped),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
+    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
+}
+
 }  // namespace
 
 int main(){ UNITY_BEGIN();
 RUN_TEST(testDefaultEasterEggIsBeatknecht);
 RUN_TEST(testLeaderboardRecordAppearsOnlyAfterFirstLaunchMarker);RUN_TEST(testLeaderboardClearRemovesScoresButRetainsStartedMarker);
 RUN_TEST(testPixelRaidIntroNeverAutoStarts);RUN_TEST(testFormula1IntroNeverAutoStarts);RUN_TEST(testBreakoutIntroNeverAutoStarts);RUN_TEST(testEggJourneyIntroNeverAutoStarts);RUN_TEST(testBeatknechtIntroNeverAutoStarts);
-RUN_TEST(testPixelRaidIntroStartsOnTap);RUN_TEST(testFormula1IntroStartsOnTap);RUN_TEST(testBreakoutIntroStartsOnTap);RUN_TEST(testEggJourneyIntroStartsOnTap);RUN_TEST(testBeatknechtIntroStartsOnTap);
+RUN_TEST(testPixelRaidIntroStartsOnTap);RUN_TEST(testFormula1IntroStartsOnTap);RUN_TEST(testBreakoutIntroStartsOnTap);RUN_TEST(testEggJourneyIntroStartsOnTap);RUN_TEST(testBeatknechtIntroUsesPlayInsteadOfTap);
 RUN_TEST(testPixelRaidHostRunKeepsRackOutputStageDisabled);RUN_TEST(testFormula1HostRunKeepsRackOutputStageDisabled);RUN_TEST(testBreakoutHostRunKeepsRackOutputStageDisabled);RUN_TEST(testEggJourneyHostRunKeepsRackOutputStageDisabled);RUN_TEST(testBeatknechtHostRunStartsWithRackOutputStageDisabled);
-RUN_TEST(testPixelRaidResetStartsWithThreeLives);RUN_TEST(testPixelRaidInitialAlienFieldHasExpectedCollision);RUN_TEST(testFormula1AcceleratesDuringNormalPlay);RUN_TEST(testBreakoutResetWaitsForExplicitLaunch);RUN_TEST(testEggJourneyResetStartsAliveWithThreeLives);RUN_TEST(testBeatknechtEncoderChangesTempoWithoutChangingStyle);RUN_TEST(testBeatknechtTapChangesStyleWithoutResettingTempo);
+RUN_TEST(testPixelRaidResetStartsWithThreeLives);RUN_TEST(testPixelRaidInitialAlienFieldHasExpectedCollision);RUN_TEST(testFormula1AcceleratesDuringNormalPlay);RUN_TEST(testBreakoutResetWaitsForExplicitLaunch);RUN_TEST(testEggJourneyResetStartsAliveWithThreeLives);RUN_TEST(testBeatknechtEncoderChangesTempoWithoutChangingStyle);RUN_TEST(testBeatknechtTapChangesStyleWithoutResettingTempo);RUN_TEST(testBeatknechtPlayPausePreservesStepPhaseAndForcesGatesLow);RUN_TEST(testBeatknechtStopResetsPhaseDisablesOutputsAndPlayRestartsStepZero);RUN_TEST(testBeatknechtStopWinsOverSimultaneousPlay);
 return UNITY_END(); }

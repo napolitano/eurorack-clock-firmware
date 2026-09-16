@@ -67,12 +67,12 @@ int main() {
     }
     runtime.setButton(SimButton::Encoder, false);
     runtime.advanceMicroseconds(35000ULL);
-    runtime.setButton(SimButton::Tap, true);
+    runtime.setButton(SimButton::Play, true);
     runtime.advanceMicroseconds(45000ULL);
     if (!runtime.outputStageEnabled()) {
-        return fail("default BEATKNECHT must enable the output stage only after explicit launch");
+        return fail("default BEATKNECHT must enable the output stage only after PLAY");
     }
-    runtime.setButton(SimButton::Tap, false);
+    runtime.setButton(SimButton::Play, false);
     runtime.setPower(false);
     runtime.setButton(SimButton::Encoder, false);
     runtime.setPower(true);

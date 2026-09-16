@@ -58,8 +58,10 @@ void ArcadeShell::begin(const std::uint32_t nowMs) {
 
 ArcadeShell::Action ArcadeShell::update(const hal::ControlSample& controls, const std::uint32_t /*nowMs*/) {
     if (screen_ == Screen::Intro) {
-        const bool startRequested = controls.tapButton.edge == hal::ButtonEdge::Pressed ||
-            controls.encoderButton.edge == hal::ButtonEdge::Pressed;
+        const bool startRequested = title_ == ArcadeTitle::Beatknecht
+            ? controls.transportButton.edge == hal::ButtonEdge::Pressed
+            : (controls.tapButton.edge == hal::ButtonEdge::Pressed ||
+                controls.encoderButton.edge == hal::ButtonEdge::Pressed);
         if (startRequested) {
             screen_ = Screen::Playing;
             return Action::StartRun;

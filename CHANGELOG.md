@@ -8,6 +8,21 @@ This project is still in active development. Until the first stable release, ver
 
 
 
+## [0.19.0-beta.14] - 2026-09-16
+
+### Changed
+
+- Gave **BEATKNECHT** a dedicated transport contract: PLAY starts the rhythm from its intro and toggles PLAY/PAUSE thereafter; STOP/BACK immediately forces all eight gates LOW, resets the pattern to step 1, and disables the output stage until PLAY is pressed again.
+- PAUSE now preserves the remaining interval to the next sixteenth-note step, so resuming continues the pattern phase instead of jumping or retriggering.
+- TAP is now exclusively the BEATKNECHT style selector and the encoder remains exclusively the tempo control; TAP no longer doubles as the intro-start gesture.
+- Added a compact PLAY/PAUSE/STOP state glyph to the BEATKNECHT performance display.
+
+### Tests
+
+- Added regressions for PLAY start, phase-preserving pause/resume, STOP phase reset/output disable, restart from step 1, and STOP priority over simultaneous transport input.
+- Expanded `test_easter_eggs` from 25 to **28** named cases and the public Native inventory from 372 to **375** tests.
+- Updated the simulator boot-Easter-egg contract to launch the default BEATKNECHT build through the physical PLAY control.
+
 ## [0.19.0-beta.13] - 2026-09-16
 
 ### Release pipeline

@@ -9,6 +9,7 @@
 
 #include <cstdint>
 
+#include "domain/clock_types.h"
 #include "game/arcade_shell.h"
 #include "hal/control_panel.h"
 #include "hal/gate_output_driver.h"
@@ -40,6 +41,12 @@ private:
     void render();
     /** @brief Emits the active gates for one sixteenth-note pattern step. */
     void triggerStep(std::uint32_t nowMs);
+    /** @brief Starts from STOP or resumes a paused rhythm without resetting tempo/style. */
+    void startOrResume(std::uint32_t nowMs);
+    /** @brief Pauses rhythm timing, preserves the remaining step interval, and forces all gates LOW. */
+    void pause(std::uint32_t nowMs);
+    /** @brief Stops playback, resets the pattern phase to step one, and disables the output stage. */
+    void stop();
     /** @brief Drives all eight gate sources low immediately. */
     void stopOutputs();
     /** @brief Returns the current sixteenth-note duration in milliseconds. */
@@ -56,6 +63,8 @@ private:
     std::uint32_t nextStepAtMs_ = 0U;
     std::uint32_t gatesOffAtMs_ = 0U;
     std::uint32_t encoderPressedAtMs_ = 0U;
+    std::uint32_t pausedStepRemainingMs_ = 0U;
+    TransportState transport_ = TransportState::Stopped;
 #ifdef CLOCK_SIMULATOR
     std::uint32_t lastSimulatorFrameAtMs_ = 0U;
 #endif
