@@ -17,7 +17,7 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `0.19.0-beta.14`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, dual SPI/I2C display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
+> **Current status: `0.19.0-beta.14`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, SPI display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
 
 **HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
 
@@ -77,7 +77,7 @@ The hard physical-HIL release gate deliberately starts at **1.5.0**; before then
 | Outputs | 8 gate/clock outputs, target 0/+5 V, individual activity LEDs |
 | Inputs | Separate SYNC and RST inputs through the planned LM393 conditioning stage; no general parameter-CV inputs by design |
 | MCU | STM32F401CCU6 Black Pill, 84 MHz Cortex-M4 |
-| Display | 128×64 SSD1306/SSD1315; SPI reference path, bounded deferred I2C alternative |
+| Display | 128×64 SSD1306/SSD1315 over the final 4-wire SPI pin map |
 | Controls | Push encoder + PLAY/PAUSE + TAP + STOP/BACK |
 | Topologies | Independent, One Clock, Divider Bank |
 | Channel functions | Off, Clock, Euclid, Sequencer |
@@ -172,12 +172,14 @@ The normal interaction grammar is deliberately small:
 | Encoder short press | Open overview | Confirm selection | Enter/confirm/toggle step |
 | Encoder long press | Open current context settings | Open highlighted settings | Context dependent |
 | TAP + encoder press | Open Settings | - | - |
-
-`SETTINGS → GENERAL SETTINGS` also contains **DIAGNOSTICS**, plus two persistent device-local installation preferences: **ENCODER DIR** (`NORMAL / REVERSED`) changes the semantic rotary direction without altering the quadrature decoder, and **ORIENTATION** (`0 DEG / 180 DEG`) rotates the OLED transfer framebuffer. `DIAGNOSTICS → INPUTS` shows the live conditioned SYNC/RST digital levels; `DIAGNOSTICS → OUTPUTS` shows the eight gate source levels in a 4×2 indicator grid. These preferences belong to the module itself and are deliberately not changed by named presets or factory templates.
 | Hold TAP + encoder turn | - | Open six-function palette | - |
 | PLAY/PAUSE | Play/pause | - | Sequencer: next 16-step page |
 | TAP | Tap Tempo | Modifier | Sequencer: previous 16-step page |
 | STOP/BACK | Stop + reset global phase | Back/cancel | Back/cancel |
+
+`SETTINGS → GENERAL SETTINGS` also contains **DIAGNOSTICS**, plus two persistent device-local installation preferences: **ENCODER DIR** (`NORMAL / REVERSED`) changes the semantic rotary direction without altering the quadrature decoder, and **ORIENTATION** (`0 DEG / 180 DEG`) rotates the OLED transfer framebuffer. `DIAGNOSTICS → INPUTS` shows the live conditioned SYNC/RST digital levels; `DIAGNOSTICS → OUTPUTS` shows the eight gate source levels in a 4×2 indicator grid. These preferences belong to the module itself and are deliberately not changed by named presets or factory templates.
+
+The Settings root action is named **PHASE RESET** because it only re-anchors the global musical phase; it does not erase settings or presets. The destructive **FACTORY RESET** action is deliberately buried as the final `INFO` item and requires explicit `NO / YES` confirmation with `NO` selected by default.
 
 On Performance, the first TAP starts a tempo-measurement sequence without visual feedback. From the second TAP onward, each TAP restarts a compact **8×8 shrinking-dot animation** in a fixed right-aligned 8×8 slot at the display edge while the BPM numerals remain centered. The four non-blocking frames contract from a filled 8-pixel disc to a 2-pixel dot. If no new TAP arrives within one beat at the configured **MIN BPM**, both the Tap Tempo sequence and the visual sequence reset; the next TAP is again the silent first tap.
 
@@ -195,7 +197,7 @@ Factory templates provide useful starting states including a conventional clock 
 
 ## Display transport
 
-SPI remains the preferred/reference display transport. I2C is also supported for easier module sourcing, but it is deliberately isolated from musical timing:
+SPI is the final hardware display transport. The older I2C transport remains host-covered for regression/reference purposes only and is not exposed as a production Blackpill profile:
 
 - `present()` publishes a framebuffer; it does not perform an immediate I2C transfer;
 - at most one I2C transaction is serviced per foreground pass;
@@ -204,7 +206,7 @@ SPI remains the preferred/reference display transport. I2C is also supported for
 - stale UI frames may be discarded - latest frame wins;
 - NACKs are retried without pretending the physical display was updated.
 
-A slower I2C frame rate is acceptable. Additional gate jitter, missed edges, SYNC/RST faults or encoder loss are not. SPI-vs-I2C HIL under maximum display activity therefore remains an important qualification test. Its result is advisory to release automation through 1.4.x and becomes a hard gate from 1.5.0.
+Display work may never add gate jitter, missed edges, SYNC/RST faults or encoder loss. Final-board HIL therefore stresses the SPI path at maximum display activity.
 
 ## Native simulator
 
@@ -230,7 +232,7 @@ The reference hardware profile is SPI SSD1306:
 pio run -e blackpill_f401cc_spi_ssd1306
 ```
 
-Additional profiles cover SPI SSD1315 and I2C SSD1306/SSD1315. The custom linker/upload path protects the Flash sectors reserved for A/B persistence.
+An additional production profile covers SPI SSD1315. The custom linker/upload path protects the Flash sectors reserved for A/B persistence.
 
 ### Native tests
 
@@ -250,10 +252,10 @@ Current inventory: **398 explicitly named Native test cases**. PlatformIO expose
 | `test_swing` | 22 | atomic swing mathematics plus observed engine edge spacing and pair-duration conservation |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
-| `test_controls` | 51 | TIM2 quadrature counting, detent-phase resynchronization after missed/coalesced edges and encoder-push phase shifts, first-detent and direction-reversal recovery, counter wraparound, NORMAL/REVERSED recovery, alternating single-detent stress, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
+| `test_controls` | 51 | TIM4 quadrature counting on PB6/PB7, detent-phase resynchronization after missed/coalesced edges and encoder-push phase shifts, first-detent and direction-reversal recovery, counter wraparound, NORMAL/REVERSED recovery, alternating single-detent stress, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
 | `test_settings` | 56 | settings limits, device-local encoder/display preferences, enum transitions, timing invariants, channel/Euclid/Sequencer edits and invalid-input behavior |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
-| `test_easter_eggs` | 34 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
+| `test_easter_eggs` | 36 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
 | `test_host_firmware` | 27 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
 
 The default Native run executes more than **223,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
@@ -289,6 +291,7 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | [GitHub Wiki publication](docs/WIKI.md) | Generated Wiki structure, automatic sync and ODT manual download |
 | [V1 Forward-Compatibility Audit](docs/V1_FORWARD_COMPATIBILITY.md) | Persistence/event-architecture constraints that protect later 1.x migration |
 | [Development](docs/DEVELOPMENT.md) | Developer workflow and quality gates |
+| [Release Process](docs/RELEASE_PROCESS.md) | Firmware flavor matrix, manual/licensing payload, provenance and GitHub publication contract |
 | [Doxygen](Doxyfile) | Source-level API documentation |
 
 The curated manual screenshots are generated from the **real production framebuffer**, not redrawn mockups. Their catalog and human-readable descriptions live in [`docs/manual/assets/manual-screenshots.tsv`](docs/manual/assets/manual-screenshots.tsv).

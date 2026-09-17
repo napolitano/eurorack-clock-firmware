@@ -22,10 +22,32 @@ except ImportError as exc:
 PNG_VERSION_KEY = "clock_firmware_version"
 ODT_MIMETYPE = b"application/vnd.oasis.opendocument.text"
 VERSION_TEXT_RE = re.compile(r"\b[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\b")
+ROOT = Path(__file__).resolve().parents[1]
+REPOSITORY_URL = "https://github.com/napolitano/eurorack-clock-firmware"
+REPOSITORY_QR = ROOT / "docs" / "manual" / "assets" / "repository-qr.png"
+
 PRERELEASE_VERSION_RE = re.compile(
     r"\b[0-9]+\.[0-9]+\.[0-9]+-(?:alpha|beta|rc)\.[0-9]+\b",
     re.IGNORECASE,
 )
+
+
+
+def requires_release_license_section(version: str) -> bool:
+    """Return whether this manual version is covered by the beta.14+ release-license contract."""
+    match = re.fullmatch(r"(\d+)\.(\d+)\.(\d+)(?:-(alpha|beta|rc)\.(\d+))?", version, re.IGNORECASE)
+    if match is None:
+        return True
+    base = tuple(int(match.group(i)) for i in range(1, 4))
+    if base != (0, 19, 0):
+        return base > (0, 19, 0)
+    stage = (match.group(4) or "stable").lower()
+    number = int(match.group(5) or 0)
+    if stage == "alpha":
+        return False
+    if stage == "beta":
+        return number >= 14
+    return True
 
 
 def run_text(command: list[str]) -> str:
@@ -83,6 +105,36 @@ def validate_odt(path: Path, version: str) -> None:
         ]
         if values != [version]:
             raise RuntimeError(f"Manual FirmwareVersion metadata mismatch: {values!r}")
+
+        if requires_release_license_section(version):
+            required_release_text = (
+                "LICENSES AND SOURCE",
+                "Firmware license",
+                "Third-party license notices",
+                "PolyForm Noncommercial License 1.0.0",
+                "GNU Arm Embedded Toolchain 7.2.1",
+                REPOSITORY_URL,
+            )
+            for required in required_release_text:
+                if required not in content_xml:
+                    raise RuntimeError(f"Manual release-license section is missing: {required}")
+            license_pos = content_xml.find("LICENSES AND SOURCE")
+            colophon_pos = content_xml.upper().find("COLOPHON")
+            if license_pos < 0 or colophon_pos < 0 or license_pos > colophon_pos:
+                raise RuntimeError("Manual release-license section must appear before the Colophon")
+            qr_match = re.search(
+                r'draw:name="RepositoryQR"[^>]*>\s*<draw:image[^>]*xlink:href="([^"]+)"',
+                content_xml,
+            )
+            if qr_match is None:
+                raise RuntimeError("Manual repository QR image is missing")
+            qr_href = qr_match.group(1)
+            if qr_href not in archive.namelist():
+                raise RuntimeError(f"Manual repository QR payload missing: {qr_href}")
+            if not REPOSITORY_QR.is_file():
+                raise RuntimeError(f"Canonical repository QR asset missing: {REPOSITORY_QR}")
+            if archive.read(qr_href) != REPOSITORY_QR.read_bytes():
+                raise RuntimeError("Embedded repository QR does not match the canonical asset")
 
         full_pages = page_images(content_xml, archive)
         if len(full_pages) != 2:

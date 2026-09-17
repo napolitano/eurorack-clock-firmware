@@ -14,7 +14,6 @@ The target interrupt hierarchy is deliberately asymmetric:
 | --- | ---: | --- |
 | TIM3 scheduler | 0 | gate edges, pulse termination, phase, SYNC/RST consumption |
 | GPIO EXTI | 4 | conditioned SYNC/RST edge capture |
-| I2C peripheral | 8 | OLED transport only |
 | Foreground | n/a | UI, rendering, display service, persistence scheduling |
 
 STM32 NVIC priorities use lower numbers for higher preemption priority. The scheduler therefore remains able to preempt display and input-service activity.
@@ -25,7 +24,7 @@ The current scheduler is service-tick based rather than final output-compare sch
 
 The physical encoder and the external timing inputs deliberately use different capture paths.
 
-The PEC11L A/B contacts are wired to PA0/PA1 and decoded by **TIM2 encoder mode**. The timer counts quadrature transitions in hardware; foreground control processing converts the wrapping transition count into mechanical detents and applies detent-phase resynchronization plus the user `NORMAL / REVERSED` semantic direction. The encoder therefore does not depend on GPIO EXTI delivery or display-loop latency.
+The PEC11L A/B contacts are wired to PB6/PB7 and decoded by **TIM4 encoder mode**. The timer counts quadrature transitions in hardware; foreground control processing converts the wrapping transition count into mechanical detents and applies detent-phase resynchronization plus the user `NORMAL / REVERSED` semantic direction. The encoder therefore does not depend on GPIO EXTI delivery or display-loop latency.
 
 Conditioned SYNC/RST inputs remain GPIO-interrupt driven. Their ISR work is limited to timestamping/queuing conditioned levels. The 20 kHz scheduler consumes those queues. RST has precedence over SYNC when both are pending at the same scheduler service boundary.
 
@@ -33,15 +32,15 @@ The V1 baseline timestamps conditioned SYNC edges through GPIO EXTI. Final hardw
 
 ## Display transports
 
-SPI and I2C remain fully supported build-time options. They intentionally have different refresh strategies.
+Final hardware uses SPI. The legacy I2C transport is retained only as a host regression path and is not a production Blackpill profile.
 
 ### SPI — reference transport
 
 SPI is the default PlatformIO/reference profile. `present()` transfers dirty pages immediately. The dedicated bus is fast enough that this remains the simplest path and it does not inherit the additional scheduling machinery required by I2C.
 
-### I2C — procurement-compatible transport
+### Legacy I2C transport — regression/reference only
 
-I2C is treated as a supported production option, not a legacy test path. blocking STM32Cube I2C master transmissions can keep the foreground waiting for transfer completion, so CLOCK never sends a complete 1 KiB framebuffer from one runtime `present()` call.
+I2C is no longer a supported production wiring option because PB6/PB7 are reserved for the encoder. The implementation remains regression-tested so older transport logic does not silently rot; blocking STM32Cube I2C master transmissions can keep the foreground waiting for transfer completion, so CLOCK never sends a complete 1 KiB framebuffer from one runtime `present()` call.
 
 Instead:
 
@@ -70,15 +69,15 @@ The following invariants are release requirements:
 - display transport must not change generated clock frequency;
 - no gate edge may be omitted because a display transfer is active;
 - configured gate lengths remain scheduler-quantized but transport-independent;
-- TIM2 encoder transitions must continue accumulating while foreground display work is active, and foreground detent conversion must not lose a complete mechanical detent;
+- TIM4 encoder transitions must continue accumulating while foreground display work is active, and foreground detent conversion must not lose a complete mechanical detent;
 - conditioned SYNC/RST edges must remain capturable while OLED traffic is active;
-- I2C is allowed to lower visual frame rate or skip stale frames under load;
+- legacy I2C regression builds may lower visual frame rate or skip stale frames under load;
 - persistence writes remain prohibited while PLAYING because STM32F4 Flash programming can stall instruction/data fetches.
 
 ## Verification layers
 
-Host tests prove the state-machine and scheduling contract: fixed-point timing, gate lengths, SYNC/RST semantics, TIM2-style wrapping encoder accumulation/detent recovery, I2C transaction bounds, latest-frame-wins behavior, and SPI/I2C build equivalence. Physical encoder contact behavior remains a HIL concern.
+Host tests prove the state-machine and scheduling contract: fixed-point timing, gate lengths, SYNC/RST semantics, TIM4-style wrapping encoder accumulation/detent recovery, I2C transaction bounds, latest-frame-wins behavior, and SPI/I2C build equivalence. Physical encoder contact behavior remains a HIL concern.
 
-Only HIL can establish actual edge jitter, IRQ latency, I2C/SPI electrical behavior, comparator thresholds, and the final timing distribution at the jacks. The required bench matrix is defined in [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).
+Only HIL can establish actual edge jitter, IRQ latency, SPI electrical behavior, comparator thresholds, and the final timing distribution at the jacks. The required bench matrix is defined in [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).
 
 <h6 align="center">From Munich with &#9829;</h6>

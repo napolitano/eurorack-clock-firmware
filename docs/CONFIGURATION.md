@@ -10,7 +10,7 @@ The prerelease firmware deliberately keeps the most frequently edited compile-ti
 Use this file for firmware policy and hardware-independent compile-time behavior:
 
 - active UI language
-- display transport (`I2c` or `Spi`)
+- display transport (final hardware: `Spi`; legacy I2C path retained for host regression)
 - display geometry, address, normal/dim contrast, and bus speeds
 - boot duration and refresh interval
 - scheduler frequency
@@ -18,34 +18,31 @@ Use this file for firmware policy and hardware-independent compile-time behavior
 - compile-time boot Easter egg (`CLOCK_EASTER_EGG`)
 - hard technical BPM range (currently 1–999; distinct from user factory limits)
 
-The OLED HAL supports both **SSD1306** and **SSD1315** 128×64 controllers over I2C or 4-wire SPI. Controller choice and physical wiring are independent compile-time settings.
+The final CLOCK hardware supports **SSD1306** and **SSD1315** 128×64 controllers over 4-wire SPI. The legacy I2C transport remains in the HAL only for regression/reference builds; PB6/PB7 are now dedicated to the encoder.
 
-Current physical prototype/default build:
+Current final-hardware/default build:
 
 ```text
 controller  SSD1306
-transport   SPI
-SCK         PA5
-MOSI / DIN  PA7
-MISO        PA6 (MCU-side SPI requirement only; not connected to OLED)
+transport   4-wire SPI
+CLK         PA5
+DIN         PA7  (SPI MOSI; labeled SDA on the earlier prototype module)
 CS          PA4
-D/C         PB9
-RESET       PB15
+DC          PB9
+RES         PB15
 SPI clock   1 MHz
 ```
 
-PlatformIO provides explicit controller/transport profiles:
+The display-side labels are authoritative for wiring the target module: **GND, VCC, CLK, DIN, RES, DC, CS**. The earlier prototype OLED used **SCL/SDA/RES/DC/CS** silk-screen labels even in SPI mode; on that module SCL was the SPI clock and SDA was the SPI data input. This does not indicate I2C operation.
+
+PlatformIO provides the two production controller profiles:
 
 ```bash
 pio run -e blackpill_f401cc_spi_ssd1315
 pio run -e blackpill_f401cc_spi_ssd1306
-pio run -e blackpill_f401cc_i2c_ssd1315
-pio run -e blackpill_f401cc_i2c_ssd1306
 ```
 
-`blackpill_f401cc_spi` remains a compatibility alias for the SSD1306 SPI profile. The generic `blackpill_f401cc` base environment remains I2C-compatible, while `default_envs` selects the SPI SSD1306 reference build. Runtime I2C framebuffer refresh is deferred and bounded; see [`TIMING.md`](TIMING.md).
-
-The controller can also be selected directly with `CLOCK_DISPLAY_CONTROLLER=1306` or `1315`; transport uses `CLOCK_DISPLAY_USE_SPI=0/1`.
+`blackpill_f401cc_spi` remains a compatibility alias for the SSD1306 SPI profile. `default_envs` selects the SPI SSD1306 reference build. The controller can also be selected directly with `CLOCK_DISPLAY_CONTROLLER=1306` or `1315`.
 
 ### Boot Easter egg
 
@@ -59,7 +56,7 @@ The controller can also be selected directly with `CLOCK_DISPLAY_CONTROLLER=1306
 | `4` | Egg Journey | auto-scrolling parallax terrain; encoder forward/backward, TAP jump/retry; three lives/progression; score + independent Top 100 |
 | `5` **(default)** | BEATKNECHT | PLAY/PAUSE controls rhythm transport; STOP resets to step 1; TAP cycles styles; encoder changes BPM; long encoder push opens a guarded NO/YES exit confirmation; eight curated 16-step gate patterns drive OUT 1–8; no leaderboard |
 
-The boot chord is unchanged: hold encoder push throughout the boot screen. Every selection opens with an individual retro intro and there is no automatic timeout into gameplay. The four ranked games start with TAP or encoder PUSH; BEATKNECHT starts with PLAY so TAP remains exclusively its style control. Ranked arcade games route final scores through the shared initials/scrollable Top-100 flow; BACK from the ranking starts a new run and a long encoder hold exits. Existing single-score prerelease records are retained as migration fallbacks. All modes run before the normal clock scheduler starts. The arcade games keep the external gate-output stage disabled; BEATKNECHT intentionally enables it only after PLAY leaves its intro. PLAY/PAUSE then controls transport, STOP resets phase and disables the output stage, and a long encoder push opens a NO/YES confirmation. The prompt silences active gates; NO restores the previous transport state, while YES exits with every output LOW and the output stage disabled.
+The boot chord is unchanged: hold encoder push throughout the boot screen. Every selection opens with an individual retro intro and there is no automatic timeout into gameplay. The four ranked games start with TAP or encoder PUSH; BEATKNECHT starts with PLAY so TAP remains exclusively its style control. Ranked arcade games route final scores through the shared initials/scrollable Top-100 flow; BACK from the ranking starts a new run and a long encoder hold exits. Existing single-score prerelease records are retained as migration fallbacks. All modes run before the normal clock scheduler starts. The arcade games keep all gate source GPIOs muted; BEATKNECHT intentionally allows gate output only after PLAY leaves its intro. PLAY/PAUSE then controls transport, STOP resets phase and mutes all gate sources, and a long encoder push opens a NO/YES confirmation. The prompt silences active gates; NO restores the previous transport state, while YES exits with every output LOW and gate output muted.
 
 ## `src/defaults.h`
 
@@ -82,7 +79,7 @@ Factory mode is **ONE CLOCK**. The UI palette order is **ONE CLOCK, DIVIDER, CLO
 
 ## Gate-output electrical contract
 
-The current hardware target is **0 V LOW / nominal +5 V HIGH** at OUT 1–8. The planned 74HCT244 translates the MCU logic domain to the 5 V output domain and provides the shared output-enable safety function. +10 V is intentionally not a supported output level in this architecture; adding it would require a separate higher-voltage driver/level-shifter stage plus a renewed protection and load-current review.
+The current hardware target is **0 V LOW / nominal +5 V HIGH** at OUT 1–8. The gate buffer translates the MCU logic domain to the 5 V output domain. The final MCU pin map has no dedicated `/OE` control line, so firmware safety is enforced by forcing every source GPIO LOW whenever logical gate output is disabled. +10 V is intentionally not a supported output level in this architecture; adding it would require a separate higher-voltage driver/level-shifter stage plus a renewed protection and load-current review.
 
 ## Analog/CV product boundary
 
@@ -100,44 +97,39 @@ Current mappings include. Gate/LED channels are also exposed as individually nam
 
 | Function | STM32 pin |
 | --- | --- |
-| Encoder phase A / CLK | PA0 |
-| Encoder phase B / DT | PA1 |
-| Encoder push | PB10 |
-| PLAY/PAUSE button | PB12 |
-| TAP TEMPO button | PB13 |
-| RESET/BACK button | PB14 |
-| Gate/LED channel 1 | PA2 |
-| Gate/LED channel 2 | PA3 |
-| Gate/LED channel 3 | PA8 |
-| Gate/LED channel 4 | PA9 |
-| Gate/LED channel 5 | PA10 |
-| Gate/LED channel 6 | PB0 |
-| Gate/LED channel 7 | PB1 |
-| Gate/LED channel 8 | PB5 |
-| 74HCT244 `/OE` | PB8 |
-| OLED I2C SDA | PB7 |
-| OLED I2C SCL | PB6 |
-| OLED SPI SCK | PA5 |
-| OLED SPI MOSI / DIN | PA7 |
-| OLED SPI MISO | PA6 — MCU-side only; no OLED connection |
+| PLAY/PAUSE button | PA1 |
+| RESET/BACK button | PA2 |
+| TAP TEMPO button | PA3 |
 | OLED SPI CS | PA4 |
-| OLED SPI D/C | PB9 |
-| OLED SPI RESET | PB15 |
+| OLED clock (`CLK`; `SCL` on the prototype module) | PA5 |
+| OLED data (`DIN`; SPI MOSI; `SDA` on the prototype module) | PA7 |
+| SYNC comparator input | PA8 |
+| RST comparator input | PA9 |
+| Gate/LED channel 1 | PB0 |
+| Gate/LED channel 2 | PB1 |
+| Gate/LED channel 3 | PB2 |
+| Gate/LED channel 4 | PB5 |
+| Encoder phase A / CLK | PB6 (TIM4_CH1) |
+| Encoder phase B / DT | PB7 (TIM4_CH2) |
+| Gate/LED channel 5 | PB8 |
+| OLED data/command (`DC`) | PB9 |
+| Gate/LED channel 6 | PB10 |
+| Gate/LED channel 7 | PB12 |
+| Gate/LED channel 8 | PB13 |
+| Encoder push | PB14 |
+| OLED reset (`RES`) | PB15 |
+| Gate-buffer `/OE` | not MCU-controlled in the final pin map |
 
-Every display signal is independently overridable from PlatformIO build flags:
+SPI display signals remain independently overridable from PlatformIO build flags:
 
 | Build macro | Default |
 | --- | --- |
-| `CLOCK_DISPLAY_I2C_SDA_PIN` | `PB7` |
-| `CLOCK_DISPLAY_I2C_SCL_PIN` | `PB6` |
 | `CLOCK_DISPLAY_SPI_SCK_PIN` | `PA5` |
 | `CLOCK_DISPLAY_SPI_MOSI_PIN` | `PA7` |
-| `CLOCK_DISPLAY_SPI_MISO_PIN` | `PA6` |
 | `CLOCK_DISPLAY_SPI_CS_PIN` | `PA4` |
 | `CLOCK_DISPLAY_SPI_DC_PIN` | `PB9` |
 | `CLOCK_DISPLAY_RESET_PIN` | `PB15` |
 | `CLOCK_DISPLAY_SPI_FREQUENCY_HZ` | `1000000` |
-| `CLOCK_DISPLAY_I2C_FREQUENCY_HZ` | `400000` |
 
 A board revision can therefore remap the OLED without editing source code, for example:
 
@@ -153,9 +145,9 @@ build_flags =
 
 Use CLOCK's framework-independent encoded pin constants (`clockfw::mcu::PA7`, `clockfw::mcu::PB9`, etc.) for these macros. The STM32Cube HAL maps those identifiers to the selected GPIO/alternate-function configuration.
 
-The current prototype SPI bus is deliberately limited to **1 MHz** for breadboard/point-to-point bring-up margin. Both supported controller families permit substantially faster serial operation, but the prototype wiring is not treated as a controlled-impedance PCB interconnect.
+The SPI bus is deliberately limited to **1 MHz** for prototype/first-PCB bring-up margin. Both supported controller families permit substantially faster serial operation, but the prototype wiring is not treated as a controlled-impedance PCB interconnect.
 
-The external-sync signal and Thonkiconn jack-detect switch remain explicitly `unassigned` until the final input routing is frozen. This is preferable to inventing a provisional pin that could silently become a hardware dependency.
+The final comparator outputs are fixed at PA8 for SYNC and PA9 for RST. Jack-detect contacts remain unassigned in firmware unless a later PCB revision routes dedicated detect signals.
 
 ## `src/ui_text.h`
 

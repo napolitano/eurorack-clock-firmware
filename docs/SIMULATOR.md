@@ -34,14 +34,14 @@ This makes the simulator useful for UI work, timing regression checks, persisten
 - encoder quadrature and encoder push;
 - PLAY, TAP, and STOP/BACK buttons, including the firmware's real debounce code;
 - all eight gate/LED source signals;
-- HCT244 output-enable state;
+- logical gate-output mute state;
 - the real 20 kHz scheduler callback;
 - all CLOCK, EUCLID, SEQUENCER, OFF, One Clock, and Divider Bank logic;
 - current settings, eight preset slots, and the arcade leaderboards through the durable 8192-byte host persistence image;
 - screensaver/dim/display-off behavior;
 - accelerated virtual time at 1×, 4×, or 16×;
 - a scrolling developer oscilloscope with rising-edge counters, transport-anchored musical reference lines, and fixed 0.5 / 1 / 2 / 4 / 8 / 16 / 32 second visible spans;
-- explicit `HI` / `LO` state at every output jack (`HZ` while the HCT244 output stage is disabled);
+- explicit `HI` / `LO` state at every output jack;
 - virtual sources patched to **SYNC IN** and **RST IN**, each with SQUARE / SINE / TRIANGLE generation and an ideal comparator exposing conditioned `HI` / `LO`;
 - SYNC tempo/PPQN acquisition, lock/loss state, and phase/tempo injection into the real clock engine;
 - continuous and one-shot RST edges that invoke the real engine global-reset boundary without stopping transport;
@@ -60,8 +60,8 @@ The separate Native `test_sync_behavior` suite adds a nominal host-only model of
 The simulator intentionally distinguishes firmware behavior from electrical/HIL behavior:
 
 - The virtual comparators validate firmware-facing edge behavior only; they do not validate the future LM393/protection/timer-capture hardware.
-- Gate waveforms are logical MCU/HCT244-source events; analog edge shape, jack loading, comparator thresholds, and physical jitter remain HIL measurements.
-- POWER OFF is a host-side electrical abstraction: it clears volatile MCU/application state and the OLED and disables the output stage, while the simulator persistence file represents non-volatile Flash.
+- Gate waveforms are logical MCU source events; analog edge shape, output-buffer behavior, jack loading, comparator thresholds, and physical jitter remain HIL measurements.
+- POWER OFF is a host-side electrical abstraction: it clears volatile MCU/application state and the OLED and mutes gate output, while the simulator persistence file represents non-volatile Flash.
 - The one-second boot sequence is serviced non-blockingly in virtual time so intermediate boot frames and the boot-held `PIXEL RAID` chord can be exercised through the normal desktop event loop.
 
 These limitations are explicit so the simulator never claims to validate behavior that still requires the module or a later firmware refactor.
@@ -249,7 +249,7 @@ The right side of the simulator window is instrumentation, not part of the modul
 - top-level operating mode;
 - transport state;
 - virtual-time multiplier;
-- virtual POWER and HCT244 output-stage state;
+- virtual POWER and logical gate-output state;
 - virtual SYNC cable/run state, source waveform, comparator `HI`/`LO`, external BPM, PPQN, acquisition/lock state, and pulse count;
 - virtual RST cable/run state, source waveform, comparator `HI`/`LO`, period, and reset count;
 - 0.5 / 1 / 2 / 4 / 8 / 16 / 32 seconds of gate history for all eight channels;
@@ -258,7 +258,7 @@ The right side of the simulator window is instrumentation, not part of the modul
 - an interactive `FREEZE ON STOP` checkbox (enabled by default) that holds the reference time and retained waveform after STOP; disabling it lets the already-started scope continue scrolling;
 - rising-edge counts.
 
-Each output jack also carries an immediate logic annotation on the front-panel view: `HI`, `LO`, or `HZ` when the output buffer is disabled. Those annotations and the waveform remain electrically exact. The separate LED above each jack adds a 75 ms perceptual hold at 1× virtual time (scaled with simulator speed) so a real 1–10 ms trigger cannot disappear between desktop render frames. The developer row also reports the most recently completed pulse width in milliseconds.
+Each output jack also carries an immediate logic annotation on the front-panel view: `HI` or `LO`, matching the gate source level currently written by firmware. Those annotations and the waveform remain logically exact at the MCU boundary. The separate LED above each jack adds a 75 ms perceptual hold at 1× virtual time (scaled with simulator speed) so a real 1–10 ms trigger cannot disappear between desktop render frames. The developer row also reports the most recently completed pulse width in milliseconds.
 
 This makes phase/synchronization bugs directly visible. Before the first PLAY the scope is ARMED and does not advance. PLAY from STOP defines the transport epoch at `t=0`; older waveform data and its transport-relative reference lines then move left together. The grid period is derived from the effective internal/external BPM rather than rounded wall-clock divisions, so 0% Swing remains aligned even at tempos such as 127 or 130 BPM. A CLOCK/EUCLID/SEQ alignment regression, Swing displacement, phase offset, or One Clock Humanize offset can therefore be inspected against the unswung musical reference lattice rather than a decorative or fixed-millisecond ruler.
 

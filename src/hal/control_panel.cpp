@@ -52,8 +52,8 @@ ControlPanel::ControlPanel()
       resetButton_(pinmap::kResetBackButtonPin) {}
 
 void ControlPanel::begin() {
-    // PA0/PA1 are handled by the dedicated quadrature backend. On STM32F401 the
-    // production implementation is TIM2 encoder mode (x4), so the first physical
+    // PB6/PB7 are handled by the dedicated quadrature backend. On STM32F401 the
+    // production implementation is TIM4 encoder mode (x4), so the first physical
     // detent and every later direction change are counted independently of EXTI
     // latency or foreground/display work.
     (void)platform::beginQuadratureEncoder(

@@ -27,7 +27,7 @@ void attachInterrupt(mcu::Pin pin, InterruptCallback callback, InterruptEdge edg
 /**
  * @brief Starts the dedicated quadrature-encoder backend for the supplied A/B pins.
  *
- * Production uses TIM2 encoder mode on PA0/PA1 so contact transitions continue to
+ * Production uses TIM4 encoder mode on PB6/PB7 so contact transitions continue to
  * be counted even while foreground code or interrupts are temporarily delayed.
  * Host/simulator builds provide an equivalent software counter for deterministic tests.
  *

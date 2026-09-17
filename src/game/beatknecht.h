@@ -45,7 +45,7 @@ private:
     void startOrResume(std::uint32_t nowMs);
     /** @brief Pauses rhythm timing, preserves the remaining step interval, and forces all gates LOW. */
     void pause(std::uint32_t nowMs);
-    /** @brief Stops playback, resets the pattern phase to step one, and disables the output stage. */
+    /** @brief Stops playback, resets the pattern phase to step one, and mutes all gate source outputs. */
     void stop();
     /** @brief Drives all eight gate sources low immediately. */
     void stopOutputs();

@@ -18,7 +18,7 @@ This is the developer-facing Native entry point. Beta.4 deliberately makes timin
 | `test_swing` | 22 | swing pair mathematics and observable scheduler edge spacing |
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
 | `test_tap_tempo` | 24 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
-| `test_controls` | 51 | TIM2 encoder quadrature, detent-phase recovery after missed/coalesced transitions and encoder-push phase shifts, first-detent and immediate direction-reversal behavior, NORMAL/REVERSED direction mapping, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
+| `test_controls` | 51 | TIM4 encoder quadrature, detent-phase recovery after missed/coalesced transitions and encoder-push phase shifts, first-detent and immediate direction-reversal behavior, NORMAL/REVERSED direction mapping, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
 | `test_settings` | 56 | settings boundaries, encoder/display device preferences, enum transitions, invariants and channel/mode editor contracts |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 28 | intro launch gating, reset state, output safety and game-specific controls |

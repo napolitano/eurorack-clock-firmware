@@ -90,8 +90,13 @@ def audit_production_stack_frames() -> None:
         ])
 
 
-def compile_host_firmware_variant(name: str, defines: list[str]) -> Path:
-    """Compile the complete firmware against deterministic fake framework headers."""
+def compile_host_firmware_variant(name: str, defines: list[str], *, execute: bool = True) -> Path:
+    """Compile the complete firmware against deterministic fake framework headers.
+
+    Synthetic custom-wiring builds may be compile-only because their deliberate
+    pin remapping can alias unrelated fake GPIOs and therefore cannot represent
+    the final hardware runtime semantics.
+    """
     build_dir = BUILD_ROOT / name
     build_dir.mkdir(parents=True, exist_ok=True)
     executable = build_dir / "tests"
@@ -109,7 +114,8 @@ def compile_host_firmware_variant(name: str, defines: list[str]) -> Path:
         "-o", str(executable),
     ]
     run(command)
-    run([str(executable)], cwd=build_dir)
+    if execute:
+        run([str(executable)], cwd=build_dir)
     return build_dir
 
 
@@ -435,14 +441,14 @@ def run_sanitizer_matrix() -> None:
     compile_sanitized_behavior_suite("settings", settings_sources(), ROOT / "test/test_settings/test_main.cpp")
     compile_sanitized_behavior_suite("screensavers", screensaver_sources(), ROOT / "test/test_screensavers/test_main.cpp")
     compile_sanitized_behavior_suite("easter_eggs", easter_egg_sources(), ROOT / "test/test_easter_eggs/test_main.cpp")
-    compile_sanitized_firmware_variant("firmware_i2c", [])
+    compile_sanitized_firmware_variant("firmware_i2c_legacy", ["-DCLOCK_DISPLAY_USE_SPI=0", "-DCLOCK_DISPLAY_I2C_SDA_PIN=0xA00", "-DCLOCK_DISPLAY_I2C_SCL_PIN=0xA0A"])
     compile_sanitized_firmware_variant(
         "firmware_spi_ssd1306", ["-DCLOCK_DISPLAY_USE_SPI=1", "-DCLOCK_DISPLAY_CONTROLLER=1306"])
     compile_sanitized_firmware_variant(
         "firmware_spi_ssd1315", ["-DCLOCK_DISPLAY_USE_SPI=1", "-DCLOCK_DISPLAY_CONTROLLER=1315"])
     compile_sanitized_firmware_variant(
-        "firmware_i2c_fixed_reset",
-        ["-DCLOCK_DISPLAY_I2C_ADDRESS=0x3C", "-DCLOCK_DISPLAY_RESET_PIN=0xA06"],
+        "firmware_i2c_legacy_fixed_reset",
+        ["-DCLOCK_DISPLAY_USE_SPI=0", "-DCLOCK_ENFORCE_FINAL_PIN_MAP=0", "-DCLOCK_DISPLAY_I2C_SDA_PIN=0xA00", "-DCLOCK_DISPLAY_I2C_SCL_PIN=0xA0A", "-DCLOCK_DISPLAY_I2C_ADDRESS=0x3C", "-DCLOCK_DISPLAY_RESET_PIN=0xA06"],
     )
 
 
@@ -680,7 +686,8 @@ def main() -> int:
         compile_behavior_suite("settings", settings_sources(), ROOT / "test/test_settings/test_main.cpp"),
         compile_behavior_suite("screensavers", screensaver_sources(), ROOT / "test/test_screensavers/test_main.cpp"),
         compile_behavior_suite("easter_eggs", easter_egg_sources(), ROOT / "test/test_easter_eggs/test_main.cpp"),
-        compile_host_firmware_variant("firmware_i2c", []),
+        compile_host_firmware_variant("firmware_spi_default", []),
+        compile_host_firmware_variant("firmware_i2c_legacy", ["-DCLOCK_DISPLAY_USE_SPI=0", "-DCLOCK_DISPLAY_I2C_SDA_PIN=0xA00", "-DCLOCK_DISPLAY_I2C_SCL_PIN=0xA0A"]),
         compile_host_firmware_variant(
             "firmware_spi_ssd1306",
             ["-DCLOCK_DISPLAY_USE_SPI=1", "-DCLOCK_DISPLAY_CONTROLLER=1306"],
@@ -690,24 +697,28 @@ def main() -> int:
             ["-DCLOCK_DISPLAY_USE_SPI=1", "-DCLOCK_DISPLAY_CONTROLLER=1315"],
         ),
         compile_host_firmware_variant(
-            "firmware_spi_custom_wiring",
-            [
-                "-DCLOCK_DISPLAY_USE_SPI=1",
-                "-DCLOCK_DISPLAY_CONTROLLER=1315",
-                "-DCLOCK_DISPLAY_SPI_SCK_PIN=0xA08",
-                "-DCLOCK_DISPLAY_SPI_MOSI_PIN=0xA09",
-                "-DCLOCK_DISPLAY_SPI_MISO_PIN=0xA0A",
-                "-DCLOCK_DISPLAY_SPI_CS_PIN=0xB00",
-                "-DCLOCK_DISPLAY_SPI_DC_PIN=0xB01",
-                "-DCLOCK_DISPLAY_RESET_PIN=0xB05",
-            ],
-        ),
-        compile_host_firmware_variant(
-            "firmware_i2c_fixed_reset",
-            ["-DCLOCK_DISPLAY_I2C_ADDRESS=0x3C", "-DCLOCK_DISPLAY_RESET_PIN=0xA06"],
+            "firmware_i2c_legacy_fixed_reset",
+            ["-DCLOCK_DISPLAY_USE_SPI=0", "-DCLOCK_ENFORCE_FINAL_PIN_MAP=0", "-DCLOCK_DISPLAY_I2C_SDA_PIN=0xA00", "-DCLOCK_DISPLAY_I2C_SCL_PIN=0xA0A", "-DCLOCK_DISPLAY_I2C_ADDRESS=0x3C", "-DCLOCK_DISPLAY_RESET_PIN=0xA06"],
         ),
         compile_native_smoke(),
     ]
+    # Compile-only regression: verifies that explicit SPI pin overrides remain
+    # supported without pretending the intentionally aliased fake GPIO map is
+    # a valid final-hardware runtime configuration.
+    compile_host_firmware_variant(
+        "firmware_spi_custom_wiring",
+        [
+            "-DCLOCK_DISPLAY_USE_SPI=1",
+            "-DCLOCK_DISPLAY_CONTROLLER=1315",
+            "-DCLOCK_ENFORCE_FINAL_PIN_MAP=0",
+            "-DCLOCK_DISPLAY_SPI_SCK_PIN=0xA08",
+            "-DCLOCK_DISPLAY_SPI_MOSI_PIN=0xA09",
+            "-DCLOCK_DISPLAY_SPI_CS_PIN=0xB00",
+            "-DCLOCK_DISPLAY_SPI_DC_PIN=0xB01",
+            "-DCLOCK_DISPLAY_RESET_PIN=0xB05",
+        ],
+        execute=False,
+    )
     report = collect_coverage(build_dirs)
     write_coverage_report(report)
     enforce_thresholds(report, args.minimum_line, args.minimum_function, args.minimum_branch)

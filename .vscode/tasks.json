@@ -2,15 +2,6 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "CLOCK: Build I2C firmware",
-      "type": "shell",
-      "command": "pio run -e blackpill_f401cc",
-      "group": "build",
-      "problemMatcher": [
-        "$gcc"
-      ]
-    },
-    {
       "label": "CLOCK: Build SPI firmware (SSD1315)",
       "type": "shell",
       "command": "pio run -e blackpill_f401cc_spi_ssd1315",
@@ -35,14 +26,6 @@
       "label": "CLOCK: Upload SPI firmware (SSD1306, DFU)",
       "type": "shell",
       "command": "pio run -e blackpill_f401cc_spi_ssd1306 -t upload",
-      "problemMatcher": [
-        "$gcc"
-      ]
-    },
-    {
-      "label": "CLOCK: Upload I2C firmware (DFU)",
-      "type": "shell",
-      "command": "pio run -e blackpill_f401cc -t upload",
       "problemMatcher": [
         "$gcc"
       ]

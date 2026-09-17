@@ -72,13 +72,13 @@ void PanelRenderer::renderDeveloperPanel(
     std::snprintf(
         status,
         sizeof(status),
-        "BPM %u  %s  %s  SPEED %.0fx  POWER %s  BUFFER %s",
+        "BPM %u  %s  %s  SPEED %.0fx  POWER %s  GATES %s",
         static_cast<unsigned>(state.bpm),
         operatingModeName(state.operatingMode),
         transportName(state.transport),
         speedMultiplier,
         runtime.poweredOn() ? "ON" : "OFF",
-        runtime.outputStageEnabled() ? "ON" : "HIGH-Z");
+        runtime.outputStageEnabled() ? "ON" : "MUTED");
     drawText(renderer, 430.0F, 72.0F, status);
     const SyncInputTelemetry sync = runtime.syncInputTelemetry();
     char syncStatus[160]{};

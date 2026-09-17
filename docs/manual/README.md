@@ -26,6 +26,8 @@ This stamps the current `CLOCK_FIRMWARE_VERSION` into the ODT body, metadata, fr
 
 The release workflow converts the frozen ODT with LibreOffice and publishes **both ODT and PDF** as GitHub Release assets. The release PDF is checked for a non-zero page count, the expected firmware version, and Ubuntu-family font embedding. A separate `Manual publication smoke test` workflow exercises the same publication path for documentation changes.
 
+Before the Colophon, the release manual contains a dedicated **Licenses and source** section with the PolyForm firmware license notice, third-party runtime notices, and the canonical repository QR code from [`assets/repository-qr.png`](assets/repository-qr.png). `scripts/check_user_manual.py` verifies that the embedded QR payload exactly matches the canonical asset and points readers to `https://github.com/napolitano/eurorack-clock-firmware`.
+
 The generated GitHub Wiki also exposes the matching version-frozen ODT directly from its Home and **Manual & Downloads** pages. `scripts/build_wiki.py` refuses to generate a Wiki for a firmware version whose frozen ODT is missing.
 
 Local helpers:
@@ -50,7 +52,7 @@ The boot logo is no longer reconstructed from Bézier/line primitives at runtime
 | [`front-panel-anatomy.svg`](assets/front-panel-anatomy.svg) | numbered front-panel key generated from `sim/panel_layout.ini`; identify display, encoder, transport, SYNC/RST, outputs, and LEDs |
 | [`operating-modes.svg`](assets/operating-modes.svg) | explain Independent, One Clock, and Divider Bank |
 | [`timing-swing-phase.svg`](assets/timing-swing-phase.svg) | explain ideal grid, Swing, phase, and One Clock Humanize |
-| [`external-sync-flow.svg`](assets/external-sync-flow.svg) | separate implemented sync model from pending physical capture |
+| [`external-sync-flow.svg`](assets/external-sync-flow.svg) | separate the implemented GPIO EXTI capture path from pending analog input HIL |
 | [`persistence-ab.svg`](assets/persistence-ab.svg) | explain the two-slot internal-Flash commit strategy |
 | [`simulator-scope.svg`](assets/simulator-scope.svg) | explain the developer oscilloscope and musical ruler |
 | [`clock-logo.svg`](assets/clock-logo.svg) | canonical CLOCK vector wordmark used as the logo source |
@@ -58,6 +60,7 @@ The boot logo is no longer reconstructed from Bézier/line primitives at runtime
 | [`clock-logo.png`](assets/clock-logo.png) | transparent raster export of the CLOCK logo for documents that need PNG assets |
 | [`manual-screenshots.tsv`](assets/manual-screenshots.tsv) | generated screenshot catalog and human-readable state descriptions |
 | [`boot-1000-1x.png`](assets/boot-1000-1x.png) | exact 1:1 pixel export of the fully rendered OLED boot screen |
+| [`repository-qr.png`](assets/repository-qr.png) | canonical QR code for the firmware source repository, embedded in the Licenses and source section |
 
 > [!NOTE]
 > These are explanatory illustrations. `front-panel-anatomy.svg` is **not** a drill template, PCB drawing, or dimensional manufacturing source. Final mechanical drawings belong with the hardware CAD/KiCad deliverables.
@@ -127,7 +130,7 @@ The maintained manual follows this user-oriented publication structure:
 17. Firmware installation / update / recovery
 18. Technical appendix
 
-The editable manual follows development continuously. A release-frozen manual must not be treated as final hardware documentation until External Sync comparator/Input-Capture HIL, SPI/I2C timing HIL, and the final scheduler implementation are validated.
+The editable manual follows development continuously. A release-frozen manual must not be treated as final hardware documentation until External Sync comparator/Input-Capture HIL, SPI timing HIL, and the final scheduler implementation are validated.
 
 
 

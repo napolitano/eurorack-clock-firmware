@@ -210,9 +210,7 @@ void PanelRenderer::renderFrontPanel(
         setColor(renderer, 25U, 26U, 28U);
         drawCircle(renderer, center.x, center.y, jack.openingRadius, true);
 
-        const char* const levelText = !runtime.outputStageEnabled()
-            ? "HZ"
-            : (channels[index].logicHigh ? "HI" : "LO");
+        const char* const levelText = channels[index].logicHigh ? "HI" : "LO";
         setColor(renderer, channels[index].logicHigh ? 225U : 170U, 225U, channels[index].logicHigh ? 170U : 180U);
         drawText(renderer, center.x - 7.0F, center.y - 4.0F, levelText);
 

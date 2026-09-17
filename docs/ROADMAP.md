@@ -51,7 +51,7 @@ General CV parameter inputs would likewise add analog front ends, routing, jacks
 | Historical baseline | `0.19.0-alpha.63` | Implemented V1 feature set before freeze | Superseded by beta freeze |
 | **V1 feature freeze** | **`0.19.0-beta.1`** | Freeze product scope; audit persistence and event architecture for later 1.x migration; align docs and release semantics | Existing behavior unchanged; forward-compatibility risks documented and guarded by tests |
 | **Qualification infrastructure** | **`0.19.0-beta.2`** | Machine-readable HIL ledger, reproducible capture format, objective scheduler-derived timing limits | Qualification workflow is auditable and cannot claim PASS without evidence |
-| **Current qualification line** | **`0.19.0-beta.14+`** | PCB bring-up, electrical measurements, SYNC/RST comparator validation, SPI/I2C stress, timing HIL, defect correction, build/manual refinement | Software/release gates stay green; physical qualification accumulates without blocking release automation before 1.5 |
+| **Current qualification line** | **`0.19.0-beta.14+`** | PCB bring-up, electrical measurements, SYNC/RST comparator validation, SPI display stress, timing HIL, defect correction, build/manual refinement | Software/release gates stay green; physical qualification accumulates without blocking release automation before 1.5 |
 | Release candidate | `1.0.0-rc.x` | Externally buildable candidate; release blockers only | Firmware, simulator, docs, packaging and upgrade path agree; no known release-blocking software defects |
 | Stable | **`1.0.0`** | First supported CLOCK DIY release | A third party can build, flash, configure and use the V1 design from published material; open HIL items are explicitly disclosed |
 
@@ -67,7 +67,7 @@ The beta/RC line is therefore not empty. It has five concrete workstreams:
 | --- | --- | --- |
 | Hardware bring-up | complete P1 prototype, verify power path, 5 V logic, gate buffer, SYNC/RST comparator behavior and front-panel wiring | bench notes, measurements, schematic/PCB updates |
 | Timing | verify internal period accuracy, gate width, phase behavior, eight-output skew and external-SYNC behavior under representative loads | HIL captures and qualification ledger |
-| Display isolation | stress SPI and I2C while all timing engines are active; display may lose frame rate but must not own musical timing | comparative timing captures |
+| Display isolation | stress SPI while all timing engines are active; display may lose frame rate but must not own musical timing | comparative timing captures |
 | Persistence/update safety | validate CURRENT/presets, power-cycle behavior, schema-v7 persistence, schema-v6 recovery and the migration contract for later schemas | host tests plus representative-device tests |
 | Publication quality | build/flash instructions, BOM, troubleshooting, release artifacts, manual and repository docs describe the same product | CI, release checklist and manual review |
 

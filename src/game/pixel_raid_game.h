@@ -33,7 +33,7 @@ public:
     void run();
 
 #ifdef CLOCK_SIMULATOR
-    /** @brief Starts a non-blocking simulator session while keeping the output stage disabled. */
+    /** @brief Starts a non-blocking simulator session while keeping all gate source GPIOs muted. */
     void beginForSimulator();
 
     /**
@@ -69,7 +69,7 @@ private:
     /** @brief Advances the alien formation and starts a new faster wave when cleared. */
     void updateAliens(std::uint32_t nowMs);
 
-    /** @brief Flashes all activity LEDs with the external HCT244 disabled. */
+    /** @brief Flashes all activity LEDs with all gate source GPIOs forced LOW. */
     void flashLifeLostLeds();
 
     /** @brief Opens the in-game exit confirmation dialog and returns the selected decision. */

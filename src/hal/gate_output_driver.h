@@ -1,6 +1,6 @@
 /**
  * @file gate_output_driver.h
- * @brief HAL driver for the eight gate/LED logic outputs and HCT244 enable line.
+ * @brief HAL driver for the eight gate/LED logic outputs and optional buffer-enable line.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -17,17 +17,17 @@ namespace clockfw::hal {
 class GateOutputDriver final {
 public:
     /**
-     * @brief Configures output GPIOs and leaves the external buffer disabled.
+     * @brief Configures output GPIOs and leaves logical gate output muted.
      *
      * This method guarantees that all eight logic signals are LOW before the
-     * 74HCT244 output stage may be enabled.
+     * firmware may allow gate HIGH requests.
      */
     void beginDisabled();
 
-    /** @brief Enables the external gate buffer after all source signals are known LOW. */
+    /** @brief Enables logical gate output after all source signals are known LOW. */
     void enableOutputStage();
 
-    /** @brief Immediately disables the external gate buffer. */
+    /** @brief Immediately disables logical gate output and forces all source GPIOs LOW. */
     void disableOutputStage();
 
     /** @brief Drives every channel source signal LOW. */
@@ -43,7 +43,11 @@ public:
     /** @brief Returns the last source level written for one gate channel. */
     bool channelStateHigh(std::size_t channelIndex) const;
 
+    /** @brief Returns whether the logical gate-output stage currently accepts HIGH requests. */
+    bool outputStageEnabled() const;
+
 private:
+    bool outputStageEnabled_{false};
     std::array<bool, 8U> channelStates_{};
 };
 

@@ -87,25 +87,46 @@ jobs:
       - name: Run simulator integration tests
         run: ctest --test-dir build/simulator-headless -C Debug --output-on-failure
 
-      - name: Build and package firmware variants
+      - name: Build and package all firmware flavors
         run: |
           rm -rf dist
           mkdir -p dist
-          while IFS='|' read -r ENVIRONMENT VARIANT; do
-            echo "Building ${ENVIRONMENT} (${VARIANT:-default / BEATKNECHT})"
+          while IFS='|' read -r ENVIRONMENT FLAVOR; do
+            echo "Building ${ENVIRONMENT} (${FLAVOR})"
             pio run -e "${ENVIRONMENT}"
-            ARGS=(firmware --build-dir ".pio/build/${ENVIRONMENT}" --out-dir dist)
-            if [[ -n "${VARIANT}" ]]; then
-              ARGS+=(--variant "${VARIANT}")
-            fi
-            python scripts/package_release.py "${ARGS[@]}"
+            test -f ".pio/build/${ENVIRONMENT}/firmware.map" || {
+              echo "Missing linker map for ${ENVIRONMENT}" >&2
+              exit 1
+            }
+            python scripts/package_release.py firmware \
+              --build-dir ".pio/build/${ENVIRONMENT}" \
+              --out-dir dist \
+              --variant "${FLAVOR}"
           done <<'EOF'
-          release_default|
+          release_default|default
           release_pixel_raid|pixel-raid
           release_formula_1|formula-1
           release_breakout|breakout
           release_egg_journey|egg-journey
           EOF
+
+      - name: Capture exact ARM toolchain licenses
+        run: |
+          python scripts/package_release.py toolchain-licenses \
+            --out-dir dist \
+            --toolchain-dir "$HOME/.platformio/packages/toolchain-gccarmnoneeabi"
+
+      - name: Generate linker-map build provenance
+        run: |
+          python scripts/package_release.py build-info \
+            --out-dir dist \
+            --toolchain-dir "$HOME/.platformio/packages/toolchain-gccarmnoneeabi" \
+            --source-revision "${GITHUB_SHA}" \
+            --map default=.pio/build/release_default/firmware.map \
+            --map pixel-raid=.pio/build/release_pixel_raid/firmware.map \
+            --map formula-1=.pio/build/release_formula_1/firmware.map \
+            --map breakout=.pio/build/release_breakout/firmware.map \
+            --map egg-journey=.pio/build/release_egg_journey/firmware.map
 
       - name: Build versioned user manual artifacts
         run: |
@@ -128,38 +149,56 @@ jobs:
             --version "${VERSION}" \
             --require-ubuntu-fonts
 
-      - name: Validate release summary and build notes
+      - name: Validate release summary and build curated notes
         run: |
           VERSION="$(python scripts/version.py)"
           SUMMARY="docs/releases/${VERSION}/RELEASE_SUMMARY.md"
           python scripts/check_release_summary.py "${SUMMARY}" --version "${VERSION}"
-          python scripts/release_notes.py "${VERSION}" --summary "${SUMMARY}" --output dist/RELEASE_NOTES.md
+          python scripts/release_notes.py "${VERSION}" \
+            --summary "${SUMMARY}" \
+            --output dist/RELEASE_NOTES.md
           python scripts/package_release.py finalize \
             --out-dir dist \
             --manual-odt "dist/clock-user-manual.${VERSION}.odt" \
             --manual-pdf "dist/clock-user-manual.${VERSION}.pdf" \
             --summary "${SUMMARY}" \
+            --release-notes dist/RELEASE_NOTES.md \
             --changelog CHANGELOG.md
 
       - name: Verify release artifact contract
         run: |
           VERSION="$(python scripts/version.py)"
-          test -f "dist/clock-v${VERSION}-stm32f401cc.dfu"
-          test -f "dist/clock-v${VERSION}-stm32f401cc-pixel-raid.dfu"
-          test -f "dist/clock-v${VERSION}-stm32f401cc-formula-1.dfu"
-          test -f "dist/clock-v${VERSION}-stm32f401cc-breakout.dfu"
-          test -f "dist/clock-v${VERSION}-stm32f401cc-egg-journey.dfu"
+          for FLAVOR in default pixel-raid formula-1 breakout egg-journey; do
+            test -f "dist/eurorack-clock-firmware-${FLAVOR}-${VERSION}.dfu"
+          done
           test -f "dist/clock-user-manual.${VERSION}.odt"
           test -f "dist/clock-user-manual.${VERSION}.pdf"
           test -f dist/CHANGELOG.md
           test -f dist/RELEASE_SUMMARY.md
           test -f dist/RELEASE_NOTES.md
+          test -f dist/LICENSE.md
+          test -f dist/NOTICE.txt
+          test -f dist/THIRD_PARTY_NOTICES.md
+          test -f dist/MANUAL-LICENSE.md
+          test -f dist/LICENSE-Apache-2.0.txt
+          test -f dist/LICENSE-BSD-3-Clause.txt
+          test -f dist/LICENSE-SDL-zlib.txt
+          test -f dist/GNU-ARM-EMBEDDED-7.2.1-LICENSES.zip
+          test -f dist/BUILD-INFO.txt
           test -f dist/SHA256SUMS.txt
+          test -f dist/MD5SUMS.txt
           # Simulator binaries are deliberately not release assets.
           if compgen -G 'dist/*simulator*' > /dev/null; then
             echo "Simulator artifact unexpectedly present in dist/" >&2
             exit 1
           fi
+
+      - name: Upload complete release bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: clock-release-${{ github.ref_name }}
+          path: dist/
+          if-no-files-found: error
 
       - name: Publish GitHub Release
         if: github.ref_type == 'tag'
@@ -172,16 +211,27 @@ jobs:
           fi
           VERSION="$(python scripts/version.py)"
           ASSETS=(
-            "dist/clock-v${VERSION}-stm32f401cc.dfu"
-            "dist/clock-v${VERSION}-stm32f401cc-pixel-raid.dfu"
-            "dist/clock-v${VERSION}-stm32f401cc-formula-1.dfu"
-            "dist/clock-v${VERSION}-stm32f401cc-breakout.dfu"
-            "dist/clock-v${VERSION}-stm32f401cc-egg-journey.dfu"
+            "dist/eurorack-clock-firmware-default-${VERSION}.dfu"
+            "dist/eurorack-clock-firmware-pixel-raid-${VERSION}.dfu"
+            "dist/eurorack-clock-firmware-formula-1-${VERSION}.dfu"
+            "dist/eurorack-clock-firmware-breakout-${VERSION}.dfu"
+            "dist/eurorack-clock-firmware-egg-journey-${VERSION}.dfu"
             "dist/clock-user-manual.${VERSION}.odt"
             "dist/clock-user-manual.${VERSION}.pdf"
             "dist/CHANGELOG.md"
             "dist/RELEASE_SUMMARY.md"
+            "dist/RELEASE_NOTES.md"
+            "dist/LICENSE.md"
+            "dist/NOTICE.txt"
+            "dist/THIRD_PARTY_NOTICES.md"
+            "dist/MANUAL-LICENSE.md"
+            "dist/LICENSE-Apache-2.0.txt"
+            "dist/LICENSE-BSD-3-Clause.txt"
+            "dist/LICENSE-SDL-zlib.txt"
+            "dist/GNU-ARM-EMBEDDED-7.2.1-LICENSES.zip"
+            "dist/BUILD-INFO.txt"
             "dist/SHA256SUMS.txt"
+            "dist/MD5SUMS.txt"
           )
           # Future VCV Rack builds can drop versioned archives below dist/vcv/.
           # They are included automatically without making VCV a release prerequisite.

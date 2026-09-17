@@ -413,7 +413,7 @@ private:
         renderer_.renderScreensaver(ScreensaverMode::CubeCover, 75U);
         capture("screensaver-cube-cover", "Cube Cover filling the OLED with 8x8 cube tiles");
         renderer_.renderScreensaver(ScreensaverMode::MakeMusic, 92U);
-        capture("screensaver-make-music", "MAKE MUSIC NOT WAR text stream building with mid-dots");
+        capture("screensaver-make-music", "MAKE MUSIC NOT WAR building character by character and row by row with mid-dots");
         renderer_.renderScreensaver(ScreensaverMode::Labyrinth, 40U);
         capture("screensaver-labyrinth", "Random perfect maze on the OLED grid");
         renderer_.renderScreensaver(ScreensaverMode::Starfield, 17U);

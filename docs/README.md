@@ -20,6 +20,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 | validate real hardware | [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md) and [`qualification/`](qualification/README.md) |
 | audit dependencies | [`DEPENDENCIES.md`](DEPENDENCIES.md) |
 | understand release/licensing constraints | [`LICENSING.md`](LICENSING.md) |
+| build and publish a release | [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md) |
 | understand citation, DOI, and project identity | [`PROJECT_IDENTITY.md`](PROJECT_IDENTITY.md) |
 | review the release and feature plan | [`ROADMAP.md`](ROADMAP.md) |
 | understand or maintain the generated GitHub Wiki | [`WIKI.md`](WIKI.md) |

@@ -80,6 +80,8 @@ void exitCritical(const std::uint32_t) { interrupts(); }
 namespace {
 TIM_HandleTypeDef gMicrosTimer{};
 TIM_HandleTypeDef gEncoderTimer{};
+std::uint16_t gEncoderRawCount = 0U;
+std::uint32_t gEncoderExtendedCount = 0U;
 InterruptCallback gExtiCallbacks[16]{};
 constexpr std::uint32_t kExtiPreemptPriority = 4U;
 constexpr std::uint32_t kExtiSubPriority = 0U;
@@ -171,29 +173,29 @@ void attachInterrupt(const mcu::Pin pin, const InterruptCallback callback, const
     HAL_GPIO_Init(port,&init); const IRQn_Type irq=extiIrq(index); HAL_NVIC_SetPriority(irq,kExtiPreemptPriority,kExtiSubPriority); HAL_NVIC_EnableIRQ(irq);
 }
 bool beginQuadratureEncoder(const mcu::Pin phaseA, const mcu::Pin phaseB) {
-    // CLOCK deliberately routes the PEC11L A/B contacts to PA0/PA1. These pins
-    // are TIM2_CH1/TIM2_CH2 (AF1) on STM32F401, so use the MCU's x4 encoder
-    // interface instead of EXTI callbacks. The peripheral keeps counting while
-    // foreground code or IRQ delivery is delayed, eliminating the lost-edge
-    // condition that could consume the first mechanical detent.
-    if (phaseA != mcu::PA0 || phaseB != mcu::PA1) {
+    // Final CLOCK hardware routes PEC11L A/B to PB6/PB7. On STM32F401 these
+    // pins are TIM4_CH1/TIM4_CH2 (AF2), so quadrature remains hardware-counted
+    // even while foreground rendering or EXTI service is delayed. TIM4 is a
+    // 16-bit timer; quadratureEncoderCount() extends its wrapping count to the
+    // existing 32-bit software contract.
+    if (phaseA != mcu::PB6 || phaseB != mcu::PB7) {
         return false;
     }
-    __HAL_RCC_GPIOA_CLK_ENABLE();
-    __HAL_RCC_TIM2_CLK_ENABLE();
+    __HAL_RCC_GPIOB_CLK_ENABLE();
+    __HAL_RCC_TIM4_CLK_ENABLE();
 
     GPIO_InitTypeDef gpio{};
-    gpio.Pin = GPIO_PIN_0 | GPIO_PIN_1;
+    gpio.Pin = GPIO_PIN_6 | GPIO_PIN_7;
     gpio.Mode = GPIO_MODE_AF_PP;
     gpio.Pull = GPIO_PULLUP;
     gpio.Speed = GPIO_SPEED_FREQ_LOW;
-    gpio.Alternate = GPIO_AF1_TIM2;
-    HAL_GPIO_Init(GPIOA, &gpio);
+    gpio.Alternate = GPIO_AF2_TIM4;
+    HAL_GPIO_Init(GPIOB, &gpio);
 
-    gEncoderTimer.Instance = TIM2;
+    gEncoderTimer.Instance = TIM4;
     gEncoderTimer.Init.Prescaler = 0U;
     gEncoderTimer.Init.CounterMode = TIM_COUNTERMODE_UP;
-    gEncoderTimer.Init.Period = 0xFFFFFFFFU;
+    gEncoderTimer.Init.Period = 0xFFFFU;
     gEncoderTimer.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
     gEncoderTimer.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
 
@@ -212,16 +214,22 @@ bool beginQuadratureEncoder(const mcu::Pin phaseA, const mcu::Pin phaseB) {
         return false;
     }
     __HAL_TIM_SET_COUNTER(&gEncoderTimer, 0U);
+    gEncoderRawCount = 0U;
+    gEncoderExtendedCount = 0U;
     return HAL_TIM_Encoder_Start(&gEncoderTimer, TIM_CHANNEL_ALL) == HAL_OK;
 }
 std::uint32_t quadratureEncoderCount() {
-    return __HAL_TIM_GET_COUNTER(&gEncoderTimer);
+    const std::uint16_t raw = static_cast<std::uint16_t>(__HAL_TIM_GET_COUNTER(&gEncoderTimer));
+    const std::int16_t delta = static_cast<std::int16_t>(raw - gEncoderRawCount);
+    gEncoderRawCount = raw;
+    gEncoderExtendedCount += static_cast<std::uint32_t>(static_cast<std::int32_t>(delta));
+    return gEncoderExtendedCount;
 }
 std::uint8_t quadratureEncoderState() {
-    const std::uint32_t idr = GPIOA->IDR;
+    const std::uint32_t idr = GPIOB->IDR;
     return static_cast<std::uint8_t>(
-        ((idr & GPIO_PIN_0) != 0U ? 2U : 0U) |
-        ((idr & GPIO_PIN_1) != 0U ? 1U : 0U));
+        ((idr & GPIO_PIN_6) != 0U ? 2U : 0U) |
+        ((idr & GPIO_PIN_7) != 0U ? 1U : 0U));
 }
 std::uint32_t milliseconds() { return HAL_GetTick(); }
 std::uint32_t microseconds() { return __HAL_TIM_GET_COUNTER(&gMicrosTimer); }

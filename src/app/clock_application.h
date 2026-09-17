@@ -81,6 +81,9 @@ public:
     /** @brief Returns true while the configured boot Easter egg owns display/controls. */
     bool easterEggActiveForSimulator() const;
 
+    /** @brief Returns the logical gate-output enable state used by the simulator. */
+    bool gateOutputEnabledForSimulator() const;
+
     /** @brief Places the simulated module into its electrically safe powered-off state. */
     void powerOffForSimulator();
 #endif

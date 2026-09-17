@@ -80,18 +80,18 @@ Boot safety is part of architecture, not UI policy:
 ```mermaid
 sequenceDiagram
     participant MCU as STM32 reset
-    participant OUT as 74HCT244 /OE
+    participant OUT as Gate source GPIOs
     participant APP as ClockApplication
     participant UI as OLED UI
     participant ENG as ClockEngine
-    MCU->>OUT: keep outputs disabled
+    MCU->>OUT: keep all gate sources LOW
     APP->>APP: restore + validate CURRENT
     APP->>APP: force runtime transport STOP
     APP->>ENG: initialize configuration from STOP
     APP->>UI: render 1000 ms boot screen
     APP->>ENG: start scheduler
     APP->>APP: force all gate source pins LOW
-    APP->>OUT: enable output buffer
+    APP->>OUT: allow gate HIGH requests
 ```
 
 A persisted PLAY value is metadata only; it is never authorization to start outputs during boot.
@@ -174,8 +174,8 @@ HAL is the only production implementation layer allowed to call STM32CubeF4 hard
 
 | Component | Responsibility |
 | --- | --- |
-| `ControlPanel` | active-low button debounce plus TIM2-backed quadrature-to-detent decoding |
-| `GateOutputDriver` | eight gate/LED source signals and 74HCT244 `/OE`; planned jack domain is nominal 0/+5 V |
+| `ControlPanel` | active-low button debounce plus TIM4-backed PB6/PB7 quadrature-to-detent decoding |
+| `GateOutputDriver` | eight gate/LED source signals; an optional buffer `/OE` can be used on alternate hardware, but the final pin map does not assign one |
 | `OledDisplay` | 1-bit framebuffer, primitives, fonts, SSD1306/SSD1315 protocol |
 | `PeriodicTimer` | current scheduler timer adapter |
 | `PersistentStorage` | project-owned A/B internal-Flash persistence |
@@ -188,14 +188,14 @@ The output architecture deliberately targets nominal **+5 V HIGH**, not +10 V. T
 
 ## Display transport
 
-The UI talks to one `OledDisplay` API. I2C/SPI is selected at build time and does not appear in renderer logic.
+The UI talks to one `OledDisplay` API. Final hardware uses SPI; the legacy I2C transport remains isolated inside the HAL for host regression coverage.
 
 ```cpp
 config::DisplayTransport::I2c
 config::DisplayTransport::Spi
 ```
 
-The default PlatformIO/reference profile uses SPI. I2C is a fully supported procurement-compatible option for SSD1306/SSD1315 modules, not merely a regression target.
+The production PlatformIO profiles use SPI. No production I2C profile is exposed because PB6/PB7 are reserved for the hardware encoder.
 
 The display driver maintains a 128×64 1-bit framebuffer, but transport scheduling deliberately differs:
 
@@ -204,7 +204,7 @@ The display driver maintains a 128×64 1-bit framebuffer, but transport scheduli
 
 Display mounting orientation is handled at the transport boundary, not by renderer coordinates or controller scan remapping. At `0 DEG`, the canonical framebuffer is transferred unchanged. At `180 DEG`, the transfer buffer applies `(x,y) -> (127-x,63-y)` by reversing columns, page order, and bit order within each page byte. SSD1306/SSD1315 stay in the proven `A1/C8` scan orientation. The canonical renderer framebuffer therefore remains identical in both mounting orientations.
 
-The 20 kHz scheduler has higher interrupt priority than SYNC/RST EXTI and I2C, so display service is never the musical timing owner. The front-panel encoder does not consume GPIO EXTI bandwidth on STM32: PA0/PA1 are decoded by TIM2 encoder mode and sampled as a wrapping hardware transition count in foreground control processing. See [`TIMING.md`](TIMING.md) for the explicit timing contract.
+The 20 kHz scheduler has higher interrupt priority than SYNC/RST EXTI, so display service is never the musical timing owner. The front-panel encoder does not consume GPIO EXTI bandwidth on STM32: PB6/PB7 are decoded by TIM4 encoder mode and sampled as a wrapping hardware transition count in foreground control processing. See [`TIMING.md`](TIMING.md) for the explicit timing contract.
 
 ## UI architecture
 

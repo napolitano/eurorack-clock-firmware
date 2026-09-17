@@ -17,10 +17,10 @@ The prerelease gates remain stringent without requiring synthetic tests for ever
 Current repository-wide validated baseline (`0.19.0-beta.14`):
 
 ```text
-Executable lines:   6971/7227 (96.46%)
-Functions:           596/605  (98.51%)
-Decision branches:  4175/4634 (90.09%)
-Compiler branches:  4176/5418 (77.08%, informational only)
+Executable lines:   6972/7230 (96.43%)
+Functions:           596/606  (98.35%)
+Decision branches:  4179/4638 (90.10%)
+Compiler branches:  4180/5422 (77.09%, informational only)
 ```
 
 ## Full host matrix
@@ -38,12 +38,14 @@ Compiler branches:  4176/5418 (77.08%, informational only)
 9. atomic Settings editor and boundary tests
 10. screensaver renderer/state tests
 11. Easter-egg launch/reset/control-state tests
-12. complete firmware with I2C OLED auto-probe
-13. complete firmware with SPI SSD1306 transport
-14. complete firmware with SPI SSD1315 transport
-15. complete firmware with custom SPI wiring
-16. complete firmware with fixed I2C address and configured OLED reset pin
+12. complete firmware with the final/default SPI SSD1306 configuration
+13. complete firmware with legacy I2C OLED auto-probe (host regression only)
+14. complete firmware with explicitly selected SPI SSD1306 transport
+15. complete firmware with SPI SSD1315 transport
+16. complete firmware with fixed legacy I2C address and configured OLED reset pin (host regression only)
 17. the PlatformIO native-smoke entry point
+
+A separate **compile-only** custom-SPI-wiring regression verifies that explicit pin overrides still build. It intentionally does not execute the full firmware host suite because its synthetic pin assignments alias unrelated fake GPIOs and therefore do not represent valid final-hardware runtime semantics. Final/default builds retain the hard compile-time pin-map assertions.
 
 The complete firmware variants compile the real production `.cpp` files against deterministic host fakes at the project-owned platform-I/O boundary. The embedded build itself uses STM32CubeF4/CMSIS; host fakes replace GPIO/time, I2C, SPI, interrupts and timers without pretending to measure real electrical timing.
 
@@ -58,7 +60,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - performance, pictographic 2×4 channel overview, six-function 2×3 mode palette, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Blox/Matrix/Cube Cover/Fractal/Orbit/Make Music/Labyrinth/Starfield/Fireworks screensaver effects, preset overwrite/name-band, templates and sequencer render paths
 - I2C auto-probe success/fallback/failure, fixed-address mode, deferred 24-byte-chunk refresh, NACK retry/latest-frame-wins behavior, SPI transport and optional reset-pin path
 - framebuffer text/primitives, all font roles, pixel clipping, dirty-page updates, unchanged-frame suppression and black/white drawing
-- TIM2 hardware quadrature accumulation on PA0/PA1, detent-phase resynchronization, first-detent/reversal recovery, counter wraparound, fast-turn backlog handling, and button debounce edges
+- TIM4 hardware quadrature accumulation on PB6/PB7, detent-phase resynchronization, first-detent/reversal recovery, counter wraparound, fast-turn backlog handling, and button debounce edges
 - gate-output enable/disable and channel bounds
 - periodic timer, interrupt lock and system clock wrappers
 - complete deterministic timing/pattern core invariants
@@ -68,12 +70,12 @@ The complete firmware variants compile the real production `.cpp` files against 
 - external-sync regression cases for 20/120/999 BPM, 1/2/4/24 PPQN, jitter, adaptive lock timeout, queue overflow/reacquisition, timestamp wraparound, effective-tempo gate release, monotonic scheduler time, phase alignment, ISR-safe pulse entry, and PPQN interpretation
 - atomic external-SYNC behavior at 1/20/30/60/120/240/300/600/900/999 BPM, strong deterministic jitter, alternating/chaotic periods, abrupt tempo changes, duplicate timestamps, glitch storms, runtime PPQN/edge changes, lock-loss policies and continuity recovery
 - continuous external-tempo movement including 60->180 and 180->60 ramps, slow drift, repeated tempo steps, ramp-plus-jitter and 24-PPQN acceleration; permanently asserted SYNC is checked for one-edge behavior and natural lock timeout rather than a synthetic pulse train
-- dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, encoder NORMAL/REVERSED plus TIM2 detent-recovery/fast-turn backlog behavior, exact OLED 0°/180° transfer-frame rotation, and atomic button debounce/queue behavior
+- dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, encoder NORMAL/REVERSED plus TIM4 detent-recovery/fast-turn backlog behavior, exact OLED 0°/180° transfer-frame rotation, and atomic button debounce/queue behavior
 - nominal LM393-front-end design-model checks for the documented resistor/hysteresis network, including end-to-end modeled 2.5 V, 3 V and 4 V clocks at low/nominal/maximum supported tempo; this remains explicitly separate from physical comparator HIL
 - ISR-safe external reset with configurable rising-edge TRIGGER or level-sensitive GATE semantics, startup-HIGH handling, queue saturation, deterministic RST-over-SYNC priority, and PLAY-transport preservation
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release
 - channel overview selection, TAP-turn six-function palette, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, and preset overwrite/save/load/name-band workflow
-- 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht PLAY/PAUSE/STOP, guarded NO/YES Beatknecht exit confirmation, launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, first-launch-gated HI-SCORES/CLEAR behavior, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-buffer-disabled LED life-loss effects
+- 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht PLAY/PAUSE/STOP, guarded NO/YES Beatknecht exit confirmation, launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, first-launch-gated HI-SCORES/CLEAR behavior, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-source-muted life-loss safety
 
 ## Decision branches versus compiler branches
 
@@ -116,11 +118,11 @@ Host execution cannot establish real-world timing quality. Planned HIL/electrica
 
 - gate jitter and pulse width at the actual jacks
 - no false output pulses during boot/reset/preset changes
-- HCT244 output-enable behavior
+- gate-source muting when no MCU `/OE` pin is assigned
 - encoder/button electrical bounce characteristics
 - SYNC/RST comparator thresholds, hysteresis, slow-crossing chatter and glitch rejection
 - external-SYNC capture latency/jitter and comparator behavior; move to timer Input Capture only if the measured EXTI path misses the V1 requirement
 - External Reset capture/IRQ timing and GLOBAL/FREE phase behavior at the physical jacks
-- I2C/SPI signal integrity and display-stress timing on the final PCB
+- SPI signal integrity and display-stress timing on the final PCB
 
 Coverage proves that code paths execute; HIL proves that the hardware behaves correctly. The concrete bench procedure is maintained in [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).

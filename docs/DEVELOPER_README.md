@@ -177,12 +177,12 @@ The committed `.vscode/settings.json` contains only portable editor preferences.
 
 `compile_commands.json` is intentionally ignored by Git. PlatformIO/clang tooling can generate it locally, but its entries normally contain absolute workstation paths such as `C:\Users\...` or `/Users/...`. Treat it as disposable local metadata. The same rule applies to clangd caches, browse databases and VSCodium-generated local launch/index files covered by `.gitignore`.
 
-## 10. Windows: build the I2C firmware
+## 10. Windows: build the default firmware
 
 In the VSCodium terminal:
 
 ```powershell
-pio run -e blackpill_f401cc
+pio run -e blackpill_f401cc_spi_ssd1306
 ```
 
 The first build takes longer because PlatformIO downloads the pinned STM32 platform, STM32CubeF4 framework, ARM toolchain, and upload utilities.
@@ -202,7 +202,7 @@ A memory-budget violation fails the build rather than printing a warning.
 pio run -e blackpill_f401cc_spi_ssd1315
 ```
 
-SPI remains the reference transport because it minimizes display service time. The SSD1315 profile defaults to PA5=SCK, PA7=MOSI, PA4=CS, PB9=D/C and PB15=active-low OLED RESET; `blackpill_f401cc_spi_ssd1306` selects SSD1306. I2C is also a supported hardware target for procurement flexibility: `blackpill_f401cc_i2c_ssd1306` and `blackpill_f401cc_i2c_ssd1315` use deferred 24-byte-chunk refresh so display traffic cannot become the musical scheduler.
+SPI is the production display transport. Both profiles use PA5=OLED `CLK`, PA7=OLED `DIN` (SPI MOSI; `SDA` on the earlier prototype module), PA4=`CS`, PB9=`DC` and PB15=active-low `RES`; `blackpill_f401cc_spi_ssd1306` selects SSD1306 and `blackpill_f401cc_spi_ssd1315` selects SSD1315. The write-only OLED bus uses SPI1 one-line transmit mode, so PA6/MISO is not consumed. The legacy I2C transport remains host-regression code only because PB6/PB7 are dedicated to the encoder on final hardware.
 
 ## 12. Windows: upload through DFU
 
@@ -216,7 +216,7 @@ When upgrading from the pre-A/B layout, the uploader first checks sectors 1/2. I
 Put the Black Pill into DFU mode using its BOOT0/NRST procedure, then run:
 
 ```powershell
-pio run -e blackpill_f401cc -t upload
+pio run -e blackpill_f401cc_spi_ssd1306 -t upload
 ```
 
 For the SPI build:
@@ -361,7 +361,7 @@ pio test -e native
 Upload in DFU mode with:
 
 ```bash
-pio run -e blackpill_f401cc -t upload
+pio run -e blackpill_f401cc_spi_ssd1306 -t upload
 ```
 
 ## 19. macOS full coverage
@@ -462,7 +462,7 @@ python3 scripts/run_host_tests.py --skip-sanitizers
 python3 scripts/run_host_tests.py --sanitizers-only
 
 # DFU upload
-pio run -e blackpill_f401cc -t upload
+pio run -e blackpill_f401cc_spi_ssd1306 -t upload
 ```
 
 ---
@@ -481,9 +481,7 @@ Tasks: Run Task
 
 Available tasks include:
 
-- `Clock: Build I2C firmware`
 - `Clock: Build SPI firmware`
-- `Clock: Upload I2C firmware (DFU)`
 - `Clock: Native core tests`
 - `Clock: Architecture policy`
 - `Clock: Python tooling tests`
@@ -607,14 +605,14 @@ The firmware deliberately separates **stored transport metadata** from **power-u
 
 A previous PLAY value may be present in persistent storage, but boot always performs this sequence:
 
-1. disable the external HCT244 output stage
-2. configure all eight gate/LED source pins LOW
+1. configure all eight gate/LED source pins LOW while logical gate output is muted
+2. verify the complete gate-source array remains LOW
 3. initialize controls/display
 4. show the boot screen
 5. force transport to STOP
 6. initialize/start the scheduler from STOP
 7. explicitly drive every channel LOW again
-8. enable the external output stage
+8. allow gate HIGH requests only after safe startup is complete
 
 Host regression tests seed persistent storage with PLAY, boot the application, execute tens of thousands of scheduler ticks, and verify that no gate pin rises.
 
@@ -701,7 +699,7 @@ Host coverage is not a substitute for bench verification. Read `docs/TIMING.md` 
 
 ## 31. GitHub Actions and releases
 
-CI runs automatically on pushes and pull requests. It checks architecture, Python tooling, native tests, complete host coverage, sanitizers, the headless simulator on Windows/macOS/Linux, the SDL3 frontend build, the I2C firmware build, the SPI build, and memory budgets. Firmware binary packaging is enabled from the STM32CubeF4 target; release publication remains controlled by the release workflow.
+CI runs automatically on pushes and pull requests. It checks architecture, Python tooling, native tests, complete host coverage, sanitizers, the headless simulator on Windows/macOS/Linux, the SDL3 frontend build, the production SPI firmware builds, and memory budgets. Firmware binary packaging is enabled from the STM32CubeF4 target; release publication remains controlled by the release workflow.
 
 Release tags must exactly match `src/version.h`:
 

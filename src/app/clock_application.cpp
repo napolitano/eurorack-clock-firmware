@@ -79,7 +79,7 @@ void ClockApplication::begin(const ClockState& initialState) {
     state_.transport = TransportState::Stopped;
     activeInstance_ = this;
 
-    // The external HCT244 is disabled before any channel GPIO is configured.
+    // The external gate buffer is disabled before any channel GPIO is configured.
     gateOutputs_.beginDisabled();
     controlPanel_.begin();
     externalInputs_.begin();
@@ -106,13 +106,14 @@ void ClockApplication::begin(const ClockState& initialState) {
         if (selectedLeaderboard_ != nullptr) {
             (void)selectedLeaderboard_->markStarted();
         }
-        // Boot Easter eggs run before the scheduler. Games keep /OE disabled; the
-        // BEATKNECHT deliberately enables it only while producing its eight gate patterns.
+        // Boot Easter eggs run before the scheduler. Arcade games keep the logical
+        // gate-output stage muted; BEATKNECHT enables it only while deliberately
+        // producing its eight gate patterns.
         runSelectedEasterEgg();
     }
 
     // ClockEngine::begin() receives the already-forced STOP state. Starting the
-    // scheduler therefore cannot produce gates even after the physical buffer is enabled.
+    // scheduler therefore cannot produce gates even after the logical gate output is enabled.
     engine_.begin(state_);
     externalSyncController_.begin(state_);
     schedulerTimer_.start(config::kSchedulerFrequencyHz, schedulerInterruptThunk);
@@ -181,6 +182,10 @@ bool ClockApplication::runningForSimulator() const {
 
 bool ClockApplication::easterEggActiveForSimulator() const {
     return simulatorLifecycle_ == SimulatorLifecycle::EasterEgg;
+}
+
+bool ClockApplication::gateOutputEnabledForSimulator() const {
+    return gateOutputs_.outputStageEnabled();
 }
 
 void ClockApplication::powerOffForSimulator() {

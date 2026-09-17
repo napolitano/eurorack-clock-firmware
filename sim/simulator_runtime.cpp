@@ -153,8 +153,7 @@ std::int64_t SimulatorRuntime::encoderVisualPosition() const {
 }
 
 bool SimulatorRuntime::outputStageEnabled() const {
-    return poweredOn_ &&
-        simfw::pinValue(pinmap::kGateBufferOutputEnablePin) == pinmap::kGateBufferEnabledLevel;
+    return poweredOn_ && application_ != nullptr && application_->gateOutputEnabledForSimulator();
 }
 
 bool SimulatorRuntime::poweredOn() const {

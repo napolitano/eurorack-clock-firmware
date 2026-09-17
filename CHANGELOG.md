@@ -8,10 +8,18 @@ This project is still in active development. Until the first stable release, ver
 
 
 
-## [0.19.0-beta.14] - 2026-09-16
+## [0.19.0-beta.14] - 2026-09-17
 
 - Rename the root `RESET` action to `PHASE RESET` to distinguish musical phase reset from destructive maintenance.
 - Add a guarded `FACTORY RESET` action as the final `INFO` item; confirmation defaults to `NO` and atomically clears settings, named presets, legacy scores, and Top-100 leaderboards before restoring factory defaults.
+
+### Release pipeline and licensing
+
+- Standardized tagged firmware assets as `eurorack-clock-firmware-<flavor>-<version>.dfu`, with mandatory `default`, `pixel-raid`, `formula-1`, `breakout`, and `egg-journey` flavors.
+- Made the versioned PDF/ODT user manual, changelog, project/manual licenses, Required Notice, third-party notices, static BSD/Apache/SDL license texts, GNU Arm Embedded 7.2.1 license capture, linker-map build provenance, and SHA-256/MD5 manifests mandatory release assets.
+- Added per-flavor GNU ld maps and `BUILD-INFO.txt` so the release records the runtime archives referenced by the exact linked binaries.
+- Added curated GitHub release notes with the user summary, firmware-flavor table, documentation/licensing inventory, matching changelog section, and source-compare link instead of generic auto-generated notes.
+- Added a `LICENSES AND SOURCE` section immediately before the manual Colophon, including firmware and third-party license notices plus a QR code to the firmware repository.
 
 ### Build compatibility follow-up
 
@@ -24,19 +32,26 @@ This project is still in active development. Until the first stable release, ver
 - Restored the STM32duino startup-order contract without restoring the Arduino/LGPL runtime: MCU/HAL initialization now completes before the top-level `ClockApplication` object is constructed.
 - Explicitly restores `SCB->VTOR` to user Flash for both cold boot and ROM-DFU handoff before interrupts are relied upon.
 - Added the Cube `HAL_MspInit()` boundary that STM32duino previously supplied, including the SYSCFG/PWR clocks required for reliable EXTI routing.
-- Changed the direct Cube OLED SPI1 setup back to the proven full-duplex peripheral configuration used by STM32duino, including PA6/MISO and `SPI_DIRECTION_2LINES`; the OLED remains physically write-only.
+- Aligned the direct Cube OLED SPI1 setup with the final write-only display wiring: PA5 drives display `CLK`, PA7 drives `DIN`, PA4 drives `CS`, PB9 drives `DC`, and PB15 drives active-low `RES`. SPI1 now uses one-line transmit mode so PA6 is not silently consumed as an unused MISO pin.
 - Corrected persistence-preserving USB DFU sequencing: the application region is written first, sector 0/vector table last, and DfuSe `:leave` now targets `0x08000000` rather than `0x0800C000`.
+
+### Final hardware pin map
+
+- Aligned the production GPIO map with the current hardware: PA1 PLAY, PA2 RESET/BACK, PA3 TAP TEMPO, PA4 OLED CS, PA5 OLED CLK, PA7 OLED DIN, PA8 SYNC, PA9 RST; PB0/PB1/PB2/PB5/PB8/PB10/PB12/PB13 gate outputs 1-8; PB6/PB7 encoder A/B; PB14 encoder push; PB9 OLED DC; PB15 OLED RES.
+- Moved PEC11L hardware quadrature counting from the prototype TIM2/PA0-PA1 path to TIM4 on PB6/PB7. The 16-bit TIM4 count is extended into the existing 32-bit software counter contract before detent decoding.
+- Removed the final-hardware MCU assignment for a shared gate-buffer `/OE` because PB8 is Gate 5. Gate safety now clamps all eight source GPIOs LOW whenever the logical output stage is muted.
+- Clarified OLED connector naming: the target module uses `CLK`/`DIN`; the earlier prototype module labeled the same SPI wires `SCL`/`SDA`.
 
 ### Hardware behavior follow-up
 
-- Replaced the PA0/PA1 EXTI rotary-encoder decoder with the STM32F401 TIM2 encoder interface. Quadrature transitions are now counted in hardware and converted to one detent per four transitions in the foreground, eliminating the remaining first-detent loss path caused by delayed or coalesced GPIO edge delivery.
+- Replaced the earlier EXTI rotary-encoder decoder with the STM32F401 TIM4 encoder interface on PB6/PB7. Quadrature transitions are now counted in hardware and converted to one detent per four transitions in the foreground, eliminating the remaining first-detent loss path caused by delayed or coalesced GPIO edge delivery.
 - Added first-detent regressions from every electrical phase, immediate reverse-detent coverage, and repeated single-detent direction-change coverage while preserving fast-turn backlog handling and the NORMAL/REVERSED setting.
 - Changed `ORIENTATION = 180 DEG` from SSD1306/SSD1315 scan-remap commands to deterministic framebuffer-transfer rotation. The controller stays in the proven `A1/C8` orientation while firmware reverses columns, pages, and page-bit order, preventing mirrored text on interchangeable OLED modules.
 - Kept the canonical renderer framebuffer unchanged so the simulator, screenshots, drawing coordinates, and UI layout remain independent of mounting orientation.
-- Restored the beta.6 electrical-cycle resynchronization contract on top of the TIM2 hardware encoder backend. The free-running x4 remainder introduced with TIM2 could again retain a quarter-cycle phase error, consuming the first detent and the first detent after a reversal. Each return to the startup detent phase is now a hard boundary: a one-transition count error is rounded to the nearest complete PEC11L cycle and any remaining ambiguous residue is discarded before the next direction.
+- Restored the beta.6 electrical-cycle resynchronization contract on top of the TIM4 hardware encoder backend. The free-running x4 remainder in the hardware encoder counter could again retain a quarter-cycle phase error, consuming the first detent and the first detent after a reversal. Each return to the startup detent phase is now a hard boundary: a one-transition count error is rounded to the nearest complete PEC11L cycle and any remaining ambiguous residue is discarded before the next direction.
 - Added four hardware-model regressions for a missing first transition, immediate reversal after recovery, half-cycle corruption, and an extra transition at the detent boundary.
-- Added five additional encoder regression cases for 32-bit TIM2 counter wraparound, recovery with NORMAL/REVERSED enabled, 100 alternating single-detent reversals, one-edge residue before a reverse detent, and fast-turn immediately after a reversal. `test_controls` now contains 49 named cases.
-- Fixed the hardware-triggered encoder regression after menu entry: a debounced encoder-push release now re-anchors the TIM2 detent phase and clears only partial quadrature residue, preventing a shaft/push-induced phase shift from consuming the first detent after a direction change.
+- Added five additional encoder regression cases for 32-bit software-extended encoder counter wraparound, recovery with NORMAL/REVERSED enabled, 100 alternating single-detent reversals, one-edge residue before a reverse detent, and fast-turn immediately after a reversal. `test_controls` now contains 49 named cases.
+- Fixed the hardware-triggered encoder regression after menu entry: a debounced encoder-push release now re-anchors the TIM4 detent phase and clears only partial quadrature residue, preventing a shaft/push-induced phase shift from consuming the first detent after a direction change.
 - Added two regression cases that reproduce the menu-entry push phase shift against the previous decoder and verify immediate reversal plus 100 alternating single-detent turns afterward. `test_controls` now contains 51 named cases.
 
 ### Screensavers
@@ -64,6 +79,10 @@ This project is still in active development. Until the first stable release, ver
 - Corrected the custom STM32Cube linker script for the real ARM target: RAM is now declared explicitly as 64 KiB instead of relying on the Arduino-only `LD_MAX_DATA_SIZE` symbol, and output-section syntax remains compatible with the pinned GCC 7.2.1/binutils toolchain.
 - Removed a misleading-indentation warning from the BEATKNECHT shutdown path without changing its STOP/output-stage behavior.
 - Forced the embedded STM32Cube target into GCC-7-compatible C++17 mode (`-std=gnu++1z`) after the real ARM build exposed that the PlatformIO toolchain was compiling project sources as C++14; this restores `inline constexpr` variables and C++17 library facilities such as `std::clamp`.
+
+### Documentation
+
+- Re-synchronized the publication ODT/PDF manual with the final beta.14 UI: PHASE RESET, guarded INFO → FACTORY RESET, live INPUTS/OUTPUTS diagnostics, all four new screensavers, and the 398-test release baseline are now represented in both Markdown and typeset documentation.
 
 ### Tests
 

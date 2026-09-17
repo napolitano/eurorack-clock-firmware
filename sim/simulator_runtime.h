@@ -120,7 +120,7 @@ public:
     /** @brief Returns accumulated host-side encoder detents for visible knob feedback. */
     std::int64_t encoderVisualPosition() const;
 
-    /** @brief Returns true when the external 74HCT244 output stage is enabled. */
+    /** @brief Returns true when the firmware logical gate-output stage is enabled. */
     bool outputStageEnabled() const;
 
     /** @brief Returns true while the simulated module has MCU power. */

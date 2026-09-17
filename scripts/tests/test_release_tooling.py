@@ -131,14 +131,14 @@ class ProjectMetadataTests(unittest.TestCase):
         build_flags = re.search(r"(?ms)^build_flags\s*=\s*\n(.*?)(?=^\S|\Z)", base).group(1)
         self.assertNotIn("-std=gnu++17", build_flags)
 
-    def test_stm32_encoder_uses_tim2_hardware_quadrature(self) -> None:
+    def test_stm32_encoder_uses_tim4_hardware_quadrature(self) -> None:
         platform = (ROOT / "src/hal/platform_io.cpp").read_text(encoding="utf-8")
         controls = (ROOT / "src/hal/control_panel.cpp").read_text(encoding="utf-8")
-        self.assertIn("TIM2", platform)
-        self.assertIn("GPIO_AF1_TIM2", platform)
+        self.assertIn("TIM4", platform)
+        self.assertIn("GPIO_AF2_TIM4", platform)
         self.assertIn("TIM_ENCODERMODE_TI12", platform)
         self.assertIn("HAL_TIM_Encoder_Start", platform)
-        self.assertIn("phaseA != mcu::PA0 || phaseB != mcu::PA1", platform)
+        self.assertIn("phaseA != mcu::PB6 || phaseB != mcu::PB7", platform)
         self.assertIn("beginQuadratureEncoder", controls)
         self.assertIn("quadratureEncoderCount", controls)
         self.assertIn("quadratureEncoderState", controls)
@@ -242,6 +242,42 @@ class PackageReleaseTests(unittest.TestCase):
         self.assertNotIn("acknowledge-lgpl-static-link", script)
         self.assertNotIn("Binary packaging is intentionally disabled", script)
 
+    def test_public_firmware_filename_contract(self) -> None:
+        module = self.release_module()
+        version = current_version()
+        self.assertEqual(
+            module["firmware_filename"](version, "default"),
+            f"eurorack-clock-firmware-default-{version}.dfu",
+        )
+        self.assertEqual(
+            module["firmware_filename"](version, "formula-1"),
+            f"eurorack-clock-firmware-formula-1-{version}.dfu",
+        )
+
+    def test_linker_map_parser_reports_runtime_archives(self) -> None:
+        module = self.release_module()
+        text = (
+            "/toolchain/lib/libc_nano.a(lib_a-memcpy.o) symbol\n"
+            "/toolchain/lib/gcc/arm-none-eabi/7.2.1/libgcc.a(_udivsi3.o) symbol\n"
+            "/toolchain/lib/libc_nano.a(lib_a-memset.o) symbol\n"
+        )
+        archives = module["linked_archives"](text)
+        self.assertEqual(
+            archives,
+            [
+                "/toolchain/lib/gcc/arm-none-eabi/7.2.1/libgcc.a",
+                "/toolchain/lib/libc_nano.a",
+            ],
+        )
+
+    def test_release_process_documents_complete_legal_payload(self) -> None:
+        text = (ROOT / "docs" / "RELEASE_PROCESS.md").read_text(encoding="utf-8")
+        self.assertIn("eurorack-clock-firmware-default-<version>.dfu", text)
+        self.assertIn("GNU-ARM-EMBEDDED-7.2.1-LICENSES.zip", text)
+        self.assertIn("BUILD-INFO.txt", text)
+        self.assertIn("SHA256SUMS.txt", text)
+        self.assertIn("MD5SUMS.txt", text)
+
     def test_dfuse_round_trip_preserves_sparse_flash_elements(self) -> None:
         module = self.release_module()
         upload = runpy.run_path(str(ROOT / "scripts/upload_preserving_persistence.py"))
@@ -264,7 +300,7 @@ class PackageReleaseTests(unittest.TestCase):
             app = tmp_path / "app.bin"
             boot.write_bytes(b"B" * 128)
             app.write_bytes(b"A" * 256)
-            for variant, suffix in (("", ""), ("egg-journey", "-egg-journey")):
+            for variant in ("default", "egg-journey"):
                 result = subprocess.run(
                     [
                         PYTHON,
@@ -285,98 +321,83 @@ class PackageReleaseTests(unittest.TestCase):
                     check=False,
                 )
                 self.assertEqual(result.returncode, 0, result.stderr)
-                expected = dist / f"clock-v{current_version()}-stm32f401cc{suffix}.dfu"
+                expected = dist / f"eurorack-clock-firmware-{variant}-{current_version()}.dfu"
                 self.assertTrue(expected.is_file())
                 elements = self.release_module()["parse_dfuse"](expected.read_bytes())
                 self.assertEqual(elements[0][1], boot.read_bytes())
                 self.assertEqual(elements[1][1], app.read_bytes())
 
-    def test_finalize_packages_manual_changelog_summary_and_checksums(self) -> None:
+    def test_finalize_packages_manual_licenses_provenance_and_checksums(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
             dist = tmp_path / "dist"
             dist.mkdir()
-            (dist / f"clock-v{current_version()}-stm32f401cc.dfu").write_bytes(b"dfu")
+            for flavor in ("default", "pixel-raid", "formula-1", "breakout", "egg-journey"):
+                (dist / f"eurorack-clock-firmware-{flavor}-{current_version()}.dfu").write_bytes(flavor.encode())
+            (dist / "GNU-ARM-EMBEDDED-7.2.1-LICENSES.zip").write_bytes(b"licenses")
+            (dist / "BUILD-INFO.txt").write_text("build info\n", encoding="utf-8")
             odt = tmp_path / f"clock-user-manual.{current_version()}.odt"
             pdf = tmp_path / f"clock-user-manual.{current_version()}.pdf"
             changelog = tmp_path / "CHANGELOG.md"
             summary = tmp_path / "RELEASE_SUMMARY.md"
+            notes = tmp_path / "RELEASE_NOTES.md"
             odt.write_bytes(b"odt-test")
             pdf.write_bytes(b"pdf-test")
             changelog.write_text("# Changelog\n", encoding="utf-8")
             summary.write_text("# Summary\n", encoding="utf-8")
+            notes.write_text("# Notes\n", encoding="utf-8")
             result = subprocess.run(
                 [
-                    PYTHON,
-                    str(ROOT / "scripts/package_release.py"),
-                    "finalize",
-                    "--out-dir",
-                    str(dist),
-                    "--manual-odt",
-                    str(odt),
-                    "--manual-pdf",
-                    str(pdf),
-                    "--changelog",
-                    str(changelog),
-                    "--summary",
-                    str(summary),
+                    PYTHON, str(ROOT / "scripts/package_release.py"), "finalize",
+                    "--out-dir", str(dist),
+                    "--manual-odt", str(odt),
+                    "--manual-pdf", str(pdf),
+                    "--changelog", str(changelog),
+                    "--summary", str(summary),
+                    "--release-notes", str(notes),
                 ],
-                cwd=ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
+                cwd=ROOT, text=True, capture_output=True, check=False,
             )
             self.assertEqual(result.returncode, 0, result.stderr)
-            self.assertEqual((dist / odt.name).read_bytes(), odt.read_bytes())
-            self.assertEqual((dist / pdf.name).read_bytes(), pdf.read_bytes())
-            self.assertEqual((dist / "CHANGELOG.md").read_text(), "# Changelog\n")
-            self.assertEqual((dist / "RELEASE_SUMMARY.md").read_text(), "# Summary\n")
-            lines = (dist / "SHA256SUMS.txt").read_text(encoding="utf-8").splitlines()
-            names = {line.split("  ", 1)[1] for line in lines}
-            self.assertEqual(
-                names,
-                {
-                    f"clock-v{current_version()}-stm32f401cc.dfu",
-                    odt.name,
-                    pdf.name,
-                    "CHANGELOG.md",
-                    "RELEASE_SUMMARY.md",
-                },
-            )
+            for name in (
+                "LICENSE.md", "NOTICE.txt", "THIRD_PARTY_NOTICES.md", "MANUAL-LICENSE.md",
+                "LICENSE-Apache-2.0.txt", "LICENSE-BSD-3-Clause.txt", "LICENSE-SDL-zlib.txt",
+                "SHA256SUMS.txt", "MD5SUMS.txt",
+            ):
+                self.assertTrue((dist / name).is_file(), name)
+            sha_names = {line.split("  ", 1)[1] for line in (dist / "SHA256SUMS.txt").read_text().splitlines()}
+            md5_names = {line.split("  ", 1)[1] for line in (dist / "MD5SUMS.txt").read_text().splitlines()}
+            self.assertEqual(sha_names, md5_names)
+            self.assertIn(f"eurorack-clock-firmware-default-{current_version()}.dfu", sha_names)
+            self.assertIn(odt.name, sha_names)
+            self.assertIn(pdf.name, sha_names)
+            self.assertIn("GNU-ARM-EMBEDDED-7.2.1-LICENSES.zip", sha_names)
+            self.assertIn("BUILD-INFO.txt", sha_names)
 
-    def test_finalize_rejects_release_without_firmware_image(self) -> None:
+    def test_finalize_rejects_release_without_complete_firmware_matrix(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             tmp_path = Path(tmp)
-            for name in ("manual.odt", "manual.pdf", "CHANGELOG.md", "RELEASE_SUMMARY.md"):
+            for name in ("manual.odt", "manual.pdf", "CHANGELOG.md", "RELEASE_SUMMARY.md", "RELEASE_NOTES.md"):
                 (tmp_path / name).write_bytes(b"x")
             result = subprocess.run(
                 [
-                    PYTHON,
-                    str(ROOT / "scripts/package_release.py"),
-                    "finalize",
-                    "--out-dir",
-                    str(tmp_path / "dist"),
-                    "--manual-odt",
-                    str(tmp_path / "manual.odt"),
-                    "--manual-pdf",
-                    str(tmp_path / "manual.pdf"),
-                    "--changelog",
-                    str(tmp_path / "CHANGELOG.md"),
-                    "--summary",
-                    str(tmp_path / "RELEASE_SUMMARY.md"),
+                    PYTHON, str(ROOT / "scripts/package_release.py"), "finalize",
+                    "--out-dir", str(tmp_path / "dist"),
+                    "--manual-odt", str(tmp_path / "manual.odt"),
+                    "--manual-pdf", str(tmp_path / "manual.pdf"),
+                    "--changelog", str(tmp_path / "CHANGELOG.md"),
+                    "--summary", str(tmp_path / "RELEASE_SUMMARY.md"),
+                    "--release-notes", str(tmp_path / "RELEASE_NOTES.md"),
                 ],
-                cwd=ROOT,
-                text=True,
-                capture_output=True,
-                check=False,
+                cwd=ROOT, text=True, capture_output=True, check=False,
             )
             self.assertNotEqual(result.returncode, 0)
-            self.assertIn("No firmware .dfu images", result.stderr + result.stdout)
+            self.assertIn("Required firmware images missing", result.stderr + result.stdout)
 
     def test_release_workflow_declares_exact_firmware_matrix_and_excludes_simulator(self) -> None:
         workflow = (ROOT / ".github/workflows/release.yml").read_text(encoding="utf-8")
         for environment in (
-            "release_default|",
+            "release_default|default",
             "release_pixel_raid|pixel-raid",
             "release_formula_1|formula-1",
             "release_breakout|breakout",
@@ -386,6 +407,10 @@ class PackageReleaseTests(unittest.TestCase):
         self.assertIn("Simulator binaries are deliberately not release assets", workflow)
         self.assertIn("dist/vcv/*", workflow)
         self.assertNotRegex(workflow, r'ASSETS=\([^)]*simulator')
+        self.assertIn("GNU-ARM-EMBEDDED-7.2.1-LICENSES.zip", workflow)
+        self.assertIn("BUILD-INFO.txt", workflow)
+        self.assertIn("MD5SUMS.txt", workflow)
+        self.assertIn("eurorack-clock-firmware-default-${VERSION}.dfu", workflow)
 
     def test_release_summary_is_complete_and_scaffold_requires_editing(self) -> None:
         summary = ROOT / "docs" / "releases" / current_version() / "RELEASE_SUMMARY.md"

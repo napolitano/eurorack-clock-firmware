@@ -9,16 +9,16 @@ This document defines the electrical and timing checks that cannot be proven by 
 
 ## SPI OLED electrical bring-up
 
-For the current SPI prototype, verify the physical pins before functional UI testing:
+For the current SPI hardware, verify the physical pins before functional UI testing:
 
-- PA5 -> OLED SCK/D0
-- PA7 -> OLED MOSI/D1
+- PA5 -> OLED CLK (`SCL` on the earlier prototype module)
+- PA7 -> OLED DIN / SPI data input (`SDA` on the earlier prototype module)
 - PA4 -> OLED CS
-- PB9 -> OLED D/C
-- PB15 -> OLED RESET/RES (active low)
+- PB9 -> OLED DC
+- PB15 -> OLED RES (active low)
 - 3.3 V logic/power and common GND as required by the selected module
 
-On every firmware boot, PA4 must be driven HIGH before PB15 is pulsed high -> low -> high. After RESET returns HIGH, the firmware waits before the selected SSD1306/SSD1315 command stream. PA4 must then pulse LOW only for command/data transactions. The default prototype SPI clock is held to 1 MHz during bring-up; remapped builds must verify the configured pins instead of assuming these defaults. A panel that only works with RESET hard-wired high or CS hard-wired low fails this bring-up check and indicates firmware-target, GPIO-routing, or wiring mismatch.
+On every firmware boot, PA4 must be driven HIGH before PB15 is pulsed high -> low -> high. After RESET returns HIGH, the firmware waits before the selected SSD1306/SSD1315 command stream. PA4 must then pulse LOW only for command/data transactions. The default SPI clock is held to 1 MHz during bring-up; remapped builds must verify the configured pins instead of assuming these defaults. A panel that only works with RESET hard-wired high or CS hard-wired low fails this bring-up check and indicates firmware-target, GPIO-routing, or wiring mismatch.
 
 
 ## 1. Purpose
@@ -52,7 +52,7 @@ Minimum useful bench setup:
 **Pass criteria**
 
 - no positive pulse exceeding the receiving-system trigger threshold
-- output buffer remains disabled until firmware has explicitly initialized all channel lines LOW
+- all eight gate outputs remain LOW until firmware has explicitly initialized the channel GPIOs and completed safe startup
 
 ### HIL-BOOT-002 — Reset does not create false gates
 
@@ -262,7 +262,7 @@ Temporarily disconnect the OLED or hold the bus in an error condition that exerc
 
 - gate scheduling continues without missing events
 - SYNC/RST capture remains functional
-- the TIM2 encoder transition count continues to advance even if visual response is delayed
+- the TIM4 encoder transition count continues to advance even if visual response is delayed
 - recovery behavior is documented; a display failure must never enable or corrupt gate outputs
 
 ## 9. Long-duration timing

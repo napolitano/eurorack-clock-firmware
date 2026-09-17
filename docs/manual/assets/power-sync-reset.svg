@@ -7,7 +7,7 @@
   <defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#555"/></marker></defs>
   <text x="580" y="40" text-anchor="middle" class="h">Native simulator — POWER and conditioned input boundaries</text>
   <g transform="translate(45 90)"><rect width="240" height="110" rx="12" class="host"/><text x="120" y="40" text-anchor="middle" class="t">POWER toggle</text><text x="120" y="70" text-anchor="middle" class="s">destroy / reconstruct volatile MCU state</text><text x="120" y="94" text-anchor="middle" class="s">durable Flash mirror retained</text></g>
-  <g transform="translate(355 90)"><rect width="330" height="110" rx="12" class="fw"/><text x="165" y="40" text-anchor="middle" class="t">ClockApplication lifecycle</text><text x="165" y="70" text-anchor="middle" class="s">timed boot → optional Easter egg → RUNNING</text><text x="165" y="94" text-anchor="middle" class="s">arcade: /OE disabled; drummer: deliberate gates</text></g>
+  <g transform="translate(355 90)"><rect width="330" height="110" rx="12" class="fw"/><text x="165" y="40" text-anchor="middle" class="t">ClockApplication lifecycle</text><text x="165" y="70" text-anchor="middle" class="s">timed boot → optional Easter egg → RUNNING</text><text x="165" y="94" text-anchor="middle" class="s">arcade: gate sources muted; drummer: deliberate gates</text></g>
   <path d="M285 145 H355" class="arrow"/>
 
   <g transform="translate(45 285)"><rect width="240" height="120" rx="12" class="host"/><text x="120" y="38" text-anchor="middle" class="t">Virtual source</text><text x="120" y="68" text-anchor="middle" class="s">SQUARE / SINE / TRIANGLE</text><text x="120" y="94" text-anchor="middle" class="s">SYNC BPM/PPQN or RST period</text></g>

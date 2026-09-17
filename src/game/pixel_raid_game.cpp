@@ -266,8 +266,9 @@ void PixelRaidGame::render() {
 }
 
 void PixelRaidGame::flashLifeLostLeds() {
-    // LEDs are connected on the MCU side of the 74HCT244. Keeping /OE disabled
-    // lets us animate those LEDs without driving a positive gate level onto the jacks.
+    // Final hardware has no MCU-controlled shared /OE. GateOutputDriver therefore
+    // clamps these legacy LED-flash HIGH requests to LOW while output is muted,
+    // preserving the life-loss pause without producing gate pulses at the jacks.
     gateOutputs_.disableOutputStage();
     for (std::uint8_t cycle = 0U; cycle < 2U; ++cycle) {
         for (std::size_t channel = 0U; channel < 8U; ++channel) {

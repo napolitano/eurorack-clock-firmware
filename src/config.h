@@ -41,12 +41,11 @@ inline constexpr EasterEgg kEasterEgg = static_cast<EasterEgg>(CLOCK_EASTER_EGG)
 /**
  * Build-time display-transport override.
  *
- * The generic/base profile uses I2C so broadly available modules work without
- * extra flags. The shipped/reference PlatformIO environment explicitly selects
- * SPI because it gives the shortest display service time.
+ * Final CLOCK hardware uses the SPI OLED wiring profile. PB6/PB7 are reserved
+ * for the quadrature encoder and therefore are not available for I2C display use.
  */
 #ifndef CLOCK_DISPLAY_USE_SPI
-#define CLOCK_DISPLAY_USE_SPI 0
+#define CLOCK_DISPLAY_USE_SPI 1
 #endif
 
 /** Display transport selected for this firmware build. */

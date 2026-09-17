@@ -114,7 +114,7 @@ The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly b
 pio test -e native
 ```
 
-The Native entry point contains **398 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 51 `test_controls`, 56 `test_settings`, 19 `test_screensavers`, 36 `test_easter_eggs`, and 27 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite locks down immediate first-detent response from every electrical phase, immediate response after direction changes, counter wraparound, missed/extra-transition recovery, menu-entry encoder-push phase re-anchoring, long alternating single-detent sequences, fast-turn backlog handling, and device-level encoder inversion after detent decoding. Production STM32F401 builds use TIM2 encoder mode on PA0/PA1 so quadrature transitions are counted by hardware rather than by EXTI delivery. The Settings/host suites additionally cover deterministic OLED 0°/180° transfer rotation and schema-v6 to schema-v7 migration for the two device-local preferences.
+The Native entry point contains **398 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 83 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 51 `test_controls`, 56 `test_settings`, 19 `test_screensavers`, 36 `test_easter_eggs`, and 27 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite locks down immediate first-detent response from every electrical phase, immediate response after direction changes, counter wraparound, missed/extra-transition recovery, menu-entry encoder-push phase re-anchoring, long alternating single-detent sequences, fast-turn backlog handling, and device-level encoder inversion after detent decoding. Production STM32F401 builds use TIM4 encoder mode on PB6/PB7 so quadrature transitions are counted by hardware rather than by EXTI delivery. The Settings/host suites additionally cover deterministic OLED 0°/180° transfer rotation and schema-v6 to schema-v7 migration for the two device-local preferences.
 
 Covered areas include:
 
@@ -160,7 +160,7 @@ python scripts/run_host_tests.py --skip-sanitizers
 python scripts/run_host_tests.py --sanitizers-only
 ```
 
-It compiles and executes the real project-owned firmware across I2C, SPI, fixed-I2C/reset-pin, deterministic-core, and native-smoke variants using GCC coverage instrumentation.
+It compiles and executes the real project-owned firmware across the production SPI profile, legacy I2C regression variants, deterministic-core, and native-smoke variants using GCC coverage instrumentation.
 
 CI requires:
 
@@ -212,7 +212,7 @@ Order:
 4. coverage-instrumented firmware tests and sanitizer gates
 5. headless full-firmware simulator build/tests on Windows, macOS, and Linux
 6. SDL3 simulator frontend compile/build gate on Ubuntu
-7. STM32F401 I2C firmware build
+7. legacy I2C transport host regression build
 8. STM32F401 SPI display compile-check
 9. verify both STM32 target builds and their memory budgets
 10. verify STM32CubeF4 firmware artifacts and embedded dependency policy before release packaging

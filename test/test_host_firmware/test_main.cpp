@@ -1313,6 +1313,24 @@ void testMenuModelAndFormatters() {
 
 void testHalBasicsAndDisplay() {
     resetFakes();
+#if CLOCK_ENFORCE_FINAL_PIN_MAP
+    CHECK_EQ(pinmap::kPlayPauseButtonPin, mcu::PA1);
+    CHECK_EQ(pinmap::kResetBackButtonPin, mcu::PA2);
+    CHECK_EQ(pinmap::kTapTempoButtonPin, mcu::PA3);
+    CHECK_EQ(pinmap::kDisplaySpiChipSelectPin, mcu::PA4);
+    CHECK_EQ(pinmap::kDisplaySpiClockPin, mcu::PA5);
+    CHECK_EQ(pinmap::kDisplaySpiDataPin, mcu::PA7);
+    CHECK_EQ(pinmap::kExternalSyncSignalPin, mcu::PA8);
+    CHECK_EQ(pinmap::kExternalResetSignalPin, mcu::PA9);
+    CHECK_EQ(pinmap::kEncoderPhaseAPin, mcu::PB6);
+    CHECK_EQ(pinmap::kEncoderPhaseBPin, mcu::PB7);
+    CHECK_EQ(pinmap::kEncoderPushButtonPin, mcu::PB14);
+    CHECK_EQ(pinmap::kDisplaySpiDataCommandPin, mcu::PB9);
+    CHECK_EQ(pinmap::kDisplayResetPin, mcu::PB15);
+    const std::array<std::uint32_t, 8U> expectedGatePins{{mcu::PB0,mcu::PB1,mcu::PB2,mcu::PB5,mcu::PB8,mcu::PB10,mcu::PB12,mcu::PB13}};
+    CHECK(pinmap::kGateChannelPins == expectedGatePins);
+    CHECK_EQ(pinmap::kGateBufferOutputEnablePin, pinmap::kUnassignedDigitalPin);
+#endif
     {
         hal::InterruptLock lock;
         CHECK_EQ(fakefw::noInterruptCalls,1U);
@@ -1325,12 +1343,17 @@ void testHalBasicsAndDisplay() {
     gates.beginDisabled();
     CHECK(!gates.channelStateHigh(0U));
     gates.setChannelState(0U, true);
-    CHECK(gates.channelStateHigh(0U));
-    gates.setAllChannelsLow();
     CHECK(!gates.channelStateHigh(0U));
-    CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin],pinmap::kGateBufferDisabledLevel);
-    gates.enableOutputStage(); CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin],pinmap::kGateBufferEnabledLevel);
-    gates.disableOutputStage(); gates.setChannelState(0U,true); CHECK_EQ(fakefw::pinValues[pinmap::kChannel1GateLedPin],HIGH);
+    CHECK_EQ(fakefw::pinValues[pinmap::kChannel1GateLedPin], LOW);
+    gates.enableOutputStage();
+    gates.setChannelState(0U, true);
+    CHECK(gates.channelStateHigh(0U));
+    CHECK_EQ(fakefw::pinValues[pinmap::kChannel1GateLedPin], HIGH);
+    gates.disableOutputStage();
+    CHECK(!gates.channelStateHigh(0U));
+    CHECK_EQ(fakefw::pinValues[pinmap::kChannel1GateLedPin], LOW);
+    gates.setChannelState(0U,true);
+    CHECK_EQ(fakefw::pinValues[pinmap::kChannel1GateLedPin],LOW);
     gates.setChannelState(0U,false); gates.setChannelState(99U,true); gates.setAllChannelsLow();
     for (auto pin: pinmap::kGateChannelPins) CHECK_EQ(fakefw::pinValues[pin],LOW);
 
@@ -3955,7 +3978,7 @@ void testEasterEggGameAndHighScore() {
     CHECK_EQ(game::PixelRaidGameTestAccess::chooseEnemyShotX(pixelRaid), 64);
 
     game::PixelRaidGameTestAccess::flashLifeLost(pixelRaid);
-    CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin], pinmap::kGateBufferDisabledLevel);
+    for (const auto pin : pinmap::kGateChannelPins) CHECK_EQ(fakefw::pinValues[pin], LOW);
     for (const std::uint32_t pin : pinmap::kGateChannelPins) CHECK_EQ(fakefw::pinValues[pin], LOW);
 
     CHECK(game::PixelRaidGameTestAccess::confirmExit(pixelRaid));
@@ -3980,7 +4003,7 @@ void testEasterEggGameAndHighScore() {
     game::Formula1Game formula1(display, controls, gates, formulaLeaderboard);
     formula1.run();
     CHECK(std::any_of(display.framebufferForTest().begin(), display.framebufferForTest().end(), [](const std::uint8_t value) { return value != 0U; }));
-    CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin], pinmap::kGateBufferDisabledLevel);
+    for (const auto pin : pinmap::kGateChannelPins) CHECK_EQ(fakefw::pinValues[pin], LOW);
 
     // Formula 1 regression: world motion must stay encoder-playable, curves must alter the frame,
     // and lane dashes must never escape above the horizon into the central sky region.
@@ -4024,7 +4047,7 @@ void testEasterEggGameAndHighScore() {
     game::BreakoutGame breakout(display, controls, gates, breakoutLeaderboard);
     breakout.run();
     CHECK(std::any_of(display.framebufferForTest().begin(), display.framebufferForTest().end(), [](const std::uint8_t value) { return value != 0U; }));
-    CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin], pinmap::kGateBufferDisabledLevel);
+    for (const auto pin : pinmap::kGateChannelPins) CHECK_EQ(fakefw::pinValues[pin], LOW);
 
     // Breakout paddle zones must produce different rebound angles, and modifiers change the bat geometry.
     game::BreakoutGameTestAccess::reset(breakout);
@@ -4219,7 +4242,7 @@ void testEasterEggGameAndHighScore() {
     drumControls = {}; drumControls.resetButton = pressedEdge();
     game::BeatknechtTestAccess::update(drummer, drumControls, 200U);
     CHECK_EQ(game::BeatknechtTestAccess::transport(drummer), TransportState::Stopped);
-    CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin], pinmap::kGateBufferDisabledLevel);
+    for (const auto pin : pinmap::kGateChannelPins) CHECK_EQ(fakefw::pinValues[pin], LOW);
 
     // Egg Journey: the terrain auto-scrolls, encoder changes the egg's screen position,
     // TAP jumps, failures consume three lives, TAP RETRY requires a fresh press, and the
@@ -4227,7 +4250,7 @@ void testEasterEggGameAndHighScore() {
     game::EggJourneyGame eggJourney(display, controls, gates, eggLeaderboard);
     eggJourney.run();
     CHECK(std::any_of(display.framebufferForTest().begin(), display.framebufferForTest().end(), [](const std::uint8_t value) { return value != 0U; }));
-    CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin], pinmap::kGateBufferDisabledLevel);
+    for (const auto pin : pinmap::kGateChannelPins) CHECK_EQ(fakefw::pinValues[pin], LOW);
     game::EggJourneyGameTestAccess::reset(eggJourney);
     const std::int32_t cameraBefore = game::EggJourneyGameTestAccess::cameraX(eggJourney);
     const std::int16_t screenBefore = game::EggJourneyGameTestAccess::screenX(eggJourney);

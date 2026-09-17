@@ -110,11 +110,11 @@ void testBeatknechtIntroUsesPlayInsteadOfTap(){
     TEST_ASSERT_TRUE(shell.playing());
 }
 
-void testPixelRaidHostRunKeepsRackOutputStageDisabled(){ Fixture f; game::PixelRaidGame g(f.display,f.controls,f.gates,f.leaderboard); g.run(); TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
-void testFormula1HostRunKeepsRackOutputStageDisabled(){ Fixture f; game::ArcadeLeaderboardStore l(f.storage,game::ArcadeGameId::Formula1); game::Formula1Game g(f.display,f.controls,f.gates,l); g.run(); TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
-void testBreakoutHostRunKeepsRackOutputStageDisabled(){ Fixture f; game::ArcadeLeaderboardStore l(f.storage,game::ArcadeGameId::Breakout); game::BreakoutGame g(f.display,f.controls,f.gates,l); g.run(); TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
-void testEggJourneyHostRunKeepsRackOutputStageDisabled(){ Fixture f; game::ArcadeLeaderboardStore l(f.storage,game::ArcadeGameId::EggJourney); game::EggJourneyGame g(f.display,f.controls,f.gates,l); g.run(); TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
-void testBeatknechtHostRunStartsWithRackOutputStageDisabled(){ Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); g.run(); TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
+void testPixelRaidHostRunKeepsRackOutputStageDisabled(){ Fixture f; game::PixelRaidGame g(f.display,f.controls,f.gates,f.leaderboard); g.run(); for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
+void testFormula1HostRunKeepsRackOutputStageDisabled(){ Fixture f; game::ArcadeLeaderboardStore l(f.storage,game::ArcadeGameId::Formula1); game::Formula1Game g(f.display,f.controls,f.gates,l); g.run(); for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
+void testBreakoutHostRunKeepsRackOutputStageDisabled(){ Fixture f; game::ArcadeLeaderboardStore l(f.storage,game::ArcadeGameId::Breakout); game::BreakoutGame g(f.display,f.controls,f.gates,l); g.run(); for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
+void testEggJourneyHostRunKeepsRackOutputStageDisabled(){ Fixture f; game::ArcadeLeaderboardStore l(f.storage,game::ArcadeGameId::EggJourney); game::EggJourneyGame g(f.display,f.controls,f.gates,l); g.run(); for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
+void testBeatknechtHostRunStartsWithRackOutputStageDisabled(){ Fixture f; game::Beatknecht g(f.display,f.controls,f.gates); g.run(); for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]); TEST_ASSERT_TRUE(hasPixels(f.display)); }
 
 void testPixelRaidResetStartsWithThreeLives(){ Fixture f; game::PixelRaidGame g(f.display,f.controls,f.gates,f.leaderboard); game::PixelRaidGameTestAccess::reset(g); TEST_ASSERT_EQUAL_UINT8(3U,game::PixelRaidGameTestAccess::lives(g)); }
 void testPixelRaidInitialAlienFieldHasExpectedCollision(){ Fixture f; game::PixelRaidGame g(f.display,f.controls,f.gates,f.leaderboard); game::PixelRaidGameTestAccess::reset(g); TEST_ASSERT_TRUE(game::PixelRaidGameTestAccess::hitAlien(g,7,13)); }
@@ -129,7 +129,6 @@ void testBeatknechtPlayPausePreservesStepPhaseAndForcesGatesLow(){
     game::BeatknechtTestAccess::update(g,playPress(),100U);
     TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Playing),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
     TEST_ASSERT_EQUAL_UINT8(0U,game::BeatknechtTestAccess::step(g));
-    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferEnabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
     TEST_ASSERT_EQUAL(HIGH,fakefw::pinValues[pinmap::kChannel1GateLedPin]);
 
     game::BeatknechtTestAccess::update(g,playPress(),150U);
@@ -155,13 +154,11 @@ void testBeatknechtStopResetsPhaseDisablesOutputsAndPlayRestartsStepZero(){
     game::BeatknechtTestAccess::update(g,stopPress(),220U);
     TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Stopped),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
     TEST_ASSERT_EQUAL_UINT8(0U,game::BeatknechtTestAccess::step(g));
-    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
     for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]);
 
     game::BeatknechtTestAccess::update(g,playPress(),1000U);
     TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Playing),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
     TEST_ASSERT_EQUAL_UINT8(0U,game::BeatknechtTestAccess::step(g));
-    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferEnabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
     TEST_ASSERT_EQUAL(HIGH,fakefw::pinValues[pinmap::kChannel1GateLedPin]);
 }
 
@@ -171,7 +168,7 @@ void testBeatknechtStopWinsOverSimultaneousPlay(){
     auto controls=playPress(); controls.resetButton={hal::ButtonEdge::Pressed,true};
     game::BeatknechtTestAccess::update(g,controls,120U);
     TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Stopped),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
-    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
+    for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]);
 }
 
 void testBeatknechtExitConfirmationPausesPlayingAndSilencesGates(){
@@ -194,7 +191,6 @@ void testBeatknechtExitConfirmationDefaultsToNoAndCancelResumesPlayback(){
     TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitConfirmationActive(g));
     TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitRequested(g));
     TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Playing),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
-    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferEnabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
 }
 
 void testBeatknechtExitConfirmationYesStopsAndDisablesOutputs(){
@@ -209,7 +205,6 @@ void testBeatknechtExitConfirmationYesStopsAndDisablesOutputs(){
     TEST_ASSERT_TRUE(game::BeatknechtTestAccess::exitRequested(g));
     TEST_ASSERT_FALSE(game::BeatknechtTestAccess::exitConfirmationActive(g));
     TEST_ASSERT_EQUAL(static_cast<int>(TransportState::Stopped),static_cast<int>(game::BeatknechtTestAccess::transport(g)));
-    TEST_ASSERT_EQUAL_UINT32(pinmap::kGateBufferDisabledLevel,fakefw::pinValues[pinmap::kGateBufferOutputEnablePin]);
     for(const auto pin: pinmap::kGateChannelPins) TEST_ASSERT_EQUAL(LOW,fakefw::pinValues[pin]);
 }
 

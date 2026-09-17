@@ -10,7 +10,7 @@ The header is exact:
 time_us,signal,level
 ```
 
-Each following row records one digital transition. `time_us` is a non-negative timestamp in microseconds, `signal` is a stable logical name, and `level` is `0` or `1`. Rows must be globally monotonic in time. Recommended signal names are `OUT1` … `OUT8`, `SYNC`, `RST`, `SCK`, `SDA`, `CS`, and `DISPLAY_MARKER` where a particular bench setup provides those probes.
+Each following row records one digital transition. `time_us` is a non-negative timestamp in microseconds, `signal` is a stable logical name, and `level` is `0` or `1`. Rows must be globally monotonic in time. Recommended signal names are `OUT1` … `OUT8`, `SYNC`, `RST`, `CLK`, `DIN`, `CS`, and `DISPLAY_MARKER` where a particular bench setup provides those probes. Older captures may use `SCK` for `CLK` and `SDA`/`MOSI` for `DIN`; those are naming aliases for the same SPI wires, not a transport change.
 
 Example:
 
