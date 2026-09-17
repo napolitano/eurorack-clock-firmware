@@ -32,7 +32,7 @@ This project is still in active development. Until the first stable release, ver
 - Restored the STM32duino startup-order contract without restoring the Arduino/LGPL runtime: MCU/HAL initialization now completes before the top-level `ClockApplication` object is constructed.
 - Explicitly restores `SCB->VTOR` to user Flash for both cold boot and ROM-DFU handoff before interrupts are relied upon.
 - Added the Cube `HAL_MspInit()` boundary that STM32duino previously supplied, including the SYSCFG/PWR clocks required for reliable EXTI routing.
-- Aligned the direct Cube OLED SPI1 setup with the final write-only display wiring: PA5 drives display `CLK`, PA7 drives `DIN`, PA4 drives `CS`, PB9 drives `DC`, and PB15 drives active-low `RES`. SPI1 now uses one-line transmit mode so PA6 is not silently consumed as an unused MISO pin.
+- Aligned the direct Cube OLED SPI1 setup with the final write-only display wiring: PA5 drives display `CLK`, PA7 drives `DIN`, PA4 drives `CS`, PB9 drives `DC`, and PB15 drives active-low `RES`. SPI1 stays in the proven normal two-line master mode while only SCK and MOSI are configured, so PA6/MISO remains unconfigured and free.
 - Corrected persistence-preserving USB DFU sequencing: the application region is written first, sector 0/vector table last, and DfuSe `:leave` now targets `0x08000000` rather than `0x0800C000`.
 
 ### Final hardware pin map
@@ -41,6 +41,8 @@ This project is still in active development. Until the first stable release, ver
 - Moved PEC11L hardware quadrature counting from the prototype TIM2/PA0-PA1 path to TIM4 on PB6/PB7. The 16-bit TIM4 count is extended into the existing 32-bit software counter contract before detent decoding.
 - Removed the final-hardware MCU assignment for a shared gate-buffer `/OE` because PB8 is Gate 5. Gate safety now clamps all eight source GPIOs LOW whenever the logical output stage is muted.
 - Clarified OLED connector naming: the target module uses `CLK`/`DIN`; the earlier prototype module labeled the same SPI wires `SCL`/`SDA`.
+- Restored the proven SPI1 two-line master configuration after the pin-map refactor had unnecessarily switched the write-only OLED to one-line mode and left the physical display dark. PA6 remains unconfigured; transmit-only behavior is provided by using only SCK/MOSI plus software CS/DC/RES.
+- Added a dedicated OLED hardware-contract regression suite that locks the final display pins, SPI mode/polarity/phase/data width, AF5 GPIO setup, TX-only HAL path, PA6 non-use, and reset pulse sequence. Mutation checks confirm that a return to `SPI_DIRECTION_1LINE` or an accidental PA6/MISO GPIO configuration fails the suite.
 
 ### Hardware behavior follow-up
 

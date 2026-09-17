@@ -73,9 +73,9 @@ class PersistenceUploadTests(unittest.TestCase):
         self.assertIn("__HAL_RCC_SYSCFG_CLK_ENABLE();", platform)
 
         oled = (ROOT / "src" / "hal" / "oled_display_transport.cpp").read_text(encoding="utf-8")
-        self.assertIn("SPI_DIRECTION_1LINE", oled)
+        self.assertIn("SPI_DIRECTION_2LINES", oled)
+        self.assertNotIn("SPI_DIRECTION_1LINE", oled)
         self.assertNotIn("kDisplaySpiMisoPin", oled)
-        self.assertNotIn("SPI_DIRECTION_2LINES", oled)
 
     def test_region_size_guard_rejects_empty_and_oversized_images(self) -> None:
         with tempfile.TemporaryDirectory() as directory:

@@ -212,8 +212,16 @@ inline constexpr std::array<std::uint32_t, 21U> kFinalHardwareDigitalPins{{
 #if CLOCK_ENFORCE_FINAL_PIN_MAP
 static_assert(distinctAssignedPins(kFinalHardwareDigitalPins),
               "Final hardware GPIO map contains a duplicate assignment");
+static_assert(kDisplaySpiChipSelectPin == mcu::PA4,
+              "Final hardware requires OLED CS on PA4");
+static_assert(kDisplaySpiClockPin == mcu::PA5,
+              "Final hardware requires OLED CLK/SCK on PA5");
+static_assert(kDisplaySpiDataPin == mcu::PA7,
+              "Final hardware requires OLED DIN/MOSI on PA7");
 static_assert(kDisplaySpiDataCommandPin == mcu::PB9,
               "Final hardware requires OLED D/C on PB9");
+static_assert(kDisplayResetPin == mcu::PB15,
+              "Final hardware requires OLED RES on PB15");
 #endif
 
 }  // namespace clockfw::pinmap

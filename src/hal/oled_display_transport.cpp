@@ -130,10 +130,11 @@ bool OledDisplay::beginSpi() {
     GPIO_InitTypeDef gpio{}; gpio.Mode = GPIO_MODE_AF_PP; gpio.Pull = GPIO_NOPULL; gpio.Speed = GPIO_SPEED_FREQ_VERY_HIGH; gpio.Alternate = GPIO_AF5_SPI1;
     gpio.Pin = maskFor(pinmap::kDisplaySpiClockPin); HAL_GPIO_Init(sckPort, &gpio);
     gpio.Pin = maskFor(pinmap::kDisplaySpiDataPin); HAL_GPIO_Init(mosiPort, &gpio);
-    // The OLED is write-only on the final PCB. Use SPI1 one-line transmit mode
-    // so PA6/MISO remains completely free instead of becoming a hidden pin
-    // assignment outside the documented hardware map.
-    gDisplaySpi.Instance = SPI1; gDisplaySpi.Init.Mode = SPI_MODE_MASTER; gDisplaySpi.Init.Direction = SPI_DIRECTION_1LINE; gDisplaySpi.Init.DataSize = SPI_DATASIZE_8BIT; gDisplaySpi.Init.CLKPolarity = SPI_POLARITY_LOW; gDisplaySpi.Init.CLKPhase = SPI_PHASE_1EDGE; gDisplaySpi.Init.NSS = SPI_NSS_SOFT; gDisplaySpi.Init.BaudRatePrescaler = spiPrescalerFor(HAL_RCC_GetPCLK2Freq(), config::kDisplaySpiFrequencyHz); gDisplaySpi.Init.FirstBit = SPI_FIRSTBIT_MSB; gDisplaySpi.Init.TIMode = SPI_TIMODE_DISABLE; gDisplaySpi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE; gDisplaySpi.Init.CRCPolynomial = 7U;
+    // The OLED is write-only, but SPI1 deliberately stays in the proven normal
+    // 2-line master mode. Only SCK and MOSI are configured as GPIO alternate
+    // functions; PA6/MISO remains unconfigured and free. Do not change the SPI
+    // direction merely to express that the display is transmit-only.
+    gDisplaySpi.Instance = SPI1; gDisplaySpi.Init.Mode = SPI_MODE_MASTER; gDisplaySpi.Init.Direction = SPI_DIRECTION_2LINES; gDisplaySpi.Init.DataSize = SPI_DATASIZE_8BIT; gDisplaySpi.Init.CLKPolarity = SPI_POLARITY_LOW; gDisplaySpi.Init.CLKPhase = SPI_PHASE_1EDGE; gDisplaySpi.Init.NSS = SPI_NSS_SOFT; gDisplaySpi.Init.BaudRatePrescaler = spiPrescalerFor(HAL_RCC_GetPCLK2Freq(), config::kDisplaySpiFrequencyHz); gDisplaySpi.Init.FirstBit = SPI_FIRSTBIT_MSB; gDisplaySpi.Init.TIMode = SPI_TIMODE_DISABLE; gDisplaySpi.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE; gDisplaySpi.Init.CRCPolynomial = 7U;
     if (HAL_SPI_Init(&gDisplaySpi) != HAL_OK) return false;
 #endif
     platform::configureOutput(pinmap::kDisplaySpiChipSelectPin); platform::configureOutput(pinmap::kDisplaySpiDataCommandPin); platform::write(pinmap::kDisplaySpiChipSelectPin,true); platform::write(pinmap::kDisplaySpiDataCommandPin,false); platform::delayMilliseconds(1U); return true;
