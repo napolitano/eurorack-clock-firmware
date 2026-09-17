@@ -46,7 +46,11 @@ enum class ScreensaverMode : std::uint8_t {
     Field = 9U,
     Blox = 10U,
     Matrix = 11U,
-    CubeCover = 12U
+    CubeCover = 12U,
+    MakeMusic = 13U,
+    Labyrinth = 14U,
+    Starfield = 15U,
+    Fireworks = 16U
 };
 
 /** @brief Represents the master transport state. */

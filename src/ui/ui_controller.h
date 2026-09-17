@@ -136,6 +136,9 @@ private:
     /** @brief Executes or cancels the guarded Top-100 clear action. */
     void confirmHighScoreClear(std::uint32_t nowMs);
 
+    /** @brief Executes or cancels the guarded full factory reset action. */
+    void confirmFactoryReset(std::uint32_t nowMs);
+
     /** @brief Opens the named-preset slot list for an explicit load or save operation. */
     void openPresetSlots(PresetSlotAction action);
 

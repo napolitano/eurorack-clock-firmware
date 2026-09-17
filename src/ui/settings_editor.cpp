@@ -190,11 +190,13 @@ void SettingsEditor::adjustScreensaver(
 
     if (rowIndex == 0U) {
         // Explicit UI order preserves persisted enum values while keeping OFF first.
-        constexpr std::array<ScreensaverMode, 12U> kOrder{{
+        constexpr std::array<ScreensaverMode, 16U> kOrder{{
             ScreensaverMode::None, ScreensaverMode::Clock, ScreensaverMode::Plug,
             ScreensaverMode::Heartbeat, ScreensaverMode::Acid, ScreensaverMode::Spectrum,
             ScreensaverMode::Field, ScreensaverMode::Blox, ScreensaverMode::Matrix,
-            ScreensaverMode::CubeCover, ScreensaverMode::Fractal, ScreensaverMode::Orbit}};
+            ScreensaverMode::CubeCover, ScreensaverMode::Fractal, ScreensaverMode::Orbit,
+            ScreensaverMode::MakeMusic, ScreensaverMode::Labyrinth,
+            ScreensaverMode::Starfield, ScreensaverMode::Fireworks}};
         std::size_t current = 0U;
         for (std::size_t index = 0U; index < kOrder.size(); ++index) {
             if (kOrder[index] == display.screensaverMode) { current = index; break; }

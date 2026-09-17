@@ -165,6 +165,16 @@ public:
         char* destination,
         std::size_t destinationSize) const;
 
+    /**
+     * @brief Atomically replaces the complete persistent image with factory state.
+     *
+     * This clears CURRENT, all named presets, legacy score records, and all Top-100
+     * leaderboards in one power-loss-safe A/B commit, then stores the supplied
+     * factory state as the new CURRENT record.
+     * @return True only after the replacement image has been committed and verified.
+     */
+    bool factoryReset(const ClockState& factoryState);
+
 private:
     /** Serialized field count for one complete ClockState payload. */
     static constexpr std::size_t kStatePayloadSize = kCurrentStatePayloadBytes;

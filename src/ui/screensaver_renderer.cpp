@@ -138,6 +138,18 @@ void ScreensaverRenderer::render(
         case ScreensaverMode::CubeCover:
             renderCubeCover(frameIndex);
             break;
+        case ScreensaverMode::MakeMusic:
+            renderMakeMusic(frameIndex);
+            break;
+        case ScreensaverMode::Labyrinth:
+            renderLabyrinth(frameIndex);
+            break;
+        case ScreensaverMode::Starfield:
+            renderStarfield(frameIndex);
+            break;
+        case ScreensaverMode::Fireworks:
+            renderFireworks(frameIndex);
+            break;
         case ScreensaverMode::None:
         default:
             break;

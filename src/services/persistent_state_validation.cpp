@@ -45,7 +45,7 @@ bool isPersistentStateValid(const ClockState& state) {
         static_cast<std::uint8_t>(state.display.screensaverMode) <
             static_cast<std::uint8_t>(ScreensaverMode::Fractal) ||
         static_cast<std::uint8_t>(state.display.screensaverMode) >
-            static_cast<std::uint8_t>(ScreensaverMode::CubeCover) ||
+            static_cast<std::uint8_t>(ScreensaverMode::Fireworks) ||
         state.display.screensaverAfterMinutes < 1U ||
         state.display.screensaverAfterMinutes > state.display.dimAfterMinutes ||
         state.display.dimAfterMinutes > state.display.offAfterMinutes ||

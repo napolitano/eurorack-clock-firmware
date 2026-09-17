@@ -27,7 +27,9 @@ SCREENSAVER_ROWS = (
     (("screensaver-spectrum.png", "SPECTRUM - synthetic 16-band display"), ("screensaver-field.png", "FIELD - moving contour field")),
     (("screensaver-blox.png", "BLOX - falling procedural bodies"), ("screensaver-matrix.png", "MATRIX - monochrome digital rain")),
     (("screensaver-cube-cover.png", "CUBE COVER - tiled cube sweep"), ("screensaver-fractal.png", "FRACTAL - curated fern crop")),
-    (("screensaver-orbit.png", "ORBIT - sparse orbital motion"), ("power-off.png", "OLED OFF - final protection stage")),
+    (("screensaver-orbit.png", "ORBIT - sparse orbital motion"), ("screensaver-make-music.png", "MAKE MUSIC - progressive text stream")),
+    (("screensaver-labyrinth.png", "LABYRINTH - generated maze"), ("screensaver-starfield.png", "STARFIELD - three-depth parallax")),
+    (("screensaver-fireworks.png", "FIREWORKS - pixel rocket and burst"), ("power-off.png", "OLED OFF - final protection stage")),
 )
 
 EASTER_ROWS = (

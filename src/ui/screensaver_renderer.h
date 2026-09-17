@@ -67,6 +67,18 @@ private:
     /** @brief Covers the display with 8x8 cube tiles using changing traversal patterns. */
     void renderCubeCover(std::uint32_t frameIndex);
 
+    /** @brief Builds the MAKE·MUSIC·NOT·WAR message one glyph at a time. */
+    void renderMakeMusic(std::uint32_t frameIndex);
+
+    /** @brief Draws a succession of deterministic random perfect mazes. */
+    void renderLabyrinth(std::uint32_t frameIndex);
+
+    /** @brief Renders a three-depth parallax starfield. */
+    void renderStarfield(std::uint32_t frameIndex);
+
+    /** @brief Launches a pixel rocket and renders a compact upper-screen burst. */
+    void renderFireworks(std::uint32_t frameIndex);
+
     static constexpr std::uint32_t kInvalidFrameIndex =
         std::numeric_limits<std::uint32_t>::max();
 

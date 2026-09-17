@@ -53,6 +53,9 @@ public:
     /** @brief Draws the guarded confirmation used before clearing the ranked-game Top-100 table. */
     void renderHighScoreClearConfirm(const NavigationState& navigation);
 
+    /** @brief Draws the guarded confirmation used before erasing all user data. */
+    void renderFactoryResetConfirm(const NavigationState& navigation);
+
     /** @brief Draws the 16-character encoder-driven preset-name editor and character band. */
     void renderNameEntry(const NavigationState& navigation);
 

@@ -95,7 +95,7 @@ The catalog currently covers:
 - channel/global overviews, all six mode-palette selections, mode confirmation, and Sequencer editor;
 - every Settings page plus an active edit state;
 - templates, preset load/save/name/overwrite flows;
-- Clock, Plug, Heartbeat, Acid, Spectrum, Field, Blox, Matrix, Cube Cover, Fractal, and Orbit screensavers;
+- Clock, Plug, Heartbeat, Acid, Spectrum, Field, Blox, Matrix, Cube Cover, Fractal, Orbit, Make Music, Labyrinth, Starfield, and Fireworks screensavers;
 - individual retro intros for Pixel Raid, Formula 1, Breakout, Egg Journey, and BEATKNECHT; shared initials-entry/Top-100 arcade screens; Pixel Raid, Formula 1 (including curve/crash states), Breakout (including modifier state), Egg Journey (action, broken-shell, and flattened-egg states), and BEATKNECHT gameplay.
 
 The catalog is intentionally finite and representative. It covers every distinct user-visible operating/UI state rather than attempting the meaningless Cartesian product of every parameter value.

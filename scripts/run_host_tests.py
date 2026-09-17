@@ -323,6 +323,10 @@ def screensaver_sources() -> list[Path]:
         ROOT / "src/ui/screensaver_blox.cpp",
         ROOT / "src/ui/screensaver_matrix.cpp",
         ROOT / "src/ui/screensaver_cube_cover.cpp",
+        ROOT / "src/ui/screensaver_make_music.cpp",
+        ROOT / "src/ui/screensaver_labyrinth.cpp",
+        ROOT / "src/ui/screensaver_starfield.cpp",
+        ROOT / "src/ui/screensaver_fireworks.cpp",
     ]
 
 

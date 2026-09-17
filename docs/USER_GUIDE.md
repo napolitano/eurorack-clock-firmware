@@ -370,6 +370,8 @@ Display protection is active only while transport is STOP. The factory timing is
 
 The configured order is constrained to `START <= DIM <= OFF`. Any front-panel activity wakes the OLED immediately. `OFF` disables animation but does not disable the later dim/panel-off protection stages.
 
+Four additional visual modes are available: **MAKE MUSIC** builds `MAKE·MUSIC·NOT·WAR` one character at a time and continues row by row; **LABYRINTH** repeatedly generates and draws a random perfect maze; **STARFIELD** scrolls three parallax depth layers; and **FIREWORKS** launches a pixel rocket from changing positions before an upper-screen burst.
+
 ![Screensaver settings page showing the selected animation and the STOP-mode start, dim, and OLED-off timing values.](manual/assets/settings-screensaver.png)
 
 <table>
@@ -395,6 +397,14 @@ The configured order is constrained to `START <= DIM <= OFF`. Any front-panel ac
 </tr>
 <tr>
 <td align="center"><img src="manual/assets/screensaver-orbit.png" alt="ORBIT screensaver showing the sparse animated orbital display." width="220"><br><sub>ORBIT — sparse orbital motion</sub></td>
+<td align="center"><img src="manual/assets/screensaver-make-music.png" alt="MAKE MUSIC screensaver progressively building the MAKE MUSIC NOT WAR text stream with mid-dot separators." width="220"><br><sub>MAKE MUSIC — progressive text stream</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="manual/assets/screensaver-labyrinth.png" alt="LABYRINTH screensaver showing a generated perfect maze." width="220"><br><sub>LABYRINTH — generated maze</sub></td>
+<td align="center"><img src="manual/assets/screensaver-starfield.png" alt="STARFIELD screensaver showing three layers of parallax stars." width="220"><br><sub>STARFIELD — three-depth parallax</sub></td>
+</tr>
+<tr>
+<td align="center"><img src="manual/assets/screensaver-fireworks.png" alt="FIREWORKS screensaver showing an upper-screen pixel burst." width="220"><br><sub>FIREWORKS — pixel rocket and burst</sub></td>
 <td align="center"><img src="manual/assets/power-off.png" alt="OLED OFF display-protection state with the panel blank." width="220"><br><sub>OLED OFF — final display-protection stage</sub></td>
 </tr>
 </table>
@@ -443,13 +453,16 @@ Pixel Raid, Formula 1, Breakout, and Egg Journey keep the external gate-output s
 
 ## 21. INFO, version, and updates
 
-`SETTINGS → INFO` is read-only and separates identity from maintenance information:
+`SETTINGS → INFO` groups identity, maintenance information, and the deliberately buried factory-reset action:
 
 - **NAME** — `CLOCK`
 - **VERSION** — currently running firmware version
 - **AUTHOR** — Axel Napolitano
 - **LICENSES** — firmware and bundled third-party license identifiers/attributions
 - **UPDATES** — full-screen QR code for the current project update URL (`https://github.com/napolitano`)
+
+
+**FACTORY RESET** is the final INFO entry so it is not exposed as a routine performance control. Selecting it opens a separate confirmation screen with **NO** selected by default. Confirming **YES** stops transport, clears CURRENT, all eight named presets, legacy score data, and all Top-100 leaderboards, then restores the documented factory configuration.
 
 <table>
 <tr>

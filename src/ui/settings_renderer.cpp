@@ -383,6 +383,7 @@ void SettingsRenderer::renderHighScoreClearConfirm(const NavigationState& naviga
     display_.present();
 }
 
+
 void SettingsRenderer::renderNameEntry(const NavigationState& navigation) {
     display_.clear();
     display_.setFont(hal::DisplayFont::Small);

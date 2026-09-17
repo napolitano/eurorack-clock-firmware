@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v0.19.0-beta.14
 
-The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 394 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 398 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -17,10 +17,10 @@ The prerelease gates remain stringent without requiring synthetic tests for ever
 Current repository-wide validated baseline (`0.19.0-beta.14`):
 
 ```text
-Executable lines:   6466/6729 (96.09%)
-Functions:           563/573  (98.25%)
-Decision branches:  3913/4343 (90.10%)
-Compiler branches:  3914/5054 (77.44%, informational only)
+Executable lines:   6971/7227 (96.46%)
+Functions:           596/605  (98.51%)
+Decision branches:  4175/4634 (90.09%)
+Compiler branches:  4176/5418 (77.08%, informational only)
 ```
 
 ## Full host matrix
@@ -55,7 +55,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 56-case Settings suite also locks down min/max coupling, enum boundaries and cross-setting invariants
 - tap tempo and all factory templates
 - all menu pages, labels, compact formatters and localization fallback
-- performance, pictographic 2×4 channel overview, six-function 2×3 mode palette, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Fractal/Orbit screensaver effects, preset overwrite/name-band, templates and sequencer render paths
+- performance, pictographic 2×4 channel overview, six-function 2×3 mode palette, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Blox/Matrix/Cube Cover/Fractal/Orbit/Make Music/Labyrinth/Starfield/Fireworks screensaver effects, preset overwrite/name-band, templates and sequencer render paths
 - I2C auto-probe success/fallback/failure, fixed-address mode, deferred 24-byte-chunk refresh, NACK retry/latest-frame-wins behavior, SPI transport and optional reset-pin path
 - framebuffer text/primitives, all font roles, pixel clipping, dirty-page updates, unchanged-frame suppression and black/white drawing
 - TIM2 hardware quadrature accumulation on PA0/PA1, detent-phase resynchronization, first-detent/reversal recovery, counter wraparound, fast-turn backlog handling, and button debounce edges

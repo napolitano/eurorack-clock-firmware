@@ -220,6 +220,11 @@ void UiController::activateCurrentSetting() {
             openSettingsPage(SettingsPage::Licenses);
         } else if (navigation_.cursor == 4U) {
             openSettingsPage(SettingsPage::Updates);
+        } else if (navigation_.cursor == 5U) {
+            navigation_.screen = Screen::FactoryResetConfirm;
+            navigation_.cursor = 0U;  // Safe default: NO.
+            navigation_.editing = false;
+            invalidate();
         }
         return;
     }
@@ -315,6 +320,8 @@ void UiController::confirmHighScoreClear(const std::uint32_t nowMs) {
     navigation_.highScoreResetAvailable = leaderboard_->hasPersistentRecord();
     openSettingsPage(SettingsPage::Root, navigation_.highScoreResetAvailable ? 4U : 0U);
 }
+
+
 
 void UiController::normalizeScrollOffset() {
     constexpr std::uint8_t visibleRows = 5U;

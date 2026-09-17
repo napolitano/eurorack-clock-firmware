@@ -99,6 +99,8 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
         }
     } else if (navigation_.screen == Screen::HighScoreClearConfirm) {
         confirmHighScoreClear(nowMs);
+    } else if (navigation_.screen == Screen::FactoryResetConfirm) {
+        confirmFactoryReset(nowMs);
     } else if (navigation_.screen == Screen::NameEntry) {
         if (navigation_.nameCharacterIndex < services::PersistentStateService::kPresetNameLength - 1U) {
             ++navigation_.nameCharacterIndex;

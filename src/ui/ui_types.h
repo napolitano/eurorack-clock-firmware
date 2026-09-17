@@ -25,6 +25,7 @@ enum class Screen : std::uint8_t {
     PresetSlots,
     OverwriteConfirm,
     HighScoreClearConfirm,
+    FactoryResetConfirm,
     NameEntry
 };
 

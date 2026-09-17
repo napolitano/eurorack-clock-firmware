@@ -58,6 +58,10 @@ screensaver-field	Dense smooth scalar-field isocontours around moving attractors
 screensaver-blox	Blox falling triangle-built bodies accumulating on the display
 screensaver-matrix	Original monochrome procedural digital rain
 screensaver-cube-cover	Cube Cover filling the OLED with 8x8 cube tiles
+screensaver-make-music	MAKE MUSIC NOT WAR building character by character and row by row with mid-dots
+screensaver-labyrinth	Random perfect maze on the OLED grid
+screensaver-starfield	Three-depth parallax starfield
+screensaver-fireworks	Pixel rocket exploding in the upper display area
 screensaver-fractal	Fractal screensaver frame
 screensaver-orbit	Orbit screensaver frame
 pixel-raid-intro	Pixel Raid individual retro intro with marquee

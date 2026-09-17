@@ -91,6 +91,9 @@ void UiRenderer::render(
         case Screen::HighScoreClearConfirm:
             settingsRenderer_.renderHighScoreClearConfirm(navigation);
             break;
+        case Screen::FactoryResetConfirm:
+            settingsRenderer_.renderFactoryResetConfirm(navigation);
+            break;
         case Screen::NameEntry:
             settingsRenderer_.renderNameEntry(navigation);
             break;

@@ -11,7 +11,8 @@ CLOCK is an eight-output Eurorack master clock, divider, Euclidean rhythm source
 - **Reliable upside-down mounting:** `ORIENTATION = 180 DEG` now rotates the outgoing framebuffer in firmware while the OLED controller stays in its proven scan orientation. This removes the mirrored-text behavior seen with controller remapping.
 - **STM32Cube hardware compatibility:** startup order, MSP/SYSCFG/PWR setup, SPI1 configuration, vector-table handling, linker memory layout, pinned GCC 7.2.1/C++17, and persistence-preserving DFU sequencing were tightened after real ARM/hardware testing.
 - **Encoder hardening:** PA0/PA1 now use STM32 TIM2 encoder mode, with detent-phase resynchronization and expanded regression cases for first-detent, reversal, missing/extra transitions, counter wraparound, reversed direction, and fast-turn behavior. Physical confirmation of the remaining first-detent hardware observation is still part of beta qualification and is not claimed by host tests alone.
-- **394 named Native tests:** the public suite now includes 51 control tests and 36 Easter-egg tests, plus sanitizer, simulator, documentation, architecture, and dependency gates.
+- **Four new OLED screensavers:** `MAKE MUSIC` builds `MAKE·MUSIC·NOT·WAR` line by line, `LABYRINTH` generates new perfect mazes, `STARFIELD` renders three parallax depth layers, and `FIREWORKS` launches pixel rockets from varying positions into upper-screen bursts.
+- **398 named Native tests:** the public suite now includes 51 control tests and 36 Easter-egg tests, plus sanitizer, simulator, documentation, architecture, and dependency gates.
 
 ## Firmware updates
 

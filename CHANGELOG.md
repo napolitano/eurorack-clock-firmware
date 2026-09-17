@@ -10,6 +10,9 @@ This project is still in active development. Until the first stable release, ver
 
 ## [0.19.0-beta.14] - 2026-09-16
 
+- Rename the root `RESET` action to `PHASE RESET` to distinguish musical phase reset from destructive maintenance.
+- Add a guarded `FACTORY RESET` action as the final `INFO` item; confirmation defaults to `NO` and atomically clears settings, named presets, legacy scores, and Top-100 leaderboards before restoring factory defaults.
+
 ### Build compatibility follow-up
 
 - pin the STM32 ARM toolchain to GCC 7.2.1 so local and CI builds do not silently fall back to GCC 6.3.1
@@ -36,6 +39,14 @@ This project is still in active development. Until the first stable release, ver
 - Fixed the hardware-triggered encoder regression after menu entry: a debounced encoder-push release now re-anchors the TIM2 detent phase and clears only partial quadrature residue, preventing a shaft/push-induced phase shift from consuming the first detent after a direction change.
 - Added two regression cases that reproduce the menu-entry push phase shift against the previous decoder and verify immediate reversal plus 100 alternating single-detent turns afterward. `test_controls` now contains 51 named cases.
 
+### Screensavers
+
+- Added four STOP-mode OLED screensavers: `MAKE MUSIC`, `LABYRINTH`, `STARFIELD`, and `FIREWORKS`.
+- `MAKE MUSIC` builds `MAKE·MUSIC·NOT·WAR` one glyph at a time, completes each display row, and then continues on the next row using centered mid-dot separators.
+- `LABYRINTH` generates a new 16×8 perfect maze for each cycle and progressively draws its walls in pseudo-random order.
+- `STARFIELD` uses three independently moving depth layers to create monochrome parallax motion.
+- `FIREWORKS` launches a single-pixel rocket from changing horizontal positions and expands it into a compact upper-screen particle burst.
+
 ### Diagnostics
 
 - Added `GENERAL SETTINGS → DIAGNOSTICS → INPUTS / OUTPUTS`.
@@ -59,7 +70,8 @@ This project is still in active development. Until the first stable release, ver
 - Added regressions for PLAY start, phase-preserving pause/resume, STOP phase reset/output disable, restart from step 1, and STOP priority over simultaneous transport input.
 - Expanded `test_easter_eggs` from 25 to **28** named cases for the transport work.
 - Added six BEATKNECHT exit-confirmation regressions covering safe gate silencing, default-NO cancellation, confirmed exit, paused-state restoration, long-press release gating, and dialog rendering. `test_easter_eggs` now contains **34** named cases.
-- With the additional encoder regressions and BEATKNECHT rendering/exit coverage, the public Native inventory is now **394** named tests.
+- With the additional encoder regressions and BEATKNECHT rendering/exit coverage, the public Native inventory is now **398** named tests.
+- Added four dedicated screensaver regressions for progressive text construction, maze regeneration, starfield motion, and rocket-to-burst animation; `test_screensavers` now contains **19** named cases.
 - Updated the simulator boot-Easter-egg contract to launch the default BEATKNECHT build through the physical PLAY control.
 - Added BEATKNECHT rendering coverage for both NO/YES exit selections and all PLAY/PAUSE/STOP transport glyph branches, restoring the repository decision-branch gate above 90% without lowering the threshold.
 

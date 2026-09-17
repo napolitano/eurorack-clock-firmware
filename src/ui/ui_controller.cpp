@@ -240,8 +240,8 @@ void UiController::handleEncoderDelta(
         return;
     }
 
-    if (navigation_.screen == Screen::ModeChangeConfirm ||
-        navigation_.screen == Screen::HighScoreClearConfirm) {
+    if (navigation_.screen == Screen::ModeChangeConfirm || navigation_.screen == Screen::HighScoreClearConfirm ||
+        navigation_.screen == Screen::FactoryResetConfirm) {
         navigation_.cursor = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(navigation_.cursor) + delta, 0, 1));
         invalidate();
@@ -349,6 +349,8 @@ void UiController::handleResetButton(
         invalidate();
     } else if (navigation_.screen == Screen::HighScoreClearConfirm) {
         openSettingsPage(SettingsPage::Root, navigation_.highScoreResetAvailable ? 4U : 0U);
+    } else if (navigation_.screen == Screen::FactoryResetConfirm) {
+        openSettingsPage(SettingsPage::Info, 5U);
     } else if (navigation_.screen == Screen::ModeSelect) {
         modeTapTurnActive_ = false;
         navigation_.screen = navigation_.modeSelectReturnScreen;

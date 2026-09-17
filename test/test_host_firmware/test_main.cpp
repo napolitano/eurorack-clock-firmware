@@ -1161,7 +1161,7 @@ void testPersistentStateValidationBoundaries() {
     invalid([](ClockState& s) { s.unifiedClock.humanizeUs = static_cast<std::uint16_t>(config::kMaximumHumanizeUs + 1U); });
     invalid([](ClockState& s) { s.dividerBank.bank = static_cast<DividerBank>(99U); });
     invalid([](ClockState& s) { s.display.screensaverMode = static_cast<ScreensaverMode>(0U); });
-    invalid([](ClockState& s) { s.display.screensaverMode = static_cast<ScreensaverMode>(13U); });
+    invalid([](ClockState& s) { s.display.screensaverMode = static_cast<ScreensaverMode>(17U); });
     invalid([](ClockState& s) { s.display.screensaverAfterMinutes = 0U; });
     invalid([](ClockState& s) { s.display.screensaverAfterMinutes = 6U; s.display.dimAfterMinutes = 5U; });
     invalid([](ClockState& s) { s.display.dimAfterMinutes = 11U; s.display.offAfterMinutes = 10U; });
@@ -1244,10 +1244,12 @@ void testMenuModelAndFormatters() {
     const auto channelRoot = ui::buildMenuRow(ui::SettingsPage::Root, 1U, 0U, state);
     const auto presetsRoot = ui::buildMenuRow(ui::SettingsPage::Root, 2U, 0U, state);
     const auto infoRoot = ui::buildMenuRow(ui::SettingsPage::Root, 3U, 0U, state);
+    const auto phaseResetRoot = ui::buildMenuRow(ui::SettingsPage::Root, 4U, 0U, state);
     CHECK(std::strcmp(generalRoot.label, "GENERAL SETTINGS") == 0);
     CHECK(std::strcmp(channelRoot.label, "CHANNEL SETTINGS") == 0);
     CHECK(std::strcmp(presetsRoot.label, "PRESETS") == 0);
     CHECK(std::strcmp(infoRoot.label, "INFO") == 0);
+    CHECK(std::strcmp(phaseResetRoot.label, "PHASE RESET") == 0);
     const auto generalSync = ui::buildMenuRow(ui::SettingsPage::General, 1U, 0U, state);
     const auto generalSaver = ui::buildMenuRow(ui::SettingsPage::General, 2U, 0U, state);
     const auto generalDiagnostics = ui::buildMenuRow(ui::SettingsPage::General, 3U, 0U, state);
@@ -1262,8 +1264,11 @@ void testMenuModelAndFormatters() {
     CHECK(std::strcmp(infoProduct.value, "SSL CLOCK") == 0);
     const auto infoLicenses = ui::buildMenuRow(ui::SettingsPage::Info, 3U, 0U, state);
     const auto infoUpdates = ui::buildMenuRow(ui::SettingsPage::Info, 4U, 0U, state);
+    const auto infoFactoryReset = ui::buildMenuRow(ui::SettingsPage::Info, 5U, 0U, state);
     CHECK(std::strcmp(infoLicenses.label, "LICENSES") == 0);
     CHECK(std::strcmp(infoUpdates.label, "UPDATES") == 0);
+    CHECK(std::strcmp(infoFactoryReset.label, "FACTORY RESET") == 0);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Info), 6U);
     state.channels[0].common.mode = ChannelMode::Sequencer;
     const auto channelModeRow = ui::buildMenuRow(ui::SettingsPage::Channel, 0U, 0U, state);
     CHECK(std::strcmp(channelModeRow.value, "SEQUENCER") == 0);
@@ -2708,6 +2713,7 @@ void testRenderEveryScreenAndState() {
     nav.screen=ui::Screen::PresetSlots; for(auto action:{ui::PresetSlotAction::Load,ui::PresetSlotAction::Save}){nav.presetSlotAction=action;for(std::uint8_t i=0;i<8U;++i){nav.cursor=i;nav.scrollOffset=i>4U?static_cast<std::uint8_t>(i-4U):0U;renderer.render(state,nav,engine.snapshot());}}
     nav.screen=ui::Screen::OverwriteConfirm; nav.selectedPresetSlot=0U; for(std::uint8_t choice=0U;choice<2U;++choice){nav.cursor=choice;renderer.render(state,nav,engine.snapshot());}
     nav.screen=ui::Screen::HighScoreClearConfirm; for(std::uint8_t choice=0U;choice<2U;++choice){nav.cursor=choice;renderer.render(state,nav,engine.snapshot());}
+    nav.screen=ui::Screen::FactoryResetConfirm; for(std::uint8_t choice=0U;choice<2U;++choice){nav.cursor=choice;renderer.render(state,nav,engine.snapshot());}
     nav.screen=ui::Screen::NameEntry; nav.presetNameBuffer.fill(' '); nav.presetNameBuffer.back()='\0'; nav.presetNameBuffer[0]='A'; for(std::uint8_t i=0;i<16U;++i){nav.nameCharacterIndex=i;renderer.render(state,nav,engine.snapshot());}
     nav.cursor=5U; nav.scrollOffset=5U; renderer.render(state,nav,engine.snapshot());
     renderer.renderBootScreen(0U); renderer.renderBootScreen(config::kBootDurationMs/2U); renderer.renderBootScreen(config::kBootDurationMs+100U);
@@ -2962,6 +2968,18 @@ void testScreensaverRenderingAndPolicy() {
     CHECK(std::any_of(cubeFrame.begin(), cubeFrame.end(), [](const std::uint8_t value) { return value != 0U; }));
     saver.render(ScreensaverMode::CubeCover, 70U);
     CHECK(display.framebufferForTest() != cubeFrame);
+    saver.render(ScreensaverMode::MakeMusic, 18U);
+    const auto makeMusicFrame = display.framebufferForTest();
+    CHECK(std::any_of(makeMusicFrame.begin(), makeMusicFrame.end(), [](const std::uint8_t value) { return value != 0U; }));
+    saver.render(ScreensaverMode::Labyrinth, 40U);
+    const auto labyrinthFrame = display.framebufferForTest();
+    CHECK(std::any_of(labyrinthFrame.begin(), labyrinthFrame.end(), [](const std::uint8_t value) { return value != 0U; }));
+    saver.render(ScreensaverMode::Starfield, 7U);
+    const auto starfieldFrame = display.framebufferForTest();
+    CHECK(std::any_of(starfieldFrame.begin(), starfieldFrame.end(), [](const std::uint8_t value) { return value != 0U; }));
+    saver.render(ScreensaverMode::Fireworks, 15U);
+    const auto fireworksFrame = display.framebufferForTest();
+    CHECK(std::any_of(fireworksFrame.begin(), fireworksFrame.end(), [](const std::uint8_t value) { return value != 0U; }));
     const auto beforeNone = display.framebufferForTest();
     saver.render(ScreensaverMode::None, 0U);
     CHECK(display.framebufferForTest() == beforeNone);
@@ -3003,6 +3021,26 @@ void testScreensaverRenderingAndPolicy() {
     CHECK_EQ(state.display.screensaverMode, ScreensaverMode::CubeCover);
     row = ui::buildMenuRow(ui::SettingsPage::Screensaver, 0U, 0U, state);
     CHECK(std::strcmp(row.value, "CUBE COVER") == 0);
+    editor.adjust(ui::SettingsPage::Screensaver, 0U, 0U, 1);
+    CHECK_EQ(state.display.screensaverMode, ScreensaverMode::Fractal);
+    editor.adjust(ui::SettingsPage::Screensaver, 0U, 0U, 1);
+    CHECK_EQ(state.display.screensaverMode, ScreensaverMode::Orbit);
+    editor.adjust(ui::SettingsPage::Screensaver, 0U, 0U, 1);
+    CHECK_EQ(state.display.screensaverMode, ScreensaverMode::MakeMusic);
+    row = ui::buildMenuRow(ui::SettingsPage::Screensaver, 0U, 0U, state);
+    CHECK(std::strcmp(row.value, "MAKE MUSIC") == 0);
+    editor.adjust(ui::SettingsPage::Screensaver, 0U, 0U, 1);
+    CHECK_EQ(state.display.screensaverMode, ScreensaverMode::Labyrinth);
+    row = ui::buildMenuRow(ui::SettingsPage::Screensaver, 0U, 0U, state);
+    CHECK(std::strcmp(row.value, "LABYRINTH") == 0);
+    editor.adjust(ui::SettingsPage::Screensaver, 0U, 0U, 1);
+    CHECK_EQ(state.display.screensaverMode, ScreensaverMode::Starfield);
+    row = ui::buildMenuRow(ui::SettingsPage::Screensaver, 0U, 0U, state);
+    CHECK(std::strcmp(row.value, "STARFIELD") == 0);
+    editor.adjust(ui::SettingsPage::Screensaver, 0U, 0U, 1);
+    CHECK_EQ(state.display.screensaverMode, ScreensaverMode::Fireworks);
+    row = ui::buildMenuRow(ui::SettingsPage::Screensaver, 0U, 0U, state);
+    CHECK(std::strcmp(row.value, "FIREWORKS") == 0);
     state.display.screensaverMode = static_cast<ScreensaverMode>(99U);
     row = ui::buildMenuRow(ui::SettingsPage::Screensaver, 0U, 0U, state);
     CHECK(std::strcmp(row.value, "OFF") == 0);
@@ -3517,6 +3555,49 @@ void testUiControllerFlows() {
     runEngineTicks(engine, 20001U);
     CHECK(engine.snapshot().channelStep[selectedChannel] != 0U);
     controller.serviceRendering(now + (3U * config::kDisplayRefreshMinimumMs) + 3U);
+
+    // FACTORY RESET is deliberately buried as the final INFO entry. NO is the
+    // safe default; YES clears the complete persistent image and returns to the
+    // documented factory state in STOP.
+    game::ArcadeLeaderboardStore resetLeaderboard(storage, game::ArcadeGameId::PixelRaid);
+    CHECK(resetLeaderboard.markStarted());
+    const std::array<char, 4U> resetInitials{{'R','S','T','\0'}};
+    CHECK_EQ(resetLeaderboard.insertAndSave(9876U, resetInitials), 0);
+    CHECK(persistentState.presetExists(0U));
+    state.bpm = 321U;
+    state.device.encoderDirectionReversed = true;
+    engine.updateConfiguration(state, true);
+
+    controllerOpenSettingsChord(controller, now);
+    controllerTurn(controller, 3, now); // INFO
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Info);
+    controllerTurn(controller, 5, now); // FACTORY RESET, final INFO item
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::FactoryResetConfirm);
+    CHECK_EQ(controller.navigation().cursor, 0U); // NO
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Info);
+    CHECK_EQ(controller.navigation().cursor, 5U);
+    CHECK(persistentState.presetExists(0U));
+    CHECK(resetLeaderboard.hasPersistentRecord());
+
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::FactoryResetConfirm);
+    controllerTurn(controller, 1, now); // YES
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
+    CHECK_EQ(state.transport, TransportState::Stopped);
+    CHECK_EQ(state.bpm, defaults::kMasterBpm);
+    CHECK_EQ(state.operatingMode, defaults::kOperatingMode);
+    CHECK_EQ(state.device.encoderDirectionReversed, defaults::kEncoderDirectionReversed);
+    CHECK(!persistentState.presetExists(0U));
+    CHECK(!resetLeaderboard.hasPersistentRecord());
+    ClockState reloadedFactory{};
+    CHECK(persistentState.restoreCurrentState(reloadedFactory));
+    CHECK_EQ(reloadedFactory.bpm, defaults::kMasterBpm);
+    CHECK_EQ(reloadedFactory.transport, TransportState::Stopped);
 
     // Defensive invalid-screen and no-op paths.
     auto& mutableNavigation = const_cast<ui::NavigationState&>(controller.navigation());

@@ -32,7 +32,7 @@ MIN_SUITE_CASES = {
     "test_tap_tempo": 20,
     "test_controls": 30,
     "test_settings": 50,
-    "test_screensavers": 15,
+    "test_screensavers": 19,
     "test_easter_eggs": 20,
     "test_host_firmware": 20,
 }
