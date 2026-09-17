@@ -58,7 +58,8 @@ UiRenderer::UiRenderer(
 void UiRenderer::render(
     const ClockState& state,
     const NavigationState& navigation,
-    const engine::EngineSnapshot& engineSnapshot) {
+    const engine::EngineSnapshot& engineSnapshot,
+    const DiagnosticSnapshot& diagnostics) {
     switch (navigation.screen) {
         case Screen::Performance:
             performanceRenderer_.render(state, navigation, engineSnapshot);
@@ -73,7 +74,7 @@ void UiRenderer::render(
             channelNavigationRenderer_.renderModeChangeConfirm(navigation);
             break;
         case Screen::Settings:
-            settingsRenderer_.renderSettings(state, navigation);
+            settingsRenderer_.renderSettings(state, navigation, diagnostics);
             break;
         case Screen::SequencerEditor:
             channelNavigationRenderer_.renderSequencerEditor(state, navigation, engineSnapshot);

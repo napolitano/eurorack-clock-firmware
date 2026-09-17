@@ -34,12 +34,16 @@ UiController::UiController(
     engine::ClockEngine& engine,
     UiRenderer& renderer,
     services::PersistentStateService& persistentState,
-    game::ArcadeLeaderboardStore* const leaderboard)
+    game::ArcadeLeaderboardStore* const leaderboard,
+    const hal::ExternalInputCapture* const externalInputs,
+    const hal::GateOutputDriver* const gateOutputs)
     : state_(state),
       engine_(engine),
       renderer_(renderer),
       persistentState_(persistentState),
       leaderboard_(leaderboard),
+      externalInputs_(externalInputs),
+      gateOutputs_(gateOutputs),
       settingsEditor_(state, engine) {}
 
 void UiController::invalidate() {
@@ -114,11 +118,35 @@ void UiController::serviceRendering(const std::uint32_t nowMs) {
         hasRenderedEngineStatus_ = true;
     }
 
+    DiagnosticSnapshot diagnostics{};
+    const bool diagnosticsVisible =
+        navigation_.screen == Screen::Settings &&
+        (navigation_.settingsPage == SettingsPage::DiagnosticsInputs ||
+         navigation_.settingsPage == SettingsPage::DiagnosticsOutputs);
+    if (diagnosticsVisible) {
+        if (externalInputs_ != nullptr) {
+            diagnostics.syncHigh = externalInputs_->syncLevelHigh();
+            diagnostics.resetHigh = externalInputs_->resetLevelHigh();
+        }
+        if (gateOutputs_ != nullptr) {
+            for (std::size_t index = 0U; index < diagnostics.outputs.size(); ++index) {
+                diagnostics.outputs[index] = gateOutputs_->channelStateHigh(index);
+            }
+        }
+        if (!hasRenderedDiagnosticSnapshot_ || diagnostics != lastDiagnosticSnapshot_) {
+            invalidate();
+        }
+        lastDiagnosticSnapshot_ = diagnostics;
+        hasRenderedDiagnosticSnapshot_ = true;
+    } else {
+        hasRenderedDiagnosticSnapshot_ = false;
+    }
+
     if (!renderDirty_ || nowMs - lastRenderAtMs_ < config::kDisplayRefreshMinimumMs) {
         return;
     }
 
-    renderer_.render(state_, navigation_, snapshot);
+    renderer_.render(state_, navigation_, snapshot, diagnostics);
     lastRenderAtMs_ = nowMs;
     renderDirty_ = false;
 }

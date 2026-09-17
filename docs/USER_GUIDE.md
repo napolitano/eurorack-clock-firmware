@@ -356,6 +356,12 @@ Factory templates currently include `ALL MASTER`, `CLOCK TREE`, `DIVIDERS`, `POL
 
 Both preferences take effect immediately and survive power cycling. They are device-local: loading a named preset or applying a factory template does not change them. Factory defaults are `NORMAL` and `0 DEG`.
 
+### Hardware diagnostics
+
+Open `SETTINGS → GENERAL SETTINGS → DIAGNOSTICS` for a live digital signal view. `INPUTS` shows the conditioned `SYNC` and `RST` levels as two centered rectangular indicators. `OUTPUTS` shows channels 1–8 as a 4×2 grid of rectangular indicators. An inactive signal is shown as an outlined rectangle; an active signal is filled with its label inverted.
+
+The input page reports the digital comparator levels seen by the MCU; the output page reports the digital source levels actually written by firmware to the eight gate-output GPIOs. The current hardware does not provide ADC voltage measurements at these points, so Diagnostics deliberately does not display inferred voltage values.
+
 Display protection is active only while transport is STOP. The factory timing is:
 
 - screensaver after 2 minutes;

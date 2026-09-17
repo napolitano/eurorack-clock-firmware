@@ -29,7 +29,10 @@ public:
      * @param state Complete application configuration used to build row values.
      * @param navigation Current settings page, cursor, scroll, and edit state.
      */
-    void renderSettings(const ClockState& state, const NavigationState& navigation);
+    void renderSettings(
+        const ClockState& state,
+        const NavigationState& navigation,
+        const DiagnosticSnapshot& diagnostics = {});
 
     /**
      * @brief Draws the factory-template selection list.

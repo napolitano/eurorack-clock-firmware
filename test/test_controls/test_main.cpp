@@ -246,9 +246,63 @@ void testFastTurnAfterImmediateReversalPreservesAllDetents(){
     TEST_ASSERT_EQUAL(sign*256,drainAllEncoder(c,now));
 }
 
+void testEncoderReleaseReanchorsPartialPhaseBeforeDirectionChange(){
+    setEncoder(1,1);
+    hal::ControlPanel c; c.begin();
+    forwardDetent(); const int sign=c.sample(1U).encoderDelta;
+    TEST_ASSERT_TRUE(sign==1 || sign==-1);
+
+    // Entering a menu uses the encoder push switch. Model an axial-push-induced
+    // one-edge A/B displacement while the switch is held, then a normal
+    // debounced release at that new stable electrical phase.
+    fakefw::setPin(pinmap::kEncoderPushButtonPin,LOW);
+    (void)c.sample(2U);
+    auto pressed=c.sample(27U);
+    TEST_ASSERT_EQUAL(hal::ButtonEdge::Pressed,pressed.encoderButton.edge);
+    setEncoder(1,0);
+    TEST_ASSERT_EQUAL(0,c.sample(28U).encoderDelta);
+    fakefw::setPin(pinmap::kEncoderPushButtonPin,HIGH);
+    (void)c.sample(29U);
+    auto released=c.sample(54U);
+    TEST_ASSERT_EQUAL(hal::ButtonEdge::Released,released.encoderButton.edge);
+    TEST_ASSERT_EQUAL(0,released.encoderDelta);
+
+    // A complete cycle beginning/ending at 10 must count immediately. More
+    // importantly, the very next opposite detent must not be consumed by the
+    // partial transition that happened during the menu-entry push.
+    setEncoder(0,0); setEncoder(0,1); setEncoder(1,1); setEncoder(1,0);
+    TEST_ASSERT_EQUAL(sign,c.sample(55U).encoderDelta);
+    setEncoder(1,1); setEncoder(0,1); setEncoder(0,0); setEncoder(1,0);
+    TEST_ASSERT_EQUAL(-sign,c.sample(56U).encoderDelta);
+}
+
+void testAlternatingDetentsRemainExactAfterMenuPushPhaseShift(){
+    setEncoder(1,1);
+    hal::ControlPanel c; c.begin();
+    forwardDetent(); const int sign=c.sample(1U).encoderDelta;
+    TEST_ASSERT_TRUE(sign==1 || sign==-1);
+
+    fakefw::setPin(pinmap::kEncoderPushButtonPin,LOW);
+    (void)c.sample(2U);
+    (void)c.sample(27U);
+    setEncoder(1,0);
+    (void)c.sample(28U);
+    fakefw::setPin(pinmap::kEncoderPushButtonPin,HIGH);
+    (void)c.sample(29U);
+    (void)c.sample(54U);
+
+    std::uint32_t now=55U;
+    for(int i=0;i<100;++i){
+        setEncoder(0,0); setEncoder(0,1); setEncoder(1,1); setEncoder(1,0);
+        TEST_ASSERT_EQUAL(sign,c.sample(now++).encoderDelta);
+        setEncoder(1,1); setEncoder(0,1); setEncoder(0,0); setEncoder(1,0);
+        TEST_ASSERT_EQUAL(-sign,c.sample(now++).encoderDelta);
+    }
+}
+
 int main(){UNITY_BEGIN();
 RUN_TEST(testIdleSampleDoesNotMaskInterrupts);RUN_TEST(testGrayCycleAProducesOneDetent);RUN_TEST(testGrayCycleBProducesOppositeDetent);RUN_TEST(testPartialGrayCycleProducesNoDetent);RUN_TEST(testEncoderBounceReturnsToSameStateWithoutDetent);RUN_TEST(testSixFastDetentsAccumulateWithoutForegroundPoll);RUN_TEST(testEncoderDrainIsEmptyAfterSample);RUN_TEST(testEncoderDrainCapsAt127AndPreservesRemainderForCycleA);RUN_TEST(testEncoderDrainCapsAt127AndPreservesRemainderForCycleB);RUN_TEST(testDirectionReversalCancelsPendingMovement);RUN_TEST(testEncoderLowAtStartupDoesNotManufactureDetent);RUN_TEST(testAllEncoderPinsUsePullups);
 RUN_TEST(testEncoderDirectionReversalInvertsCompletedDetentWithoutChangingDecoder);RUN_TEST(testEncoderDirectionReversalPreservesFastTurnBacklog);RUN_TEST(testFastTurnThousandDetentsAreNotLostForward);RUN_TEST(testFastTurnThousandDetentsAreNotLostReverse);RUN_TEST(testFastTurnRepeatedForegroundDrainsPreserveTotal);RUN_TEST(testFastTurnDirectionReversalCancelsLargeBacklog);RUN_TEST(testFastTurnBacklogSaturatesWithoutSignedOverflow);RUN_TEST(testFastTurnDuringButtonBouncePreservesAllDetents);RUN_TEST(testFirstDetentCountsImmediatelyFromEveryElectricalPhase);RUN_TEST(testFirstReverseDetentCountsImmediatelyFromEveryElectricalPhase);RUN_TEST(testEverySingleDetentAfterDirectionChangeIsReported);RUN_TEST(testMidCycleDirectionReversalDoesNotPoisonNextDetent);
-RUN_TEST(testMissedTransitionAtDetentStillReportsFirstClick);RUN_TEST(testMissedTransitionRecoveryDoesNotPoisonImmediateReverse);RUN_TEST(testHalfCycleCorruptionIsDiscardedAtDetentBoundary);RUN_TEST(testExtraTransitionAtDetentDoesNotCreatePersistentPhaseError);RUN_TEST(testQuadratureCounterWrapDoesNotLoseDetent);RUN_TEST(testMissingTransitionRecoveryRespectsReversedSetting);RUN_TEST(testLongAlternatingSingleDetentsNeverDropFirstClick);RUN_TEST(testOneEdgeResidueBeforeReverseDetentIsRecoveredAtAnchor);RUN_TEST(testFastTurnAfterImmediateReversalPreservesAllDetents);
+RUN_TEST(testMissedTransitionAtDetentStillReportsFirstClick);RUN_TEST(testMissedTransitionRecoveryDoesNotPoisonImmediateReverse);RUN_TEST(testHalfCycleCorruptionIsDiscardedAtDetentBoundary);RUN_TEST(testExtraTransitionAtDetentDoesNotCreatePersistentPhaseError);RUN_TEST(testQuadratureCounterWrapDoesNotLoseDetent);RUN_TEST(testMissingTransitionRecoveryRespectsReversedSetting);RUN_TEST(testLongAlternatingSingleDetentsNeverDropFirstClick);RUN_TEST(testOneEdgeResidueBeforeReverseDetentIsRecoveredAtAnchor);RUN_TEST(testFastTurnAfterImmediateReversalPreservesAllDetents);RUN_TEST(testEncoderReleaseReanchorsPartialPhaseBeforeDirectionChange);RUN_TEST(testAlternatingDetentsRemainExactAfterMenuPushPhaseShift);
 RUN_TEST(testEncoderPushDebouncesPress);RUN_TEST(testPlayPauseDebouncesPress);RUN_TEST(testTapDebouncesPress);RUN_TEST(testResetBackDebouncesPress);RUN_TEST(testEncoderPushDebouncesRelease);RUN_TEST(testPlayPauseDebouncesRelease);RUN_TEST(testTapDebouncesRelease);RUN_TEST(testResetBackDebouncesRelease);RUN_TEST(testEncoderPushHoldDoesNotRepeat);RUN_TEST(testPlayPauseHoldDoesNotRepeat);RUN_TEST(testTapHoldDoesNotRepeat);RUN_TEST(testResetBackHoldDoesNotRepeat);RUN_TEST(testButtonBounceBeforeDebounceDoesNotPress);RUN_TEST(testSimultaneousButtonsReportIndependentEdges);RUN_TEST(testButtonActivityDoesNotLoseEncoderDetent);RUN_TEST(testInitiallyPressedButtonIsStableWithoutSyntheticEdge);
 return UNITY_END();}

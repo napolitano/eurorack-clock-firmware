@@ -14,6 +14,8 @@
 #include "engine/clock_engine.h"
 #include "game/arcade_leaderboard_store.h"
 #include "hal/control_panel.h"
+#include "hal/external_input_capture.h"
+#include "hal/gate_output_driver.h"
 #include "services/persistent_state_service.h"
 #include "services/tap_tempo.h"
 #include "ui/settings_editor.h"
@@ -44,7 +46,9 @@ public:
         engine::ClockEngine& engine,
         UiRenderer& renderer,
         services::PersistentStateService& persistentState,
-        game::ArcadeLeaderboardStore* leaderboard = nullptr);
+        game::ArcadeLeaderboardStore* leaderboard = nullptr,
+        const hal::ExternalInputCapture* externalInputs = nullptr,
+        const hal::GateOutputDriver* gateOutputs = nullptr);
 
     /** @brief Marks the current frame as requiring a redraw. */
     void invalidate();
@@ -164,6 +168,8 @@ private:
     UiRenderer& renderer_;
     services::PersistentStateService& persistentState_;
     game::ArcadeLeaderboardStore* leaderboard_ = nullptr;
+    const hal::ExternalInputCapture* externalInputs_ = nullptr;
+    const hal::GateOutputDriver* gateOutputs_ = nullptr;
     SettingsEditor settingsEditor_;
     services::TapTempo tapTempo_{};
     NavigationState navigation_{};
@@ -177,6 +183,8 @@ private:
     std::uint8_t lastRenderedChannelStep_ = 0xFFU;
     bool lastRenderedExternalLocked_ = false;
     bool hasRenderedEngineStatus_ = false;
+    DiagnosticSnapshot lastDiagnosticSnapshot_{};
+    bool hasRenderedDiagnosticSnapshot_ = false;
 
     bool settingsChordActive_ = false;
     bool encoderPressTracking_ = false;

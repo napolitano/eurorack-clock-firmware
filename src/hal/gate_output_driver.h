@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 
 namespace clockfw::hal {
@@ -38,6 +39,12 @@ public:
      * @param high True for an active gate, false for LOW.
      */
     void setChannelState(std::size_t channelIndex, bool high);
+
+    /** @brief Returns the last source level written for one gate channel. */
+    bool channelStateHigh(std::size_t channelIndex) const;
+
+private:
+    std::array<bool, 8U> channelStates_{};
 };
 
 }  // namespace clockfw::hal

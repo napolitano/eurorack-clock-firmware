@@ -21,6 +21,7 @@ void ExternalInputCapture::begin() {
     activeInstance_ = this;
     if (pinmap::kExternalSyncSignalPin != pinmap::kUnassignedDigitalPin) {
         platform::configureInputPullup(pinmap::kExternalSyncSignalPin);
+        syncLevelHigh_ = platform::read(pinmap::kExternalSyncSignalPin);
         platform::attachInterrupt(pinmap::kExternalSyncSignalPin, syncInterruptThunk, platform::InterruptEdge::Change);
     }
     if (pinmap::kExternalResetSignalPin != pinmap::kUnassignedDigitalPin) {
@@ -36,6 +37,10 @@ bool ExternalInputCapture::popSyncEdge(ExternalInputEdge& edge) {
 
 bool ExternalInputCapture::popResetEdge(ExternalInputEdge& edge) {
     return pop(resetQueue_, edge);
+}
+
+bool ExternalInputCapture::syncLevelHigh() const {
+    return syncLevelHigh_;
 }
 
 bool ExternalInputCapture::resetLevelHigh() const {
@@ -63,9 +68,9 @@ void ExternalInputCapture::resetInterruptThunk() {
 }
 
 void ExternalInputCapture::captureSyncFromIsr() {
-    pushFromIsr(syncQueue_, {
-        SystemClock::microseconds(),
-        platform::read(pinmap::kExternalSyncSignalPin)});
+    const bool high = platform::read(pinmap::kExternalSyncSignalPin);
+    syncLevelHigh_ = high;
+    pushFromIsr(syncQueue_, {SystemClock::microseconds(), high});
 }
 
 void ExternalInputCapture::captureResetFromIsr() {
@@ -123,6 +128,7 @@ bool ExternalInputCapture::pop(EdgeQueue& queue, ExternalInputEdge& edge) {
 void ExternalInputCapture::injectSyncEdgeForTest(
     const std::uint32_t timestampUs,
     const bool high) {
+    syncLevelHigh_ = high;
     pushFromIsr(syncQueue_, {timestampUs, high});
 }
 

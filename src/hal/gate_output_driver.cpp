@@ -19,9 +19,10 @@ void GateOutputDriver::beginDisabled() {
     platform::configureOutput(pinmap::kGateBufferOutputEnablePin);
     disableOutputStage();
 
-    for (const std::uint32_t pin : pinmap::kGateChannelPins) {
-        platform::configureOutput(pin);
-        platform::write(pin, false);
+    for (std::size_t index = 0U; index < pinmap::kGateChannelPins.size(); ++index) {
+        platform::configureOutput(pinmap::kGateChannelPins[index]);
+        platform::write(pinmap::kGateChannelPins[index], false);
+        channelStates_[index] = false;
     }
 }
 
@@ -34,8 +35,9 @@ void GateOutputDriver::disableOutputStage() {
 }
 
 void GateOutputDriver::setAllChannelsLow() {
-    for (const std::uint32_t pin : pinmap::kGateChannelPins) {
-        platform::write(pin, false);
+    for (std::size_t index = 0U; index < pinmap::kGateChannelPins.size(); ++index) {
+        platform::write(pinmap::kGateChannelPins[index], false);
+        channelStates_[index] = false;
     }
 }
 
@@ -45,6 +47,11 @@ void GateOutputDriver::setChannelState(const std::size_t channelIndex, const boo
     }
 
     platform::write(pinmap::kGateChannelPins[channelIndex], high);
+    channelStates_[channelIndex] = high;
+}
+
+bool GateOutputDriver::channelStateHigh(const std::size_t channelIndex) const {
+    return channelIndex < channelStates_.size() ? channelStates_[channelIndex] : false;
 }
 
 }  // namespace clockfw::hal

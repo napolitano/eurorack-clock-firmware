@@ -59,7 +59,7 @@ ClockApplication::ClockApplication()
       engine_(gateOutputs_),
       externalSyncController_(externalInputs_, engine_),
       renderer_(display_, persistentState_),
-      uiController_(state_, engine_, renderer_, persistentState_, selectedLeaderboard_) {}
+      uiController_(state_, engine_, renderer_, persistentState_, selectedLeaderboard_, &externalInputs_, &gateOutputs_) {}
 
 void ClockApplication::begin() {
     ClockState initialState{};

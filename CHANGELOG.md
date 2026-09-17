@@ -33,6 +33,15 @@ This project is still in active development. Until the first stable release, ver
 - Restored the beta.6 electrical-cycle resynchronization contract on top of the TIM2 hardware encoder backend. The free-running x4 remainder introduced with TIM2 could again retain a quarter-cycle phase error, consuming the first detent and the first detent after a reversal. Each return to the startup detent phase is now a hard boundary: a one-transition count error is rounded to the nearest complete PEC11L cycle and any remaining ambiguous residue is discarded before the next direction.
 - Added four hardware-model regressions for a missing first transition, immediate reversal after recovery, half-cycle corruption, and an extra transition at the detent boundary.
 - Added five additional encoder regression cases for 32-bit TIM2 counter wraparound, recovery with NORMAL/REVERSED enabled, 100 alternating single-detent reversals, one-edge residue before a reverse detent, and fast-turn immediately after a reversal. `test_controls` now contains 49 named cases.
+- Fixed the hardware-triggered encoder regression after menu entry: a debounced encoder-push release now re-anchors the TIM2 detent phase and clears only partial quadrature residue, preventing a shaft/push-induced phase shift from consuming the first detent after a direction change.
+- Added two regression cases that reproduce the menu-entry push phase shift against the previous decoder and verify immediate reversal plus 100 alternating single-detent turns afterward. `test_controls` now contains 51 named cases.
+
+### Diagnostics
+
+- Added `GENERAL SETTINGS → DIAGNOSTICS → INPUTS / OUTPUTS`.
+- `INPUTS` renders centered rectangular `SYNC` and `RST` indicators from the live conditioned comparator levels.
+- `OUTPUTS` renders channels 1–8 as two rows of four rectangular indicators using the levels actually written by the gate-output driver.
+- Active indicators are filled with inverted labels; inactive indicators use an outline. No voltage values are inferred because the current hardware exposes digital levels only.
 
 ### Changed
 
@@ -50,7 +59,7 @@ This project is still in active development. Until the first stable release, ver
 - Added regressions for PLAY start, phase-preserving pause/resume, STOP phase reset/output disable, restart from step 1, and STOP priority over simultaneous transport input.
 - Expanded `test_easter_eggs` from 25 to **28** named cases for the transport work.
 - Added six BEATKNECHT exit-confirmation regressions covering safe gate silencing, default-NO cancellation, confirmed exit, paused-state restoration, long-press release gating, and dialog rendering. `test_easter_eggs` now contains **34** named cases.
-- With the additional encoder regressions and BEATKNECHT rendering/exit coverage, the public Native inventory is now **392** named tests.
+- With the additional encoder regressions and BEATKNECHT rendering/exit coverage, the public Native inventory is now **394** named tests.
 - Updated the simulator boot-Easter-egg contract to launch the default BEATKNECHT build through the physical PLAY control.
 - Added BEATKNECHT rendering coverage for both NO/YES exit selections and all PLAY/PAUSE/STOP transport glyph branches, restoring the repository decision-branch gate above 90% without lowering the threshold.
 

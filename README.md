@@ -173,7 +173,7 @@ The normal interaction grammar is deliberately small:
 | Encoder long press | Open current context settings | Open highlighted settings | Context dependent |
 | TAP + encoder press | Open Settings | - | - |
 
-`SETTINGS → GENERAL SETTINGS` also contains two persistent device-local installation preferences: **ENCODER DIR** (`NORMAL / REVERSED`) changes the semantic rotary direction without altering the quadrature decoder, and **ORIENTATION** (`0 DEG / 180 DEG`) rotates the OLED in controller hardware. These preferences belong to the module itself and are deliberately not changed by named presets or factory templates.
+`SETTINGS → GENERAL SETTINGS` also contains **DIAGNOSTICS**, plus two persistent device-local installation preferences: **ENCODER DIR** (`NORMAL / REVERSED`) changes the semantic rotary direction without altering the quadrature decoder, and **ORIENTATION** (`0 DEG / 180 DEG`) rotates the OLED transfer framebuffer. `DIAGNOSTICS → INPUTS` shows the live conditioned SYNC/RST digital levels; `DIAGNOSTICS → OUTPUTS` shows the eight gate source levels in a 4×2 indicator grid. These preferences belong to the module itself and are deliberately not changed by named presets or factory templates.
 | Hold TAP + encoder turn | - | Open six-function palette | - |
 | PLAY/PAUSE | Play/pause | - | Sequencer: next 16-step page |
 | TAP | Tap Tempo | Modifier | Sequencer: previous 16-step page |
@@ -240,7 +240,7 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **392 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **394 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
@@ -250,7 +250,7 @@ Current inventory: **392 explicitly named Native test cases**. PlatformIO expose
 | `test_swing` | 22 | atomic swing mathematics plus observed engine edge spacing and pair-duration conservation |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
-| `test_controls` | 49 | TIM2 quadrature counting, detent-phase resynchronization after missed/coalesced edges, first-detent and direction-reversal recovery, counter wraparound, NORMAL/REVERSED recovery, alternating single-detent stress, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
+| `test_controls` | 51 | TIM2 quadrature counting, detent-phase resynchronization after missed/coalesced edges and encoder-push phase shifts, first-detent and direction-reversal recovery, counter wraparound, NORMAL/REVERSED recovery, alternating single-detent stress, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
 | `test_settings` | 56 | settings limits, device-local encoder/display preferences, enum transitions, timing invariants, channel/Euclid/Sequencer edits and invalid-input behavior |
 | `test_screensavers` | 15 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 34 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |

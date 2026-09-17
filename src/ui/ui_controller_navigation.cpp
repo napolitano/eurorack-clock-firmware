@@ -122,8 +122,12 @@ void UiController::backFromSettings() {
         navigation_.settingsPage = SettingsPage::Root;
     } else if (navigation_.settingsPage == SettingsPage::Master ||
                navigation_.settingsPage == SettingsPage::Sync ||
-               navigation_.settingsPage == SettingsPage::Screensaver) {
+               navigation_.settingsPage == SettingsPage::Screensaver ||
+               navigation_.settingsPage == SettingsPage::Diagnostics) {
         navigation_.settingsPage = SettingsPage::General;
+    } else if (navigation_.settingsPage == SettingsPage::DiagnosticsInputs ||
+               navigation_.settingsPage == SettingsPage::DiagnosticsOutputs) {
+        navigation_.settingsPage = SettingsPage::Diagnostics;
     } else if (navigation_.settingsPage == SettingsPage::Licenses ||
                navigation_.settingsPage == SettingsPage::Updates) {
         navigation_.settingsPage = SettingsPage::Info;
@@ -194,10 +198,20 @@ void UiController::activateCurrentSetting() {
             openSettingsPage(SettingsPage::Sync);
         } else if (navigation_.cursor == 2U) {
             openSettingsPage(SettingsPage::Screensaver);
+        } else if (navigation_.cursor == 3U) {
+            openSettingsPage(SettingsPage::Diagnostics);
         } else {
             navigation_.editing = !navigation_.editing;
             invalidate();
         }
+        return;
+    }
+
+    if (navigation_.settingsPage == SettingsPage::Diagnostics) {
+        openSettingsPage(
+            navigation_.cursor == 0U
+                ? SettingsPage::DiagnosticsInputs
+                : SettingsPage::DiagnosticsOutputs);
         return;
     }
 
@@ -277,7 +291,10 @@ void UiController::activateCurrentSetting() {
     if (navigation_.settingsPage != SettingsPage::Info &&
         navigation_.settingsPage != SettingsPage::Licenses &&
         navigation_.settingsPage != SettingsPage::Updates &&
-        navigation_.settingsPage != SettingsPage::General) {
+        navigation_.settingsPage != SettingsPage::General &&
+        navigation_.settingsPage != SettingsPage::Diagnostics &&
+        navigation_.settingsPage != SettingsPage::DiagnosticsInputs &&
+        navigation_.settingsPage != SettingsPage::DiagnosticsOutputs) {
         navigation_.editing = !navigation_.editing;
         invalidate();
     }

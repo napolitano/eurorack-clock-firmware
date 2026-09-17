@@ -38,6 +38,9 @@ public:
     /** @brief Pops the oldest captured RST edge; false means the queue is empty. */
     bool popResetEdge(ExternalInputEdge& edge);
 
+    /** @brief Returns the most recently observed SYNC comparator level. */
+    bool syncLevelHigh() const;
+
     /** @brief Returns the most recently observed RST comparator level. */
     bool resetLevelHigh() const;
 
@@ -89,6 +92,7 @@ private:
     static ExternalInputCapture* activeInstance_;
     EdgeQueue syncQueue_{};
     EdgeQueue resetQueue_{};
+    volatile bool syncLevelHigh_ = false;
     volatile bool resetLevelHigh_ = false;
 };
 

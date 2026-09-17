@@ -138,10 +138,10 @@ void SettingsEditor::adjustGeneral(const std::uint8_t rowIndex, const std::int8_
     if (delta == 0) {
         return;
     }
-    if (rowIndex == 3U) {
+    if (rowIndex == 4U) {
         const int value = state_.device.encoderDirectionReversed ? 1 : 0;
         state_.device.encoderDirectionReversed = clampInt(value + delta, 0, 1) != 0;
-    } else if (rowIndex == 4U) {
+    } else if (rowIndex == 5U) {
         const int value = state_.device.displayRotated180 ? 1 : 0;
         state_.device.displayRotated180 = clampInt(value + delta, 0, 1) != 0;
     }

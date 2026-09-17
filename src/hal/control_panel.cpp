@@ -60,11 +60,11 @@ void ControlPanel::begin() {
         pinmap::kEncoderPhaseAPin,
         pinmap::kEncoderPhaseBPin);
     encoderLastTransitionCount_ = platform::quadratureEncoderCount();
-    // PEC11L-4120K-S0020 is a 20-detent / 20-PPR full-cycle encoder. Capture
-    // the electrical phase of the mechanical detent at startup and use each
-    // return to that phase as a cycle anchor. This removes the arbitrary
-    // quarter-cycle offset that can otherwise consume the first detent and the
-    // first detent after a direction reversal.
+    // PEC11L-4120K-S0020 is a 20-detent / 20-PPR encoder. Capture the
+    // electrical state seen at rest as a recovery anchor. Bourns places the
+    // mechanical detent at a contact transition, so this state is deliberately
+    // refreshed after every debounced encoder-button release rather than treated
+    // as an immutable phase for the lifetime of the firmware.
     encoderDetentPhase_ = platform::quadratureEncoderState();
     encoderTransitionRemainder_ = 0;
     pendingEncoderDetents_ = 0;
@@ -77,13 +77,26 @@ void ControlPanel::begin() {
 }
 
 ControlSample ControlPanel::sample(const std::uint32_t nowMs) {
+    const ButtonSample encoderButton = encoderButton_.sample(nowMs);
     std::int8_t encoderDelta = sampleEncoder();
+
+    // The PEC11L push switch is part of the same mechanical shaft as A/B. Its
+    // datasheet places the detent at a quadrature contact transition and allows
+    // contact bounce, so pressing/releasing the shaft can leave the transition
+    // accumulator between detents even when no intentional turn happened. The
+    // debounced release means the switch and shaft have already been stable for
+    // kDebounceMs, making this a safe point to discard only the partial residue
+    // and re-anchor the electrical phase. Completed/pending detents are kept.
+    if (encoderButton.edge == ButtonEdge::Released) {
+        resynchronizeEncoderAtRest();
+    }
+
     if (encoderDirectionReversed_) {
         encoderDelta = static_cast<std::int8_t>(-encoderDelta);
     }
     return {
         encoderDelta,
-        encoderButton_.sample(nowMs),
+        encoderButton,
         transportButton_.sample(nowMs),
         tapButton_.sample(nowMs),
         resetButton_.sample(nowMs)
@@ -92,6 +105,12 @@ ControlSample ControlPanel::sample(const std::uint32_t nowMs) {
 
 void ControlPanel::setEncoderDirectionReversed(const bool reversed) {
     encoderDirectionReversed_ = reversed;
+}
+
+void ControlPanel::resynchronizeEncoderAtRest() {
+    encoderLastTransitionCount_ = platform::quadratureEncoderCount();
+    encoderDetentPhase_ = platform::quadratureEncoderState();
+    encoderTransitionRemainder_ = 0;
 }
 
 std::int8_t ControlPanel::sampleEncoder() {
@@ -114,13 +133,13 @@ std::int8_t ControlPanel::sampleEncoder() {
 
         std::int32_t newDetents = 0;
         if (atDetentPhase) {
-            // PEC11L-4120K-S0020 has one full quadrature cycle per mechanical
-            // detent (20 detents / 20 PPR). Returning to the startup phase is
-            // therefore a hard resynchronization boundary. Round a one-edge
-            // count error to the nearest complete cycle and discard any
-            // remaining half-cycle corruption instead of carrying it across a
-            // later direction reversal. Ties (two transitions) round toward
-            // zero because they are electrically ambiguous.
+            // PEC11L-4120K-S0020 has one quadrature pulse per mechanical detent
+            // (20 detents / 20 PPR). Returning to the current rest-phase anchor
+            // is therefore a useful recovery boundary. Round a one-edge count
+            // error to the nearest complete cycle and discard any remaining
+            // half-cycle corruption instead of carrying it across a later
+            // direction reversal. Ties (two transitions) round toward zero
+            // because they are electrically ambiguous.
             const std::int64_t magnitude =
                 accumulatedTransitions < 0 ? -accumulatedTransitions : accumulatedTransitions;
             const std::int32_t completedCycles = static_cast<std::int32_t>(

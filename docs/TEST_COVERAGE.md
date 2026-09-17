@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v0.19.0-beta.14
 
-The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 392 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 394 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 

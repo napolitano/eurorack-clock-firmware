@@ -45,7 +45,8 @@ public:
     void render(
         const ClockState& state,
         const NavigationState& navigation,
-        const engine::EngineSnapshot& engineSnapshot);
+        const engine::EngineSnapshot& engineSnapshot,
+        const DiagnosticSnapshot& diagnostics = {});
 
     /**
      * @brief Renders the one-second boot screen using the generated 1-bit CLOCK logo bitmap and progress bar.

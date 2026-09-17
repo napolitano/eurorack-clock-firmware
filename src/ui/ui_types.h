@@ -32,6 +32,9 @@ enum class Screen : std::uint8_t {
 enum class SettingsPage : std::uint8_t {
     Root,
     General,
+    Diagnostics,
+    DiagnosticsInputs,
+    DiagnosticsOutputs,
     Master,
     Sync,
     Preferences,
@@ -60,6 +63,20 @@ enum class ModeFunction : std::uint8_t {
 
 /** @brief Operation being performed on the explicit user preset slots. */
 enum class PresetSlotAction : std::uint8_t { Load, Save };
+
+/** @brief Live digital levels shown by the hardware diagnostics pages. */
+struct DiagnosticSnapshot {
+    bool syncHigh = false;
+    bool resetHigh = false;
+    std::array<bool, 8U> outputs{};
+
+    bool operator==(const DiagnosticSnapshot& other) const {
+        return syncHigh == other.syncHigh &&
+               resetHigh == other.resetHigh &&
+               outputs == other.outputs;
+    }
+    bool operator!=(const DiagnosticSnapshot& other) const { return !(*this == other); }
+};
 
 /** @brief Complete mutable UI navigation state, deliberately separate from musical state. */
 struct NavigationState {

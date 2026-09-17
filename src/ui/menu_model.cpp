@@ -31,6 +31,9 @@ void copyText(char* const destination, const std::size_t size, const text::TextI
 const char* settingsPageTitle(const SettingsPage page) {
     switch (page) {
         case SettingsPage::General: return text::get(text::TextId::GeneralSettings);
+        case SettingsPage::Diagnostics: return text::get(text::TextId::Diagnostics);
+        case SettingsPage::DiagnosticsInputs: return text::get(text::TextId::Inputs);
+        case SettingsPage::DiagnosticsOutputs: return text::get(text::TextId::Outputs);
         case SettingsPage::Master: return text::get(text::TextId::ModeClockLong);
         case SettingsPage::Sync: return text::get(text::TextId::Sync);
         case SettingsPage::Preferences: return text::get(text::TextId::Presets);
@@ -56,7 +59,10 @@ std::uint8_t settingsPageItemCount(
     const bool highScoreResetAvailable) {
     switch (page) {
         case SettingsPage::Root: return highScoreResetAvailable ? 6U : 5U;
-        case SettingsPage::General: return 5U;
+        case SettingsPage::General: return 6U;
+        case SettingsPage::Diagnostics: return 2U;
+        case SettingsPage::DiagnosticsInputs:
+        case SettingsPage::DiagnosticsOutputs: return 0U;
         case SettingsPage::Master: return 5U;
         case SettingsPage::Sync: return 7U;
         case SettingsPage::Preferences: return 4U;
@@ -112,12 +118,13 @@ MenuRow buildMenuRow(
             text::TextId::ModeClockLong,
             text::TextId::Sync,
             text::TextId::Screensaver,
+            text::TextId::Diagnostics,
             text::TextId::EncoderDirection,
             text::TextId::Orientation};
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
-        if (rowIndex < 3U) {
+        if (rowIndex < 4U) {
             copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-        } else if (rowIndex == 3U) {
+        } else if (rowIndex == 4U) {
             copyText(
                 row.value,
                 sizeof(row.value),
@@ -128,6 +135,10 @@ MenuRow buildMenuRow(
                 sizeof(row.value),
                 state.device.displayRotated180 ? text::TextId::Degrees180 : text::TextId::Degrees0);
         }
+    } else if (page == SettingsPage::Diagnostics) {
+        constexpr text::TextId kLabels[] = {text::TextId::Inputs, text::TextId::Outputs};
+        copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
+        copyText(row.value, sizeof(row.value), text::TextId::Arrow);
     } else if (page == SettingsPage::Master) {
         if (rowIndex == 0U) {
             copyText(row.label, sizeof(row.label), text::TextId::Tempo);

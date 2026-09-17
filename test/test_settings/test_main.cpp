@@ -35,10 +35,10 @@ struct Harness {
     }
 };
 
-void testGeneralEncoderDirectionCanBeReversed(){ Harness h; TEST_ASSERT_FALSE(h.state.device.encoderDirectionReversed); h.editor.adjust(ui::SettingsPage::General,3U,0U,1); TEST_ASSERT_TRUE(h.state.device.encoderDirectionReversed); }
-void testGeneralEncoderDirectionCanReturnToNormal(){ Harness h; h.state.device.encoderDirectionReversed=true; h.editor.adjust(ui::SettingsPage::General,3U,0U,-1); TEST_ASSERT_FALSE(h.state.device.encoderDirectionReversed); }
-void testGeneralDisplayOrientationCanRotate180(){ Harness h; TEST_ASSERT_FALSE(h.state.device.displayRotated180); h.editor.adjust(ui::SettingsPage::General,4U,0U,1); TEST_ASSERT_TRUE(h.state.device.displayRotated180); }
-void testGeneralDisplayOrientationCanReturnToZero(){ Harness h; h.state.device.displayRotated180=true; h.editor.adjust(ui::SettingsPage::General,4U,0U,-1); TEST_ASSERT_FALSE(h.state.device.displayRotated180); }
+void testGeneralEncoderDirectionCanBeReversed(){ Harness h; TEST_ASSERT_FALSE(h.state.device.encoderDirectionReversed); h.editor.adjust(ui::SettingsPage::General,4U,0U,1); TEST_ASSERT_TRUE(h.state.device.encoderDirectionReversed); }
+void testGeneralEncoderDirectionCanReturnToNormal(){ Harness h; h.state.device.encoderDirectionReversed=true; h.editor.adjust(ui::SettingsPage::General,4U,0U,-1); TEST_ASSERT_FALSE(h.state.device.encoderDirectionReversed); }
+void testGeneralDisplayOrientationCanRotate180(){ Harness h; TEST_ASSERT_FALSE(h.state.device.displayRotated180); h.editor.adjust(ui::SettingsPage::General,5U,0U,1); TEST_ASSERT_TRUE(h.state.device.displayRotated180); }
+void testGeneralDisplayOrientationCanReturnToZero(){ Harness h; h.state.device.displayRotated180=true; h.editor.adjust(ui::SettingsPage::General,5U,0U,-1); TEST_ASSERT_FALSE(h.state.device.displayRotated180); }
 void testMasterTempoClampsAtConfiguredMaximum(){ Harness h; h.state.bpm=998U; h.state.tempoRange.maximumBpm=999U; h.editor.changeMasterTempo(10); TEST_ASSERT_EQUAL_UINT32(999U,h.state.bpm); }
 void testMasterTempoClampsAtConfiguredMinimum(){ Harness h; h.state.bpm=21U; h.state.tempoRange.minimumBpm=20U; h.editor.changeMasterTempo(-10); TEST_ASSERT_EQUAL_UINT32(20U,h.state.bpm); }
 void testMinimumBpmClampsAtTechnicalMinimum(){ Harness h; h.editor.adjust(ui::SettingsPage::Master,1U,0U,-127); TEST_ASSERT_EQUAL_UINT32(1U,h.state.tempoRange.minimumBpm); }

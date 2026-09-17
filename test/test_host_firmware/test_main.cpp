@@ -39,6 +39,7 @@
 #include "game/beatknecht.h"
 #include "hal/control_panel.h"
 #include "hal/display_font.h"
+#include "hal/external_input_capture.h"
 #include "hal/gate_output_driver.h"
 #include "hal/interrupt_lock.h"
 #include "hal/oled_display.h"
@@ -1218,7 +1219,7 @@ void testMenuModelAndFormatters() {
     ui::formatChannelDetail(state.channels[0], buffer, sizeof(buffer)); CHECK_EQ(std::strlen(buffer), 0U);
     ui::formatChannelSummary(state.channels[0], buffer, sizeof(buffer)); CHECK(std::strcmp(buffer, "OFF") == 0);
 
-    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::Rate,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::UnifiedClock,ui::SettingsPage::DividerBank};
+    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::Diagnostics,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::Rate,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::UnifiedClock,ui::SettingsPage::DividerBank};
     state.source=ClockSource::External; state.externalSync.edge=SyncEdge::Falling; state.externalSync.lossMode=SyncLossMode::Stop;
     state.channels[0].common.resetMode=ResetMode::Free; state.channels[0].common.muted=true;
     for (auto page: pages) {
@@ -1230,6 +1231,9 @@ void testMenuModelAndFormatters() {
         }
     }
     CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::General), "GENERAL SETTINGS") == 0);
+    CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::Diagnostics), "DIAGNOSTICS") == 0);
+    CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::DiagnosticsInputs), "INPUTS") == 0);
+    CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::DiagnosticsOutputs), "OUTPUTS") == 0);
     CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::Master), "CLOCK") == 0);
     CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::Preferences), "PRESETS") == 0);
     CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::Screensaver), "SCREENSAVER") == 0);
@@ -1246,8 +1250,14 @@ void testMenuModelAndFormatters() {
     CHECK(std::strcmp(infoRoot.label, "INFO") == 0);
     const auto generalSync = ui::buildMenuRow(ui::SettingsPage::General, 1U, 0U, state);
     const auto generalSaver = ui::buildMenuRow(ui::SettingsPage::General, 2U, 0U, state);
+    const auto generalDiagnostics = ui::buildMenuRow(ui::SettingsPage::General, 3U, 0U, state);
+    const auto diagnosticInputs = ui::buildMenuRow(ui::SettingsPage::Diagnostics, 0U, 0U, state);
+    const auto diagnosticOutputs = ui::buildMenuRow(ui::SettingsPage::Diagnostics, 1U, 0U, state);
     CHECK(std::strcmp(generalSync.label, "SYNC") == 0);
     CHECK(std::strcmp(generalSaver.label, "SCREENSAVER") == 0);
+    CHECK(std::strcmp(generalDiagnostics.label, "DIAGNOSTICS") == 0);
+    CHECK(std::strcmp(diagnosticInputs.label, "INPUTS") == 0);
+    CHECK(std::strcmp(diagnosticOutputs.label, "OUTPUTS") == 0);
     const auto infoProduct = ui::buildMenuRow(ui::SettingsPage::Info, 0U, 0U, state);
     CHECK(std::strcmp(infoProduct.value, "SSL CLOCK") == 0);
     const auto infoLicenses = ui::buildMenuRow(ui::SettingsPage::Info, 3U, 0U, state);
@@ -1308,11 +1318,27 @@ void testHalBasicsAndDisplay() {
 
     hal::GateOutputDriver gates;
     gates.beginDisabled();
+    CHECK(!gates.channelStateHigh(0U));
+    gates.setChannelState(0U, true);
+    CHECK(gates.channelStateHigh(0U));
+    gates.setAllChannelsLow();
+    CHECK(!gates.channelStateHigh(0U));
     CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin],pinmap::kGateBufferDisabledLevel);
     gates.enableOutputStage(); CHECK_EQ(fakefw::pinValues[pinmap::kGateBufferOutputEnablePin],pinmap::kGateBufferEnabledLevel);
     gates.disableOutputStage(); gates.setChannelState(0U,true); CHECK_EQ(fakefw::pinValues[pinmap::kChannel1GateLedPin],HIGH);
     gates.setChannelState(0U,false); gates.setChannelState(99U,true); gates.setAllChannelsLow();
     for (auto pin: pinmap::kGateChannelPins) CHECK_EQ(fakefw::pinValues[pin],LOW);
+
+    hal::ExternalInputCapture externalInputs;
+    externalInputs.begin();
+    externalInputs.injectSyncEdgeForTest(101U, true);
+    CHECK(externalInputs.syncLevelHigh());
+    externalInputs.injectSyncEdgeForTest(102U, false);
+    CHECK(!externalInputs.syncLevelHigh());
+    externalInputs.injectResetEdgeForTest(103U, true);
+    CHECK(externalInputs.resetLevelHigh());
+    externalInputs.injectResetEdgeForTest(104U, false);
+    CHECK(!externalInputs.resetLevelHigh());
 
     hal::PeriodicTimer timer;
     bool callbackCalled=false;
@@ -2665,6 +2691,17 @@ void testRenderEveryScreenAndState() {
     nav.screen=ui::Screen::Settings;
     const ui::SettingsPage pages[]={ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Rate,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::UnifiedClock,ui::SettingsPage::DividerBank};
     for(auto page:pages){nav.settingsPage=page;const auto count=ui::settingsPageItemCount(page);for(std::uint8_t row=0;row<count;++row){nav.cursor=row;nav.scrollOffset=row>4U?static_cast<std::uint8_t>(row-4U):0U;nav.editing=(row&1U)!=0U;renderer.render(state,nav,engine.snapshot());}}
+    ui::DiagnosticSnapshot diagnostics{};
+    diagnostics.syncHigh = true;
+    diagnostics.resetHigh = false;
+    diagnostics.outputs = {{true,false,true,false,false,true,false,true}};
+    nav.settingsPage = ui::SettingsPage::DiagnosticsInputs;
+    renderer.render(state, nav, engine.snapshot(), diagnostics);
+    const auto inputsFrame = display.framebufferForTest();
+    nav.settingsPage = ui::SettingsPage::DiagnosticsOutputs;
+    renderer.render(state, nav, engine.snapshot(), diagnostics);
+    const auto outputsFrame = display.framebufferForTest();
+    CHECK(inputsFrame != outputsFrame);
     nav.settingsPage=ui::SettingsPage::Channel;
     for(const auto mode:{ChannelMode::Off,ChannelMode::Clock,ChannelMode::Euclid,ChannelMode::Sequencer}){state.channels[0].common.mode=mode;const auto count=ui::settingsPageItemCount(ui::SettingsPage::Channel,mode);for(std::uint8_t row=0;row<count;++row){nav.cursor=row;nav.scrollOffset=row>4U?static_cast<std::uint8_t>(row-4U):0U;nav.editing=(row&1U)!=0U;renderer.render(state,nav,engine.snapshot());}}
     nav.screen=ui::Screen::Templates; for(std::uint8_t i=0;i<services::TemplateService::kTemplateCount;++i){nav.cursor=i;nav.scrollOffset=i>3U?static_cast<std::uint8_t>(i-3U):0U;renderer.render(state,nav,engine.snapshot());}
@@ -3207,6 +3244,25 @@ void testUiControllerFlows() {
     // TAP + encoder push is the only gesture for the combined settings tree.
     // It must not leak a tap-tempo event or a second encoder action on release.
     const std::uint16_t bpmBeforeChord = state.bpm;
+    controllerOpenSettingsChord(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Root);
+    controllerShortPress(controller, now);  // GENERAL SETTINGS
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::General);
+    controllerTurn(controller, 3, now);
+    controllerShortPress(controller, now);  // DIAGNOSTICS
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Diagnostics);
+    controllerShortPress(controller, now);  // INPUTS
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::DiagnosticsInputs);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Diagnostics);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);  // OUTPUTS
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::DiagnosticsOutputs);
+    controllerReset(controller, now);
+    controllerReset(controller, now);
+    controllerReset(controller, now);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
     controllerOpenSettingsChord(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Root);

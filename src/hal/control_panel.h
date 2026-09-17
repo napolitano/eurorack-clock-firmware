@@ -76,6 +76,16 @@ private:
     /** @brief Converts the wrapping quadrature transition counter into complete detents. */
     std::int8_t sampleEncoder();
 
+    /**
+     * @brief Re-anchors quadrature bookkeeping after the encoder push switch settles.
+     *
+     * The PEC11L detent lies at a contact transition, so axial push/release can
+     * leave a harmless partial quadrature residue even though the shaft is again
+     * sitting in a mechanical detent. Re-anchoring after a debounced release
+     * prevents that residue from consuming the next detent or direction reversal.
+     */
+    void resynchronizeEncoderAtRest();
+
     DebouncedButton encoderButton_;
     DebouncedButton transportButton_;
     DebouncedButton tapButton_;

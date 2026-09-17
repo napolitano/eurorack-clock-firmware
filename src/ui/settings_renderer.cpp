@@ -63,10 +63,84 @@ void drawUpdateQr(hal::OledDisplay& display) {
 
 SettingsRenderer::SettingsRenderer(hal::OledDisplay& display) : display_(display) {}
 
+namespace {
+
+void drawDiagnosticBox(
+    hal::OledDisplay& display,
+    const std::int16_t x,
+    const std::int16_t y,
+    const std::int16_t width,
+    const std::int16_t height,
+    const char* const label,
+    const bool active) {
+    if (active) {
+        display.fillRectangle(x, y, width, height, hal::PixelColor::White);
+        display.setTextColor(hal::PixelColor::Black);
+    } else {
+        display.drawRectangle(x, y, width, height, hal::PixelColor::White);
+        display.setTextColor(hal::PixelColor::White);
+    }
+    const hal::TextBounds bounds = display.measureText(label, 0, 0);
+    const std::int16_t textX = static_cast<std::int16_t>(x + (width - static_cast<std::int16_t>(bounds.width)) / 2);
+    const std::int16_t textY = static_cast<std::int16_t>(y + (height - 7) / 2);
+    display.drawText(textX, textY, label);
+    display.setTextColor(hal::PixelColor::White);
+}
+
+void renderDiagnosticHeader(hal::OledDisplay& display, const char* const title) {
+    display.clear();
+    display.setFont(hal::DisplayFont::Small);
+    display.setTextColor(hal::PixelColor::White);
+    const hal::TextBounds bounds = display.measureText(title, 0, 0);
+    display.drawText(
+        static_cast<std::int16_t>((static_cast<int>(hal::OledDisplay::kWidth) - static_cast<int>(bounds.width)) / 2),
+        0,
+        title);
+    display.drawHorizontalLine(0, 9, hal::OledDisplay::kWidth);
+}
+
+}  // namespace
+
 void SettingsRenderer::renderSettings(
     const ClockState& state,
-    const NavigationState& navigation) {
+    const NavigationState& navigation,
+    const DiagnosticSnapshot& diagnostics) {
     display_.clear();
+    if (navigation.settingsPage == SettingsPage::DiagnosticsInputs) {
+        renderDiagnosticHeader(display_, text::get(text::TextId::Inputs));
+        constexpr std::int16_t kWidth = 44;
+        constexpr std::int16_t kHeight = 22;
+        constexpr std::int16_t kGap = 8;
+        constexpr std::int16_t kStartX = (128 - (kWidth * 2 + kGap)) / 2;
+        drawDiagnosticBox(display_, kStartX, 25, kWidth, kHeight, text::get(text::TextId::Sync), diagnostics.syncHigh);
+        drawDiagnosticBox(display_, kStartX + kWidth + kGap, 25, kWidth, kHeight, text::get(text::TextId::ResetShort), diagnostics.resetHigh);
+        display_.present();
+        return;
+    }
+    if (navigation.settingsPage == SettingsPage::DiagnosticsOutputs) {
+        renderDiagnosticHeader(display_, text::get(text::TextId::Outputs));
+        constexpr std::int16_t kWidth = 25;
+        constexpr std::int16_t kHeight = 18;
+        constexpr std::int16_t kGapX = 6;
+        constexpr std::int16_t kGapY = 5;
+        constexpr std::int16_t kStartX = (128 - (kWidth * 4 + kGapX * 3)) / 2;
+        constexpr std::int16_t kStartY = 15;
+        for (std::uint8_t index = 0U; index < 8U; ++index) {
+            char label[2]{static_cast<char>('1' + index), '\0'};
+            const std::int16_t column = static_cast<std::int16_t>(index % 4U);
+            const std::int16_t row = static_cast<std::int16_t>(index / 4U);
+            drawDiagnosticBox(
+                display_,
+                static_cast<std::int16_t>(kStartX + column * (kWidth + kGapX)),
+                static_cast<std::int16_t>(kStartY + row * (kHeight + kGapY)),
+                kWidth,
+                kHeight,
+                label,
+                diagnostics.outputs[index]);
+        }
+        display_.present();
+        return;
+    }
     if (navigation.settingsPage == SettingsPage::Updates) {
         drawUpdateQr(display_);
         display_.present();
