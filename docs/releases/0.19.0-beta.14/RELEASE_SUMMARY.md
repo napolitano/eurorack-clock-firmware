@@ -14,7 +14,7 @@ CLOCK is an eight-output Eurorack master clock, divider, Euclidean rhythm source
 - **Four new OLED screensavers:** `MAKE MUSIC` builds `MAKE·MUSIC·NOT·WAR` line by line, `LABYRINTH` generates new perfect mazes, `STARFIELD` renders three parallax depth layers, and `FIREWORKS` launches pixel rockets from varying positions into upper-screen bursts.
 - **Live hardware diagnostics:** `GENERAL SETTINGS → DIAGNOSTICS` provides separate INPUTS and OUTPUTS pages with rectangular live-state indicators for conditioned SYNC/RST and all eight gate GPIO source levels.
 - **Clear reset semantics:** the routine musical action is now named `PHASE RESET`; destructive `FACTORY RESET` is the final INFO entry, defaults to NO, and clears CURRENT, all eight named presets, legacy scores, and Top-100 leaderboards before restoring factory defaults.
-- **400 named Native tests:** the public suite now includes 51 control tests and 36 Easter-egg tests, plus sanitizer, simulator, documentation, architecture, and dependency gates.
+- **401 named Native tests:** the public suite now includes 51 control tests and 36 Easter-egg tests, plus sanitizer, simulator, documentation, architecture, and dependency gates.
 - **Release-ready binary packaging:** every tag now builds all five Easter-egg firmware flavors and publishes the PDF/ODT manual, complete license/notice payload, exact pinned-toolchain license capture, linker-map build provenance, changelog, and SHA-256/MD5 manifests under a deterministic naming contract.
 
 ## Firmware updates

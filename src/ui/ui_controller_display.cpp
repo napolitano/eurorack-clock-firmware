@@ -47,6 +47,14 @@ void UiController::noteUserActivity(const std::uint32_t nowMs) {
  * @return true when normal UI rendering must remain suppressed for this cycle.
  */
 bool UiController::serviceStopModeDisplay(const std::uint32_t nowMs) {
+    if (externalInputs_ != nullptr) {
+        const std::uint32_t activitySequence = externalInputs_->activitySequence();
+        if (activitySequence != lastExternalInputActivitySequence_) {
+            lastExternalInputActivitySequence_ = activitySequence;
+            noteUserActivity(nowMs);
+        }
+    }
+
     if (!activityClockInitialized_) {
         lastUserActivityAtMs_ = nowMs;
         activityClockInitialized_ = true;

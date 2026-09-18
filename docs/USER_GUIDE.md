@@ -109,7 +109,7 @@ For lengths above 16 steps, the lowest display rows show the active 16-step bloc
 
 ![Independent Clock performance screen in STOP, with transport stopped and no beat animation.](manual/assets/performance-independent-clock-stop.png)
 
-With factory display preferences, STOP-mode inactivity starts the configured screensaver after 2 minutes, dims the OLED after 5 minutes, and powers the OLED panel off after 10 minutes. Any front-panel interaction wakes it immediately.
+With factory display preferences, STOP-mode inactivity starts the configured screensaver after 2 minutes, dims the OLED after 5 minutes, and powers the OLED panel off after 10 minutes. Any front-panel interaction or conditioned SYNC/RST transition wakes it immediately.
 
 ## 7. Navigation and editing
 

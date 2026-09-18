@@ -904,6 +904,21 @@ void testHeldHighSyncCannotManufactureFallingEdgeClock() {
     CHECK(!fixture.engine.snapshot().externalLocked);
 }
 
+void testExternalInputActivitySequenceTracksSyncAndReset() {
+    hal::ExternalInputCapture inputs;
+    CHECK_EQ(inputs.activitySequence(), 0U);
+
+    inputs.injectSyncEdgeForTest(1000U, true);
+    CHECK_EQ(inputs.activitySequence(), 1U);
+    inputs.injectSyncEdgeForTest(2000U, false);
+    CHECK_EQ(inputs.activitySequence(), 2U);
+
+    inputs.injectResetEdgeForTest(3000U, true);
+    CHECK_EQ(inputs.activitySequence(), 3U);
+    inputs.injectResetEdgeForTest(4000U, false);
+    CHECK_EQ(inputs.activitySequence(), 4U);
+}
+
 int main() {
     UNITY_BEGIN();
     RUN_TEST(testSyncFrontendReferenceDividerIsNominal161mV);
@@ -990,6 +1005,7 @@ int main() {
     RUN_TEST(testHeldHighSyncCreatesOnlyOneSelectedEdge);
     RUN_TEST(testHeldHighSyncAfterLockEventuallyTimesOut);
     RUN_TEST(testHeldHighSyncCannotManufactureFallingEdgeClock);
+    RUN_TEST(testExternalInputActivitySequenceTracksSyncAndReset);
     std::cout << "SYNC behavior assertions: " << checks << "\n";
     return UNITY_END();
 }

@@ -201,6 +201,7 @@ private:
     std::uint32_t lastUserActivityAtMs_ = 0U;
     std::uint32_t lastScreensaverFrameAtMs_ = 0U;
     std::uint32_t screensaverFrameIndex_ = 0U;
+    std::uint32_t lastExternalInputActivitySequence_ = 0U;
 };
 
 }  // namespace clockfw::ui

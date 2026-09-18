@@ -55,6 +55,10 @@ std::uint32_t ExternalInputCapture::collapsedResetEdges() const {
     return resetQueue_.overflowCount;
 }
 
+std::uint32_t ExternalInputCapture::activitySequence() const {
+    return activitySequence_;
+}
+
 void ExternalInputCapture::syncInterruptThunk() {
     if (activeInstance_ != nullptr) {
         activeInstance_->captureSyncFromIsr();
@@ -70,12 +74,14 @@ void ExternalInputCapture::resetInterruptThunk() {
 void ExternalInputCapture::captureSyncFromIsr() {
     const bool high = platform::read(pinmap::kExternalSyncSignalPin);
     syncLevelHigh_ = high;
+    ++activitySequence_;
     pushFromIsr(syncQueue_, {SystemClock::microseconds(), high});
 }
 
 void ExternalInputCapture::captureResetFromIsr() {
     const bool high = platform::read(pinmap::kExternalResetSignalPin);
     resetLevelHigh_ = high;
+    ++activitySequence_;
     pushFromIsr(resetQueue_, {SystemClock::microseconds(), high});
 }
 
@@ -129,6 +135,7 @@ void ExternalInputCapture::injectSyncEdgeForTest(
     const std::uint32_t timestampUs,
     const bool high) {
     syncLevelHigh_ = high;
+    ++activitySequence_;
     pushFromIsr(syncQueue_, {timestampUs, high});
 }
 
@@ -136,6 +143,7 @@ void ExternalInputCapture::injectResetEdgeForTest(
     const std::uint32_t timestampUs,
     const bool high) {
     resetLevelHigh_ = high;
+    ++activitySequence_;
     pushFromIsr(resetQueue_, {timestampUs, high});
 }
 #endif

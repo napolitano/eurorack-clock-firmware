@@ -49,6 +49,7 @@ This project is still in active development. Until the first stable release, ver
 - Changed the factory clock source from `INTERNAL` to `AUTO`, so a fresh or factory-reset unit follows valid external SYNC automatically while retaining the configured internal BPM as fallback.
 - Fixed Tap Tempo silently forcing `SOURCE = INTERNAL` and persisting that change. Tap Tempo now updates only the internal/fallback BPM and preserves `INTERNAL`, `EXTERNAL`, or `AUTO` exactly as selected by the user.
 - Added regressions for the `AUTO` factory default, automatic acquisition of a 120 BPM external source, and Tap Tempo source preservation in RAM and persistent CURRENT state for all three source modes.
+- Treat every conditioned SYNC or RST transition as display activity so an active STOP-mode screensaver, dimmed panel, or powered-off OLED wakes immediately when an external signal arrives.
 
 ### Hardware behavior follow-up
 

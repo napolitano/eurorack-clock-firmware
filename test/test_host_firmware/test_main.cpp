@@ -3128,7 +3128,9 @@ void testScreensaverRenderingAndPolicy() {
     services::PersistentStateService persistence(storage);
     persistence.begin();
     ui::UiRenderer renderer(display, persistence);
-    ui::UiController controller(state, engine, renderer, persistence);
+    hal::ExternalInputCapture externalInputs;
+    ui::UiController controller(
+        state, engine, renderer, persistence, nullptr, &externalInputs);
 
     // Screensaver now lives below GENERAL SETTINGS.
     std::uint32_t navigationNow = 10U;
@@ -3157,14 +3159,28 @@ void testScreensaverRenderingAndPolicy() {
     controller.processControls(wake, 180'002U);
     controller.serviceRendering(180'002U + config::kDisplayRefreshMinimumMs);
 
+    // Any external SYNC or RST transition is visible activity: it wakes the
+    // stopped module immediately and restarts the inactivity interval.
+    controller.serviceRendering(240'003U);
+    const auto syncSleeperFrame = display.framebufferForTest();
+    externalInputs.injectSyncEdgeForTest(240'004'000U, true);
+    controller.serviceRendering(240'004U);
+    CHECK(display.framebufferForTest() != syncSleeperFrame);
+
+    controller.serviceRendering(300'005U);
+    const auto resetSleeperFrame = display.framebufferForTest();
+    externalInputs.injectResetEdgeForTest(300'006'000U, true);
+    controller.serviceRendering(300'006U);
+    CHECK(display.framebufferForTest() != resetSleeperFrame);
+
     // MODE 3 deliberately keeps the ordinary STOP screen until DIM/OFF.
     state.display = {ScreensaverMode::None, 1U, 2U, 3U};
-    controller.processControls(wake, 200'000U);
-    controller.serviceRendering(260'001U);
+    controller.processControls(wake, 320'000U);
+    controller.serviceRendering(380'001U);
 
     // Screensaver logic is disabled while transport is not STOPPED.
     state.transport = TransportState::Playing;
-    controller.serviceRendering(400'000U);
+    controller.serviceRendering(500'000U);
 }
 
 void testUiControllerFlows() {
