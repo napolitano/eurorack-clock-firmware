@@ -41,7 +41,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential doxygen
           python -m pip install --upgrade pip
-          python -m pip install "platformio==6.1.19" pillow
+          python -m pip install "platformio==6.1.19" pillow lxml
 
       - name: Enforce architecture policy
         run: python scripts/check_architecture.py

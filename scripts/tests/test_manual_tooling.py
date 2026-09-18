@@ -159,6 +159,18 @@ class ManualToolingTests(unittest.TestCase):
             workflow.index("scripts/build_user_manual.py"),
         )
 
+    def test_ci_and_release_install_manual_tooling_dependencies_before_tests(self) -> None:
+        for workflow_name in ("ci.yml", "release.yml"):
+            workflow = (ROOT / ".github" / "workflows" / workflow_name).read_text(encoding="utf-8")
+            install = 'python -m pip install "platformio==6.1.19" pillow lxml'
+            self.assertIn(install, workflow, workflow_name)
+            self.assertIn("Run release-tooling tests", workflow, workflow_name)
+            self.assertLess(
+                workflow.index(install),
+                workflow.index("Run release-tooling tests"),
+                workflow_name,
+            )
+
     def test_direct_manual_screenshot_contract_is_complete(self) -> None:
         targets = REFRESH.direct_frame_targets(
             self.working, ROOT / "docs" / "manual" / "assets"
