@@ -19,6 +19,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Build and manual tooling
 
+- Restore the hard 90% source decision-branch coverage gate after the Pre-Count rendering fix by extending regression coverage for zero-count overlay defense and the Settings/non-Performance rendering path; do not lower the threshold.
 - Standardize CI and release headless-simulator jobs on the `simulator-headless` CMake preset so the screenshot generator and prior simulator steps always use the same Ninja build tree.
 - Make manual screenshot generation recover automatically from an existing `build/simulator-headless` cache created with a different CMake generator, preventing `Ninja` versus `Unix Makefiles` cache collisions.
 - Add regression coverage for both workflow consistency and stale-generator recovery.

@@ -2945,6 +2945,13 @@ void testPerformanceRendererShowsCenteredShrinkingPreCountOverlay() {
     snapshot.preCountActive = false;
     renderer.render(state, navigation, snapshot);
     CHECK(display.framebufferForTest() == normalFrame);
+
+    // Defensive snapshot contract: an active flag with no remaining count must not
+    // draw a stale overlay. This covers the second early-return condition explicitly.
+    snapshot.preCountActive = true;
+    snapshot.preCountRemaining = 0U;
+    renderer.render(state, navigation, snapshot);
+    CHECK(display.framebufferForTest() == normalFrame);
 }
 
 void testPreCountAnimationInvalidatesFramesAndClearsOnCompletion() {
@@ -3020,6 +3027,14 @@ void testPreCountAnimationInvalidatesFramesAndClearsOnCompletion() {
     nowMs += 1100U;
     controller.serviceRendering(nowMs);
     CHECK(display.framebufferForTest() != staleOverlayFrame);
+
+    // Rendering must also leave the phase-driven Performance path cleanly when the
+    // user opens ordinary Settings. Besides guarding against an accidental global
+    // Pre-Count invalidation loop, this exercises the non-diagnostics Settings path.
+    controllerOpenSettingsChord(controller, nowMs);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
+    nowMs += config::kDisplayRefreshMinimumMs + 1U;
+    controller.serviceRendering(nowMs);
 }
 
 void testPerformanceRendererShowsMeasuredExternalBpmWhileLockedAndFreewheeling() {
