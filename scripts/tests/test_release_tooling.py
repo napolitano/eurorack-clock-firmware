@@ -168,16 +168,16 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("test_clock_core=44", result.stdout)
         self.assertIn("test_realtime=24", result.stdout)
-        self.assertIn("test_sync_behavior=90", result.stdout)
+        self.assertIn("test_sync_behavior=96", result.stdout)
         self.assertIn("test_swing=22", result.stdout)
         self.assertIn("test_humanize=12", result.stdout)
         self.assertIn("test_tap_tempo=24", result.stdout)
         self.assertIn("test_controls=51", result.stdout)
-        self.assertIn("test_settings=56", result.stdout)
+        self.assertIn("test_settings=59", result.stdout)
         self.assertIn("test_screensavers=19", result.stdout)
         self.assertIn("test_easter_eggs=36", result.stdout)
         self.assertIn("test_host_firmware=29", result.stdout)
-        self.assertIn("total=407", result.stdout)
+        self.assertIn("total=416", result.stdout)
 
 
 
@@ -576,8 +576,8 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("Why no general CV modulation?", readme)
         self.assertIn("digital timing, gate, and trigger", roadmap)
         self.assertIn("0.19.0-beta.1", roadmap)
-        self.assertIn("2,522 bytes", audit)
-        self.assertIn("61 bytes", audit)
+        self.assertIn("2,531 bytes", audit)
+        self.assertIn("60 bytes", audit)
         self.assertIn("schema v8", audit)
 
     def test_hil_qualification_contract_is_staged_from_1_5(self) -> None:

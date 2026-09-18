@@ -27,7 +27,8 @@ bool isPersistentStateValid(const ClockState& state) {
         state.externalSync.pulsesPerQuarterNote == 0U ||
         static_cast<std::uint8_t>(state.externalSync.edge) > static_cast<std::uint8_t>(SyncEdge::Falling) ||
         static_cast<std::uint8_t>(state.externalSync.lossMode) > static_cast<std::uint8_t>(SyncLossMode::Internal) ||
-        static_cast<std::uint8_t>(state.externalSync.resetMode) > static_cast<std::uint8_t>(ExternalResetMode::Gate)) {
+        static_cast<std::uint8_t>(state.externalSync.resetMode) > static_cast<std::uint8_t>(ExternalResetMode::Gate) ||
+        static_cast<std::uint8_t>(state.externalSync.smoothing) > static_cast<std::uint8_t>(SyncSmoothing::Full)) {
         return false;
     }
 

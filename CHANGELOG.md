@@ -22,10 +22,18 @@ CLOCK 1.0.0 is the first stable firmware release. It freezes the V1 feature set 
 - Show the measured external BPM on the Performance screen while `AUTO` or `EXTERNAL` is locked; unlocked operation continues to show the internal/fallback BPM.
 - Keep RST phase-only and transport-independent in both TRIGGER and GATE modes.
 
+### External SYNC responsiveness
+
+- Add `SMOOTHING = OFF / LOW / MEDIUM / FULL` to the SYNC settings so tempo-following can be matched to precise digital masters, deliberately modulated clocks, or noisier analog sources.
+- Make `LOW` the factory default: each new valid period contributes 75% and the previous filtered period 25%, replacing the earlier fixed 25%-new/75%-old response that could take several seconds to settle after a large tempo move.
+- Define `OFF` as 100% newest period, `MEDIUM` as 50/50, and `FULL` as the legacy 25%-new/75%-old behavior. Keep the existing microsecond `FILTER` setting independent as the glitch-rejection control.
+- Persist the new setting in schema v8 and migrate schema v7 records losslessly with `LOW` injected as the safe release default.
+
 ### Hardware and documentation
 
 - Correct current hardware documentation and source comments from the obsolete 74HCT244 reference to the final 74HCT541-class output buffer.
 - Synchronize the stable 1.0.0 identity across primary user/developer documentation and release metadata.
+- Harden manual release stamping so firmware-version updates are limited to firmware-bearing body/metadata fields and can never rewrite independent license versions such as PolyForm Noncommercial 1.0.0.
 - Document two-edge lock acquisition, external auto-start, manual transport precedence, all three sync-loss policies, and measured external BPM display behavior.
 
 ### Tests
@@ -33,8 +41,8 @@ CLOCK 1.0.0 is the first stable firmware release. It freezes the V1 feature set 
 - Add dedicated regressions for acquisition-only first pulse, second-pulse lock/auto-start, manual STOP precedence, STOP-loss/reacquisition restart, and AUTO FREEWHEEL tempo retention.
 - Add a framebuffer-level Performance regression proving that a locked external source renders its measured BPM rather than the internal fallback value.
 - Add simulator regressions that keep a newly opened developer scope armed when transport is already stopped after an earlier run, while attaching correctly when opened during a live PLAY epoch.
-- Expand the public Native inventory to **407 named tests**, including **90** external-SYNC behavior tests and **29** complete host-firmware tests.
-- Revalidate the complete host sanitizer matrix and both headless simulator tests; repository coverage remains above every hard release floor at **96.39% executable lines / 98.36% functions / 90.03% source decision branches**.
+- Expand the public Native inventory to **416 named tests**, including **96** external-SYNC behavior tests, **59** settings-contract tests, and **29** complete host-firmware tests.
+- Revalidate the complete host sanitizer matrix and both headless simulator tests; repository coverage remains above every hard release floor at **96.51% executable lines / 98.37% functions / 90.08% source decision branches**.
 
 ## [0.19.0-beta.14] - 2026-09-17
 

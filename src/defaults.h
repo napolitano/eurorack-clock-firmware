@@ -138,6 +138,9 @@ inline constexpr SyncLossMode kExternalSyncLossMode = SyncLossMode::Freewheel;
 /** Factory interpretation of the external RST comparator level. */
 inline constexpr ExternalResetMode kExternalResetMode = ExternalResetMode::Trigger;
 
+/** Factory external-sync period smoothing. LOW follows deliberate tempo moves quickly while damping jitter. */
+inline constexpr SyncSmoothing kExternalSyncSmoothing = SyncSmoothing::Low;
+
 /** Factory external-sync glitch-rejection interval in microseconds. */
 inline constexpr std::uint16_t kExternalSyncGlitchFilterUs = 1000U;
 

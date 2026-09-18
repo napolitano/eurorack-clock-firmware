@@ -3,7 +3,7 @@
 
 # South Signal Lab CLOCK Firmware Configuration
 
-The prerelease firmware deliberately keeps the most frequently edited compile-time configuration at the top level of `src/`.
+The stable firmware deliberately keeps the most frequently edited compile-time configuration at the top level of `src/`.
 
 ## `src/config.h`
 
@@ -75,7 +75,7 @@ Use this file for the user-visible factory state:
 
 No factory-setting value should be duplicated in renderer or engine code.
 
-Factory mode is **ONE CLOCK**. The UI palette order is **ONE CLOCK, DIVIDER, CLOCK, EUCLID, SEQUENCER, OFF**. Gate-length choices are `1/2/5/10/20/50/100 ms`; the factory value is `10 ms`.
+Factory mode is **ONE CLOCK**. The UI palette order is **ONE CLOCK, DIVIDER, CLOCK, EUCLID, SEQUENCER, OFF**. Gate-length choices are `1/2/5/10/20/50/100 ms`; the factory value is `10 ms`. External clock source defaults to `AUTO`; SYNC period smoothing defaults to `LOW` (75% new period / 25% previous), with `OFF`, `MEDIUM`, and `FULL` also available. The microsecond `FILTER` remains a separate glitch-rejection setting.
 
 ## Gate-output electrical contract
 
@@ -160,7 +160,7 @@ This arrangement means adding another language does not require changes to scree
 
 ## Persistent configuration
 
-Persistent user state is not configured by scattered constants. `PersistentStateService` stores one autosaved `CURRENT` state plus eight named user preset slots. Each state includes master settings, sync configuration, display/screensaver preferences, every channel's common settings, CLOCK meter data, Euclid parameters, and the complete 64-bit Sequencer patterns.
+Persistent user state is not configured by scattered constants. `PersistentStateService` stores one autosaved `CURRENT` state plus eight named user preset slots. Each state includes master settings, sync configuration (including the selected smoothing level), display/screensaver preferences, every channel's common settings, CLOCK meter data, Euclid parameters, and the complete 64-bit Sequencer patterns. The stable write format is schema v8; schema v7 and earlier supported formats are migrated losslessly, with pre-v8 records receiving the `LOW` smoothing default.
 
 The current logical persistence image is 8192 bytes. The lower 4096 bytes preserve the established settings/preset and legacy-score layout; the upper half stores the four independent arcade Top-100 tables. Valid 4096-byte A/B generations from earlier prereleases remain readable and are promoted to 8192 bytes on the first subsequent write. On STM32F401 it is committed into two independent 16 KiB A/B slots in Flash sectors 1 and 2. A complete image is written to the inactive slot, CRC-verified, and made valid by programming its commit marker last. The previous generation remains untouched until the new one is durable, so a power loss during save cannot destroy the last valid state.
 

@@ -9,9 +9,9 @@ CLOCK 1.0.0 is the first stable firmware release for the eight-output STM32F401 
 - **External SYNC is now end-to-end coherent:** the first pulse starts acquisition, the second valid pulse establishes BPM and lock, and a newly acquired external clock can start transport automatically without overriding an explicit user STOP or PAUSE.
 - **Loss policies now do what they say:** STOP stops transport, FREE continues at the last measured external tempo, and INTERNAL continues at the configured fallback BPM. A sync-loss STOP can restart on a valid reacquisition; a manual stop cannot.
 - **The Performance display shows the real external BPM while locked** in AUTO or EXTERNAL instead of continuing to display the internal fallback value.
-- **Factory behavior remains performance-safe:** SOURCE defaults to AUTO, Tap Tempo changes only the fallback BPM, RST remains phase-only, and external SYNC/RST activity wakes the display.
+- **External tempo response is now user-selectable:** `SMOOTHING = OFF / LOW / MEDIUM / FULL` separates deliberate tempo-following from the electrical `FILTER` control. `LOW` is the factory default and weights each new valid period 75%, while `FULL` preserves the earlier slower 25% response.
 - **Final hardware documentation is aligned with the build:** the production pin map, SPI OLED contract, TIM4 encoder path, and 74HCT541-class output buffer are reflected in current documentation.
-- **407 named Native tests** now include 90 focused external-SYNC cases and 29 complete host-firmware cases; the sanitizer matrix and both headless simulator tests pass, with repository coverage at 96.39% lines / 98.36% functions / 90.03% source decision branches.
+- **416 named Native tests** now include 96 focused external-SYNC cases, 59 settings-contract cases, and 29 complete host-firmware cases; the sanitizer matrix and both headless simulator tests pass, with repository coverage at 96.51% lines / 98.37% functions / 90.08% source decision branches.
 
 ## Firmware updates
 
@@ -19,4 +19,4 @@ Routine USB updates use CLOCK's persistence-preserving DfuSe release images and 
 
 ## Compatibility
 
-The 1.0.0 release keeps the established persistence schema, eight named presets, Top-100 arcade data, final production GPIO map, and persistence-safe DFU layout. Existing stored clock-source settings are intentionally preserved across firmware updates; a unit that previously stored `INTERNAL` remains internal until changed by the user or restored through Factory Reset.
+The 1.0.0 release writes persistence schema v8, adding one stored SYNC-smoothing byte while preserving the established eight named presets, Top-100 arcade data, final production GPIO map, and persistence-safe DFU layout. Schema v7 records migrate losslessly and receive the `LOW` smoothing default; earlier supported schemas continue through the existing migration chain. Existing stored clock-source settings are intentionally preserved across firmware updates; a unit that previously stored `INTERNAL` remains internal until changed by the user or restored through Factory Reset.

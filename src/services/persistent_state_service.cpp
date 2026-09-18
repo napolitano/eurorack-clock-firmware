@@ -5,18 +5,14 @@
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
  */
-
 #include "services/persistent_state_service.h"
 
 #include <algorithm>
 #include <cstring>
-
 #include "config.h"
-
 namespace clockfw::services {
 
-PersistentStateService::PersistentStateService(hal::PersistentStorage& storage)
-    : storage_(storage) {}
+PersistentStateService::PersistentStateService(hal::PersistentStorage& storage) : storage_(storage) {}
 
 void PersistentStateService::begin() {
     pendingPresetWrite_ = false;
@@ -30,6 +26,18 @@ void PersistentStateService::begin() {
         kCurrentRecordOffset,
         currentRecord.data(),
         currentRecord.size()) && deserializeCurrentRecord(currentRecord, loadedCurrent);
+
+    if (!hasStoredCurrentState_) {
+        std::array<std::uint8_t, kV7CurrentRecordSize> v7Record{};
+        if (storage_.readBytes(
+                kCurrentRecordOffset,
+                v7Record.data(),
+                v7Record.size()) &&
+            deserializeV7CurrentRecord(v7Record, loadedCurrent)) {
+            hasStoredCurrentState_ = true;
+            migrationNeeded = true;
+        }
+    }
 
     if (!hasStoredCurrentState_) {
         std::array<std::uint8_t, kV6CurrentRecordSize> v6Record{};
@@ -94,7 +102,7 @@ void PersistentStateService::begin() {
     }
     writePending_ = false;
 
-    // Build a canonical v7 records area in PersistentStorage's bounded staging
+    // Build a canonical v8 records area in PersistentStorage's bounded staging
     // buffer while records are being inspected. If no old schema is found the
     // transaction is simply discarded. This avoids keeping migrated copies of all
     // eight ClockState objects or an 8-KiB storage image on the call stack.
@@ -117,6 +125,16 @@ void PersistentStateService::begin() {
             presetOffset(slotIndex),
             record.data(),
             record.size()) && deserializePresetRecord(record, name, loadedPreset);
+
+        if (!presetValid_[slotIndex]) {
+            std::array<std::uint8_t, kV7PresetRecordSize> v7Record{};
+            presetValid_[slotIndex] = storage_.readBytes(
+                v7PresetOffset(slotIndex),
+                v7Record.data(),
+                v7Record.size()) &&
+                deserializeV7PresetRecord(v7Record, name, loadedPreset);
+            loadedPriorSchema = presetValid_[slotIndex];
+        }
 
         if (!presetValid_[slotIndex]) {
             std::array<std::uint8_t, kV6PresetRecordSize> v6Record{};
@@ -428,8 +446,4 @@ void PersistentStateService::presetName(
         destination[--end] = '\0';
     }
 }
-
-
-
-
 }  // namespace clockfw::services

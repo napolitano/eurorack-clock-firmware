@@ -7,6 +7,7 @@
  */
 
 #include <cstdint>
+#include <cstring>
 #include <unity.h>
 #include <Arduino.h>
 
@@ -14,6 +15,9 @@
 #include "engine/clock_engine.h"
 #include "hal/gate_output_driver.h"
 #include "ui/settings_editor.h"
+#include "ui/menu_model.h"
+#include "ui/menu_model_sync.h"
+#include "ui_text.h"
 
 using namespace clockfw;
 
@@ -59,7 +63,49 @@ void testSyncEdgeNegativeDeltaSelectsRising(){ Harness h; h.state.externalSync.e
 void testSyncLossModeClampsAcrossEnum(){ Harness h; h.state.externalSync.lossMode=SyncLossMode::Stop; h.editor.adjust(ui::SettingsPage::Sync,3U,0U,10); TEST_ASSERT_EQUAL(SyncLossMode::Internal,h.state.externalSync.lossMode); }
 void testSyncResetModeSelectsGateAndTrigger(){ Harness h; h.editor.adjust(ui::SettingsPage::Sync,4U,0U,1); TEST_ASSERT_EQUAL(ExternalResetMode::Gate,h.state.externalSync.resetMode); h.editor.adjust(ui::SettingsPage::Sync,4U,0U,-1); TEST_ASSERT_EQUAL(ExternalResetMode::Trigger,h.state.externalSync.resetMode); }
 void testSyncGlitchFilterClampsZeroToFiveMilliseconds(){ Harness h; h.state.externalSync.glitchFilterUs=250U; h.editor.adjust(ui::SettingsPage::Sync,5U,0U,-10); TEST_ASSERT_EQUAL_UINT32(0U,h.state.externalSync.glitchFilterUs); h.editor.adjust(ui::SettingsPage::Sync,5U,0U,127); TEST_ASSERT_EQUAL_UINT32(5000U,h.state.externalSync.glitchFilterUs); }
-void testSyncTimeoutClampsTwoHundredToFiveThousandMs(){ Harness h; h.state.externalSync.timeoutMs=300U; h.editor.adjust(ui::SettingsPage::Sync,6U,0U,-10); TEST_ASSERT_EQUAL_UINT32(200U,h.state.externalSync.timeoutMs); h.editor.adjust(ui::SettingsPage::Sync,6U,0U,127); TEST_ASSERT_EQUAL_UINT32(5000U,h.state.externalSync.timeoutMs); }
+void testSyncSmoothingClampsOffToFull(){ Harness h; h.state.externalSync.smoothing=SyncSmoothing::Low; h.editor.adjust(ui::SettingsPage::Sync,6U,0U,-10); TEST_ASSERT_EQUAL(SyncSmoothing::Off,h.state.externalSync.smoothing); h.editor.adjust(ui::SettingsPage::Sync,6U,0U,127); TEST_ASSERT_EQUAL(SyncSmoothing::Full,h.state.externalSync.smoothing); }
+void testSyncSmoothingMenuLabelsAllModes(){ Harness h;
+    struct Case { SyncSmoothing mode; text::TextId label; };
+    constexpr Case cases[] = {
+        {SyncSmoothing::Off, text::TextId::Off},
+        {SyncSmoothing::Low, text::TextId::SyncLow},
+        {SyncSmoothing::Medium, text::TextId::SyncMedium},
+        {SyncSmoothing::Full, text::TextId::SyncFull},
+    };
+    for (const auto& item : cases) {
+        h.state.externalSync.smoothing = item.mode;
+        const auto row = ui::buildSyncMenuRow(6U, h.state);
+        TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::Smoothing), row.label) == 0);
+        TEST_ASSERT_TRUE(std::strcmp(text::get(item.label), row.value) == 0);
+    }
+}
+void testScreensaverMenuLabelsAllModes(){ Harness h;
+    struct Case { ScreensaverMode mode; text::TextId label; };
+    constexpr Case cases[] = {
+        {ScreensaverMode::None, text::TextId::ScreensaverNone},
+        {ScreensaverMode::Fractal, text::TextId::ScreensaverFractal},
+        {ScreensaverMode::Orbit, text::TextId::ScreensaverOrbit},
+        {ScreensaverMode::Plug, text::TextId::ScreensaverPlug},
+        {ScreensaverMode::Clock, text::TextId::ScreensaverClock},
+        {ScreensaverMode::Heartbeat, text::TextId::ScreensaverHeartbeat},
+        {ScreensaverMode::Acid, text::TextId::ScreensaverAcid},
+        {ScreensaverMode::Spectrum, text::TextId::ScreensaverSpectrum},
+        {ScreensaverMode::Field, text::TextId::ScreensaverField},
+        {ScreensaverMode::Blox, text::TextId::ScreensaverBlox},
+        {ScreensaverMode::Matrix, text::TextId::ScreensaverMatrix},
+        {ScreensaverMode::CubeCover, text::TextId::ScreensaverCubeCover},
+        {ScreensaverMode::MakeMusic, text::TextId::ScreensaverMakeMusic},
+        {ScreensaverMode::Labyrinth, text::TextId::ScreensaverLabyrinth},
+        {ScreensaverMode::Starfield, text::TextId::ScreensaverStarfield},
+        {ScreensaverMode::Fireworks, text::TextId::ScreensaverFireworks},
+    };
+    for (const auto& item : cases) {
+        h.state.display.screensaverMode = item.mode;
+        const auto row = ui::buildMenuRow(ui::SettingsPage::Screensaver, 0U, 0U, h.state);
+        TEST_ASSERT_TRUE(std::strcmp(text::get(item.label), row.value) == 0);
+    }
+}
+void testSyncTimeoutClampsTwoHundredToFiveThousandMs(){ Harness h; h.state.externalSync.timeoutMs=300U; h.editor.adjust(ui::SettingsPage::Sync,7U,0U,-10); TEST_ASSERT_EQUAL_UINT32(200U,h.state.externalSync.timeoutMs); h.editor.adjust(ui::SettingsPage::Sync,7U,0U,127); TEST_ASSERT_EQUAL_UINT32(5000U,h.state.externalSync.timeoutMs); }
 void testScreensaverModeOrderStartsWithOff(){ Harness h; h.state.display.screensaverMode=ScreensaverMode::None; h.editor.adjust(ui::SettingsPage::Screensaver,0U,0U,-10); TEST_ASSERT_EQUAL(ScreensaverMode::None,h.state.display.screensaverMode); }
 void testScreensaverModeCanReachFireworks(){ Harness h; h.state.display.screensaverMode=ScreensaverMode::None; h.editor.adjust(ui::SettingsPage::Screensaver,0U,0U,127); TEST_ASSERT_EQUAL(ScreensaverMode::Fireworks,h.state.display.screensaverMode); }
 void testScreensaverDelayCannotExceedDimDelay(){ Harness h; h.state.display={ScreensaverMode::Clock,2U,5U,10U}; h.editor.adjust(ui::SettingsPage::Screensaver,1U,0U,127); TEST_ASSERT_EQUAL_UINT8(5U,h.state.display.screensaverAfterMinutes); }
@@ -103,8 +149,8 @@ int main(){
     RUN_TEST(testMasterMeterBeatsClampAtOne); RUN_TEST(testMasterMeterBeatsClampAtSixteen); RUN_TEST(testMasterBeatUnitStepsThroughOptions);
     RUN_TEST(testSyncSourceClampsInternal); RUN_TEST(testSyncSourceClampsAuto); RUN_TEST(testSyncPpqnStepsOneTwoFourTwentyFour); RUN_TEST(testSyncPpqnInvalidStoredValueFallsBackToOptionStart);
     RUN_TEST(testSyncEdgePositiveDeltaSelectsFalling); RUN_TEST(testSyncEdgeNegativeDeltaSelectsRising); RUN_TEST(testSyncLossModeClampsAcrossEnum); RUN_TEST(testSyncResetModeSelectsGateAndTrigger);
-    RUN_TEST(testSyncGlitchFilterClampsZeroToFiveMilliseconds); RUN_TEST(testSyncTimeoutClampsTwoHundredToFiveThousandMs);
-    RUN_TEST(testScreensaverModeOrderStartsWithOff); RUN_TEST(testScreensaverModeCanReachFireworks); RUN_TEST(testScreensaverDelayCannotExceedDimDelay); RUN_TEST(testDimDelayCannotPrecedeScreensaver); RUN_TEST(testDimDelayCannotExceedOffDelay); RUN_TEST(testOffDelayCannotPrecedeDimDelay);
+    RUN_TEST(testSyncGlitchFilterClampsZeroToFiveMilliseconds); RUN_TEST(testSyncSmoothingClampsOffToFull); RUN_TEST(testSyncSmoothingMenuLabelsAllModes); RUN_TEST(testSyncTimeoutClampsTwoHundredToFiveThousandMs);
+    RUN_TEST(testScreensaverModeOrderStartsWithOff); RUN_TEST(testScreensaverModeCanReachFireworks); RUN_TEST(testScreensaverMenuLabelsAllModes); RUN_TEST(testScreensaverDelayCannotExceedDimDelay); RUN_TEST(testDimDelayCannotPrecedeScreensaver); RUN_TEST(testDimDelayCannotExceedOffDelay); RUN_TEST(testOffDelayCannotPrecedeDimDelay);
     RUN_TEST(testInvalidChannelIndexIsIgnored); RUN_TEST(testChannelSwingClampsZeroToFifty); RUN_TEST(testChannelProbabilityClampsZeroToHundred); RUN_TEST(testChannelGateLengthUsesCuratedOptions); RUN_TEST(testChannelPhaseClampsZeroToNinetyNine); RUN_TEST(testChannelResetModeFollowsDeltaSign); RUN_TEST(testChannelMuteTogglesOncePerAdjustment);
     RUN_TEST(testRateFactorTraversesCuratedList); RUN_TEST(testRateNumeratorClampsOneToSixteen); RUN_TEST(testRateDenominatorClampsOneToSixteen); RUN_TEST(testClockMeterBeatsClampOneToSixteen);
     RUN_TEST(testEuclidShrinkingStepsClampsHitsAndRotation); RUN_TEST(testEuclidHitsCannotExceedSteps); RUN_TEST(testEuclidRotationCannotExceedLastStep);

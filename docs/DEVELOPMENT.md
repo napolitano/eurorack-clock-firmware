@@ -64,7 +64,7 @@ Global project configuration is intentionally kept at the top of `src/`:
 - `defaults.h` — editable factory user settings
 - `pin_map.h` — physical GPIO/peripheral routing
 - `ui_text.h` — static user-visible text / localization catalog
-- `version.h` — prerelease version only
+- `version.h` — firmware version source of truth
 
 Headers belonging to an implementation module live beside its `.cpp` file. CI rejects a source implementation whose matching header has drifted back into a separate include tree.
 
@@ -114,7 +114,7 @@ The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly b
 pio test -e native
 ```
 
-The Native entry point contains **407 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 90 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 51 `test_controls`, 56 `test_settings`, 19 `test_screensavers`, 36 `test_easter_eggs`, and 29 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite locks down immediate first-detent response from every electrical phase, immediate response after direction changes, counter wraparound, missed/extra-transition recovery, menu-entry encoder-push phase re-anchoring, long alternating single-detent sequences, fast-turn backlog handling, and device-level encoder inversion after detent decoding. Production STM32F401 builds use TIM4 encoder mode on PB6/PB7 so quadrature transitions are counted by hardware rather than by EXTI delivery. The Settings/host suites additionally cover deterministic OLED 0°/180° transfer rotation and schema-v6 to schema-v7 migration for the two device-local preferences.
+The Native entry point contains **416 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 24 `test_realtime`, 96 `test_sync_behavior`, 22 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 51 `test_controls`, 59 `test_settings`, 19 `test_screensavers`, 36 `test_easter_eggs`, and 29 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite locks down immediate first-detent response from every electrical phase, immediate response after direction changes, counter wraparound, missed/extra-transition recovery, menu-entry encoder-push phase re-anchoring, long alternating single-detent sequences, fast-turn backlog handling, and device-level encoder inversion after detent decoding. Production STM32F401 builds use TIM4 encoder mode on PB6/PB7 so quadrature transitions are counted by hardware rather than by EXTI delivery. The Settings/host suites additionally cover deterministic OLED 0°/180° transfer rotation and schema-v7 to schema-v8 migration for SYNC smoothing plus the earlier schema migration chain.
 
 Covered areas include:
 
@@ -170,7 +170,7 @@ CI requires:
 - AddressSanitizer = **clean**
 - UndefinedBehaviorSanitizer = **clean**
 
-The beta.4 repository-wide baseline is maintained by `run_host_tests.py` and must remain above 95% executable lines, 95% functions and 90% source decision branches. The report lists every uncovered production function and decision branch explicitly so prerelease thresholds do not hide newly introduced blind spots.
+The stable repository-wide baseline is maintained by `run_host_tests.py` and must remain above 95% executable lines, 95% functions and 90% source decision branches. The report lists every uncovered production function and decision branch explicitly so release thresholds do not hide newly introduced blind spots.
 
 Raw GCC compiler-branch coverage is reported separately because GCC also emits synthetic throw/exception edges. These are informational only; source decision branches are gated at 90%.
 

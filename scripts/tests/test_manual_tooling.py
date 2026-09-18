@@ -78,6 +78,39 @@ class ManualToolingTests(unittest.TestCase):
             )
             CHECK.validate_odt(output, target_version)
 
+    def test_firmware_stamping_never_rewrites_license_versions(self) -> None:
+        import zipfile
+
+        with tempfile.TemporaryDirectory() as directory:
+            directory_path = Path(directory)
+            stable = directory_path / "clock-user-manual.1.0.0.odt"
+            next_release = directory_path / "clock-user-manual.1.1.0.odt"
+
+            PREPARE.stamp_odt(
+                self.working,
+                stable,
+                "1.0.0",
+                allow_font_substitution=True,
+            )
+            PREPARE.stamp_odt(
+                stable,
+                next_release,
+                "1.1.0",
+                allow_font_substitution=True,
+            )
+
+            with zipfile.ZipFile(next_release, "r") as archive:
+                content = archive.read("content.xml").decode("utf-8")
+                metadata = archive.read("meta.xml").decode("utf-8")
+
+            self.assertIn("CLOCK 1.1.0", content)
+            self.assertIn("firmware 1.1.0", content.lower())
+            self.assertIn("PolyForm Noncommercial License 1.0.0", content)
+            self.assertNotIn("PolyForm Noncommercial License 1.1.0", content)
+            self.assertIn("PolyForm Noncommercial License 1.0.0", metadata)
+            self.assertNotIn("PolyForm Noncommercial License 1.1.0", metadata)
+            CHECK.validate_odt(next_release, "1.1.0")
+
     def test_pdf_font_check_accepts_libreoffice_subset_without_light_suffix(self) -> None:
         fonts = (
             "name                                 type              encoding         emb sub uni object ID\n"

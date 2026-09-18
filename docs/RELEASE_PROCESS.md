@@ -53,6 +53,8 @@ docs/manual/releases/<version>/clock-user-manual.<version>.odt
 
 The release workflow validates that ODT, builds both the versioned ODT and PDF with the required Ubuntu fonts, and validates the exported PDF before publication. The manual contains the firmware license, third-party license notices, and a QR code to the source repository before the Colophon.
 
+Firmware-version stamping is deliberately scoped to firmware-bearing fields and prose. **License names and license versions are immutable release content**: for example, publishing firmware `1.1.0` must not alter `PolyForm Noncommercial License 1.0.0`, `CC BY-NC 4.0`, Apache-2.0, BSD-3-Clause, or any other third-party license identifier. The manual-tooling regression suite enforces this separation.
+
 ## Release description
 
 GitHub release notes are generated from three curated sources rather than GitHub's generic automatic notes:

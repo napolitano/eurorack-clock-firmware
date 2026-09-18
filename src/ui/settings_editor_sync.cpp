@@ -46,6 +46,9 @@ void SettingsEditor::adjustSync(const std::uint8_t rowIndex, const std::int8_t d
             0,
             5000));
     } else if (rowIndex == 6U) {
+        state_.externalSync.smoothing = static_cast<SyncSmoothing>(clampInt(
+            static_cast<int>(state_.externalSync.smoothing) + delta, 0, 3));
+    } else if (rowIndex == 7U) {
         state_.externalSync.timeoutMs = static_cast<std::uint16_t>(clampInt(
             static_cast<int>(state_.externalSync.timeoutMs) + delta * 100,
             200,

@@ -44,6 +44,26 @@ def current_version() -> str:
 
 
 def source_version(meta_xml: str, content_xml: str) -> str:
+    """Return the firmware version embedded in the manual source.
+
+    License versions are independent metadata and must never participate in firmware
+    version detection. Prefer the dedicated FirmwareVersion field and only fall back
+    to explicit ``firmware <semver>`` prose in older manual sources.
+    """
+    ns = {
+        "meta": "urn:oasis:names:tc:opendocument:xmlns:meta:1.0",
+    }
+    try:
+        root = ET.fromstring(meta_xml)
+    except ET.ParseError:
+        root = None
+    if root is not None:
+        for element in root.findall(".//meta:user-defined", ns):
+            if element.attrib.get(f"{{{ns['meta']}}}name") == "FirmwareVersion":
+                value = (element.text or "").strip()
+                if value:
+                    return value
+
     for text in (meta_xml, content_xml):
         match = COVERAGE_VERSION_RE.search(text)
         if match is not None:
@@ -128,32 +148,74 @@ def stamp_back(image_bytes: bytes, version: str, font_path: str) -> bytes:
     return out.getvalue()
 
 
-def replace_version(text: str, old_version: str, version: str) -> str:
-    pattern = re.compile(re.escape(old_version), re.IGNORECASE)
+def _replace_explicit_firmware_reference(text: str, old_version: str, version: str) -> str:
+    """Replace a firmware version only when the surrounding text identifies it as firmware."""
+    escaped = re.escape(old_version)
+    patterns = (
+        re.compile(
+            rf"(?i)(\bfirmware(?:\s+version)?\s*(?:[:·—–-]\s*)?){escaped}\b"
+        ),
+        re.compile(rf"(?i)(\bCLOCK\s+){escaped}\b"),
+    )
+    updated = text
+    for pattern in patterns:
+        updated = pattern.sub(lambda match: f"{match.group(1)}{version}", updated)
+    return updated
 
-    def replacement(match: re.Match[str]) -> str:
-        return version.upper() if match.group(0).upper() == match.group(0) else version
 
-    return pattern.sub(replacement, text)
+def replace_firmware_version_in_content(content_xml: str, old_version: str, version: str) -> str:
+    """Stamp only firmware-version occurrences in ODT content.xml.
+
+    In particular, a firmware release such as 1.1.0 must never rewrite an
+    unrelated license identifier such as PolyForm Noncommercial License 1.0.0.
+    """
+    updated = _replace_explicit_firmware_reference(content_xml, old_version, version)
+
+    # The technical-status table stores the value in a separate cell next to an
+    # exact ``Firmware`` label, so there is no textual ``firmware <version>``
+    # phrase for the generic replacement above to match. Restrict the fallback
+    # to only that labeled table row.
+    row_pattern = re.compile(r"<table:table-row\b.*?</table:table-row>", re.DOTALL)
+    exact_value = re.compile(rf"(?<![0-9A-Za-z.-]){re.escape(old_version)}(?![0-9A-Za-z.-])")
+
+    def replace_firmware_row(match: re.Match[str]) -> str:
+        row = match.group(0)
+        if re.search(r">\s*Firmware\s*<", row, re.IGNORECASE) is None:
+            return row
+        return exact_value.sub(version, row)
+
+    return row_pattern.sub(replace_firmware_row, updated)
 
 
 def update_meta_xml(meta_xml: str, old_version: str, version: str) -> str:
-    updated = replace_version(meta_xml, old_version, version)
     ns = {
         "office": "urn:oasis:names:tc:opendocument:xmlns:office:1.0",
         "meta": "urn:oasis:names:tc:opendocument:xmlns:meta:1.0",
+        "dc": "http://purl.org/dc/elements/1.1/",
     }
     ET.register_namespace("office", ns["office"])
     ET.register_namespace("meta", ns["meta"])
-    root = ET.fromstring(updated)
+    ET.register_namespace("dc", ns["dc"])
+    root = ET.fromstring(meta_xml)
     office_meta = root.find("office:meta", ns)
     if office_meta is None:
         raise RuntimeError("ODT meta.xml does not contain office:meta")
+
+    description = office_meta.find("dc:description", ns)
+    if description is not None and description.text:
+        description.text = _replace_explicit_firmware_reference(
+            description.text, old_version, version
+        )
+
     existing = None
     for element in office_meta.findall("meta:user-defined", ns):
-        if element.attrib.get(f"{{{ns['meta']}}}name") == "FirmwareVersion":
+        name = element.attrib.get(f"{{{ns['meta']}}}name")
+        if name == "Coverage" and element.text:
+            element.text = _replace_explicit_firmware_reference(
+                element.text, old_version, version
+            )
+        elif name == "FirmwareVersion":
             existing = element
-            break
     if existing is None:
         existing = ET.SubElement(
             office_meta,
@@ -181,7 +243,7 @@ def stamp_odt(source: Path, destination: Path, version: str, *, allow_font_subst
         cover_name, back_name = page_images(content_xml, archive)
 
         replacements: dict[str, bytes] = {
-            "content.xml": replace_version(content_xml, old_version, version).encode("utf-8"),
+            "content.xml": replace_firmware_version_in_content(content_xml, old_version, version).encode("utf-8"),
             "meta.xml": update_meta_xml(meta_xml, old_version, version).encode("utf-8"),
             cover_name: stamp_cover(archive.read(cover_name), version, regular_font),
             back_name: stamp_back(archive.read(back_name), version, bold_font),

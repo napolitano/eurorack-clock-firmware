@@ -4,7 +4,7 @@
 
 > **Release documentation — v1.0.0 · V1 feature freeze**
 >
-> CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation and physical HIL timing sign-off remain open. Timer Input Capture or compare-event scheduling are implementation options only if measured V1 timing requires them.
+> CLOCK 1.0.0 is the stable V1 firmware baseline. The clock engine, UI, persistence, simulator, final GPIO routing, interrupt-driven SYNC/RST capture path, and production SPI display path are implemented. Physical comparator thresholds, jack-level timing, gate jitter, and other bench measurements remain tracked HIL qualification evidence; they do not change the documented firmware behavior.
 
 This guide is the GitHub-readable operating reference for CLOCK. OLED screenshots are generated from the **production renderer and the real 128×64 framebuffer**, then enlarged with nearest-neighbor scaling. They are not hand-drawn UI mockups.
 
@@ -311,6 +311,7 @@ Available settings are:
 - **LOSS** — `STOP / FREE / INTERNAL`
 - **RST MODE** — `TRIGGER / GATE`
 - **FILTER** — 0–5000 µs in 250 µs steps
+- **SMOOTHING** — `OFF / LOW / MEDIUM / FULL` (factory default: `LOW`)
 - **TIMEOUT** — 200–5000 ms in 100 ms steps
 
 `TRIGGER` is the factory reset-input mode. One accepted inactive→active reset edge generates one reset; holding the conditioned reset signal HIGH does not repeat it.
@@ -318,6 +319,8 @@ Available settings are:
 `GATE` treats the reset input as a held reset condition: while the conditioned input remains HIGH, the timing engine is held in reset and all generated gates remain LOW. Releasing the input restarts from phase zero.
 
 `AUTO` is the factory clock source. Without a valid external lock, CLOCK runs from the configured internal BPM. The first accepted SYNC pulse starts acquisition but does **not** advertise a lock because no period can be measured yet. The second valid selected pulse establishes the first period, calculates the external BPM, acquires lock, resets the external phase to zero, and starts transport unless the user has explicitly stopped or paused it. While locked in `EXTERNAL` or `AUTO`, the large BPM display shows the measured external tempo. Tap Tempo updates the internal/fallback BPM only and never changes the selected clock source.
+
+`FILTER` and `SMOOTHING` solve different problems. `FILTER` rejects implausibly short electrical/glitch intervals. `SMOOTHING` controls how quickly the measured tempo follows genuine period changes: `OFF` uses 100% of the newest period, `LOW` uses 75% new / 25% previous, `MEDIUM` uses 50% / 50%, and `FULL` uses 25% new / 75% previous. `LOW` is the factory default because it follows deliberate tempo moves quickly while still damping modest source jitter; `FULL` preserves the earlier, deliberately slow response.
 
 After external loss, `LOSS = STOP` stops transport and forces normal STOP gate behavior; a later valid reacquisition may restart only when transport was still armed for external operation. A manual STOP or PAUSE takes precedence and is not undone by incoming SYNC. `LOSS = FREE` continues at the last measured external BPM, while `LOSS = INTERNAL` continues at the configured internal fallback BPM. RST remains phase-only: it resets or holds phase according to `RST MODE` and never changes PLAY/PAUSE/STOP by itself.
 
@@ -327,7 +330,7 @@ SYNC/RST transitions are captured by GPIO interrupts and consumed at the determi
 <tr>
 <td align="center"><img src="manual/assets/performance-external-unlocked.png" alt="Performance screen with external source selected but no valid lock yet." width="220"><br><sub>External selected, not yet locked</sub></td>
 <td align="center"><img src="manual/assets/performance-external-locked.png" alt="Performance screen in slave mode with the external-lock padlock visible." width="220"><br><sub>External slave locked</sub></td>
-<td align="center"><img src="manual/assets/settings-sync.png" alt="SYNC settings page listing source, PPQN, edge, loss policy, reset-input mode, filter, and timeout." width="220"><br><sub>SYNC/RST configuration</sub></td>
+<td align="center"><img src="manual/assets/settings-sync.png" alt="SYNC settings page showing the upper portion of the external timing configuration." width="220"><br><sub>SYNC/RST configuration</sub></td>
 </tr>
 </table>
 

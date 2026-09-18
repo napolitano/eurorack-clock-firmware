@@ -71,6 +71,9 @@ enum class ExternalResetMode : std::uint8_t { Trigger, Gate };
 /** @brief Selects transport behavior after the external clock is lost. */
 enum class SyncLossMode : std::uint8_t { Stop, Freewheel, Internal };
 
+/** @brief Selects how strongly successive external-clock periods are smoothed. */
+enum class SyncSmoothing : std::uint8_t { Off, Low, Medium, Full };
+
 /** @brief Musical meter expressed as numerator and note-value denominator. */
 struct MeterSettings {
     std::uint8_t beats = 4U;
@@ -147,6 +150,7 @@ struct ExternalSyncSettings {
     SyncEdge edge = SyncEdge::Rising;
     SyncLossMode lossMode = SyncLossMode::Freewheel;
     ExternalResetMode resetMode = ExternalResetMode::Trigger;
+    SyncSmoothing smoothing = SyncSmoothing::Low;
     std::uint16_t glitchFilterUs = 1000U;
     std::uint16_t timeoutMs = 1500U;
 };

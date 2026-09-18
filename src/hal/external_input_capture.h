@@ -24,7 +24,7 @@ struct ExternalInputEdge {
  * @brief Captures external comparator transitions without involving the foreground loop.
  *
  * The current prototype backend uses GPIO CHANGE interrupts. The public edge queue is
- * deliberately timer-agnostic so the final PCB can replace SYNC timestamp production
+ * deliberately timer-agnostic so the timer-capable PA8 route can replace SYNC timestamp production
  * with STM32 timer input capture without changing the real-time synchronization service.
  */
 class ExternalInputCapture final {

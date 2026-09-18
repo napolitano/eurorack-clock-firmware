@@ -63,7 +63,7 @@ CLOCK documentation follows a few explicit rules:
 9. Every README-style document ends with the same project footer.
 
 > [!IMPORTANT]
-> Documentation must not turn planned hardware into an implemented feature. The interrupt-driven digital SYNC/RST firmware boundary exists; final comparator circuitry, PCB pin routing, external-SYNC capture latency/jitter, and electrical HIL remain open until measured on representative hardware. Timer Input Capture is an escalation path, not a prerelease requirement by itself.
+> Documentation must not turn unmeasured hardware characteristics into verified facts. The final PA8/PA9 GPIO routing and interrupt-driven digital SYNC/RST firmware path are implemented; comparator thresholds, external-SYNC capture latency/jitter, electrical output levels, and related bench behavior remain HIL measurements on representative hardware. Timer Input Capture remains an escalation path only if measured timing justifies it.
 
 ## Manual assets
 

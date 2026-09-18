@@ -18,11 +18,11 @@
 namespace clockfw::services {
 namespace {
 
-/** Four-byte CURRENT magic value "CUR7" stored little-endian. */
-constexpr std::uint32_t kCurrentMagic = 0x37525543UL;
+/** Four-byte CURRENT magic value "CUR8" stored little-endian. */
+constexpr std::uint32_t kCurrentMagic = 0x38525543UL;
 
-/** Four-byte preset magic value "PRE7" stored little-endian. */
-constexpr std::uint32_t kPresetMagic = 0x37455250UL;
+/** Four-byte preset magic value "PRE8" stored little-endian. */
+constexpr std::uint32_t kPresetMagic = 0x38455250UL;
 
 /** Reflected CRC-32 polynomial used by Ethernet/ZIP and many embedded formats. */
 constexpr std::uint32_t kCrcPolynomial = 0xEDB88320UL;
@@ -199,6 +199,10 @@ PersistentStateService::serializeState(const ClockState& state) {
     writer.write8(state.device.encoderDirectionReversed ? 1U : 0U);
     writer.write8(state.device.displayRotated180 ? 1U : 0U);
 
+    // SYNC smoothing was added for V1 immediately before release. Appending it
+    // preserves every schema-v7 payload as an exact prefix for lossless migration.
+    writer.write8(static_cast<std::uint8_t>(state.externalSync.smoothing));
+
     // A schema-size mismatch is a programmer error and should fail at compile/test time.
     (void)writer.position();
     return payload;
@@ -264,6 +268,7 @@ bool PersistentStateService::deserializeState(
 
     candidate.device.encoderDirectionReversed = reader.read8() != 0U;
     candidate.device.displayRotated180 = reader.read8() != 0U;
+    candidate.externalSync.smoothing = static_cast<SyncSmoothing>(reader.read8());
 
     if (reader.position() != kStatePayloadSize || !isStateValid(candidate)) {
         return false;

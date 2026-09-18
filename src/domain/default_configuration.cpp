@@ -24,6 +24,7 @@ void initializeFactoryDefaults(ClockState& state) {
         defaults::kExternalSyncEdge,
         defaults::kExternalSyncLossMode,
         defaults::kExternalResetMode,
+        defaults::kExternalSyncSmoothing,
         defaults::kExternalSyncGlitchFilterUs,
         defaults::kExternalSyncTimeoutMs};
     state.unifiedClock = {

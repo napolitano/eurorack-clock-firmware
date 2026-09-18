@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v1.0.0
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 407 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 416 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -17,10 +17,10 @@ The release gates remain stringent without requiring synthetic tests for every d
 Current repository-wide validated baseline (`1.0.0`):
 
 ```text
-Executable lines:   7022/7285 (96.39%)
-Functions:           601/611  (98.36%)
-Decision branches:  4219/4686 (90.03%)
-Compiler branches:  4220/5476 (77.06%, informational only)
+Executable lines:   7108/7365 (96.51%)
+Functions:           605/615  (98.37%)
+Decision branches:  4287/4759 (90.08%)
+Compiler branches:  4288/5562 (77.09%, informational only)
 ```
 
 ## Full host matrix
@@ -54,7 +54,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - application boot lifecycle, safe display-failure path, scheduler callback and STM32Cube entry-point/platform-I/O glue
 - all `ClockEngine` public methods and OFF/CLOCK/EUC/SEQ behavior
 - pause/stop, external-loss STOP/FREE behavior, bar progression/wrap and GLOBAL/FREE reset handling
-- all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 56-case Settings suite also locks down min/max coupling, enum boundaries and cross-setting invariants
+- all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 59-case Settings suite also locks down min/max coupling, enum boundaries, SYNC smoothing labels and cross-setting invariants
 - tap tempo and all factory templates
 - all menu pages, labels, compact formatters and localization fallback
 - performance, pictographic 2×4 channel overview, six-function 2×3 mode palette, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Blox/Matrix/Cube Cover/Fractal/Orbit/Make Music/Labyrinth/Starfield/Fireworks screensaver effects, preset overwrite/name-band, templates and sequencer render paths
@@ -66,9 +66,10 @@ The complete firmware variants compile the real production `.cpp` files against 
 - complete deterministic timing/pattern core invariants
 - sixteenth-note base-rate semantics for Euclid/Sequencer (`x1`: 16 steps per 4/4 bar)
 - complete CURRENT-state persistence plus CRC/schema validation and 8 named user preset slots, including screensaver mode/start/dim/off plus device-local encoder-direction/OLED-orientation preferences
-- schema-v3/v4/v5/v6 to schema-v7 CURRENT/preset migration, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
+- schema-v3/v4/v5/v6/v7 to schema-v8 CURRENT/preset migration, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
 - external-sync regression cases for 20/120/999 BPM, 1/2/4/24 PPQN, jitter, adaptive lock timeout, queue overflow/reacquisition, timestamp wraparound, effective-tempo gate release, monotonic scheduler time, phase alignment, ISR-safe pulse entry, and PPQN interpretation
 - atomic external-SYNC behavior at 1/20/30/60/120/240/300/600/900/999 BPM, strong deterministic jitter, alternating/chaotic periods, abrupt tempo changes, duplicate timestamps, glitch storms, runtime PPQN/edge changes, lock-loss policies and continuity recovery
+- external-SYNC `SMOOTHING` OFF/LOW/MEDIUM/FULL weighting, factory LOW default, live smoothing changes after lock, and menu-label coverage for all four modes
 - continuous external-tempo movement including 60->180 and 180->60 ramps, slow drift, repeated tempo steps, ramp-plus-jitter and 24-PPQN acceleration; permanently asserted SYNC is checked for one-edge behavior and natural lock timeout rather than a synthetic pulse train
 - dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, encoder NORMAL/REVERSED plus TIM4 detent-recovery/fast-turn backlog behavior, exact OLED 0°/180° transfer-frame rotation, and atomic button debounce/queue behavior
 - nominal LM393-front-end design-model checks for the documented resistor/hysteresis network, including end-to-end modeled 2.5 V, 3 V and 4 V clocks at low/nominal/maximum supported tempo; this remains explicitly separate from physical comparator HIL

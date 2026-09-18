@@ -262,6 +262,30 @@ void writeTestUint32Le(std::uint8_t* const destination, const std::uint32_t valu
 
 
 template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
+std::array<std::uint8_t, LegacySize> makeLegacyV7Record(
+    const std::array<std::uint8_t, CurrentSize>& current) {
+    constexpr std::size_t kV8PayloadSize = 255U;
+    constexpr std::size_t kV7PayloadSize = 254U;
+    static_assert(kV8PayloadSize == kV7PayloadSize + 1U);
+    std::array<std::uint8_t, LegacySize> legacy{};
+
+    if constexpr (PayloadOffset == 8U) {
+        writeTestUint32Le(legacy.data(), 0x37525543UL);  // "CUR7"
+    } else {
+        std::copy_n(current.begin() + 8, 16U, legacy.begin() + 8);
+        writeTestUint32Le(legacy.data(), 0x37455250UL);  // "PRE7"
+    }
+    legacy[4] = 7U;
+    legacy[5] = current[5];
+    writeTestUint16Le(legacy.data() + 6U, static_cast<std::uint16_t>(kV7PayloadSize));
+    std::copy_n(current.begin() + static_cast<std::ptrdiff_t>(PayloadOffset),
+                kV7PayloadSize,
+                legacy.begin() + static_cast<std::ptrdiff_t>(PayloadOffset));
+    writeTestUint32Le(legacy.data() + LegacySize - 4U, testCrc32(legacy.data(), LegacySize - 4U));
+    return legacy;
+}
+
+template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
 std::array<std::uint8_t, LegacySize> makeLegacyV6Record(
     const std::array<std::uint8_t, CurrentSize>& current) {
     constexpr std::size_t kV7PayloadSize = 254U;
@@ -512,12 +536,12 @@ void testPersistentLayoutV1ForwardCompatibilityContract() {
     CHECK_EQ(hal::persistent_layout::kMaximumImageBytes, 12288U);
     CHECK_EQ(hal::persistent_layout::kLegacyScoreRegionOffset, 3072U);
     CHECK_EQ(hal::persistent_layout::kLeaderboardRegionOffset, 4096U);
-    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 254U);
-    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 266U);
-    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 282U);
-    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2522U);
-    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 550U);
-    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 61U);
+    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 255U);
+    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 267U);
+    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 283U);
+    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2531U);
+    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 541U);
+    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 60U);
 }
 
 void testPersistentStorageTransactionalUpdate() {
@@ -749,7 +773,7 @@ void testPersistentStorageAndStateService() {
     complete.masterMeter = {7U, 8U};
     complete.transport = TransportState::Playing;
     complete.source = ClockSource::Auto;
-    complete.externalSync = {24U, SyncEdge::Falling, SyncLossMode::Internal, ExternalResetMode::Gate, 750U, 2200U};
+    complete.externalSync = {24U, SyncEdge::Falling, SyncLossMode::Internal, ExternalResetMode::Gate, SyncSmoothing::Full, 750U, 2200U};
     complete.display = {ScreensaverMode::Orbit, 3U, 7U, 12U};
     complete.device = {true, true};
     for (std::uint8_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
@@ -855,10 +879,10 @@ void testPersistentStorageAndStateService() {
     hal::PersistentStorage::failNextReadForTest();
     CHECK(!fullReload.renamePreset(2U, "READFAIL"));
 
-    constexpr std::size_t kV7CurrentRecordSizeForTest = 266U;
-    constexpr std::size_t kV7PresetRecordSizeForTest = 282U;
+    constexpr std::size_t kCurrentRecordSizeForTest = 267U;
+    constexpr std::size_t kPresetRecordSizeForTest = 283U;
     constexpr std::size_t kPreset2OffsetForTest =
-        kV7CurrentRecordSizeForTest + 2U * kV7PresetRecordSizeForTest;
+        kCurrentRecordSizeForTest + 2U * kPresetRecordSizeForTest;
     std::uint8_t presetMagicByte = 0U;
     CHECK(storage.readBytes(kPreset2OffsetForTest, &presetMagicByte, 1U));
     const std::uint8_t corruptPresetMagic = static_cast<std::uint8_t>(presetMagicByte ^ 0x01U);
@@ -899,6 +923,8 @@ void testPersistentStorageAndStateService() {
 
 
 void testPersistentV3Migration() {
+    constexpr std::size_t kV8CurrentSize = 267U;
+    constexpr std::size_t kV8PresetSize = 283U;
     constexpr std::size_t kV7CurrentSize = 266U;
     constexpr std::size_t kV7PresetSize = 282U;
     constexpr std::size_t kV6CurrentSize = 264U;
@@ -909,6 +935,7 @@ void testPersistentV3Migration() {
     constexpr std::size_t kV4PresetSize = 273U;
     constexpr std::size_t kV3CurrentSize = 253U;
     constexpr std::size_t kV3PresetSize = 269U;
+    constexpr std::size_t kV8PresetOffset = kV8CurrentSize;
     constexpr std::size_t kV7PresetOffset = kV7CurrentSize;
     constexpr std::size_t kV6PresetOffset = kV6CurrentSize;
     constexpr std::size_t kV5PresetOffset = kV5CurrentSize;
@@ -916,8 +943,8 @@ void testPersistentV3Migration() {
     constexpr std::size_t kV3PresetOffset = kV3CurrentSize;
     constexpr std::size_t kScoreOffset = 3072U;
 
-    // Seed a v7 record using the production serializer, strip the two appended
-    // device-preference bytes to obtain v6, then derive each older schema in turn.
+    // Seed a v8 record using the production serializer, strip the appended
+    // SYNC-smoothing byte to obtain v7, then derive each older schema in turn.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage seedStorage;
     services::PersistentStateService seed(seedStorage);
@@ -935,10 +962,12 @@ void testPersistentV3Migration() {
     CHECK(seed.savePreset(0U, "MIGRATE", legacyState));
     seed.service(5000U);
 
-    std::array<std::uint8_t, kV7CurrentSize> v7Current{};
-    std::array<std::uint8_t, kV7PresetSize> v7Preset{};
-    CHECK(seedStorage.readBytes(0U, v7Current.data(), v7Current.size()));
-    CHECK(seedStorage.readBytes(kV7PresetOffset, v7Preset.data(), v7Preset.size()));
+    std::array<std::uint8_t, kV8CurrentSize> v8Current{};
+    std::array<std::uint8_t, kV8PresetSize> v8Preset{};
+    CHECK(seedStorage.readBytes(0U, v8Current.data(), v8Current.size()));
+    CHECK(seedStorage.readBytes(kV8PresetOffset, v8Preset.data(), v8Preset.size()));
+    const auto v7Current = makeLegacyV7Record<kV8CurrentSize, kV7CurrentSize, 8U>(v8Current);
+    const auto v7Preset = makeLegacyV7Record<kV8PresetSize, kV7PresetSize, 24U>(v8Preset);
     const auto v6Current = makeLegacyV6Record<kV7CurrentSize, kV6CurrentSize, 8U>(v7Current);
     const auto v6Preset = makeLegacyV6Record<kV7PresetSize, kV6PresetSize, 24U>(v7Preset);
     const auto v5Current = makeLegacyV5Record<kV6CurrentSize, kV5CurrentSize, 8U>(v6Current);
@@ -951,6 +980,27 @@ void testPersistentV3Migration() {
     const std::array<std::uint8_t, 16U> scoreMarker{
         0x52U, 0x41U, 0x49U, 0x44U, 1U, 2U, 3U, 4U,
         5U, 6U, 7U, 8U, 9U, 10U, 11U, 12U};
+
+    // v7 -> v8: all prior musical/device state survives and SYNC smoothing
+    // receives the release-safe LOW default before records are rewritten as v8.
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage legacyV7Storage;
+    CHECK(legacyV7Storage.writeBytes(0U, v7Current.data(), v7Current.size()));
+    CHECK(legacyV7Storage.writeBytes(kV7PresetOffset, v7Preset.data(), v7Preset.size()));
+    services::PersistentStateService migratedV7(legacyV7Storage);
+    migratedV7.begin();
+    ClockState restoredV7 = makeDefaultState();
+    CHECK(migratedV7.restoreCurrentState(restoredV7));
+    CHECK_EQ(restoredV7.bpm, 143U);
+    CHECK_EQ(restoredV7.externalSync.resetMode, ExternalResetMode::Gate);
+    CHECK_EQ(restoredV7.externalSync.smoothing, SyncSmoothing::Low);
+    CHECK(migratedV7.presetExists(0U));
+    std::array<std::uint8_t, kV8CurrentSize> migratedV7ToV8Current{};
+    std::array<std::uint8_t, kV8PresetSize> migratedV7ToV8Preset{};
+    CHECK(legacyV7Storage.readBytes(0U, migratedV7ToV8Current.data(), migratedV7ToV8Current.size()));
+    CHECK(legacyV7Storage.readBytes(kV8PresetOffset, migratedV7ToV8Preset.data(), migratedV7ToV8Preset.size()));
+    CHECK_EQ(migratedV7ToV8Current[4], 8U);
+    CHECK_EQ(migratedV7ToV8Preset[4], 8U);
 
     // A CRC-valid current record with a semantically invalid payload must be rejected.
     // This exercises the post-decode semantic-validation path independently of CRC checks.
@@ -967,7 +1017,7 @@ void testPersistentV3Migration() {
     invalidV6.begin();
     CHECK(!invalidV6.hasStoredCurrentState());
 
-    // v6 -> v7: musical state is preserved and new device preferences default safely.
+    // v6 -> v8: musical state is preserved and new device preferences default safely.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV6Storage;
     CHECK(legacyV6Storage.writeBytes(0U, v6Current.data(), v6Current.size()));
@@ -980,15 +1030,16 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV6.externalSync.resetMode, ExternalResetMode::Gate);
     CHECK(!restoredV6.device.encoderDirectionReversed);
     CHECK(!restoredV6.device.displayRotated180);
+    CHECK_EQ(restoredV6.externalSync.smoothing, SyncSmoothing::Low);
     CHECK(migratedV6.presetExists(0U));
-    std::array<std::uint8_t, kV7CurrentSize> migratedV6ToV7Current{};
-    std::array<std::uint8_t, kV7PresetSize> migratedV6ToV7Preset{};
-    CHECK(legacyV6Storage.readBytes(0U, migratedV6ToV7Current.data(), migratedV6ToV7Current.size()));
-    CHECK(legacyV6Storage.readBytes(kV7PresetOffset, migratedV6ToV7Preset.data(), migratedV6ToV7Preset.size()));
-    CHECK_EQ(migratedV6ToV7Current[4], 7U);
-    CHECK_EQ(migratedV6ToV7Preset[4], 7U);
+    std::array<std::uint8_t, kV8CurrentSize> migratedV6ToV8Current{};
+    std::array<std::uint8_t, kV8PresetSize> migratedV6ToV8Preset{};
+    CHECK(legacyV6Storage.readBytes(0U, migratedV6ToV8Current.data(), migratedV6ToV8Current.size()));
+    CHECK(legacyV6Storage.readBytes(kV8PresetOffset, migratedV6ToV8Preset.data(), migratedV6ToV8Preset.size()));
+    CHECK_EQ(migratedV6ToV8Current[4], 8U);
+    CHECK_EQ(migratedV6ToV8Preset[4], 8U);
 
-    // v5 -> v7: user state remains intact; newer fields receive safe defaults.
+    // v5 -> v8: user state remains intact; newer fields receive safe defaults.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV5Storage;
     CHECK(legacyV5Storage.writeBytes(0U, v5Current.data(), v5Current.size()));
@@ -1002,15 +1053,16 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV5.externalSync.resetMode, defaults::kExternalResetMode);
     CHECK(!restoredV5.device.encoderDirectionReversed);
     CHECK(!restoredV5.device.displayRotated180);
+    CHECK_EQ(restoredV5.externalSync.smoothing, SyncSmoothing::Low);
     CHECK(migratedV5.presetExists(0U));
-    std::array<std::uint8_t, kV7CurrentSize> migratedV7Current{};
-    std::array<std::uint8_t, kV7PresetSize> migratedV7Preset{};
-    CHECK(legacyV5Storage.readBytes(0U, migratedV7Current.data(), migratedV7Current.size()));
-    CHECK(legacyV5Storage.readBytes(kV7PresetOffset, migratedV7Preset.data(), migratedV7Preset.size()));
-    CHECK_EQ(migratedV7Current[4], 7U);
-    CHECK_EQ(migratedV7Preset[4], 7U);
+    std::array<std::uint8_t, kV8CurrentSize> migratedV8Current{};
+    std::array<std::uint8_t, kV8PresetSize> migratedV8Preset{};
+    CHECK(legacyV5Storage.readBytes(0U, migratedV8Current.data(), migratedV8Current.size()));
+    CHECK(legacyV5Storage.readBytes(kV8PresetOffset, migratedV8Preset.data(), migratedV8Preset.size()));
+    CHECK_EQ(migratedV8Current[4], 8U);
+    CHECK_EQ(migratedV8Preset[4], 8U);
 
-    // v4 -> v7: user BPM remains intact and newer preferences receive factory defaults.
+    // v4 -> v8: user BPM remains intact and newer preferences receive factory defaults.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV4Storage;
     CHECK(legacyV4Storage.writeBytes(0U, v4Current.data(), v4Current.size()));
@@ -1025,13 +1077,14 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV4.tempoRange.maximumBpm, defaults::kMaximumBpm);
     CHECK_EQ(restoredV4.unifiedClock.humanizeUs, defaults::kUnifiedClockHumanizeUs);
     CHECK_EQ(restoredV4.externalSync.resetMode, defaults::kExternalResetMode);
+    CHECK_EQ(restoredV4.externalSync.smoothing, SyncSmoothing::Low);
     CHECK(migratedV4.presetExists(0U));
-    CHECK(legacyV4Storage.readBytes(0U, migratedV7Current.data(), migratedV7Current.size()));
-    CHECK(legacyV4Storage.readBytes(kV7PresetOffset, migratedV7Preset.data(), migratedV7Preset.size()));
-    CHECK_EQ(migratedV7Current[4], 7U);
-    CHECK_EQ(migratedV7Preset[4], 7U);
+    CHECK(legacyV4Storage.readBytes(0U, migratedV8Current.data(), migratedV8Current.size()));
+    CHECK(legacyV4Storage.readBytes(kV8PresetOffset, migratedV8Preset.data(), migratedV8Preset.size()));
+    CHECK_EQ(migratedV8Current[4], 8U);
+    CHECK_EQ(migratedV8Preset[4], 8U);
 
-    // v3 -> v7 through the v4/v5/v6 layouts, preserving the independent high-score area.
+    // v3 -> v8 through the v4/v5/v6/v7 layouts, preserving the independent high-score area.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyStorage;
     CHECK(legacyStorage.writeBytes(0U, v3Current.data(), v3Current.size()));
@@ -1056,6 +1109,7 @@ void testPersistentV3Migration() {
     CHECK_EQ(restored.externalSync.resetMode, defaults::kExternalResetMode);
     CHECK(!restored.device.encoderDirectionReversed);
     CHECK(!restored.device.displayRotated180);
+    CHECK_EQ(restored.externalSync.smoothing, SyncSmoothing::Low);
     CHECK(migrated.presetExists(0U));
     char presetName[services::PersistentStateService::kPresetNameLength + 1U]{};
     migrated.presetName(0U, presetName, sizeof(presetName));
@@ -1067,14 +1121,15 @@ void testPersistentV3Migration() {
     CHECK_EQ(loadedPreset.transport, TransportState::Paused);
     CHECK_EQ(loadedPreset.display.screensaverMode, defaults::kScreensaverMode);
     CHECK_EQ(loadedPreset.externalSync.resetMode, defaults::kExternalResetMode);
+    CHECK_EQ(loadedPreset.externalSync.smoothing, SyncSmoothing::Low);
 
     std::array<std::uint8_t, 16U> scoreAfter{};
     CHECK(legacyStorage.readBytes(kScoreOffset, scoreAfter.data(), scoreAfter.size()));
     CHECK(scoreAfter == scoreMarker);
-    CHECK(legacyStorage.readBytes(0U, migratedV7Current.data(), migratedV7Current.size()));
-    CHECK(legacyStorage.readBytes(kV7PresetOffset, migratedV7Preset.data(), migratedV7Preset.size()));
-    CHECK_EQ(migratedV7Current[4], 7U);
-    CHECK_EQ(migratedV7Preset[4], 7U);
+    CHECK(legacyStorage.readBytes(0U, migratedV8Current.data(), migratedV8Current.size()));
+    CHECK(legacyStorage.readBytes(kV8PresetOffset, migratedV8Preset.data(), migratedV8Preset.size()));
+    CHECK_EQ(migratedV8Current[4], 8U);
+    CHECK_EQ(migratedV8Preset[4], 8U);
 
     // A damaged v3 CURRENT must not prevent a valid v3 preset from being recovered.
     auto corruptCurrent = v3Current;

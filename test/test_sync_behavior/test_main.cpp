@@ -1028,6 +1028,65 @@ void testRuntimeTimeoutChangePreservesValidLockAndEstimator() {
     CHECK_EQ(fixture.sync.filteredBpmMilli(), before);
 }
 
+
+void testFactoryDefaultSyncSmoothingIsLow() {
+    ClockState state{};
+    initializeFactoryDefaults(state);
+    CHECK_EQ(state.externalSync.smoothing, SyncSmoothing::Low);
+}
+
+void testSyncSmoothingOffFollowsNextValidPeriodExactly() {
+    Fixture fixture;
+    fixture.state.externalSync.smoothing = SyncSmoothing::Off;
+    fixture.begin();
+    acquireRising(fixture, 500000U);
+    injectRisingPulse(fixture, 834333U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 180000U);
+}
+
+void testSyncSmoothingLowUsesSeventyFivePercentNewPeriod() {
+    Fixture fixture;
+    fixture.state.externalSync.smoothing = SyncSmoothing::Low;
+    fixture.begin();
+    acquireRising(fixture, 500000U);
+    injectRisingPulse(fixture, 834333U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 160000U);
+}
+
+void testSyncSmoothingMediumUsesHalfNewPeriod() {
+    Fixture fixture;
+    fixture.state.externalSync.smoothing = SyncSmoothing::Medium;
+    fixture.begin();
+    acquireRising(fixture, 500000U);
+    injectRisingPulse(fixture, 834333U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 143999U);
+}
+
+void testSyncSmoothingFullPreservesLegacyTwentyFivePercentNewPeriod() {
+    Fixture fixture;
+    fixture.state.externalSync.smoothing = SyncSmoothing::Full;
+    fixture.begin();
+    acquireRising(fixture, 500000U);
+    injectRisingPulse(fixture, 834333U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 130909U);
+}
+
+void testRuntimeSmoothingChangePreservesLockAndAppliesOnNextPeriod() {
+    Fixture fixture;
+    fixture.state.externalSync.smoothing = SyncSmoothing::Full;
+    fixture.begin();
+    acquireRising(fixture, 500000U);
+
+    ClockState updated = fixture.state;
+    updated.externalSync.smoothing = SyncSmoothing::Off;
+    fixture.sync.updateConfiguration(updated);
+    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
+
+    injectRisingPulse(fixture, 834333U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 180000U);
+}
+
 void testRuntimeLossModeChangePreservesValidLockAndEstimator() {
     Fixture fixture;
     fixture.begin();
@@ -1185,6 +1244,12 @@ int main() {
     RUN_TEST(testRuntimeGlitchFilterChangePreservesValidLockAndEstimator);
     RUN_TEST(testRuntimeTimeoutChangePreservesValidLockAndEstimator);
     RUN_TEST(testRuntimeLossModeChangePreservesValidLockAndEstimator);
+    RUN_TEST(testFactoryDefaultSyncSmoothingIsLow);
+    RUN_TEST(testSyncSmoothingOffFollowsNextValidPeriodExactly);
+    RUN_TEST(testSyncSmoothingLowUsesSeventyFivePercentNewPeriod);
+    RUN_TEST(testSyncSmoothingMediumUsesHalfNewPeriod);
+    RUN_TEST(testSyncSmoothingFullPreservesLegacyTwentyFivePercentNewPeriod);
+    RUN_TEST(testRuntimeSmoothingChangePreservesLockAndAppliesOnNextPeriod);
     RUN_TEST(testHeldHighSyncCreatesOnlyOneSelectedEdge);
     RUN_TEST(testHeldHighSyncAfterLockEventuallyTimesOut);
     RUN_TEST(testHeldHighSyncCannotManufactureFallingEdgeClock);

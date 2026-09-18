@@ -1,16 +1,16 @@
-<!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
-
-# CLOCK
-
-**Eight-channel Eurorack master clock, rhythm generator and gate sequencer by South Signal Lab.**
+<p align="center">
+  <img src="docs/assets/clock-header.jpg" alt="CLOCK eight-channel Eurorack clock and gate-rhythm generator" width="100%">
+</p>
 
 [![CI](https://github.com/napolitano/eurorack-clock-firmware/actions/workflows/ci.yml/badge.svg)](https://github.com/napolitano/eurorack-clock-firmware/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/napolitano/eurorack-clock-firmware?include_prereleases&sort=semver&label=release)](https://github.com/napolitano/eurorack-clock-firmware/releases)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE.md)
 
-<p align="center">
-  <img src="docs/manual/assets/front-panel-anatomy.svg" alt="Numbered South Signal Lab CLOCK front-panel illustration showing the OLED, encoder, PLAY, TAP, STOP/BACK, SYNC, RST, eight outputs and their activity LEDs" width="430">
-</p>
+<!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
+
+# CLOCK
+
+**Eight-channel Eurorack master clock, rhythm generator and gate sequencer by South Signal Lab.**
 
 CLOCK is the firmware and reference design for our own **10 HP, eight-output Eurorack clock module** built around the STM32F401CCU6 Black Pill. It combines a deterministic master timeline with three ways of using the outputs: eight independent rhythmic channels, one shared clock on all outputs, or an eight-output divider bank.
 
@@ -73,7 +73,7 @@ The hard physical-HIL release gate deliberately starts at **1.5.0**; before then
 | --- | --- |
 | Format | Eurorack, 3U, 10 HP reference panel |
 | Outputs | 8 gate/clock outputs, target 0/+5 V, individual activity LEDs |
-| Inputs | Separate SYNC and RST inputs through the planned LM393 conditioning stage; no general parameter-CV inputs by design |
+| Inputs | Separate conditioned SYNC and RST inputs through the LM393 front end; no general parameter-CV inputs by design |
 | MCU | STM32F401CCU6 Black Pill, 84 MHz Cortex-M4 |
 | Display | 128×64 SSD1306/SSD1315 over the final 4-wire SPI pin map |
 | Controls | Push encoder + PLAY/PAUSE + TAP + STOP/BACK |
@@ -151,11 +151,12 @@ The firmware-side synchronization model supports:
 - PPQN: `1`, `2`, `4`, `24`;
 - rising/falling edge selection;
 - configurable glitch filter;
+- selectable period smoothing: `OFF`, `LOW`, `MEDIUM`, `FULL` (factory default: `LOW`);
 - lock-loss timeout;
 - loss policy: stop, freewheel or return to internal timing;
 - reset input as `TRIGGER` or `GATE`.
 
-SYNC/RST edges are captured by GPIO interrupts and consumed in the deterministic scheduler. External tempo estimation is period-based and includes smoothing, continuity handling, adaptive timeout and timestamp-wrap-safe arithmetic.
+SYNC/RST edges are captured by GPIO interrupts and consumed in the deterministic scheduler. External tempo estimation is period-based and includes continuity handling, adaptive timeout and timestamp-wrap-safe arithmetic. `SMOOTHING` controls only the tempo-period averaging: `OFF` follows each valid period directly, `LOW` weights the new period 75%, `MEDIUM` 50%, and `FULL` 25%. The separate microsecond `FILTER` setting remains the electrical/glitch rejection control.
 
 > [!CAUTION]
 > Host tests prove the software semantics, not the analog input stage. Comparator thresholds, signal integrity, final timer-capture routing and resulting output jitter remain real-hardware HIL qualification items. They are reported, but do not block automated releases before 1.5.0. See [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).

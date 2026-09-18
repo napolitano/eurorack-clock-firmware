@@ -255,23 +255,23 @@ The DFU upload helper emits separated firmware regions so ordinary firmware upda
 
 ## External SYNC / RST boundary
 
-The engine-side sync/global-reset semantics and the interrupt-driven digital capture boundary are implemented and simulator/host-testable. The analog comparator frontend and final STM32 pin routing remain deliberately separate until PCB routing is frozen:
+The engine-side sync/global-reset semantics and the interrupt-driven digital capture boundary are implemented and simulator/host-testable. The final Rev 1 pin map routes conditioned SYNC to PA8 and RST to PA9:
 
 ```mermaid
 flowchart LR
     SyncJack[SYNC IN] --> SyncAnalog[Protection + LM393 comparator]
     ResetJack[RST IN] --> ResetAnalog[Protection + LM393 comparator]
-    SyncAnalog -. final PCB .-> SyncCapture[GPIO IRQ / optional TIM Input Capture]
-    ResetAnalog -. final PCB .-> ResetCapture[GPIO IRQ]
-    SyncCapture -. timestamp .-> Tracker[Sync tracker]
-    ResetCapture -. edge .-> Reset[Global phase reset]
+    SyncAnalog --> SyncCapture[PA8 GPIO EXTI timestamp]
+    ResetAnalog --> ResetCapture[PA9 GPIO EXTI edge/level]
+    SyncCapture --> Tracker[Sync tracker + selectable period smoothing]
+    ResetCapture --> Reset[Global phase reset]
     SimSync[Simulator ideal comparator] --> Tracker
     SimReset[Simulator ideal comparator] --> Reset
     Tracker --> Engine[ClockEngine]
     Reset --> Engine
 ```
 
-The current firmware timestamps conditioned SYNC/RST levels from GPIO interrupts and queues them for deterministic scheduler-side consumption; foreground polling is not used. This EXTI path is the V1 baseline and must be measured on representative hardware. Timer Input Capture is an optional escalation if those measurements do not meet the V1 timing requirement; it is not assumed to be necessary before the data exists. RST does not require period-measurement precision and remains naturally edge/level interrupt driven. The simulator's SQUARE/SINE/TRIANGLE generators do not emulate LM393 electrical characteristics.
+The current firmware timestamps conditioned SYNC/RST levels from GPIO interrupts and queues them for deterministic scheduler-side consumption; foreground polling is not used. The PA8 EXTI path is the V1 baseline. PA8 is also timer-capable, so a later firmware revision can move SYNC timestamp production to timer input capture without changing the higher-level synchronization contract if HIL measurements ever justify it. RST does not require period-measurement precision and remains edge/level interrupt driven. The simulator's SQUARE/SINE/TRIANGLE generators do not emulate LM393 electrical characteristics.
 
 ## Native simulator architecture
 

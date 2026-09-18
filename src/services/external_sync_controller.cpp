@@ -25,6 +25,7 @@ bool settingsEqual(
         first.edge == second.edge &&
         first.lossMode == second.lossMode &&
         first.resetMode == second.resetMode &&
+        first.smoothing == second.smoothing &&
         first.glitchFilterUs == second.glitchFilterUs &&
         first.timeoutMs == second.timeoutMs;
 }
@@ -241,9 +242,27 @@ void ExternalSyncController::processSyncEdges() {
         if (filteredPeriodQ8_ == 0U) {
             filteredPeriodQ8_ = periodQ8;
         } else {
-            // 25% new sample: enough smoothing for comparator/IRQ jitter without
-            // making deliberate tempo changes feel sluggish.
-            filteredPeriodQ8_ = (filteredPeriodQ8_ * 3U + periodQ8) / 4U;
+            // Period smoothing is user-selectable because external clocks range
+            // from precise digital masters to noisy/modulated analog sources.
+            // OFF    = 100% new sample
+            // LOW    =  75% new / 25% previous (factory default)
+            // MEDIUM =  50% new / 50% previous
+            // FULL   =  25% new / 75% previous (legacy behavior)
+            switch (settings_.smoothing) {
+                case SyncSmoothing::Off:
+                    filteredPeriodQ8_ = periodQ8;
+                    break;
+                case SyncSmoothing::Low:
+                    filteredPeriodQ8_ = (filteredPeriodQ8_ + periodQ8 * 3U) / 4U;
+                    break;
+                case SyncSmoothing::Medium:
+                    filteredPeriodQ8_ = (filteredPeriodQ8_ + periodQ8) / 2U;
+                    break;
+                case SyncSmoothing::Full:
+                default:
+                    filteredPeriodQ8_ = (filteredPeriodQ8_ * 3U + periodQ8) / 4U;
+                    break;
+            }
         }
         const std::uint32_t filteredPeriodUs = static_cast<std::uint32_t>(
             (filteredPeriodQ8_ + 128U) >> 8U);

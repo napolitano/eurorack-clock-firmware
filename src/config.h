@@ -116,7 +116,7 @@ inline constexpr std::uint32_t kBootDurationMs = 1000UL;
 /** Minimum time between boot progress framebuffer transfers. */
 inline constexpr std::uint32_t kBootRefreshIntervalMs = 25UL;
 
-/** Scheduler service frequency used by the current prerelease timing engine. */
+/** Scheduler service frequency used by the current stable timing engine. */
 inline constexpr std::uint32_t kSchedulerFrequencyHz = 20000UL;
 
 /** Highest preemption priority reserved for the musical timing scheduler. */

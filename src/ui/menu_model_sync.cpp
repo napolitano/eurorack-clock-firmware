@@ -31,6 +31,7 @@ MenuRow buildSyncMenuRow(const std::uint8_t rowIndex, const ClockState& state) {
         text::TextId::Loss,
         text::TextId::ResetInputMode,
         text::TextId::Filter,
+        text::TextId::Smoothing,
         text::TextId::Timeout};
     if (rowIndex >= sizeof(kLabels) / sizeof(kLabels[0])) {
         return row;
@@ -55,6 +56,14 @@ MenuRow buildSyncMenuRow(const std::uint8_t rowIndex, const ClockState& state) {
     } else if (rowIndex == 5U) {
         std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::MicrosecondsFormat),
             state.externalSync.glitchFilterUs);
+    } else if (rowIndex == 6U) {
+        const text::TextId smoothingText = state.externalSync.smoothing == SyncSmoothing::Off
+            ? text::TextId::Off
+            : (state.externalSync.smoothing == SyncSmoothing::Low
+                ? text::TextId::SyncLow
+                : (state.externalSync.smoothing == SyncSmoothing::Medium
+                    ? text::TextId::SyncMedium : text::TextId::SyncFull));
+        copySyncText(row.value, sizeof(row.value), smoothingText);
     } else {
         std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::MillisecondsFormat),
             state.externalSync.timeoutMs);

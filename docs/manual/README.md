@@ -2,7 +2,7 @@
 
 # CLOCK Manual Workspace
 
-This directory contains the maintained, publication-layout CLOCK end-user manual together with its reusable diagrams and deterministic UI screenshots. The repository User Guide remains the canonical GitHub-readable operating reference while the project is in prerelease development; the ODT is the editable source for the typeset release manual.
+This directory contains the maintained, publication-layout CLOCK end-user manual together with its reusable diagrams and deterministic UI screenshots. The repository User Guide is the canonical GitHub-readable operating reference; the ODT is the editable source for the typeset release manual.
 
 
 ## Maintained user manual source
@@ -22,7 +22,7 @@ Before creating a release tag, run:
 python scripts/prepare_release_manual.py
 ```
 
-This stamps the current `CLOCK_FIRMWARE_VERSION` into the ODT body, metadata, front cover, and back cover, then writes the frozen source to `docs/manual/releases/<version>/clock-user-manual.<version>.odt`. The release workflow refuses to publish when that exact frozen source is missing or version-mismatched.
+This stamps the current `CLOCK_FIRMWARE_VERSION` into firmware-bearing ODT body text, firmware metadata, front cover, and back cover, then writes the frozen source to `docs/manual/releases/<version>/clock-user-manual.<version>.odt`. License names and license versions are independent content and are never rewritten by firmware-version stamping. The release workflow refuses to publish when that exact frozen source is missing or version-mismatched.
 
 The release workflow converts the frozen ODT with LibreOffice and publishes **both ODT and PDF** as GitHub Release assets. The release PDF is checked for a non-zero page count, the expected firmware version, and Ubuntu-family font embedding. A separate `Manual publication smoke test` workflow exercises the same publication path for documentation changes.
 
