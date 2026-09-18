@@ -42,7 +42,7 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential doxygen libreoffice-writer poppler-utils fonts-ubuntu-classic
           python -m pip install --upgrade pip
-          python -m pip install "platformio==6.1.19" pillow
+          python -m pip install "platformio==6.1.19" pillow lxml
 
       - name: Enforce architecture policy
         run: python scripts/check_architecture.py
@@ -86,6 +86,9 @@ jobs:
 
       - name: Run simulator integration tests
         run: ctest --test-dir build/simulator-headless -C Debug --output-on-failure
+
+      - name: Regenerate manual OLED screenshots from this release source
+        run: python scripts/generate_manual_screenshots.py
 
       - name: Build and package all firmware flavors
         run: |
@@ -137,10 +140,15 @@ jobs:
             echo "Run: python scripts/prepare_release_manual.py" >&2
             exit 1
           }
-          python scripts/check_user_manual.py "${MANUAL_SOURCE}" --version "${VERSION}"
+          REFRESHED_MANUAL="build/release-manual/clock-user-manual.${VERSION}.odt"
+          mkdir -p "$(dirname "${REFRESHED_MANUAL}")"
+          python scripts/refresh_manual_screenshots.py \
+            --source "${MANUAL_SOURCE}" \
+            --output "${REFRESHED_MANUAL}"
+          python scripts/check_user_manual.py "${REFRESHED_MANUAL}" --version "${VERSION}"
           python scripts/build_user_manual.py \
             --version "${VERSION}" \
-            --source "${MANUAL_SOURCE}" \
+            --source "${REFRESHED_MANUAL}" \
             --output-dir dist \
             --require-ubuntu-fonts
           python scripts/check_user_manual.py \

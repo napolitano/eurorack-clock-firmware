@@ -86,9 +86,10 @@ Run the VS Code task **`CLOCK: Generate manual screenshots`**, or execute:
 
 ```bash
 python scripts/generate_manual_screenshots.py
+python scripts/refresh_manual_screenshots.py
 ```
 
-The task configures the SDL-free simulator preset, builds `clock-manual-screenshot-generator`, renders the complete curated firmware-state catalog, converts every native 128×64 framebuffer to a 4× grayscale PNG with nearest-neighbour scaling, removes only stale files recorded by the previous generated manifest, and writes the result directly beside the SVG assets in `docs/manual/assets/`.
+The first command configures the SDL-free simulator preset, builds `clock-manual-screenshot-generator`, renders the complete curated firmware-state catalog, converts every native 128×64 framebuffer to a 4× grayscale PNG with nearest-neighbour scaling, removes only stale files recorded by the previous generated manifest, and writes the result directly beside the SVG assets in `docs/manual/assets/`.
 
 The catalog currently covers:
 
@@ -105,7 +106,7 @@ The catalog is intentionally finite and representative. It covers every distinct
 
 The shipped/default boot Easter egg is **BEATKNECHT** (`CLOCK_EASTER_EGG=5`). PLAY starts it, PLAY/PAUSE controls transport, STOP resets to step 1 and disables the output stage, TAP changes style, and a long encoder push opens a guarded `EXIT GAME? / NO / YES` confirmation. Egg Journey is named consistently in both user-facing material and its `egg_journey_*` firmware sources.
 
-The ODT publication manual contains generated **two-across** mini-galleries for Screensavers and Easter eggs, with one short caption below each individual screenshot. After regenerating screenshot assets, run `python scripts/update_manual_galleries.py` before freezing a release manual; the postprocessor preserves the narrow manual page geometry and keeps each screenshot pair with its captions.
+The ODT publication manual contains generated **two-across** mini-galleries for Screensavers and Easter eggs, with one short caption below each individual screenshot. All OLED frames in the manual are refreshed by `scripts/refresh_manual_screenshots.py`; the tool replaces the fixed direct screenshot frames and rebuilds both galleries while preserving the approved page geometry. The release workflow always regenerates the framebuffer catalog from the tagged firmware source and refreshes the frozen release ODT before PDF conversion, so a release can never silently ship stale UI screenshots.
 
 ## Manual structure
 

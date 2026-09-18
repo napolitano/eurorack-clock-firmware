@@ -6,6 +6,7 @@ License: PolyForm-Noncommercial-1.0.0
 """
 from __future__ import annotations
 
+import argparse
 import copy
 import shutil
 import tempfile
@@ -135,6 +136,7 @@ def gallery_table(
     image_template: etree._Element,
     name: str,
     embedded: dict[str, bytes],
+    assets: Path,
 ) -> etree._Element:
     table = etree.Element(q("table", "table"), {q("table", "name"): name, q("table", "style-name"): "GalleryTableStyle"})
     etree.SubElement(table, q("table", "table-column"), {q("table", "style-name"): "GalleryColumnStyle", q("table", "number-columns-repeated"): "2"})
@@ -147,7 +149,7 @@ def gallery_table(
                 {q("table", "style-name"): "GalleryCellStyle", q("office", "value-type"): "string"},
             )
             archive_name = f"Pictures/gallery_{name.lower()}_{row_number:02d}_{column_number:02d}.png"
-            embedded[archive_name] = (ASSETS / filename).read_bytes()
+            embedded[archive_name] = (assets / filename).read_bytes()
             cell.append(image_paragraph(image_template, archive_name, f"{name}Image{row_number:02d}{column_number:02d}"))
             caption_p = etree.SubElement(cell, q("text", "p"), {q("text", "style-name"): "GalleryCaptionStyle"})
             caption_p.text = caption
@@ -162,87 +164,96 @@ def heading_paragraph(template: etree._Element, text: str) -> etree._Element:
     return paragraph
 
 
-def rebuild_odt() -> None:
+def rebuild_odt(manual: Path = MANUAL, assets: Path = ASSETS) -> int:
     # The previous composite-gallery experiment is not part of the source contract.
-    for old in ASSETS.glob("gallery-*.png"):
+    for old in assets.glob("gallery-*.png"):
         old.unlink()
 
-    with zipfile.ZipFile(MANUAL, "r") as archive:
+    with zipfile.ZipFile(manual, "r") as archive:
         content = etree.fromstring(archive.read("content.xml"))
         manifest = etree.fromstring(archive.read("META-INF/manifest.xml"))
-        ensure_styles(content)
-        body = content.xpath("//office:body/office:text", namespaces=NS)[0]
+        archive_entries = [(info, archive.read(info.filename)) for info in archive.infolist()]
 
-        # Remove generated gallery tables/labels from an earlier run.
-        for element in list(body):
-            if element.tag == q("table", "table") and (element.get(q("table", "name")) or "").startswith("ManualGallery"):
-                body.remove(element)
-            elif direct_text(element) in ("Screensaver gallery", "Easter-egg gallery"):
-                body.remove(element)
-            else:
-                hrefs = element.xpath(".//draw:image/@xlink:href", namespaces=NS)
-                if any(str(href).startswith("Pictures/gallery-") for href in hrefs):
-                    body.remove(element)
+    ensure_styles(content)
+    body = content.xpath("//office:body/office:text", namespaces=NS)[0]
 
-        image_template = next(
-            p for p in body if p.xpath(".//draw:image[@xlink:href='Pictures/manual_rework_017.png']", namespaces=NS)
+    # Remove generated gallery tables/labels from an earlier run.
+    for element in list(body):
+        if element.tag == q("table", "table") and (element.get(q("table", "name")) or "").startswith("ManualGallery"):
+            body.remove(element)
+        elif direct_text(element) in ("Screensaver gallery", "Easter-egg gallery"):
+            body.remove(element)
+        else:
+            hrefs = element.xpath(".//draw:image/@xlink:href", namespaces=NS)
+            if any(str(href).startswith("Pictures/gallery-") for href in hrefs):
+                body.remove(element)
+
+    image_template = next(
+        p for p in body if p.xpath(".//draw:image[@xlink:href='Pictures/manual_rework_017.png']", namespaces=NS)
+    )
+    screensaver_heading = next(p for p in body if direct_text(p) == "Available animations")
+    easter_heading = next(p for p in body if direct_text(p) == "Arcade flow")
+    embedded: dict[str, bytes] = {}
+
+    # Insert screensaver gallery after the mode table.
+    children = list(body)
+    heading_index = next(i for i, p in enumerate(children) if direct_text(p) == "Available animations")
+    mode_table = children[heading_index + 1]
+    insert_at = body.index(mode_table) + 1
+    body.insert(insert_at, heading_paragraph(screensaver_heading, "Screensaver gallery"))
+    body.insert(insert_at + 1, gallery_table(SCREENSAVER_ROWS, image_template, "ManualGalleryScreensavers", embedded, assets))
+
+    # Insert Easter-egg gallery directly before the Arcade flow explanation.
+    children = list(body)
+    arcade_index = next(i for i, p in enumerate(children) if direct_text(p) == "Arcade flow")
+    body.insert(arcade_index, heading_paragraph(easter_heading, "Easter-egg gallery"))
+    body.insert(arcade_index + 1, gallery_table(EASTER_ROWS, image_template, "ManualGalleryEasterEggs", embedded, assets))
+
+    # Drop stale gallery manifest entries and add the current embedded screenshots.
+    path_attr = q("manifest", "full-path")
+    for entry in list(manifest):
+        full_path = entry.get(path_attr) or ""
+        if full_path.startswith("Pictures/gallery-") or full_path.startswith("Pictures/gallery_"):
+            manifest.remove(entry)
+    for archive_name in sorted(embedded):
+        etree.SubElement(
+            manifest,
+            q("manifest", "file-entry"),
+            {path_attr: archive_name, q("manifest", "media-type"): "image/png"},
         )
-        screensaver_heading = next(p for p in body if direct_text(p) == "Available animations")
-        easter_heading = next(p for p in body if direct_text(p) == "Arcade flow")
-        embedded: dict[str, bytes] = {}
 
-        # Insert screensaver gallery after the mode table.
-        children = list(body)
-        heading_index = next(i for i, p in enumerate(children) if direct_text(p) == "Available animations")
-        mode_table = children[heading_index + 1]
-        insert_at = body.index(mode_table) + 1
-        body.insert(insert_at, heading_paragraph(screensaver_heading, "Screensaver gallery"))
-        body.insert(insert_at + 1, gallery_table(SCREENSAVER_ROWS, image_template, "ManualGalleryScreensavers", embedded))
+    replacements = {
+        "content.xml": etree.tostring(content, encoding="UTF-8", xml_declaration=True),
+        "META-INF/manifest.xml": etree.tostring(manifest, encoding="UTF-8", xml_declaration=True),
+        **embedded,
+    }
+    with tempfile.NamedTemporaryFile(suffix=".odt", delete=False, dir=manual.parent) as temp:
+        temp_path = Path(temp.name)
+    try:
+        with zipfile.ZipFile(temp_path, "w") as output:
+            for info, original in archive_entries:
+                if info.filename.startswith("Pictures/gallery-") or info.filename.startswith("Pictures/gallery_"):
+                    continue
+                payload = replacements.get(info.filename, original)
+                compression = zipfile.ZIP_STORED if info.filename == "mimetype" else info.compress_type
+                output.writestr(info, payload, compress_type=compression)
+            for archive_name, payload in embedded.items():
+                output.writestr(archive_name, payload, compress_type=zipfile.ZIP_DEFLATED)
+        shutil.move(temp_path, manual)
+    finally:
+        temp_path.unlink(missing_ok=True)
+    return len(embedded)
 
-        # Insert Easter-egg gallery directly before the Arcade flow explanation.
-        children = list(body)
-        arcade_index = next(i for i, p in enumerate(children) if direct_text(p) == "Arcade flow")
-        body.insert(arcade_index, heading_paragraph(easter_heading, "Easter-egg gallery"))
-        body.insert(arcade_index + 1, gallery_table(EASTER_ROWS, image_template, "ManualGalleryEasterEggs", embedded))
 
-        # Drop stale gallery manifest entries and add the current embedded screenshots.
-        path_attr = q("manifest", "full-path")
-        for entry in list(manifest):
-            full_path = entry.get(path_attr) or ""
-            if full_path.startswith("Pictures/gallery-") or full_path.startswith("Pictures/gallery_"):
-                manifest.remove(entry)
-        for archive_name in sorted(embedded):
-            etree.SubElement(
-                manifest,
-                q("manifest", "file-entry"),
-                {path_attr: archive_name, q("manifest", "media-type"): "image/png"},
-            )
-
-        replacements = {
-            "content.xml": etree.tostring(content, encoding="UTF-8", xml_declaration=True),
-            "META-INF/manifest.xml": etree.tostring(manifest, encoding="UTF-8", xml_declaration=True),
-            **embedded,
-        }
-        with tempfile.NamedTemporaryFile(suffix=".odt", delete=False, dir=MANUAL.parent) as temp:
-            temp_path = Path(temp.name)
-        try:
-            with zipfile.ZipFile(temp_path, "w") as output:
-                mimetype = archive.getinfo("mimetype")
-                output.writestr(mimetype, archive.read("mimetype"), compress_type=zipfile.ZIP_STORED)
-                for info in archive.infolist():
-                    if info.filename == "mimetype":
-                        continue
-                    if info.filename.startswith("Pictures/gallery-") or info.filename.startswith("Pictures/gallery_"):
-                        continue
-                    payload = replacements.get(info.filename, archive.read(info.filename))
-                    output.writestr(info, payload)
-                for archive_name, payload in embedded.items():
-                    output.writestr(archive_name, payload, compress_type=zipfile.ZIP_DEFLATED)
-            shutil.move(temp_path, MANUAL)
-        finally:
-            temp_path.unlink(missing_ok=True)
+def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manual", type=Path, default=MANUAL)
+    parser.add_argument("--assets", type=Path, default=ASSETS)
+    args = parser.parse_args()
+    count = rebuild_odt(args.manual.resolve(), args.assets.resolve())
+    print(f"Rebuilt {count} gallery screenshots in {args.manual.resolve()}")
+    return 0
 
 
 if __name__ == "__main__":
-    rebuild_odt()
-    print(MANUAL)
+    raise SystemExit(main())

@@ -51,7 +51,7 @@ The frozen release manual lives at:
 docs/manual/releases/<version>/clock-user-manual.<version>.odt
 ```
 
-The release workflow validates that ODT, builds both the versioned ODT and PDF with the required Ubuntu fonts, and validates the exported PDF before publication. The manual contains the firmware license, third-party license notices, and a QR code to the source repository before the Colophon.
+The release workflow regenerates the complete deterministic OLED screenshot catalog from the exact tagged firmware source, refreshes every generated screenshot embedded in the frozen ODT (including the Screensaver and Easter-egg galleries), validates the refreshed ODT, builds both the versioned ODT and PDF with the required Ubuntu fonts, and validates the exported PDF before publication. The manual contains the firmware license, third-party license notices, and a QR code to the source repository before the Colophon. This refresh happens on every release build; checked-in screenshots are not trusted as the publication source of truth.
 
 Firmware-version stamping is deliberately scoped to firmware-bearing fields and prose. **License names and license versions are immutable release content**: for example, publishing firmware `1.1.0` must not alter `PolyForm Noncommercial License 1.0.0`, `CC BY-NC 4.0`, Apache-2.0, BSD-3-Clause, or any other third-party license identifier. The manual-tooling regression suite enforces this separation.
 

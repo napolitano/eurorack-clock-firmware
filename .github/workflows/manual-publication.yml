@@ -9,6 +9,11 @@ on:
     paths:
       - "docs/manual/**"
       - "scripts/prepare_release_manual.py"
+      - "scripts/generate_manual_screenshots.py"
+      - "scripts/refresh_manual_screenshots.py"
+      - "scripts/update_manual_galleries.py"
+      - "test/tools/manual_screenshot_generator.cpp"
+      - "src/**"
       - "scripts/build_user_manual.py"
       - "scripts/check_user_manual.py"
       - ".github/workflows/manual-publication.yml"
@@ -29,16 +34,22 @@ jobs:
       - name: Install publication toolchain
         run: |
           sudo apt-get update
-          sudo apt-get install -y libreoffice-writer poppler-utils fonts-ubuntu-classic
+          sudo apt-get install -y build-essential cmake libreoffice-writer poppler-utils fonts-ubuntu-classic
           python -m pip install --upgrade pip
-          python -m pip install pillow
+          python -m pip install pillow lxml
 
-      - name: Stamp current manual version
+      - name: Regenerate OLED screenshots from current firmware
+        run: python scripts/generate_manual_screenshots.py
+
+      - name: Stamp and refresh current manual
         run: |
           VERSION="$(python scripts/version.py)"
           python scripts/prepare_release_manual.py \
             --version "${VERSION}" \
             --source docs/manual/clock-user-manual.odt \
+            --output "/tmp/clock-user-manual.${VERSION}.odt"
+          python scripts/refresh_manual_screenshots.py \
+            --source "/tmp/clock-user-manual.${VERSION}.odt" \
             --output "/tmp/clock-user-manual.${VERSION}.odt"
 
       - name: Build ODT and PDF publication artifacts

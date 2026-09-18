@@ -160,6 +160,7 @@ private:
 
     void renderPerformanceStates() {
         reset();
+        state_.operatingMode = OperatingMode::Independent;
         state_.transport = TransportState::Playing;
         state_.channels[0].common.mode = ChannelMode::Clock;
         state_.channels[0].common.swingPercent = 12U;
@@ -175,11 +176,13 @@ private:
         renderCurrent("performance-independent-clock-stop", "Independent Clock channel while stopped");
 
         reset();
+        state_.operatingMode = OperatingMode::Independent;
         state_.transport = TransportState::Playing;
         state_.channels[0].common.mode = ChannelMode::Off;
         renderCurrent("performance-independent-off", "Independent channel disabled");
 
         reset();
+        state_.operatingMode = OperatingMode::Independent;
         state_.transport = TransportState::Playing;
         state_.channels[2].common.mode = ChannelMode::Euclid;
         state_.channels[2].common.swingPercent = 18U;
@@ -191,6 +194,7 @@ private:
         renderCurrent("performance-independent-euclid-play", "Independent Euclid channel while playing");
 
         reset();
+        state_.operatingMode = OperatingMode::Independent;
         state_.transport = TransportState::Playing;
         state_.channels[6].common.mode = ChannelMode::Sequencer;
         state_.channels[6].sequencer.length = 64U;
@@ -236,6 +240,7 @@ private:
 
     void renderNavigationStates() {
         reset();
+        state_.operatingMode = OperatingMode::Independent;
         state_.channels[0].common.mode = ChannelMode::Clock;
         state_.channels[1].common.mode = ChannelMode::Euclid;
         state_.channels[2].common.mode = ChannelMode::Sequencer;
@@ -270,6 +275,7 @@ private:
         renderCurrent("mode-change-confirm-yes", "Mode-change confirmation with YES selected");
 
         reset();
+        state_.operatingMode = OperatingMode::Independent;
         state_.channels[0].common.mode = ChannelMode::Sequencer;
         state_.channels[0].sequencer.length = 64U;
         state_.channels[0].sequencer.pattern = 0xA55A0F0F33CC5AA5ULL;
@@ -344,6 +350,19 @@ private:
             navigation_.screen = ui::Screen::Settings;
             navigation_.settingsPage = kPages[index];
             navigation_.cursor = 0U;
+            if (kPages[index] == ui::SettingsPage::Sync) {
+                // Keep the release-manual screenshot focused on the timing controls
+                // most likely to change between releases, including SMOOTHING.
+                navigation_.cursor = 6U;
+                navigation_.scrollOffset = 3U;
+            }
+            if (kPages[index] == ui::SettingsPage::Channel ||
+                kPages[index] == ui::SettingsPage::Rate ||
+                kPages[index] == ui::SettingsPage::Clock ||
+                kPages[index] == ui::SettingsPage::Euclid ||
+                kPages[index] == ui::SettingsPage::Sequencer) {
+                state_.operatingMode = OperatingMode::Independent;
+            }
             if (kPages[index] == ui::SettingsPage::Euclid) {
                 state_.channels[0].common.mode = ChannelMode::Euclid;
             } else if (kPages[index] == ui::SettingsPage::Sequencer) {

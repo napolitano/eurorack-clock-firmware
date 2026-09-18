@@ -8,6 +8,16 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 
 
+## [Unreleased]
+
+### Documentation and release tooling
+
+- Regenerate the complete deterministic OLED screenshot catalog from the exact tagged firmware source on every release build.
+- Refresh every generated OLED image embedded in the release ODT before PDF conversion, including the fixed manual figures and the Screensaver/Easter-egg galleries.
+- Reject degenerate screenshot catalogs when distinct operating states accidentally render identical frames.
+- Correct the manual screenshot generator so Independent-mode examples explicitly render the Independent topology instead of inheriting the One Clock factory default.
+- Keep the SYNC settings screenshot focused on the timing controls so `FILTER`, `SMOOTHING`, and `TIMEOUT` are visible in the publication manual.
+
 ## [1.0.0] - 2026-09-18
 
 CLOCK 1.0.0 is the first stable firmware release. It freezes the V1 feature set and closes the remaining external-SYNC correctness gaps found during final hardware bring-up.

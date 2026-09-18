@@ -251,10 +251,11 @@ For a tag build the workflow:
 4. runs native production-core tests
 5. enforces coverage thresholds
 6. builds the STM32 firmware
-7. validates the frozen versioned ODT manual
-8. converts that ODT to `clock-user-manual.<version>.pdf` with LibreOffice and validates the PDF/font contract
-9. extracts release notes from the matching `CHANGELOG.md` section
-10. publishes the GitHub Release with the versioned **ODT and PDF manual artifacts** attached
+7. regenerates the deterministic OLED screenshot catalog from the exact release source and refreshes every screenshot in the frozen ODT
+8. validates the refreshed versioned ODT manual
+9. converts that ODT to `clock-user-manual.<version>.pdf` with LibreOffice and validates the PDF/font contract
+10. extracts release notes from the matching `CHANGELOG.md` section
+11. publishes the GitHub Release with the versioned **ODT and PDF manual artifacts** attached
 
 GitHub supplies the source archive for the tagged commit. Firmware binaries are now eligible for release packaging because the embedded runtime uses STM32CubeF4/CMSIS without the former STM32duino LGPL dependency. See `docs/LICENSING.md`.
 

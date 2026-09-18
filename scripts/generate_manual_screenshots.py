@@ -113,6 +113,30 @@ def parse_manifest(path: Path) -> list[tuple[str, str]]:
     return entries
 
 
+DISTINCT_SCREENSHOT_PAIRS = (
+    ("performance-independent-clock-play", "performance-one-clock-play"),
+    ("performance-independent-euclid-play", "performance-independent-clock-play"),
+    ("performance-independent-sequencer-play", "performance-independent-clock-play"),
+    ("channel-overview-independent", "channel-overview-one-clock"),
+)
+
+
+def validate_generated_catalog(directory: Path, entries: list[tuple[str, str]]) -> None:
+    """Reject stale/degenerate screenshot catalogs before publishing manual assets."""
+    names = [name for name, _ in entries]
+    if len(names) != len(set(names)):
+        raise RuntimeError("Manual screenshot generator emitted duplicate catalog names")
+    available = set(names)
+    for left, right in DISTINCT_SCREENSHOT_PAIRS:
+        if left not in available or right not in available:
+            raise RuntimeError(f"Manual screenshot catalog is missing required states: {left}, {right}")
+        if (directory / f"{left}.pgm").read_bytes() == (directory / f"{right}.pgm").read_bytes():
+            raise RuntimeError(
+                "Manual screenshot renderer collapsed distinct UI states into an identical frame: "
+                f"{left} == {right}"
+            )
+
+
 def remove_previous_outputs(output_dir: Path) -> None:
     """Delete only files listed in the previous generated manifest."""
     previous_manifest = output_dir / MANIFEST_NAME
@@ -141,6 +165,7 @@ def generate(output_dir: Path, scale: int) -> int:
         temporary_dir = Path(temporary)
         run([str(executable), str(temporary_dir)])
         entries = parse_manifest(temporary_dir / "manifest.tsv")
+        validate_generated_catalog(temporary_dir, entries)
         remove_previous_outputs(output_dir)
 
         for name, _ in entries:

@@ -29,6 +29,7 @@ def load(name: str, path: Path):
 PREPARE = load("prepare_release_manual", ROOT / "scripts" / "prepare_release_manual.py")
 CHECK = load("check_user_manual", ROOT / "scripts" / "check_user_manual.py")
 BUILD = load("build_user_manual", ROOT / "scripts" / "build_user_manual.py")
+REFRESH = load("refresh_manual_screenshots", ROOT / "scripts" / "refresh_manual_screenshots.py")
 
 
 class ManualToolingTests(unittest.TestCase):
@@ -137,11 +138,56 @@ class ManualToolingTests(unittest.TestCase):
 
     def test_release_workflow_publishes_odt_and_pdf(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
+        self.assertIn("scripts/generate_manual_screenshots.py", workflow)
+        self.assertIn("scripts/refresh_manual_screenshots.py", workflow)
         self.assertIn("scripts/build_user_manual.py", workflow)
         self.assertIn("scripts/check_user_manual.py", workflow)
         self.assertIn('clock-user-manual.${VERSION}.odt', workflow)
         self.assertIn('clock-user-manual.${VERSION}.pdf', workflow)
         self.assertIn("--require-ubuntu-fonts", workflow)
+        self.assertLess(
+            workflow.index("scripts/generate_manual_screenshots.py"),
+            workflow.index("scripts/build_user_manual.py"),
+        )
+        self.assertLess(
+            workflow.index("scripts/refresh_manual_screenshots.py"),
+            workflow.index("scripts/build_user_manual.py"),
+        )
+
+    def test_direct_manual_screenshot_contract_is_complete(self) -> None:
+        targets = REFRESH.direct_frame_targets(
+            self.working, ROOT / "docs" / "manual" / "assets"
+        )
+        self.assertEqual(len(targets), len(REFRESH.DIRECT_SCREENSHOTS))
+        self.assertIn("ManualImage15", targets)
+        self.assertEqual(REFRESH.DIRECT_SCREENSHOTS["ManualImage15"], "settings-sync.png")
+
+    def test_refresh_replaces_direct_frames_and_galleries(self) -> None:
+        import zipfile
+        from lxml import etree
+
+        with tempfile.TemporaryDirectory() as directory:
+            output = Path(directory) / "manual.odt"
+            direct_count, gallery_count = REFRESH.refresh(
+                self.working, output, ROOT / "docs" / "manual" / "assets"
+            )
+            self.assertEqual(direct_count, len(REFRESH.DIRECT_SCREENSHOTS))
+            self.assertEqual(gallery_count, 22)
+            with zipfile.ZipFile(output, "r") as archive:
+                root = etree.fromstring(archive.read("content.xml"))
+                ns = REFRESH.NS
+                frame = root.xpath(
+                    '//draw:frame[@draw:name="ManualImage15"]/draw:image', namespaces=ns
+                )[0]
+                href = frame.get(f"{{{ns['xlink']}}}href")
+                self.assertEqual(
+                    archive.read(href),
+                    (ROOT / "docs" / "manual" / "assets" / "settings-sync.png").read_bytes(),
+                )
+                self.assertEqual(
+                    archive.read("Pictures/gallery_manualgalleryscreensavers_01_01.png"),
+                    (ROOT / "docs" / "manual" / "assets" / "screensaver-clock.png").read_bytes(),
+                )
 
     def test_manual_publication_smoke_workflow_exists(self) -> None:
         workflow = ROOT / ".github" / "workflows" / "manual-publication.yml"
@@ -150,6 +196,8 @@ class ManualToolingTests(unittest.TestCase):
         self.assertIn("fonts-ubuntu", text)
         self.assertIn("libreoffice-writer", text)
         self.assertIn("clock-user-manual", text)
+        self.assertIn("scripts/generate_manual_screenshots.py", text)
+        self.assertIn("scripts/refresh_manual_screenshots.py", text)
 
 
 if __name__ == "__main__":
