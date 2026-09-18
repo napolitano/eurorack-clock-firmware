@@ -610,6 +610,151 @@ void testTwentyFourPpqnTempoRampRemainsLocked() {
     CHECK(fixture.sync.filteredBpmMilli() <= 160000U);
 }
 
+
+void testFirstPulseIsAcquisitionOnlyAndDoesNotAdvertiseLock() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Auto;
+    fixture.begin();
+    fixture.engine.stop();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+
+    const auto snapshot = fixture.engine.snapshot();
+    CHECK(!snapshot.externalLocked);
+    CHECK_EQ(snapshot.externalBpmMilli, 0U);
+    CHECK(!snapshot.playing);
+}
+
+void testSecondValidPulseAcquiresLockAndAutoStartsTransport() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Auto;
+    fixture.begin();
+    fixture.engine.stop();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    fixture.inputs.injectSyncEdgeForTest(501000U, true);
+    fixture.sync.processSchedulerTick(501000U);
+
+    const auto snapshot = fixture.engine.snapshot();
+    CHECK(snapshot.externalLocked);
+    CHECK_NEAR(snapshot.externalBpmMilli, 120000U, 1U);
+    CHECK(snapshot.playing);
+    TransportState transition = TransportState::Stopped;
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Playing);
+}
+
+void testManualStopPreventsExternalReacquisitionFromStartingTransport() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Auto;
+    fixture.begin();
+    fixture.engine.stop();
+    fixture.sync.notifyManualTransportState(TransportState::Stopped);
+
+    acquireRising(fixture, 500000U);
+
+    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().playing);
+    TransportState transition = TransportState::Playing;
+    CHECK(!fixture.sync.consumeTransportTransition(transition));
+
+    // INTERNAL may observe and report a valid external clock, but acquisition must
+    // never take ownership of transport while the user explicitly selected INTERNAL.
+    Fixture internal;
+    internal.state.source = ClockSource::Internal;
+    internal.begin();
+    internal.engine.stop();
+    acquireRising(internal, 500000U);
+    CHECK(internal.engine.snapshot().externalLocked);
+    CHECK(!internal.engine.snapshot().playing);
+    CHECK(!internal.sync.consumeTransportTransition(transition));
+}
+
+void testStopLossStopsAndReacquisitionRestartsWhenNotManuallyStopped() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Auto;
+    fixture.state.externalSync.lossMode = SyncLossMode::Stop;
+    fixture.state.externalSync.timeoutMs = 200U;
+    fixture.begin();
+    fixture.engine.stop();
+
+    acquireRising(fixture, 500000U);
+    CHECK(fixture.engine.snapshot().playing);
+    TransportState transition = TransportState::Stopped;
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Playing);
+
+    fixture.sync.processSchedulerTick(1501000U);
+    CHECK(!fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().playing);
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Stopped);
+
+    fixture.inputs.injectSyncEdgeForTest(2000000U, true);
+    fixture.sync.processSchedulerTick(2000000U);
+    CHECK(!fixture.engine.snapshot().externalLocked);
+    fixture.inputs.injectSyncEdgeForTest(2500000U, true);
+    fixture.sync.processSchedulerTick(2500000U);
+    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(fixture.engine.snapshot().playing);
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Playing);
+
+    // A manual PAUSE disarms automatic transport ownership. Sync loss still clears
+    // the lock, but it must not enqueue a synthetic STOP or later auto-restart.
+    Fixture paused;
+    paused.state.source = ClockSource::Auto;
+    paused.state.externalSync.lossMode = SyncLossMode::Stop;
+    paused.state.externalSync.timeoutMs = 200U;
+    paused.begin();
+    acquireRising(paused, 500000U);
+    CHECK(paused.sync.consumeTransportTransition(transition));
+    paused.engine.pause();
+    paused.sync.notifyManualTransportState(TransportState::Paused);
+    paused.sync.processSchedulerTick(1501000U);
+    CHECK(!paused.engine.snapshot().externalLocked);
+    CHECK(!paused.engine.snapshot().playing);
+    CHECK(!paused.sync.consumeTransportTransition(transition));
+
+    // STOP loss policy is irrelevant while INTERNAL owns the clock source.
+    Fixture internal;
+    internal.state.source = ClockSource::Internal;
+    internal.state.externalSync.lossMode = SyncLossMode::Stop;
+    internal.state.externalSync.timeoutMs = 200U;
+    internal.begin();
+    acquireRising(internal, 500000U);
+    CHECK(internal.engine.snapshot().externalLocked);
+    internal.sync.processSchedulerTick(1501000U);
+    CHECK(!internal.engine.snapshot().externalLocked);
+    CHECK(internal.engine.snapshot().playing);
+    CHECK(!internal.sync.consumeTransportTransition(transition));
+}
+
+void testAutoFreewheelKeepsLastMeasuredExternalTempoAfterLoss() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Auto;
+    fixture.state.bpm = 60U;
+    fixture.state.externalSync.lossMode = SyncLossMode::Freewheel;
+    fixture.state.externalSync.timeoutMs = 200U;
+    fixture.begin();
+    acquireRising(fixture, 500000U);  // 120 BPM
+    fixture.sync.processSchedulerTick(1501000U);
+    CHECK(!fixture.engine.snapshot().externalLocked);
+
+    const auto before = fixture.engine.snapshot().masterPositionQ32;
+    for (std::uint32_t i = 0U; i < 20000U; ++i) {
+        fixture.engine.processSchedulerTick();
+    }
+    const auto after = fixture.engine.snapshot().masterPositionQ32;
+    const std::uint64_t delta = after - before;
+    CHECK(delta > 0U);
+    // 20,000 ticks at 20 kHz = one second. 120 BPM advances about two quarter notes,
+    // while the 60-BPM internal fallback would advance only one.
+    CHECK(delta > (static_cast<std::uint64_t>(1U) << 32U) + (static_cast<std::uint64_t>(1U) << 31U));
+}
+
 // -------------------------------------------------------------------------
 // Lock loss, fallback policies, range boundaries, wrap and continuity.
 // -------------------------------------------------------------------------
@@ -727,12 +872,20 @@ void testSlowerThan1BpmGapStartsFreshAcquisition() {
     Fixture fixture;
     fixture.state.bpm = 123U;
     fixture.begin();
-    fixture.inputs.injectSyncEdgeForTest(1000U, true);
-    fixture.sync.processSchedulerTick(1000U);
-    fixture.inputs.injectSyncEdgeForTest(60002000U, true);
-    fixture.sync.processSchedulerTick(60002000U);
+    acquireRising(fixture, 500000U);
     CHECK(fixture.engine.snapshot().externalLocked);
-    CHECK_EQ(fixture.sync.filteredBpmMilli(), 123000U);
+
+    // A >60 s period is below the supported 1 BPM floor. If it arrives after a
+    // valid lock it must drop that lock and become the first pulse of a new epoch.
+    fixture.inputs.injectSyncEdgeForTest(60502000U, true);
+    fixture.sync.processSchedulerTick(60502000U);
+    CHECK(!fixture.engine.snapshot().externalLocked);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
+
+    fixture.inputs.injectSyncEdgeForTest(61002000U, true);
+    fixture.sync.processSchedulerTick(61002000U);
+    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK_NEAR(fixture.sync.filteredBpmMilli(), 120000U, 1U);
 }
 
 void testTimestampWrapMaintains120BpmPeriod() {
@@ -757,7 +910,7 @@ void testExplicitClearRequiresFreshPeriodBeforeTempoUpdate() {
     CHECK(!fixture.engine.snapshot().externalLocked);
     fixture.inputs.injectSyncEdgeForTest(2000000U, true);
     fixture.sync.processSchedulerTick(2000000U);
-    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().externalLocked);
     CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
     fixture.inputs.injectSyncEdgeForTest(3000000U, true);
     fixture.sync.processSchedulerTick(3000000U);
@@ -778,13 +931,33 @@ void testQueueOverflowForcesFreshContinuityEpoch() {
 
     fixture.inputs.injectSyncEdgeForTest(2000000U, true);
     fixture.sync.processSchedulerTick(2000000U);
-    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().externalLocked);
     const std::uint32_t before = fixture.sync.filteredBpmMilli();
     fixture.inputs.injectSyncEdgeForTest(2500000U, true);
     fixture.sync.processSchedulerTick(2500000U);
     CHECK(fixture.sync.filteredBpmMilli() >= 119000U);
     CHECK(fixture.sync.filteredBpmMilli() <= 121000U);
     CHECK(before <= 999000U);
+
+    // Exercise the same continuity boundary during first-pulse acquisition, before
+    // any external lock exists. The overflow marker must discard that partial epoch.
+    Fixture acquiring;
+    acquiring.begin();
+    acquiring.inputs.injectSyncEdgeForTest(1000U, true);
+    acquiring.sync.processSchedulerTick(1000U);
+    for (std::uint32_t i = 0U; i < 40U; ++i) {
+        acquiring.inputs.injectSyncEdgeForTest(2000U + i * 1000U, (i & 1U) == 0U);
+    }
+    CHECK(acquiring.inputs.droppedSyncEdges() > 0U);
+    acquiring.sync.processSchedulerTick(50000U);
+    CHECK(!acquiring.engine.snapshot().externalLocked);
+    acquiring.inputs.injectSyncEdgeForTest(1000000U, true);
+    acquiring.sync.processSchedulerTick(1000000U);
+    CHECK(!acquiring.engine.snapshot().externalLocked);
+    acquiring.inputs.injectSyncEdgeForTest(1500000U, true);
+    acquiring.sync.processSchedulerTick(1500000U);
+    CHECK(acquiring.engine.snapshot().externalLocked);
+    CHECK_NEAR(acquiring.sync.filteredBpmMilli(), 120000U, 1U);
 }
 
 
@@ -801,7 +974,7 @@ void testRuntimePpqnChangeRestartsAcquisitionWithoutBogusTempo() {
 
     fixture.inputs.injectSyncEdgeForTest(700000U, true);
     fixture.sync.processSchedulerTick(700000U);
-    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().externalLocked);
     fixture.inputs.injectSyncEdgeForTest(720833U, true);
     fixture.sync.processSchedulerTick(720833U);
     CHECK_NEAR(fixture.sync.filteredBpmMilli(), 120000U, 20U);
@@ -842,6 +1015,11 @@ void testRuntimeTimeoutChangePreservesValidLockAndEstimator() {
     fixture.begin();
     acquireRising(fixture, 500000U);
     const std::uint32_t before = fixture.sync.filteredBpmMilli();
+
+    // An identical foreground state is an explicit no-op and must not disturb lock.
+    fixture.sync.updateConfiguration(fixture.state);
+    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), before);
 
     ClockState updated = fixture.state;
     updated.externalSync.timeoutMs = 3000U;
@@ -985,6 +1163,11 @@ int main() {
     RUN_TEST(testRepeatedTempoStepsDoNotLoseLock);
     RUN_TEST(testAccelerationWithAlternatingJitterRemainsLocked);
     RUN_TEST(testTwentyFourPpqnTempoRampRemainsLocked);
+    RUN_TEST(testFirstPulseIsAcquisitionOnlyAndDoesNotAdvertiseLock);
+    RUN_TEST(testSecondValidPulseAcquiresLockAndAutoStartsTransport);
+    RUN_TEST(testManualStopPreventsExternalReacquisitionFromStartingTransport);
+    RUN_TEST(testStopLossStopsAndReacquisitionRestartsWhenNotManuallyStopped);
+    RUN_TEST(testAutoFreewheelKeepsLastMeasuredExternalTempoAfterLoss);
     RUN_TEST(testAdaptiveTimeoutKeepsLockOneMicrosecondBeforeBoundary);
     RUN_TEST(testAdaptiveTimeoutDropsLockExactlyAtBoundary);
     RUN_TEST(testStopLossModeFreezesEngineAfterTimeout);

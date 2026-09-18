@@ -19,6 +19,7 @@ void Session::update(SimulatorRuntime& runtime) {
         observedStartSequence_ = 0U;
         epochSimulatorUs_ = 0ULL;
         referenceUs_ = 0ULL;
+        initialized_ = false;
         started_ = false;
         runtime.setTelemetryHistoryFrozen(false);
         if (!runtime.poweredOn()) {
@@ -27,7 +28,19 @@ void Session::update(SimulatorRuntime& runtime) {
     }
 
     const TransportTelemetry transport = runtime.transportTelemetry();
-    if (transport.startSequence != observedStartSequence_) {
+    if (!initialized_) {
+        // A new scope session observes the current transport state rather than
+        // replaying a historical STOP-to-PLAY transition. If transport is
+        // already running, attach to that live epoch; if it is stopped, remain
+        // armed until the next real start sequence is observed.
+        initialized_ = true;
+        observedStartSequence_ = transport.startSequence;
+        if (transport.state == TransportState::Playing && transport.startSequence != 0U) {
+            epochSimulatorUs_ = transport.lastStartUs;
+            referenceUs_ = 0ULL;
+            started_ = true;
+        }
+    } else if (transport.startSequence != observedStartSequence_) {
         observedStartSequence_ = transport.startSequence;
         epochSimulatorUs_ = transport.lastStartUs;
         referenceUs_ = 0ULL;

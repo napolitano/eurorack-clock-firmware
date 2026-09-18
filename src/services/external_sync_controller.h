@@ -44,6 +44,12 @@ public:
     /** @brief Returns the most recent filtered external tempo in milli-BPM. */
     std::uint32_t filteredBpmMilli() const;
 
+    /** @brief Publishes an explicit user transport decision to the real-time sync policy. */
+    void notifyManualTransportState(TransportState transport);
+
+    /** @brief Consumes one transport transition initiated by external-sync policy. */
+    bool consumeTransportTransition(TransportState& transport);
+
 private:
     /** @brief Consumes RST edges before SYNC so reset wins at identical scheduler boundaries. */
     void processResetEdges();
@@ -63,6 +69,12 @@ private:
     /** @brief Returns the lock-loss timeout derived from user floor and observed/minimum tempo. */
     std::uint32_t effectiveTimeoutUs() const;
 
+    /** @brief Applies lock-loss policy and preserves manual transport precedence. */
+    void loseExternalLockFromIsr();
+
+    /** @brief Starts transport on a newly acquired lock when automatic transport is armed. */
+    void startOnLockAcquisitionFromIsr();
+
     hal::ExternalInputCapture& inputCapture_;
     engine::ClockEngine& engine_;
     // Foreground-only publication shadow. It lets the hot runOnce() path reject
@@ -70,10 +82,12 @@ private:
     ExternalSyncSettings foregroundSettings_{};
     std::uint32_t foregroundFallbackBpmMilli_ = 120000U;
     std::uint16_t foregroundMinimumBpm_ = 20U;
+    ClockSource foregroundSource_ = ClockSource::Auto;
 
     ExternalSyncSettings settings_{};
     std::uint32_t fallbackBpmMilli_ = 120000U;
     std::uint16_t minimumBpm_ = 20U;
+    ClockSource source_ = ClockSource::Auto;
     bool configurationDirty_ = false;
     bool resetGateApplied_ = false;
     bool haveAcceptedPulse_ = false;
@@ -81,6 +95,8 @@ private:
     std::uint32_t lastAcceptedPulseUs_ = 0U;
     std::uint64_t filteredPeriodQ8_ = 0U;
     std::uint32_t filteredBpmMilli_ = 0U;
+    bool autoTransportArmed_ = true;
+    volatile std::uint8_t pendingTransportTransition_ = 0xFFU;
 };
 
 }  // namespace clockfw::services

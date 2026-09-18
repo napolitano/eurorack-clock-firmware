@@ -56,6 +56,7 @@
 #include "ui/menu_model_sync.h"
 #include "ui/mode_functions.h"
 #include "ui/pattern_strip_renderer.h"
+#include "ui/performance_renderer.h"
 #include "ui/preset_name_alphabet.h"
 #include "ui/settings_editor.h"
 #include "ui/screensaver_renderer.h"
@@ -2792,6 +2793,48 @@ std::size_t countFramebufferPixels(
 }
 
 
+void testPerformanceRendererShowsMeasuredExternalBpmWhileLocked() {
+    resetFakes(); prepareDisplaySuccess();
+
+    ClockState actualState = makeDefaultState();
+    actualState.source = ClockSource::Auto;
+    actualState.bpm = 90U;
+    ui::NavigationState navigation{};
+    engine::EngineSnapshot lockedSnapshot{};
+    lockedSnapshot.externalLocked = true;
+    lockedSnapshot.externalBpmMilli = 120000U;
+
+    hal::OledDisplay actualDisplay;
+    CHECK(actualDisplay.begin());
+    ui::PerformanceRenderer actualRenderer(actualDisplay);
+    actualRenderer.render(actualState, navigation, lockedSnapshot);
+    const auto actualFrame = actualDisplay.framebufferForTest();
+
+    ClockState expectedState = actualState;
+    expectedState.bpm = 120U;
+    hal::OledDisplay expectedDisplay;
+    CHECK(expectedDisplay.begin());
+    ui::PerformanceRenderer expectedRenderer(expectedDisplay);
+    expectedRenderer.render(expectedState, navigation, lockedSnapshot);
+    CHECK(actualFrame == expectedDisplay.framebufferForTest());
+
+    engine::EngineSnapshot unlockedSnapshot = lockedSnapshot;
+    unlockedSnapshot.externalLocked = false;
+    hal::OledDisplay fallbackDisplay;
+    CHECK(fallbackDisplay.begin());
+    ui::PerformanceRenderer fallbackRenderer(fallbackDisplay);
+    fallbackRenderer.render(actualState, navigation, unlockedSnapshot);
+    CHECK(actualFrame != fallbackDisplay.framebufferForTest());
+
+    ClockState internalState = actualState;
+    internalState.source = ClockSource::Internal;
+    hal::OledDisplay internalDisplay;
+    CHECK(internalDisplay.begin());
+    ui::PerformanceRenderer internalRenderer(internalDisplay);
+    internalRenderer.render(internalState, navigation, lockedSnapshot);
+    CHECK(actualFrame != internalDisplay.framebufferForTest());
+}
+
 void testTapTempoPreservesClockSourceAndPersistence() {
     for (const ClockSource source : {ClockSource::Internal, ClockSource::External, ClockSource::Auto}) {
         resetFakes();
@@ -4470,6 +4513,7 @@ int main() {
     RUN_TEST(testEngineAuditRegressions);
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
+    RUN_TEST(testPerformanceRendererShowsMeasuredExternalBpmWhileLocked);
     RUN_TEST(testTapTempoPreservesClockSourceAndPersistence);
     RUN_TEST(testTapIndicatorStartsOnSecondTapAndRestartsEveryFollowingTap);
     RUN_TEST(testTapIndicatorRendersFourShrinkingEightPixelFramesThenClears);

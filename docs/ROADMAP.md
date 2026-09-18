@@ -8,8 +8,7 @@ This roadmap separates the first stable DIY release from later musical expansion
 
 ```mermaid
 flowchart LR
-    B["NOW<br/>0.19.0-beta.x<br/>V1 qualification"] --> RC["1.0.0-rc.x<br/>Release candidate"] --> V1["1.0.0<br/>Stable V1"]
-    V1 --> G["1.1.x<br/>Swing 2.0<br/>Groove Engine"]
+    V1["NOW<br/>1.0.0<br/>Stable V1"] --> G["1.1.x<br/>Swing 2.0<br/>Groove Engine"]
     G --> S["1.2.x<br/>Sequencer 2.0"]
     S --> E["1.3.x<br/>Euclid Auto-Fill<br/>Conditions"]
     E --> R["1.4.x<br/>Ratchet / Burst"]
@@ -26,9 +25,8 @@ flowchart LR
     classDef virtual fill:#EEE7F7,color:#221832,stroke:#74509A,stroke-width:1.5px;
     classDef research fill:#F2F2F2,color:#222222,stroke:#777777,stroke-dasharray: 4 3;
 
-    class B current;
-    class V1 stable;
-    class RC,G,S,E,R,I,P music;
+    class V1 current;
+    class G,S,E,R,I,P music;
     class N gate;
     class VCV virtual;
     class X research;
@@ -51,7 +49,7 @@ General CV parameter inputs would likewise add analog front ends, routing, jacks
 | Historical baseline | `0.19.0-alpha.63` | Implemented V1 feature set before freeze | Superseded by beta freeze |
 | **V1 feature freeze** | **`0.19.0-beta.1`** | Freeze product scope; audit persistence and event architecture for later 1.x migration; align docs and release semantics | Existing behavior unchanged; forward-compatibility risks documented and guarded by tests |
 | **Qualification infrastructure** | **`0.19.0-beta.2`** | Machine-readable HIL ledger, reproducible capture format, objective scheduler-derived timing limits | Qualification workflow is auditable and cannot claim PASS without evidence |
-| **Current qualification line** | **`0.19.0-beta.14+`** | PCB bring-up, electrical measurements, SYNC/RST comparator validation, SPI display stress, timing HIL, defect correction, build/manual refinement | Software/release gates stay green; physical qualification accumulates without blocking release automation before 1.5 |
+| **Current qualification line** | **`1.0.0+`** | PCB bring-up, electrical measurements, SYNC/RST comparator validation, SPI display stress, timing HIL, defect correction, build/manual refinement | Software/release gates stay green; physical qualification accumulates without blocking release automation before 1.5 |
 | Release candidate | `1.0.0-rc.x` | Externally buildable candidate; release blockers only | Firmware, simulator, docs, packaging and upgrade path agree; no known release-blocking software defects |
 | Stable | **`1.0.0`** | First supported CLOCK DIY release | A third party can build, flash, configure and use the V1 design from published material; open HIL items are explicitly disclosed |
 

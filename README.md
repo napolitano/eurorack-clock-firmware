@@ -17,7 +17,7 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `0.19.0-beta.14`.** V1 is now feature-frozen. The implemented firmware model, UI, persistence, simulator, SPI display support and host-side timing tests form the release-qualification baseline. From this point to 1.0, changes are limited to defects, qualification gaps, reproducibility/documentation work, and compatibility work required to keep later 1.x upgrades safe. Final PCB/comparator validation and physical HIL timing sign-off remain tracked qualification work. Until firmware 1.5.0 they are advisory for automated release builds rather than a hard CI/release gate.
+> **Current status: `1.0.0`.** V1 is feature-frozen. The stable line covers the implemented clock engine, UI, persistence, simulator, SPI display support, external SYNC/RST behavior, and release tooling. Physical HIL measurements remain tracked qualification evidence and stay advisory for automated release builds through 1.4.x; the hard HIL gate begins with 1.5.0 release candidates and stable releases.
 
 **HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
 
@@ -46,12 +46,11 @@ Rather than dilute DIY buildability to chase feature parity with modulation-cent
 
 ## Roadmap at a glance
 
-CLOCK reaches **1.0** by stabilizing and qualifying the product that already exists, not by delaying the first stable release until every future rhythm idea is implemented. Musical expansion begins after 1.0 and stays focused on what eight precise gate/trigger outputs can do well.
+CLOCK reached **1.0** by stabilizing and qualifying the product that already existed, rather than delaying the first stable release until every future rhythm idea was implemented. Musical expansion begins after 1.0 and stays focused on what eight precise gate/trigger outputs can do well.
 
 ```mermaid
 flowchart LR
-    B["NOW<br/>0.19.0-beta.x<br/>V1 qualification"] --> V1["1.0.0<br/>Stable V1"]
-    V1 --> G["1.1<br/>Swing 2.0<br/>Grooves"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
+    V1["NOW<br/>1.0.0<br/>Stable V1"] --> G["1.1<br/>Swing 2.0<br/>Grooves"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
     V1 -. separate track .-> VCV["VCV Rack<br/>Reference port"]
 
     classDef current fill:#0B4FC0,color:#ffffff,stroke:#062F75,stroke-width:2px;
@@ -60,8 +59,7 @@ flowchart LR
     classDef gate fill:#F4E8C1,color:#2A2416,stroke:#9D771B,stroke-width:1.5px;
     classDef virtual fill:#EEE7F7,color:#221832,stroke:#74509A,stroke-width:1.5px;
 
-    class B current;
-    class V1 stable;
+    class V1 current;
     class G,S,E,R,I,P planned;
     class N gate;
     class VCV virtual;
@@ -307,7 +305,7 @@ The current reference design uses:
 - separate conditioned SYNC and RST inputs;
 - eight Thonkiconn-style output jacks;
 - eight 3 mm red activity LEDs;
-- 74HCT244-class 5 V output buffer;
+- 74HCT541-class 5 V output buffer;
 - local +12 V to +5 V conversion.
 
 The simulator panel dimensions and control coordinates are maintained in [`sim/panel_layout.ini`](sim/panel_layout.ini). The documentation front-panel SVG is generated directly from that file, so the illustration cannot silently drift away from the simulator layout.

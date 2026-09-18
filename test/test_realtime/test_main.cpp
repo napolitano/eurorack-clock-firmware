@@ -161,7 +161,7 @@ void testFallingEdgeSelection() {
     CHECK(!fixture.engine.snapshot().externalLocked);
     fixture.inputs.injectSyncEdgeForTest(2000U, false);
     fixture.sync.processSchedulerTick(2000U);
-    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().externalLocked);
     fixture.inputs.injectSyncEdgeForTest(502000U, false);
     fixture.sync.processSchedulerTick(502000U);
     CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
@@ -218,7 +218,7 @@ void testSyncTimeoutBoundaryAndLossModes() {
         fixture.begin();
         fixture.inputs.injectSyncEdgeForTest(1000U, true);
         fixture.sync.processSchedulerTick(1000U);
-        CHECK(fixture.engine.snapshot().externalLocked);
+        CHECK(!fixture.engine.snapshot().externalLocked);
         fixture.inputs.injectSyncEdgeForTest(501000U, true);
         fixture.sync.processSchedulerTick(501000U);
         CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
@@ -254,9 +254,9 @@ void testSlowExternalClockDoesNotTimeoutBeforeSecondPulse() {
         const std::uint32_t periodUs = 60000000U / minimumBpm;
         fixture.inputs.injectSyncEdgeForTest(1000U, true);
         fixture.sync.processSchedulerTick(1000U);
-        CHECK(fixture.engine.snapshot().externalLocked);
+        CHECK(!fixture.engine.snapshot().externalLocked);
         fixture.sync.processSchedulerTick(1000U + periodUs - 1U);
-        CHECK(fixture.engine.snapshot().externalLocked);
+        CHECK(!fixture.engine.snapshot().externalLocked);
         fixture.inputs.injectSyncEdgeForTest(1000U + periodUs, true);
         fixture.sync.processSchedulerTick(1000U + periodUs);
         CHECK(fixture.engine.snapshot().externalLocked);
@@ -396,8 +396,10 @@ void testResetWinsWhenSyncArrivesOnSameSchedulerBoundary() {
     fixture.state.externalSync.resetMode = ExternalResetMode::Gate;
     fixture.begin();
     fixture.inputs.injectSyncEdgeForTest(1000U, true);
-    fixture.inputs.injectResetEdgeForTest(1000U, true);
-    fixture.tick(1000U);
+    fixture.sync.processSchedulerTick(1000U);
+    fixture.inputs.injectSyncEdgeForTest(501000U, true);
+    fixture.inputs.injectResetEdgeForTest(501000U, true);
+    fixture.tick(501000U);
     const auto snapshot = fixture.engine.snapshot();
     CHECK(snapshot.externalLocked);
     CHECK(snapshot.externalResetHeld);
@@ -423,7 +425,7 @@ void testPhysicalComparatorIrqPathWhenPinsAreAssigned() {
     fakefw::nowUs = 1000U;
     fakefw::setPin(pinmap::kExternalSyncSignalPin, HIGH);
     fixture.sync.processSchedulerTick(fakefw::nowUs);
-    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().externalLocked);
 
     fakefw::nowUs = 501000U;
     fakefw::setPin(pinmap::kExternalSyncSignalPin, LOW);
@@ -520,7 +522,7 @@ void testTechnicalMaximumRejectsImpossibleSyncRate() {
     // acquisition sample; this also protects the Q32 master increment arithmetic.
     fixture.inputs.injectSyncEdgeForTest(1100U, true);
     fixture.sync.processSchedulerTick(1100U);
-    CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
+    CHECK_EQ(fixture.sync.filteredBpmMilli(), 0U);
 
     // The first physically supported interval is accepted and hard-capped at the
     // documented 999-BPM technical ceiling rather than overflowing downstream math.
@@ -566,7 +568,7 @@ void testExplicitExternalLockClearAndReacquire() {
     // One fresh edge re-anchors phase without inventing a period from the cable gap.
     fixture.inputs.injectSyncEdgeForTest(5001000U, true);
     fixture.sync.processSchedulerTick(5001000U);
-    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().externalLocked);
     CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
 
     // The following clean period resumes normal tempo acquisition.
@@ -588,12 +590,16 @@ void testSyncQueueOverflowDoesNotMasqueradeAsTempoDrop() {
     }
     CHECK(fixture.inputs.droppedSyncEdges() > 0U);
     fixture.sync.processSchedulerTick(timestamp);
-    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().externalLocked);
     CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
 
-    // The next clean edge reacquires the period without a transient false BPM.
+    // Two clean selected edges are required after continuity loss.
     fixture.inputs.injectSyncEdgeForTest(12001000U, true);
     fixture.sync.processSchedulerTick(12001000U);
+    CHECK(!fixture.engine.snapshot().externalLocked);
+    fixture.inputs.injectSyncEdgeForTest(12501000U, true);
+    fixture.sync.processSchedulerTick(12501000U);
+    CHECK(fixture.engine.snapshot().externalLocked);
     CHECK_EQ(fixture.sync.filteredBpmMilli(), 120000U);
 }
 
@@ -636,12 +642,12 @@ void testExternalSyncConfigurationBoundaryPaths() {
 
     fixture.inputs.injectSyncEdgeForTest(1000U, true);
     fixture.sync.processSchedulerTick(1000U);
-    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().externalLocked);
 
-    // Duplicate timestamp: period == 0 must be ignored without corrupting lock.
+    // Duplicate timestamp: period == 0 must be ignored without manufacturing lock.
     fixture.inputs.injectSyncEdgeForTest(1000U, true);
     fixture.sync.processSchedulerTick(1000U);
-    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK(!fixture.engine.snapshot().externalLocked);
 
     // A gap beyond the supported 1-BPM technical floor becomes a fresh
     // acquisition boundary rather than an ultra-slow tempo sample.

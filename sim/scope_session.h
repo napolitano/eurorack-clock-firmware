@@ -48,6 +48,7 @@ private:
     std::uint64_t referenceUs_ = 0ULL;
     std::uint64_t epochSimulatorUs_ = 0ULL;
     std::uint32_t observedStartSequence_ = 0U;
+    bool initialized_ = false;
     bool started_ = false;
     bool freezeOnStop_ = true;
 };

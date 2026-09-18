@@ -168,7 +168,7 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertIn("test_clock_core=44", result.stdout)
         self.assertIn("test_realtime=24", result.stdout)
-        self.assertIn("test_sync_behavior=85", result.stdout)
+        self.assertIn("test_sync_behavior=90", result.stdout)
         self.assertIn("test_swing=22", result.stdout)
         self.assertIn("test_humanize=12", result.stdout)
         self.assertIn("test_tap_tempo=24", result.stdout)
@@ -176,8 +176,8 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertIn("test_settings=56", result.stdout)
         self.assertIn("test_screensavers=19", result.stdout)
         self.assertIn("test_easter_eggs=36", result.stdout)
-        self.assertIn("test_host_firmware=28", result.stdout)
-        self.assertIn("total=401", result.stdout)
+        self.assertIn("test_host_firmware=29", result.stdout)
+        self.assertIn("total=407", result.stdout)
 
 
 

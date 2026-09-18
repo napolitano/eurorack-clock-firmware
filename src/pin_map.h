@@ -41,28 +41,28 @@ inline constexpr std::uint32_t kTapTempoButtonPin = mcu::PA3;
 /** Dedicated RESET/BACK front-panel button. */
 inline constexpr std::uint32_t kResetBackButtonPin = mcu::PA2;
 
-/** Channel 1 logic output feeding activity LED 1 and 74HCT244 input 1. */
+/** Channel 1 logic output feeding activity LED 1 and 74HCT541 input 1. */
 inline constexpr std::uint32_t kChannel1GateLedPin = mcu::PB0;
 
-/** Channel 2 logic output feeding activity LED 2 and 74HCT244 input 2. */
+/** Channel 2 logic output feeding activity LED 2 and 74HCT541 input 2. */
 inline constexpr std::uint32_t kChannel2GateLedPin = mcu::PB1;
 
-/** Channel 3 logic output feeding activity LED 3 and 74HCT244 input 3. */
+/** Channel 3 logic output feeding activity LED 3 and 74HCT541 input 3. */
 inline constexpr std::uint32_t kChannel3GateLedPin = mcu::PB2;
 
-/** Channel 4 logic output feeding activity LED 4 and 74HCT244 input 4. */
+/** Channel 4 logic output feeding activity LED 4 and 74HCT541 input 4. */
 inline constexpr std::uint32_t kChannel4GateLedPin = mcu::PB5;
 
-/** Channel 5 logic output feeding activity LED 5 and 74HCT244 input 5. */
+/** Channel 5 logic output feeding activity LED 5 and 74HCT541 input 5. */
 inline constexpr std::uint32_t kChannel5GateLedPin = mcu::PB8;
 
-/** Channel 6 logic output feeding activity LED 6 and 74HCT244 input 6. */
+/** Channel 6 logic output feeding activity LED 6 and 74HCT541 input 6. */
 inline constexpr std::uint32_t kChannel6GateLedPin = mcu::PB10;
 
-/** Channel 7 logic output feeding activity LED 7 and 74HCT244 input 7. */
+/** Channel 7 logic output feeding activity LED 7 and 74HCT541 input 7. */
 inline constexpr std::uint32_t kChannel7GateLedPin = mcu::PB12;
 
-/** Channel 8 logic output feeding activity LED 8 and 74HCT244 input 8. */
+/** Channel 8 logic output feeding activity LED 8 and 74HCT541 input 8. */
 inline constexpr std::uint32_t kChannel8GateLedPin = mcu::PB13;
 
 /** Ordered channel-pin table used by the gate-output driver. */

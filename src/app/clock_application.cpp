@@ -133,8 +133,18 @@ void ClockApplication::runOnce() {
         return;
     }
 #endif
+    TransportState externalTransport{};
+    if (externalSyncController_.consumeTransportTransition(externalTransport)) {
+        state_.transport = externalTransport;
+        uiController_.invalidate();
+    }
+
     const hal::ControlSample controls = controlPanel_.sample(nowMs);
+    const TransportState transportBeforeControls = state_.transport;
     uiController_.processControls(controls, nowMs);
+    if (state_.transport != transportBeforeControls) {
+        externalSyncController_.notifyManualTransportState(state_.transport);
+    }
     synchronizeDevicePreferences();
     externalSyncController_.updateConfiguration(state_);
     // Render visible state changes before any timing-safe Flash flush. This keeps

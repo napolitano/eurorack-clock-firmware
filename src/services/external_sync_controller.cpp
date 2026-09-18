@@ -42,9 +42,11 @@ void ExternalSyncController::begin(const ClockState& state) {
     foregroundMinimumBpm_ = state.tempoRange.minimumBpm != 0U
         ? state.tempoRange.minimumBpm
         : 1U;
+    foregroundSource_ = state.source;
     settings_ = foregroundSettings_;
     fallbackBpmMilli_ = foregroundFallbackBpmMilli_;
     minimumBpm_ = foregroundMinimumBpm_;
+    source_ = foregroundSource_;
     configurationDirty_ = true;
     resetGateApplied_ = false;
     haveAcceptedPulse_ = false;
@@ -52,6 +54,8 @@ void ExternalSyncController::begin(const ClockState& state) {
     lastAcceptedPulseUs_ = 0U;
     filteredPeriodQ8_ = 0U;
     filteredBpmMilli_ = 0U;
+    autoTransportArmed_ = true;
+    pendingTransportTransition_ = 0xFFU;
 }
 
 void ExternalSyncController::updateConfiguration(const ClockState& state) {
@@ -62,7 +66,8 @@ void ExternalSyncController::updateConfiguration(const ClockState& state) {
         : 1U;
     if (settingsEqual(state.externalSync, foregroundSettings_) &&
         requestedFallbackBpmMilli == foregroundFallbackBpmMilli_ &&
-        requestedMinimumBpm == foregroundMinimumBpm_) {
+        requestedMinimumBpm == foregroundMinimumBpm_ &&
+        state.source == foregroundSource_) {
         return;
     }
 
@@ -73,12 +78,14 @@ void ExternalSyncController::updateConfiguration(const ClockState& state) {
     foregroundSettings_ = state.externalSync;
     foregroundFallbackBpmMilli_ = requestedFallbackBpmMilli;
     foregroundMinimumBpm_ = requestedMinimumBpm;
+    foregroundSource_ = state.source;
 
     hal::InterruptLock interruptLock;
     const bool resetModeChanged = foregroundSettings_.resetMode != settings_.resetMode;
     settings_ = foregroundSettings_;
     fallbackBpmMilli_ = foregroundFallbackBpmMilli_;
     minimumBpm_ = foregroundMinimumBpm_;
+    source_ = foregroundSource_;
     configurationDirty_ = configurationDirty_ || resetModeChanged;
 
     // PPQN and selected-edge changes alter the meaning of captured periods.
@@ -108,22 +115,31 @@ void ExternalSyncController::processSchedulerTick(const std::uint32_t nowUs) {
         return;
     }
 
-    externalLocked_ = false;
-    haveAcceptedPulse_ = false;
-    filteredPeriodQ8_ = 0U;
-    engine_.setExternalLockFromIsr(false, filteredBpmMilli_);
+    loseExternalLockFromIsr();
 }
 
 void ExternalSyncController::clearExternalLock() {
     hal::InterruptLock interruptLock;
-    externalLocked_ = false;
-    haveAcceptedPulse_ = false;
-    filteredPeriodQ8_ = 0U;
-    engine_.setExternalLockFromIsr(false, filteredBpmMilli_);
+    loseExternalLockFromIsr();
 }
 
 std::uint32_t ExternalSyncController::filteredBpmMilli() const {
     return filteredBpmMilli_;
+}
+
+void ExternalSyncController::notifyManualTransportState(const TransportState transport) {
+    hal::InterruptLock interruptLock;
+    autoTransportArmed_ = transport == TransportState::Playing;
+}
+
+bool ExternalSyncController::consumeTransportTransition(TransportState& transport) {
+    hal::InterruptLock interruptLock;
+    if (pendingTransportTransition_ == 0xFFU) {
+        return false;
+    }
+    transport = static_cast<TransportState>(pendingTransportTransition_);
+    pendingTransportTransition_ = 0xFFU;
+    return true;
 }
 
 void ExternalSyncController::processResetEdges() {
@@ -171,8 +187,12 @@ void ExternalSyncController::processSyncEdges() {
             // queue captures CHANGE transitions. Reset acquisition and wait for the
             // next real selected edge instead of manufacturing a long period across
             // transitions that were dropped while the queue was saturated.
-            haveAcceptedPulse_ = false;
-            filteredPeriodQ8_ = 0U;
+            if (externalLocked_) {
+                loseExternalLockFromIsr();
+            } else {
+                haveAcceptedPulse_ = false;
+                filteredPeriodQ8_ = 0U;
+            }
             continue;
         }
 
@@ -182,14 +202,7 @@ void ExternalSyncController::processSyncEdges() {
 
         if (!haveAcceptedPulse_) {
             haveAcceptedPulse_ = true;
-            externalLocked_ = true;
             lastAcceptedPulseUs_ = edge.timestampUs;
-            if (filteredBpmMilli_ == 0U) {
-                filteredBpmMilli_ = fallbackBpmMilli_;
-            }
-            engine_.acceptExternalPulseFromIsr(
-                filteredBpmMilli_,
-                settings_.pulsesPerQuarterNote);
             continue;
         }
 
@@ -214,13 +227,12 @@ void ExternalSyncController::processSyncEdges() {
             // Treat an out-of-range slow gap as a fresh acquisition boundary,
             // never as a valid ultra-low tempo. This also keeps the arithmetic
             // contract aligned with the documented 1..999 BPM technical range.
+            if (externalLocked_) {
+                loseExternalLockFromIsr();
+            }
             haveAcceptedPulse_ = true;
             filteredPeriodQ8_ = 0U;
             lastAcceptedPulseUs_ = edge.timestampUs;
-            filteredBpmMilli_ = fallbackBpmMilli_;
-            engine_.acceptExternalPulseFromIsr(
-                filteredBpmMilli_,
-                settings_.pulsesPerQuarterNote);
             continue;
         }
 
@@ -236,10 +248,14 @@ void ExternalSyncController::processSyncEdges() {
         const std::uint32_t filteredPeriodUs = static_cast<std::uint32_t>(
             (filteredPeriodQ8_ + 128U) >> 8U);
         filteredBpmMilli_ = calculateBpmMilli(filteredPeriodUs);
+        const bool acquiredLock = !externalLocked_;
         externalLocked_ = true;
         engine_.acceptExternalPulseFromIsr(
             filteredBpmMilli_,
             settings_.pulsesPerQuarterNote);
+        if (acquiredLock) {
+            startOnLockAcquisitionFromIsr();
+        }
     }
 }
 
@@ -255,6 +271,34 @@ void ExternalSyncController::applyResetModeChange() {
         resetGateApplied_ = false;
         engine_.setExternalResetGateFromIsr(false);
     }
+}
+
+void ExternalSyncController::loseExternalLockFromIsr() {
+    const bool wasLocked = externalLocked_;
+    externalLocked_ = false;
+    haveAcceptedPulse_ = false;
+    filteredPeriodQ8_ = 0U;
+    engine_.setExternalLockFromIsr(false, filteredBpmMilli_);
+
+    if (!wasLocked ||
+        settings_.lossMode != SyncLossMode::Stop ||
+        (source_ != ClockSource::External && source_ != ClockSource::Auto) ||
+        !autoTransportArmed_) {
+        return;
+    }
+
+    engine_.stop();
+    pendingTransportTransition_ = static_cast<std::uint8_t>(TransportState::Stopped);
+}
+
+void ExternalSyncController::startOnLockAcquisitionFromIsr() {
+    if ((source_ != ClockSource::External && source_ != ClockSource::Auto) ||
+        !autoTransportArmed_) {
+        return;
+    }
+
+    engine_.play();
+    pendingTransportTransition_ = static_cast<std::uint8_t>(TransportState::Playing);
 }
 
 bool ExternalSyncController::selectedSyncEdge(const bool high) const {

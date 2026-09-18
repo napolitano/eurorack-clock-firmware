@@ -1,8 +1,8 @@
 <!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
-# South Signal Lab CLOCK Test Coverage — v0.19.0-beta.14
+# South Signal Lab CLOCK Test Coverage — v1.0.0
 
-The prerelease test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 401 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 407 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -12,15 +12,15 @@ The following are mandatory:
 - **Functions: >=95%**
 - **Non-throw decision branches: >=90%**
 
-The prerelease gates remain stringent without requiring synthetic tests for every defensive/error path. The coverage report still lists every uncovered production function and source decision so regressions remain visible during review.
+The release gates remain stringent without requiring synthetic tests for every defensive/error path. The coverage report still lists every uncovered production function and source decision so regressions remain visible during review.
 
-Current repository-wide validated baseline (`0.19.0-beta.14`):
+Current repository-wide validated baseline (`1.0.0`):
 
 ```text
-Executable lines:   6972/7230 (96.43%)
-Functions:           596/606  (98.35%)
-Decision branches:  4179/4638 (90.10%)
-Compiler branches:  4180/5422 (77.09%, informational only)
+Executable lines:   7022/7285 (96.39%)
+Functions:           601/611  (98.36%)
+Decision branches:  4219/4686 (90.03%)
+Compiler branches:  4220/5476 (77.06%, informational only)
 ```
 
 ## Full host matrix
@@ -110,11 +110,11 @@ cmake --build --preset simulator-headless
 ctest --preset simulator-headless
 ```
 
-These tests boot the complete firmware above the simulator HAL, exercise real debounced controls and scheduler callbacks, verify OLED output and gate edges, verify host-file persistence, power-cycle the application, enter the configured boot Easter egg through the real boot chord, check framebuffer-visible projectiles, drive ideal SYNC/RST comparator sources, and verify scope reset/re-arm semantics. The virtual OLED additionally consumes the same physical transfer framebuffer used by hardware. Regressions prove canonical-framebuffer immutability, exact pixel mapping `(x,y) -> (127-x,63-y)` at 180 degrees, immediate reversal back to 0 degrees, and a fixed controller scan orientation. CI executes this layer on Windows, macOS, and Linux.
+These tests boot the complete firmware above the simulator HAL, exercise real debounced controls and scheduler callbacks, verify OLED output and gate edges, verify host-file persistence, power-cycle the application, enter the configured boot Easter egg through the real boot chord, check framebuffer-visible projectiles, drive ideal SYNC/RST comparator sources, and verify scope reset/re-arm semantics, reject historical PLAY epochs when a new scope session is opened in STOP, and attach a newly opened scope to the current live epoch when transport is already PLAYING. The virtual OLED additionally consumes the same physical transfer framebuffer used by hardware. Regressions prove canonical-framebuffer immutability, exact pixel mapping `(x,y) -> (127-x,63-y)` at 180 degrees, immediate reversal back to 0 degrees, and a fixed controller scan orientation. CI executes this layer on Windows, macOS, and Linux.
 
-## Hardware-in-the-loop remains mandatory
+## Hardware-in-the-loop qualification remains explicit
 
-Host execution cannot establish real-world timing quality. Planned HIL/electrical tests still include:
+Host execution cannot establish real-world timing quality. Physical HIL/electrical qualification therefore remains tracked separately; before the 1.5.0 hard-gate milestone, open HIL items are disclosed rather than silently treated as software validation. The bench plan includes:
 
 - gate jitter and pulse width at the actual jacks
 - no false output pulses during boot/reset/preset changes

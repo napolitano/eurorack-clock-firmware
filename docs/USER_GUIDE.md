@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Beta documentation — v0.19.0-beta.14 · V1 feature freeze**
+> **Release documentation — v1.0.0 · V1 feature freeze**
 >
 > CLOCK is still prerelease hardware/firmware. The user-facing clock engine, UI, persistence, simulator, interrupt-driven SYNC/RST capture boundary, and SPI/I2C display paths are implemented. Final comparator/PCB validation and physical HIL timing sign-off remain open. Timer Input Capture or compare-event scheduling are implementation options only if measured V1 timing requires them.
 
@@ -317,7 +317,9 @@ Available settings are:
 
 `GATE` treats the reset input as a held reset condition: while the conditioned input remains HIGH, the timing engine is held in reset and all generated gates remain LOW. Releasing the input restarts from phase zero.
 
-`AUTO` is the factory clock source. Without a valid external lock, CLOCK runs from the configured internal BPM. When valid SYNC arrives, it locks to the external source automatically; after external loss it follows the configured loss policy. Tap Tempo updates the internal/fallback BPM only and never changes the selected clock source.
+`AUTO` is the factory clock source. Without a valid external lock, CLOCK runs from the configured internal BPM. The first accepted SYNC pulse starts acquisition but does **not** advertise a lock because no period can be measured yet. The second valid selected pulse establishes the first period, calculates the external BPM, acquires lock, resets the external phase to zero, and starts transport unless the user has explicitly stopped or paused it. While locked in `EXTERNAL` or `AUTO`, the large BPM display shows the measured external tempo. Tap Tempo updates the internal/fallback BPM only and never changes the selected clock source.
+
+After external loss, `LOSS = STOP` stops transport and forces normal STOP gate behavior; a later valid reacquisition may restart only when transport was still armed for external operation. A manual STOP or PAUSE takes precedence and is not undone by incoming SYNC. `LOSS = FREE` continues at the last measured external BPM, while `LOSS = INTERNAL` continues at the configured internal fallback BPM. RST remains phase-only: it resets or holds phase according to `RST MODE` and never changes PLAY/PAUSE/STOP by itself.
 
 SYNC/RST transitions are captured by GPIO interrupts and consumed at the deterministic 20 kHz scheduler boundary. External tempo is measured in the period domain with filtering, continuity handling, adaptive timeout, and timestamp-wrap-safe arithmetic. The effective loss timeout is at least long enough for slow valid sources; for example, 20 BPM at 1 PPQN produces one pulse every 3 seconds and must not falsely unlock between pulses.
 

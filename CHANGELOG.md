@@ -4,9 +4,37 @@
 
 All notable prototype changes are documented here.
 
-This project is still in active development. Until the first stable release, version numbers primarily identify development milestones rather than a compatibility promise.
+CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlier 0.x entries document prototype development history.
 
 
+
+## [1.0.0] - 2026-09-18
+
+CLOCK 1.0.0 is the first stable firmware release. It freezes the V1 feature set and closes the remaining external-SYNC correctness gaps found during final hardware bring-up.
+
+### External SYNC and transport
+
+- Require two valid selected SYNC edges before advertising external lock: the first edge starts acquisition; the second establishes a measurable period and external BPM.
+- Start transport on a newly acquired valid external lock in `AUTO`/`EXTERNAL` when external auto-transport is armed.
+- Preserve explicit user STOP/PAUSE precedence so incoming SYNC cannot silently restart a manually stopped or paused clock.
+- Apply `LOSS = STOP` to transport as well as lock state and allow a later valid reacquisition to restart only when the stop was caused by sync loss rather than by the user.
+- Fix `AUTO + FREE` so loss of lock continues at the last measured external tempo instead of falling back to the internal BPM.
+- Show the measured external BPM on the Performance screen while `AUTO` or `EXTERNAL` is locked; unlocked operation continues to show the internal/fallback BPM.
+- Keep RST phase-only and transport-independent in both TRIGGER and GATE modes.
+
+### Hardware and documentation
+
+- Correct current hardware documentation and source comments from the obsolete 74HCT244 reference to the final 74HCT541-class output buffer.
+- Synchronize the stable 1.0.0 identity across primary user/developer documentation and release metadata.
+- Document two-edge lock acquisition, external auto-start, manual transport precedence, all three sync-loss policies, and measured external BPM display behavior.
+
+### Tests
+
+- Add dedicated regressions for acquisition-only first pulse, second-pulse lock/auto-start, manual STOP precedence, STOP-loss/reacquisition restart, and AUTO FREEWHEEL tempo retention.
+- Add a framebuffer-level Performance regression proving that a locked external source renders its measured BPM rather than the internal fallback value.
+- Add simulator regressions that keep a newly opened developer scope armed when transport is already stopped after an earlier run, while attaching correctly when opened during a live PLAY epoch.
+- Expand the public Native inventory to **407 named tests**, including **90** external-SYNC behavior tests and **29** complete host-firmware tests.
+- Revalidate the complete host sanitizer matrix and both headless simulator tests; repository coverage remains above every hard release floor at **96.39% executable lines / 98.36% functions / 90.03% source decision branches**.
 
 ## [0.19.0-beta.14] - 2026-09-17
 

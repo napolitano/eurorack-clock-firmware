@@ -72,7 +72,7 @@ Measure LOW and HIGH voltage at each jack.
 
 - LOW is close to 0 V and HIGH meets the nominal +5 V output specification on every channel
 - verify both unloaded outputs and the representative Eurorack input load defined by the final schematic/BOM
-- no +10 V output level is expected from the current 74HCT244 architecture
+- no +10 V output level is expected from the current 74HCT541 architecture
 
 ### HIL-GATE-002 — Pulse width
 

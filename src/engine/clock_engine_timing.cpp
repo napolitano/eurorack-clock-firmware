@@ -22,9 +22,11 @@ std::uint32_t ClockEngine::effectiveBpmMilli() const {
             externalBpmMilli_ != 0U) {
             bpmMilli = externalBpmMilli_;
         }
-    } else if (configuration_.source == ClockSource::Auto && externalLocked_ &&
-               externalBpmMilli_ != 0U) {
-        bpmMilli = externalBpmMilli_;
+    } else if (configuration_.source == ClockSource::Auto) {
+        if ((externalLocked_ || configuration_.syncLossMode == SyncLossMode::Freewheel) &&
+            externalBpmMilli_ != 0U) {
+            bpmMilli = externalBpmMilli_;
+        }
     }
     return bpmMilli;
 }

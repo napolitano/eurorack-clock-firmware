@@ -184,7 +184,7 @@ HAL is the only production implementation layer allowed to call STM32CubeF4 hard
 
 `pin_map.h` is the only non-HAL file allowed to include MCU pin definitions directly because it is a declarative wiring map.
 
-The output architecture deliberately targets nominal **+5 V HIGH**, not +10 V. The 74HCT244 is a 5 V-domain buffer; a future +10 V requirement would cross the HAL/PCB boundary and require a different physical output stage rather than a firmware setting.
+The output architecture deliberately targets nominal **+5 V HIGH**, not +10 V. The 74HCT541 is a 5 V-domain buffer; a future +10 V requirement would cross the HAL/PCB boundary and require a different physical output stage rather than a firmware setting.
 
 ## Display transport
 

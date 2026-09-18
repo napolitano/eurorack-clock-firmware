@@ -11,6 +11,7 @@
 #include <algorithm>
 #include <cstdio>
 
+#include "config.h"
 #include "engine/output_mode_resolver.h"
 #include "ui/text_formatter.h"
 #include "ui_text.h"
@@ -138,7 +139,14 @@ void PerformanceRenderer::render(
     }
 
     char tempoText[6]{};
-    std::snprintf(tempoText, sizeof(tempoText), "%u", state.bpm);
+    std::uint32_t displayedBpm = state.bpm;
+    if (engineSnapshot.externalLocked &&
+        (state.source == ClockSource::External || state.source == ClockSource::Auto) &&
+        engineSnapshot.externalBpmMilli != 0U) {
+        displayedBpm = (engineSnapshot.externalBpmMilli + 500U) / 1000U;
+    }
+    displayedBpm = std::min<std::uint32_t>(displayedBpm, config::kSupportedMaximumBpm);
+    std::snprintf(tempoText, sizeof(tempoText), "%u", static_cast<unsigned>(displayedBpm));
 
     const bool dividerView = state.operatingMode == OperatingMode::DividerBank;
     const bool clockOnlyView = state.operatingMode != OperatingMode::Independent ||

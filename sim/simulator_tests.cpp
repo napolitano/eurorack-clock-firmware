@@ -89,6 +89,9 @@ int main() {
         !lockedSync.locked || lockedSync.pulseCount < 2ULL || lockedSync.bpmMilli != 90000U) {
         return fail("virtual SYNC IN generator must acquire lock from generated pulses");
     }
+    if (runtime.state().transport != clockfw::TransportState::Playing) {
+        return fail("AUTO source must start transport when virtual SYNC acquires a valid lock");
+    }
     const std::uint8_t oldPpqn = lockedSync.ppqn;
     runtime.cycleSyncPpqn();
     runtime.advanceMicroseconds(1500000ULL);
@@ -115,6 +118,9 @@ int main() {
     runtime.advanceMicroseconds(2000000ULL);
     if (runtime.syncInputTelemetry().locked) {
         return fail("virtual SYNC IN must lose lock after the firmware timeout");
+    }
+    if (runtime.state().transport != clockfw::TransportState::Playing) {
+        return fail("default FREEWHEEL loss policy must keep transport running after SYNC loss");
     }
     runtime.setSyncCableConnected(false);
 
@@ -162,6 +168,17 @@ int main() {
         return fail("simulator encoder feedback must track requested detents");
     }
 
+    // Earlier external-SYNC checks intentionally auto-start transport in AUTO mode.
+    // Return to an explicit user STOP before validating the developer scope's
+    // pre-start contract; manual STOP must remain authoritative over external sync.
+    runtime.setButton(clockfw::sim::SimButton::Stop, true);
+    runtime.advanceMicroseconds(35000ULL);
+    runtime.setButton(clockfw::sim::SimButton::Stop, false);
+    runtime.advanceMicroseconds(35000ULL);
+    if (runtime.state().transport != clockfw::TransportState::Stopped) {
+        return fail("manual STOP must override transport started by external AUTO sync");
+    }
+
     scope::Session scopeSession{};
     scopeSession.setWindowUs(32000000ULL);
     scopeSession.update(runtime);
@@ -182,6 +199,14 @@ int main() {
     if (!startedScope.started || startedScope.epochSimulatorUs == 0ULL ||
         startedScope.referenceUs > 100000ULL) {
         return fail("scope t=0 must be anchored to the exact STOP-to-PLAY transport transition");
+    }
+
+    scope::Session attachedScope{};
+    attachedScope.update(runtime);
+    const scope::SessionView attachedView = attachedScope.view();
+    if (!attachedView.started || attachedView.epochSimulatorUs != startedScope.epochSimulatorUs ||
+        attachedView.referenceUs > 100000ULL) {
+        return fail("scope opened during PLAY must attach to the current live transport epoch");
     }
 
     runtime.advanceMicroseconds(1200000ULL);
