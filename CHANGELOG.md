@@ -44,6 +44,12 @@ This project is still in active development. Until the first stable release, ver
 - Restored the proven SPI1 two-line master configuration after the pin-map refactor had unnecessarily switched the write-only OLED to one-line mode and left the physical display dark. PA6 remains unconfigured; transmit-only behavior is provided by using only SCK/MOSI plus software CS/DC/RES.
 - Added a dedicated OLED hardware-contract regression suite that locks the final display pins, SPI mode/polarity/phase/data width, AF5 GPIO setup, TX-only HAL path, PA6 non-use, and reset pulse sequence. Mutation checks confirm that a return to `SPI_DIRECTION_1LINE` or an accidental PA6/MISO GPIO configuration fails the suite.
 
+### External sync bugfix
+
+- Changed the factory clock source from `INTERNAL` to `AUTO`, so a fresh or factory-reset unit follows valid external SYNC automatically while retaining the configured internal BPM as fallback.
+- Fixed Tap Tempo silently forcing `SOURCE = INTERNAL` and persisting that change. Tap Tempo now updates only the internal/fallback BPM and preserves `INTERNAL`, `EXTERNAL`, or `AUTO` exactly as selected by the user.
+- Added regressions for the `AUTO` factory default, automatic acquisition of a 120 BPM external source, and Tap Tempo source preservation in RAM and persistent CURRENT state for all three source modes.
+
 ### Hardware behavior follow-up
 
 - Replaced the earlier EXTI rotary-encoder decoder with the STM32F401 TIM4 encoder interface on PB6/PB7. Quadrature transitions are now counted in hardware and converted to one detent per four transitions in the foreground, eliminating the remaining first-detent loss path caused by delayed or coalesced GPIO edge delivery.
@@ -84,14 +90,14 @@ This project is still in active development. Until the first stable release, ver
 
 ### Documentation
 
-- Re-synchronized the publication ODT/PDF manual with the final beta.14 UI: PHASE RESET, guarded INFO → FACTORY RESET, live INPUTS/OUTPUTS diagnostics, all four new screensavers, and the 398-test release baseline are now represented in both Markdown and typeset documentation.
+- Re-synchronized the publication ODT/PDF manual with the final beta.14 UI: PHASE RESET, guarded INFO → FACTORY RESET, live INPUTS/OUTPUTS diagnostics, all four new screensavers, and the 400-test release baseline are now represented in both Markdown and typeset documentation.
 
 ### Tests
 
 - Added regressions for PLAY start, phase-preserving pause/resume, STOP phase reset/output disable, restart from step 1, and STOP priority over simultaneous transport input.
 - Expanded `test_easter_eggs` from 25 to **28** named cases for the transport work.
 - Added six BEATKNECHT exit-confirmation regressions covering safe gate silencing, default-NO cancellation, confirmed exit, paused-state restoration, long-press release gating, and dialog rendering. `test_easter_eggs` now contains **34** named cases.
-- With the additional encoder regressions and BEATKNECHT rendering/exit coverage, the public Native inventory is now **398** named tests.
+- With the additional encoder regressions and BEATKNECHT rendering/exit coverage, the public Native inventory is now **400** named tests.
 - Added four dedicated screensaver regressions for progressive text construction, maze regeneration, starfield motion, and rocket-to-burst animation; `test_screensavers` now contains **19** named cases.
 - Updated the simulator boot-Easter-egg contract to launch the default BEATKNECHT build through the physical PLAY control.
 - Added BEATKNECHT rendering coverage for both NO/YES exit selections and all PLAY/PAUSE/STOP transport glyph branches, restoring the repository decision-branch gate above 90% without lowering the threshold.

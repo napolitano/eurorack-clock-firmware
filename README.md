@@ -149,7 +149,7 @@ The detailed timing contract is normative: [`docs/TIMING.md`](docs/TIMING.md).
 
 The firmware-side synchronization model supports:
 
-- source: `INTERNAL`, `EXTERNAL`, `AUTO`;
+- source: `INTERNAL`, `EXTERNAL`, `AUTO` (factory default: `AUTO`);
 - PPQN: `1`, `2`, `4`, `24`;
 - rising/falling edge selection;
 - configurable glitch filter;
@@ -242,13 +242,13 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **398 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **400 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
 | `test_clock_core` | 44 | deterministic rate, Q32, probability, Euclid and sequencer mathematics |
 | `test_realtime` | 24 | scheduler, physical gate driver, SYNC/RST integration and queue stress |
-| `test_sync_behavior` | 83 | external-SYNC boundaries, changing tempo, jitter/glitches/loss, PPQN/edge changes, permanent-HIGH behavior, and nominal LM393-front-end voltage behavior |
+| `test_sync_behavior` | 84 | external-SYNC boundaries, changing tempo, jitter/glitches/loss, PPQN/edge changes, permanent-HIGH behavior, and nominal LM393-front-end voltage behavior |
 | `test_swing` | 22 | atomic swing mathematics plus observed engine edge spacing and pair-duration conservation |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
@@ -256,7 +256,7 @@ Current inventory: **398 explicitly named Native test cases**. PlatformIO expose
 | `test_settings` | 56 | settings limits, device-local encoder/display preferences, enum transitions, timing invariants, channel/Euclid/Sequencer edits and invalid-input behavior |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
-| `test_host_firmware` | 27 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
+| `test_host_firmware` | 28 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
 
 The default Native run executes more than **223,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
 

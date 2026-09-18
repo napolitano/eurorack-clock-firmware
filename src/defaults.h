@@ -36,7 +36,7 @@ inline constexpr MeterSettings kMasterMeter{4U, 4U};
 inline constexpr TransportState kTransportState = TransportState::Stopped;
 
 /** Factory master clock source. */
-inline constexpr ClockSource kClockSource = ClockSource::Internal;
+inline constexpr ClockSource kClockSource = ClockSource::Auto;
 
 /** Factory shared-clock rate used in One Clock mode. */
 inline constexpr RateSettings kUnifiedClockRate{ClockRatioMode::Multiply, 1U, 1U, 1U};

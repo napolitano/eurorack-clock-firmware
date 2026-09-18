@@ -228,6 +228,7 @@ ClockState makeDefaultState() {
     // shipping UI default. Keep that fixture explicit while factory-default
     // tests use makeFactoryState().
     state.operatingMode = OperatingMode::Independent;
+    state.source = ClockSource::Internal;
     return state;
 }
 
@@ -430,6 +431,8 @@ void testDefaultsTemplatesAndServices() {
     initializeFactoryDefaults(state);
     CHECK_EQ(state.bpm, defaults::kMasterBpm);
     CHECK_EQ(state.operatingMode, OperatingMode::UnifiedClock);
+    CHECK_EQ(defaults::kClockSource, ClockSource::Auto);
+    CHECK_EQ(state.source, ClockSource::Auto);
     CHECK_EQ(state.tempoRange.minimumBpm, 20U);
     CHECK_EQ(state.tempoRange.maximumBpm, 999U);
     CHECK_EQ(state.unifiedClock.humanizeUs, 0U);
@@ -2788,6 +2791,44 @@ std::size_t countFramebufferPixels(
     return count;
 }
 
+
+void testTapTempoPreservesClockSourceAndPersistence() {
+    for (const ClockSource source : {ClockSource::Internal, ClockSource::External, ClockSource::Auto}) {
+        resetFakes();
+        prepareDisplaySuccess();
+        hal::OledDisplay display;
+        CHECK(display.begin());
+
+        ClockState state = makeFactoryState();
+        state.source = source;
+        state.bpm = 90U;
+
+        hal::GateOutputDriver gates;
+        gates.beginDisabled();
+        engine::ClockEngine engine(gates);
+        engine.begin(state);
+
+        hal::PersistentStorage::resetForTest();
+        hal::PersistentStorage storage;
+        services::PersistentStateService persistence(storage);
+        persistence.begin();
+        ui::UiRenderer renderer(display, persistence);
+        ui::UiController controller(state, engine, renderer, persistence);
+
+        controllerTapAt(controller, 1000U);
+        controllerTapAt(controller, 1500U);
+
+        CHECK_EQ(state.bpm, 120U);
+        CHECK_EQ(state.source, source);
+
+        persistence.service(1500U + config::kPersistenceCommitDelayMs);
+        ClockState restored{};
+        CHECK(persistence.restoreCurrentState(restored));
+        CHECK_EQ(restored.bpm, 120U);
+        CHECK_EQ(restored.source, source);
+    }
+}
+
 void testTapIndicatorStartsOnSecondTapAndRestartsEveryFollowingTap() {
     resetFakes(); prepareDisplaySuccess();
     hal::OledDisplay display; CHECK(display.begin());
@@ -4413,6 +4454,7 @@ int main() {
     RUN_TEST(testEngineAuditRegressions);
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
+    RUN_TEST(testTapTempoPreservesClockSourceAndPersistence);
     RUN_TEST(testTapIndicatorStartsOnSecondTapAndRestartsEveryFollowingTap);
     RUN_TEST(testTapIndicatorRendersFourShrinkingEightPixelFramesThenClears);
     RUN_TEST(testTapIndicatorSequenceResetsAfterConfiguredMinimumBpmInterval);

@@ -178,7 +178,7 @@ struct ClockState {
     TempoRangeSettings tempoRange{};
     MeterSettings masterMeter{4U, 4U};
     TransportState transport = TransportState::Stopped;
-    ClockSource source = ClockSource::Internal;
+    ClockSource source = ClockSource::Auto;
     ExternalSyncSettings externalSync{};
     UnifiedClockSettings unifiedClock{};
     DividerBankSettings dividerBank{};

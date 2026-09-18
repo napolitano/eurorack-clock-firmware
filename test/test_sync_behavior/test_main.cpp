@@ -670,6 +670,34 @@ void testInternalLossModeFallsBackToConfiguredInternalTempo() {
     CHECK(fixture.engine.snapshot().masterPositionQ32 > before);
 }
 
+
+void testFactoryDefaultAutoAcquiresExternalSync() {
+    ClockState state{};
+    initializeFactoryDefaults(state);
+    CHECK_EQ(state.source, ClockSource::Auto);
+
+    hal::GateOutputDriver gates;
+    engine::ClockEngine engine(gates);
+    hal::ExternalInputCapture inputs;
+    services::ExternalSyncController sync(inputs, engine);
+    fakefw::resetArduino();
+    gates.beginDisabled();
+    gates.enableOutputStage();
+    engine.begin(state);
+    sync.begin(state);
+    engine.play();
+
+    inputs.injectSyncEdgeForTest(1000U, true);
+    sync.processSchedulerTick(1000U);
+    inputs.injectSyncEdgeForTest(2000U, false);
+    sync.processSchedulerTick(2000U);
+    inputs.injectSyncEdgeForTest(501000U, true);
+    sync.processSchedulerTick(501000U);
+
+    CHECK(engine.snapshot().externalLocked);
+    CHECK_NEAR(engine.snapshot().externalBpmMilli, 120000U, 1U);
+}
+
 void testAutoSourceFallsBackAfterExternalLoss() {
     Fixture fixture;
     fixture.state.source = ClockSource::Auto;
@@ -947,6 +975,7 @@ int main() {
     RUN_TEST(testStopLossModeFreezesEngineAfterTimeout);
     RUN_TEST(testFreewheelLossModeContinuesAtLastExternalTempo);
     RUN_TEST(testInternalLossModeFallsBackToConfiguredInternalTempo);
+    RUN_TEST(testFactoryDefaultAutoAcquiresExternalSync);
     RUN_TEST(testAutoSourceFallsBackAfterExternalLoss);
     RUN_TEST(testFasterThan999BpmPulseIsIgnoredAfterLock);
     RUN_TEST(testSlowerThan1BpmGapStartsFreshAcquisition);

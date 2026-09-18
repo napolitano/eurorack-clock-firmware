@@ -409,7 +409,7 @@ void UiController::registerTapTempo(const std::uint32_t nowMs) {
     }
 
     state_.bpm = estimatedBpm;
-    state_.source = ClockSource::Internal;
+    // Tap Tempo updates only the internal/fallback BPM; SOURCE remains user-selected.
     engine_.updateConfiguration(state_, false);
     persistCurrentState(nowMs);
     invalidate();

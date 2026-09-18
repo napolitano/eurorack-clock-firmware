@@ -305,7 +305,7 @@ Open `SETTINGS → GENERAL SETTINGS → SYNC` to configure external timing.
 
 Available settings are:
 
-- **SOURCE** — `INTERNAL / EXTERNAL / AUTO`
+- **SOURCE** — `INTERNAL / EXTERNAL / AUTO` (factory default: `AUTO`)
 - **PPQN** — `1 / 2 / 4 / 24`
 - **EDGE** — rising / falling
 - **LOSS** — `STOP / FREE / INTERNAL`
@@ -316,6 +316,8 @@ Available settings are:
 `TRIGGER` is the factory reset-input mode. One accepted inactive→active reset edge generates one reset; holding the conditioned reset signal HIGH does not repeat it.
 
 `GATE` treats the reset input as a held reset condition: while the conditioned input remains HIGH, the timing engine is held in reset and all generated gates remain LOW. Releasing the input restarts from phase zero.
+
+`AUTO` is the factory clock source. Without a valid external lock, CLOCK runs from the configured internal BPM. When valid SYNC arrives, it locks to the external source automatically; after external loss it follows the configured loss policy. Tap Tempo updates the internal/fallback BPM only and never changes the selected clock source.
 
 SYNC/RST transitions are captured by GPIO interrupts and consumed at the deterministic 20 kHz scheduler boundary. External tempo is measured in the period domain with filtering, continuity handling, adaptive timeout, and timestamp-wrap-safe arithmetic. The effective loss timeout is at least long enough for slow valid sources; for example, 20 BPM at 1 PPQN produces one pulse every 3 seconds and must not falsely unlock between pulses.
 
