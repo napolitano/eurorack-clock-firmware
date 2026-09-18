@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "product": "South Signal Lab CLOCK",
-  "baseline": "1.0.0",
+  "baseline": "1.0.1",
   "scheduler_tick_us": 50,
   "overall_status": "IN_PROGRESS",
   "tests": [

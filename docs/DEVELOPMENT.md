@@ -226,8 +226,8 @@ The STM32 firmware build only runs after host coverage and both native-simulator
 A release tag must exactly match `src/version.h`:
 
 ```text
-firmware: 1.0.0
-Git tag:   v1.0.0
+firmware: 1.0.1
+Git tag:   v1.0.1
 ```
 
 A mismatch fails before publication.

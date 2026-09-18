@@ -139,6 +139,7 @@ class ManualToolingTests(unittest.TestCase):
     def test_release_workflow_publishes_odt_and_pdf(self) -> None:
         workflow = (ROOT / ".github" / "workflows" / "release.yml").read_text(encoding="utf-8")
         self.assertIn("scripts/generate_manual_screenshots.py", workflow)
+        self.assertIn("scripts/prepare_release_manual.py", workflow)
         self.assertIn("scripts/refresh_manual_screenshots.py", workflow)
         self.assertIn("scripts/build_user_manual.py", workflow)
         self.assertIn("scripts/check_user_manual.py", workflow)
@@ -147,7 +148,11 @@ class ManualToolingTests(unittest.TestCase):
         self.assertIn("--require-ubuntu-fonts", workflow)
         self.assertLess(
             workflow.index("scripts/generate_manual_screenshots.py"),
-            workflow.index("scripts/build_user_manual.py"),
+            workflow.index("scripts/prepare_release_manual.py"),
+        )
+        self.assertLess(
+            workflow.index("scripts/prepare_release_manual.py"),
+            workflow.index("scripts/refresh_manual_screenshots.py"),
         )
         self.assertLess(
             workflow.index("scripts/refresh_manual_screenshots.py"),

@@ -140,9 +140,12 @@ void PerformanceRenderer::render(
 
     char tempoText[6]{};
     std::uint32_t displayedBpm = state.bpm;
-    if (engineSnapshot.externalLocked &&
+    const bool externalTempoOwnsDisplay =
         (state.source == ClockSource::External || state.source == ClockSource::Auto) &&
-        engineSnapshot.externalBpmMilli != 0U) {
+        engineSnapshot.externalBpmMilli != 0U &&
+        (engineSnapshot.externalLocked ||
+         state.externalSync.lossMode == SyncLossMode::Freewheel);
+    if (externalTempoOwnsDisplay) {
         displayedBpm = (engineSnapshot.externalBpmMilli + 500U) / 1000U;
     }
     displayedBpm = std::min<std::uint32_t>(displayedBpm, config::kSupportedMaximumBpm);

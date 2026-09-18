@@ -1,6 +1,6 @@
 <!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
-# South Signal Lab CLOCK Test Coverage — v1.0.0
+# South Signal Lab CLOCK Test Coverage — v1.0.1
 
 The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 416 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
@@ -14,7 +14,7 @@ The following are mandatory:
 
 The release gates remain stringent without requiring synthetic tests for every defensive/error path. The coverage report still lists every uncovered production function and source decision so regressions remain visible during review.
 
-Current repository-wide validated baseline (`1.0.0`):
+Last complete repository-wide validated baseline before the 1.0.1 maintenance patch (`1.0.0`):
 
 ```text
 Executable lines:   7108/7365 (96.51%)
@@ -22,6 +22,8 @@ Functions:           605/615  (98.37%)
 Decision branches:  4287/4759 (90.08%)
 Compiler branches:  4288/5562 (77.09%, informational only)
 ```
+
+The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on the exact tagged source before publishing. Local pre-release verification covers the changed host renderer regression, the 96-case external-SYNC suite, release/manual tooling, documentation policies, and both headless simulator tests; the authoritative 1.0.1 repository-wide percentages are therefore produced by the release CI rather than copied forward from 1.0.0.
 
 ## Full host matrix
 

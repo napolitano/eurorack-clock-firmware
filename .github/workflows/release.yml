@@ -140,10 +140,15 @@ jobs:
             echo "Run: python scripts/prepare_release_manual.py" >&2
             exit 1
           }
+          STAMPED_MANUAL="build/release-manual/clock-user-manual.${VERSION}.stamped.odt"
           REFRESHED_MANUAL="build/release-manual/clock-user-manual.${VERSION}.odt"
           mkdir -p "$(dirname "${REFRESHED_MANUAL}")"
-          python scripts/refresh_manual_screenshots.py \
+          python scripts/prepare_release_manual.py \
+            --version "${VERSION}" \
             --source "${MANUAL_SOURCE}" \
+            --output "${STAMPED_MANUAL}"
+          python scripts/refresh_manual_screenshots.py \
+            --source "${STAMPED_MANUAL}" \
             --output "${REFRESHED_MANUAL}"
           python scripts/check_user_manual.py "${REFRESHED_MANUAL}" --version "${VERSION}"
           python scripts/build_user_manual.py \

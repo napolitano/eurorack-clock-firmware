@@ -8,7 +8,7 @@ This roadmap separates the first stable DIY release from later musical expansion
 
 ```mermaid
 flowchart LR
-    V1["NOW<br/>1.0.0<br/>Stable V1"] --> G["1.1.x<br/>Swing 2.0<br/>Groove Engine"]
+    V1["NOW<br/>1.0.1<br/>Stable V1"] --> G["1.1.x<br/>Swing 2.0<br/>Groove Engine"]
     G --> S["1.2.x<br/>Sequencer 2.0"]
     S --> E["1.3.x<br/>Euclid Auto-Fill<br/>Conditions"]
     E --> R["1.4.x<br/>Ratchet / Burst"]

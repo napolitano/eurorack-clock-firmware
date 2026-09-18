@@ -17,7 +17,7 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `1.0.0`.** V1 is feature-frozen. The stable line covers the implemented clock engine, UI, persistence, simulator, SPI display support, external SYNC/RST behavior, and release tooling. Physical HIL measurements remain tracked qualification evidence and stay advisory for automated release builds through 1.4.x; the hard HIL gate begins with 1.5.0 release candidates and stable releases.
+> **Current status: `1.0.1`.** V1 is feature-frozen. The stable line covers the implemented clock engine, UI, persistence, simulator, SPI display support, external SYNC/RST behavior, and release tooling. Physical HIL measurements remain tracked qualification evidence and stay advisory for automated release builds through 1.4.x; the hard HIL gate begins with 1.5.0 release candidates and stable releases.
 
 **HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
 
@@ -50,7 +50,7 @@ CLOCK reached **1.0** by stabilizing and qualifying the product that already exi
 
 ```mermaid
 flowchart LR
-    V1["NOW<br/>1.0.0<br/>Stable V1"] --> G["1.1<br/>Swing 2.0<br/>Grooves"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
+    V1["NOW<br/>1.0.1<br/>Stable V1"] --> G["1.1<br/>Swing 2.0<br/>Grooves"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
     V1 -. separate track .-> VCV["VCV Rack<br/>Reference port"]
 
     classDef current fill:#0B4FC0,color:#ffffff,stroke:#062F75,stroke-width:2px;
@@ -157,6 +157,8 @@ The firmware-side synchronization model supports:
 - reset input as `TRIGGER` or `GATE`.
 
 SYNC/RST edges are captured by GPIO interrupts and consumed in the deterministic scheduler. External tempo estimation is period-based and includes continuity handling, adaptive timeout and timestamp-wrap-safe arithmetic. `SMOOTHING` controls only the tempo-period averaging: `OFF` follows each valid period directly, `LOW` weights the new period 75%, `MEDIUM` 50%, and `FULL` 25%. The separate microsecond `FILTER` setting remains the electrical/glitch rejection control.
+
+With `LOSS = FREE`, both the timing engine and the Performance BPM display retain the last measured external tempo after lock is lost. `LOSS = INTERNAL` returns both to the configured internal fallback BPM; `LOSS = STOP` stops transport.
 
 > [!CAUTION]
 > Host tests prove the software semantics, not the analog input stage. Comparator thresholds, signal integrity, final timer-capture routing and resulting output jitter remain real-hardware HIL qualification items. They are reported, but do not block automated releases before 1.5.0. See [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).

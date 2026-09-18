@@ -2848,7 +2848,7 @@ std::size_t countFramebufferPixels(
 }
 
 
-void testPerformanceRendererShowsMeasuredExternalBpmWhileLocked() {
+void testPerformanceRendererShowsMeasuredExternalBpmWhileLockedAndFreewheeling() {
     resetFakes(); prepareDisplaySuccess();
 
     ClockState actualState = makeDefaultState();
@@ -2863,7 +2863,7 @@ void testPerformanceRendererShowsMeasuredExternalBpmWhileLocked() {
     CHECK(actualDisplay.begin());
     ui::PerformanceRenderer actualRenderer(actualDisplay);
     actualRenderer.render(actualState, navigation, lockedSnapshot);
-    const auto actualFrame = actualDisplay.framebufferForTest();
+    const auto lockedExternalFrame = actualDisplay.framebufferForTest();
 
     ClockState expectedState = actualState;
     expectedState.bpm = 120U;
@@ -2871,23 +2871,42 @@ void testPerformanceRendererShowsMeasuredExternalBpmWhileLocked() {
     CHECK(expectedDisplay.begin());
     ui::PerformanceRenderer expectedRenderer(expectedDisplay);
     expectedRenderer.render(expectedState, navigation, lockedSnapshot);
-    CHECK(actualFrame == expectedDisplay.framebufferForTest());
+    CHECK(lockedExternalFrame == expectedDisplay.framebufferForTest());
 
+    // FREEWHEEL keeps ownership of the last valid external tempo after lock loss.
+    // Compare two unlocked frames so the LOCK icon itself cannot affect the assertion.
     engine::EngineSnapshot unlockedSnapshot = lockedSnapshot;
     unlockedSnapshot.externalLocked = false;
-    hal::OledDisplay fallbackDisplay;
-    CHECK(fallbackDisplay.begin());
-    ui::PerformanceRenderer fallbackRenderer(fallbackDisplay);
-    fallbackRenderer.render(actualState, navigation, unlockedSnapshot);
-    CHECK(actualFrame != fallbackDisplay.framebufferForTest());
+    actualState.externalSync.lossMode = SyncLossMode::Freewheel;
+    hal::OledDisplay freewheelDisplay;
+    CHECK(freewheelDisplay.begin());
+    ui::PerformanceRenderer freewheelRenderer(freewheelDisplay);
+    freewheelRenderer.render(actualState, navigation, unlockedSnapshot);
+
+    ClockState expectedFreewheelState = actualState;
+    expectedFreewheelState.bpm = 120U;
+    hal::OledDisplay expectedFreewheelDisplay;
+    CHECK(expectedFreewheelDisplay.begin());
+    ui::PerformanceRenderer expectedFreewheelRenderer(expectedFreewheelDisplay);
+    expectedFreewheelRenderer.render(expectedFreewheelState, navigation, unlockedSnapshot);
+    CHECK(freewheelDisplay.framebufferForTest() == expectedFreewheelDisplay.framebufferForTest());
+
+    // INTERNAL loss deliberately hands the display back to the configured fallback BPM.
+    actualState.externalSync.lossMode = SyncLossMode::Internal;
+    hal::OledDisplay internalLossDisplay;
+    CHECK(internalLossDisplay.begin());
+    ui::PerformanceRenderer internalLossRenderer(internalLossDisplay);
+    internalLossRenderer.render(actualState, navigation, unlockedSnapshot);
+    CHECK(freewheelDisplay.framebufferForTest() != internalLossDisplay.framebufferForTest());
 
     ClockState internalState = actualState;
     internalState.source = ClockSource::Internal;
+    internalState.externalSync.lossMode = SyncLossMode::Freewheel;
     hal::OledDisplay internalDisplay;
     CHECK(internalDisplay.begin());
     ui::PerformanceRenderer internalRenderer(internalDisplay);
     internalRenderer.render(internalState, navigation, lockedSnapshot);
-    CHECK(actualFrame != internalDisplay.framebufferForTest());
+    CHECK(lockedExternalFrame != internalDisplay.framebufferForTest());
 }
 
 void testTapTempoPreservesClockSourceAndPersistence() {
@@ -4568,7 +4587,7 @@ int main() {
     RUN_TEST(testEngineAuditRegressions);
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
-    RUN_TEST(testPerformanceRendererShowsMeasuredExternalBpmWhileLocked);
+    RUN_TEST(testPerformanceRendererShowsMeasuredExternalBpmWhileLockedAndFreewheeling);
     RUN_TEST(testTapTempoPreservesClockSourceAndPersistence);
     RUN_TEST(testTapIndicatorStartsOnSecondTapAndRestartsEveryFollowingTap);
     RUN_TEST(testTapIndicatorRendersFourShrinkingEightPixelFramesThenClears);

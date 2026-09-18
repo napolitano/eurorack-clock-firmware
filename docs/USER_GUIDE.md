@@ -2,9 +2,9 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Release documentation — v1.0.0 · V1 feature freeze**
+> **Release documentation — v1.0.1 · stable V1 maintenance line**
 >
-> CLOCK 1.0.0 is the stable V1 firmware baseline. The clock engine, UI, persistence, simulator, final GPIO routing, interrupt-driven SYNC/RST capture path, and production SPI display path are implemented. Physical comparator thresholds, jack-level timing, gate jitter, and other bench measurements remain tracked HIL qualification evidence; they do not change the documented firmware behavior.
+> CLOCK 1.0.1 is the current stable V1 maintenance release. The clock engine, UI, persistence, simulator, final GPIO routing, interrupt-driven SYNC/RST capture path, and production SPI display path are implemented. Physical comparator thresholds, jack-level timing, gate jitter, and other bench measurements remain tracked HIL qualification evidence; they do not change the documented firmware behavior.
 
 This guide is the GitHub-readable operating reference for CLOCK. OLED screenshots are generated from the **production renderer and the real 128×64 framebuffer**, then enlarged with nearest-neighbor scaling. They are not hand-drawn UI mockups.
 
@@ -322,7 +322,7 @@ Available settings are:
 
 `FILTER` and `SMOOTHING` solve different problems. `FILTER` rejects implausibly short electrical/glitch intervals. `SMOOTHING` controls how quickly the measured tempo follows genuine period changes: `OFF` uses 100% of the newest period, `LOW` uses 75% new / 25% previous, `MEDIUM` uses 50% / 50%, and `FULL` uses 25% new / 75% previous. `LOW` is the factory default because it follows deliberate tempo moves quickly while still damping modest source jitter; `FULL` preserves the earlier, deliberately slow response.
 
-After external loss, `LOSS = STOP` stops transport and forces normal STOP gate behavior; a later valid reacquisition may restart only when transport was still armed for external operation. A manual STOP or PAUSE takes precedence and is not undone by incoming SYNC. `LOSS = FREE` continues at the last measured external BPM, while `LOSS = INTERNAL` continues at the configured internal fallback BPM. RST remains phase-only: it resets or holds phase according to `RST MODE` and never changes PLAY/PAUSE/STOP by itself.
+After external loss, `LOSS = STOP` stops transport and forces normal STOP gate behavior; a later valid reacquisition may restart only when transport was still armed for external operation. A manual STOP or PAUSE takes precedence and is not undone by incoming SYNC. `LOSS = FREE` continues at the last measured external BPM and keeps that BPM on the Performance display after lock is lost, while `LOSS = INTERNAL` continues at the configured internal fallback BPM. RST remains phase-only: it resets or holds phase according to `RST MODE` and never changes PLAY/PAUSE/STOP by itself.
 
 SYNC/RST transitions are captured by GPIO interrupts and consumed at the deterministic 20 kHz scheduler boundary. External tempo is measured in the period domain with filtering, continuity handling, adaptive timeout, and timestamp-wrap-safe arithmetic. The effective loss timeout is at least long enough for slow valid sources; for example, 20 BPM at 1 PPQN produces one pulse every 3 seconds and must not falsely unlock between pulses.
 

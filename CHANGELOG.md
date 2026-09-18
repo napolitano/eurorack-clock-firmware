@@ -10,6 +10,14 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+## [1.0.1] - 2026-09-18
+
+### External SYNC display
+
+- Keep the last measured external BPM on the Performance screen after lock loss when `LOSS = FREE`, matching the tempo that the engine actually continues to run.
+- Keep `LOSS = INTERNAL` and non-freewheel unlocked operation on the configured internal/fallback BPM.
+- Extend the framebuffer regression so locked external tempo, unlocked FREEWHEEL tempo retention, INTERNAL fallback, and INTERNAL source ownership are checked separately.
+
 ### Documentation and release tooling
 
 - Regenerate the complete deterministic OLED screenshot catalog from the exact tagged firmware source on every release build.
