@@ -10,6 +10,12 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Build and manual tooling
+
+- Standardize CI and release headless-simulator jobs on the `simulator-headless` CMake preset so the screenshot generator and prior simulator steps always use the same Ninja build tree.
+- Make manual screenshot generation recover automatically from an existing `build/simulator-headless` cache created with a different CMake generator, preventing `Ninja` versus `Unix Makefiles` cache collisions.
+- Add regression coverage for both workflow consistency and stale-generator recovery.
+
 ## [1.0.1] - 2026-09-18
 
 ### External SYNC display

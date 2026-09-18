@@ -32,6 +32,9 @@ inline constexpr std::uint16_t kMaximumBpm = 999U;
 /** Factory master meter. */
 inline constexpr MeterSettings kMasterMeter{4U, 4U};
 
+/** Factory silent master-beat pre-count before a fresh STOP -> PLAY start. */
+inline constexpr std::uint8_t kPreCountSteps = 0U;
+
 /** Factory transport state after boot. */
 inline constexpr TransportState kTransportState = TransportState::Stopped;
 

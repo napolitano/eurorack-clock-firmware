@@ -79,13 +79,13 @@ jobs:
         run: python scripts/run_host_tests.py --sanitizers-only
 
       - name: Configure headless simulator
-        run: cmake -S . -B build/simulator-headless -DCLOCK_SIMULATOR_WITH_SDL=OFF -DCMAKE_BUILD_TYPE=Debug
+        run: cmake --preset simulator-headless
 
       - name: Build headless simulator
-        run: cmake --build build/simulator-headless --config Debug
+        run: cmake --build --preset simulator-headless
 
       - name: Run simulator integration tests
-        run: ctest --test-dir build/simulator-headless -C Debug --output-on-failure
+        run: ctest --preset simulator-headless
 
       - name: Regenerate manual OLED screenshots from this release source
         run: python scripts/generate_manual_screenshots.py

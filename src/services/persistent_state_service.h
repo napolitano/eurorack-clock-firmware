@@ -38,14 +38,14 @@ public:
     /** Maximum number of user-visible characters in one preset name. */
     static constexpr std::size_t kPresetNameLength = 16U;
 
-    /** Serialized v8 payload bytes for one complete V1 ClockState. */
-    static constexpr std::size_t kCurrentStatePayloadBytes = 255U;
+    /** Serialized v9 payload bytes for one complete ClockState. */
+    static constexpr std::size_t kCurrentStatePayloadBytes = 256U;
 
-    /** Durable CURRENT record bytes: header + V1 state payload + CRC-32. */
-    static constexpr std::size_t kCurrentRecordBytes = 267U;
+    /** Durable CURRENT record bytes: header + state payload + CRC-32. */
+    static constexpr std::size_t kCurrentRecordBytes = 268U;
 
-    /** Durable named-preset record bytes: header + name + V1 state payload + CRC-32. */
-    static constexpr std::size_t kPresetRecordBytes = 283U;
+    /** Durable named-preset record bytes: header + name + state payload + CRC-32. */
+    static constexpr std::size_t kPresetRecordBytes = 284U;
 
     /** Bytes occupied by CURRENT plus all eight V1 named presets. */
     static constexpr std::size_t kSettingsPresetFootprintBytes =
@@ -186,7 +186,13 @@ private:
     static constexpr std::size_t kPresetRecordSize = kPresetRecordBytes;
 
     /** Stable CURRENT record schema version. */
-    static constexpr std::uint8_t kSchemaVersion = 8U;
+    static constexpr std::uint8_t kSchemaVersion = 9U;
+
+    /** v8 schema used by 1.0.x before persistent Pre-Count was added. */
+    static constexpr std::uint8_t kV8SchemaVersion = 8U;
+    static constexpr std::size_t kV8StatePayloadSize = 255U;
+    static constexpr std::size_t kV8CurrentRecordSize = 267U;
+    static constexpr std::size_t kV8PresetRecordSize = 283U;
 
     /** v7 schema used through the 1.0.0 release-prep before SYNC smoothing became persistent. */
     static constexpr std::uint8_t kV7SchemaVersion = 7U;
@@ -231,6 +237,12 @@ private:
     /** @brief Returns the byte offset for one preset slot. */
     static constexpr std::size_t presetOffset(const std::uint8_t slotIndex) {
         return kPresetAreaOffset + static_cast<std::size_t>(slotIndex) * kPresetRecordSize;
+    }
+
+    /** @brief Returns the byte offset used by one v8 preset slot. */
+    static constexpr std::size_t v8PresetOffset(const std::uint8_t slotIndex) {
+        return kV8CurrentRecordSize +
+            static_cast<std::size_t>(slotIndex) * kV8PresetRecordSize;
     }
 
     /** @brief Returns the byte offset used by one v7 preset slot. */
@@ -288,6 +300,22 @@ private:
     /** @brief Validates and extracts one named user preset record. */
     static bool deserializePresetRecord(
         const std::array<std::uint8_t, kPresetRecordSize>& record,
+        char* name,
+        ClockState& state);
+
+    /** @brief Upgrades a v8 state payload by injecting the factory Pre-Count length. */
+    static bool deserializeV8State(
+        const std::array<std::uint8_t, kV8StatePayloadSize>& payload,
+        ClockState& state);
+
+    /** @brief Validates and upgrades one v8 CURRENT record. */
+    static bool deserializeV8CurrentRecord(
+        const std::array<std::uint8_t, kV8CurrentRecordSize>& record,
+        ClockState& state);
+
+    /** @brief Validates and upgrades one named v8 preset record. */
+    static bool deserializeV8PresetRecord(
+        const std::array<std::uint8_t, kV8PresetRecordSize>& record,
         char* name,
         ClockState& state);
 
@@ -404,7 +432,7 @@ static_assert(
         hal::persistent_layout::kLegacyScoreRegionOffset,
     "CURRENT plus named presets overlap the legacy score region.");
 static_assert(
-    PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes == 60U,
+    PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes == 59U,
     "V1 persistence headroom changed; update the forward-compatibility analysis.");
 
 }  // namespace clockfw::services

@@ -18,6 +18,7 @@ bool isPersistentStateValid(const ClockState& state) {
         state.tempoRange.minimumBpm > state.tempoRange.maximumBpm ||
         state.bpm < state.tempoRange.minimumBpm || state.bpm > state.tempoRange.maximumBpm ||
         state.masterMeter.beats < 1U || state.masterMeter.beats > 16U ||
+        state.preCountSteps > 64U ||
         (state.masterMeter.unit != 1U && state.masterMeter.unit != 2U &&
          state.masterMeter.unit != 4U && state.masterMeter.unit != 8U &&
          state.masterMeter.unit != 16U) ||

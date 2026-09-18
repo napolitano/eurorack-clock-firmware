@@ -206,6 +206,30 @@ class ManualToolingTests(unittest.TestCase):
                     (ROOT / "docs" / "manual" / "assets" / "screensaver-clock.png").read_bytes(),
                 )
 
+    def test_manual_screenshot_generator_recovers_from_generator_mismatch(self) -> None:
+        generator = load(
+            "generate_manual_screenshots_test",
+            ROOT / "scripts" / "generate_manual_screenshots.py",
+        )
+        with tempfile.TemporaryDirectory() as directory:
+            build_dir = Path(directory) / "simulator-headless"
+            build_dir.mkdir(parents=True)
+            (build_dir / "CMakeCache.txt").write_text(
+                "CMAKE_GENERATOR:INTERNAL=Unix Makefiles\n",
+                encoding="utf-8",
+            )
+            (build_dir / "stale-artifact").write_text("stale", encoding="utf-8")
+            generator.ensure_compatible_build_tree(build_dir)
+            self.assertFalse(build_dir.exists())
+
+    def test_ci_and_release_use_headless_cmake_preset_consistently(self) -> None:
+        for workflow_name in ("ci.yml", "release.yml"):
+            workflow = (ROOT / ".github" / "workflows" / workflow_name).read_text(encoding="utf-8")
+            self.assertIn("cmake --preset simulator-headless", workflow, workflow_name)
+            self.assertIn("cmake --build --preset simulator-headless", workflow, workflow_name)
+            self.assertIn("ctest --preset simulator-headless", workflow, workflow_name)
+            self.assertNotIn("cmake -S . -B build/simulator-headless", workflow, workflow_name)
+
     def test_manual_publication_smoke_workflow_exists(self) -> None:
         workflow = ROOT / ".github" / "workflows" / "manual-publication.yml"
         self.assertTrue(workflow.is_file())

@@ -24,6 +24,9 @@ struct EngineSnapshot {
     std::uint32_t masterBeatSerial = 0U;
     std::uint8_t masterBeat = 1U;
     std::uint16_t masterBar = 1U;
+    bool preCountActive = false;
+    std::uint8_t preCountRemaining = 0U;
+    std::uint64_t preCountPhaseQ32 = 0U;
     bool externalLocked = false;
     bool externalResetHeld = false;
     std::uint32_t externalBpmMilli = 0U;
@@ -154,6 +157,7 @@ private:
         std::uint16_t bpm = 120U;
         std::uint8_t beatsPerBar = 4U;
         std::uint8_t beatUnit = 4U;
+        std::uint8_t preCountSteps = 0U;
         ClockSource source = ClockSource::Internal;
         SyncLossMode syncLossMode = SyncLossMode::Freewheel;
         OperatingMode operatingMode = OperatingMode::Independent;
@@ -242,6 +246,12 @@ private:
     /** @brief Resets master/runtime state while respecting each channel's GLOBAL/FREE policy. */
     void resetRuntime();
 
+    /** @brief Arms the silent STOP->PLAY count-in from the configured master-beat count. */
+    void startPreCountUnsafe();
+
+    /** @brief Finishes the count-in and restarts musical phase at the first audible boundary. */
+    void finishPreCountUnsafe();
+
     /** @brief Copies master and channel configuration without entering a critical section. */
     void copyConfigurationUnsafe(const ClockState& state);
 
@@ -249,6 +259,11 @@ private:
     EngineConfiguration configuration_{};
     volatile bool playing_ = true;
     volatile bool restartPending_ = true;
+    volatile bool preCountActive_ = false;
+    volatile std::uint8_t preCountRemaining_ = 0U;
+    volatile std::uint64_t preCountPhaseQ32_ = 0U;
+    volatile std::uint64_t preCountRemainder_ = 0U;
+    volatile std::uint8_t preCountExternalPulseCounter_ = 0U;
     volatile std::uint64_t masterPositionQ32_ = 0U;
     volatile std::uint64_t globalScheduleEpochQ32_ = 0U;
     volatile std::uint64_t masterBeatPhaseQ32_ = 0U;

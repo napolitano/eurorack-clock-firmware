@@ -66,7 +66,7 @@ The beta/RC line is therefore not empty. It has five concrete workstreams:
 | Hardware bring-up | complete P1 prototype, verify power path, 5 V logic, gate buffer, SYNC/RST comparator behavior and front-panel wiring | bench notes, measurements, schematic/PCB updates |
 | Timing | verify internal period accuracy, gate width, phase behavior, eight-output skew and external-SYNC behavior under representative loads | HIL captures and qualification ledger |
 | Display isolation | stress SPI while all timing engines are active; display may lose frame rate but must not own musical timing | comparative timing captures |
-| Persistence/update safety | validate CURRENT/presets, power-cycle behavior, schema-v8 persistence, schema-v7/v6 recovery and the migration contract for later schemas | host tests plus representative-device tests |
+| Persistence/update safety | validate CURRENT/presets, power-cycle behavior, schema-v9 persistence, schema-v8/v7/v6 recovery and the migration contract for later schemas | host tests plus representative-device tests |
 | Publication quality | build/flash instructions, BOM, troubleshooting, release artifacts, manual and repository docs describe the same product | CI, release checklist and manual review |
 
 ## HIL enforcement policy
@@ -83,6 +83,7 @@ The hard all-PASS HIL gate starts with **1.5.0**. Release candidates and stable 
 
 Planned scope:
 
+- configurable 1–64-beat Pre-Count with silent gate suppression and centered shrinking-circle performance overlay;
 - grid-aware classic drum-machine-style swing with a musically familiar straight-to-deep range;
 - a substantial curated factory groove library rather than a handful of renamed swing values;
 - editable custom groove patterns with deterministic per-step microtiming;
@@ -93,7 +94,7 @@ Planned scope:
 Dependencies and constraints:
 
 - event timestamps must remain monotonic and bounded by the scheduler contract;
-- custom groove persistence must use a migration-safe schema rather than silently enlarging schema v8;
+- custom groove persistence must use extension records or another migration-safe layout rather than silently enlarging the repeated schema-v9 ClockState payload;
 - the UI must remain usable on the 128×64 display without turning the performance surface into a DAW-style editor.
 
 Definition of done:

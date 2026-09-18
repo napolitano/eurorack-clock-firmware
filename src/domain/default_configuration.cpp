@@ -17,6 +17,7 @@ void initializeFactoryDefaults(ClockState& state) {
     state.bpm = defaults::kMasterBpm;
     state.tempoRange = {defaults::kMinimumBpm, defaults::kMaximumBpm};
     state.masterMeter = defaults::kMasterMeter;
+    state.preCountSteps = defaults::kPreCountSteps;
     state.transport = defaults::kTransportState;
     state.source = defaults::kClockSource;
     state.externalSync = {

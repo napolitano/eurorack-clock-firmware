@@ -63,7 +63,7 @@ std::uint8_t settingsPageItemCount(
         case SettingsPage::Diagnostics: return 2U;
         case SettingsPage::DiagnosticsInputs:
         case SettingsPage::DiagnosticsOutputs: return 0U;
-        case SettingsPage::Master: return 5U;
+        case SettingsPage::Master: return 6U;
         case SettingsPage::Sync: return 8U;
         case SettingsPage::Preferences: return 4U;
         case SettingsPage::Screensaver: return 4U;
@@ -152,9 +152,16 @@ MenuRow buildMenuRow(
         } else if (rowIndex == 3U) {
             copyText(row.label, sizeof(row.label), text::TextId::MeterBeats);
             std::snprintf(row.value, sizeof(row.value), "%u", state.masterMeter.beats);
-        } else {
+        } else if (rowIndex == 4U) {
             copyText(row.label, sizeof(row.label), text::TextId::MeterUnit);
             std::snprintf(row.value, sizeof(row.value), "%u", state.masterMeter.unit);
+        } else {
+            copyText(row.label, sizeof(row.label), text::TextId::PreCount);
+            if (state.preCountSteps == 0U) {
+                copyText(row.value, sizeof(row.value), text::TextId::Off);
+            } else {
+                std::snprintf(row.value, sizeof(row.value), "%u", state.preCountSteps);
+            }
         }
     } else if (page == SettingsPage::Sync) {
         row = buildSyncMenuRow(rowIndex, state);

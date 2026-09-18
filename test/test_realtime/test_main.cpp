@@ -117,6 +117,96 @@ void testConfiguredGateLengthsReachPhysicalGpio() {
     }
 }
 
+void testInternalPreCountSuppressesGatesAndStartsFromPhaseZero() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Internal;
+    fixture.state.bpm = 120U;
+    fixture.state.preCountSteps = 2U;
+    fixture.begin();
+
+    auto snapshot = fixture.engine.snapshot();
+    CHECK(snapshot.preCountActive);
+    CHECK_EQ(snapshot.preCountRemaining, 2U);
+    CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], LOW);
+
+    constexpr std::uint32_t kTicksPerBeatAt120 = config::kSchedulerFrequencyHz / 2U;
+    runTicks(fixture.engine, kTicksPerBeatAt120);
+    snapshot = fixture.engine.snapshot();
+    CHECK(snapshot.preCountActive);
+    CHECK_EQ(snapshot.preCountRemaining, 1U);
+    CHECK_EQ(snapshot.masterPositionQ32, 0U);
+    CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], LOW);
+
+    runTicks(fixture.engine, kTicksPerBeatAt120);
+    snapshot = fixture.engine.snapshot();
+    CHECK(!snapshot.preCountActive);
+    CHECK_EQ(snapshot.preCountRemaining, 0U);
+    CHECK_EQ(snapshot.masterPositionQ32, 0U);
+    CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], LOW);
+
+    fixture.engine.processSchedulerTick();
+    CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], HIGH);
+}
+
+void testPreCountPauseResumeContinuesInsteadOfRestarting() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Internal;
+    fixture.state.bpm = 120U;
+    fixture.state.preCountSteps = 2U;
+    fixture.begin();
+
+    constexpr std::uint32_t kTicksPerBeatAt120 = config::kSchedulerFrequencyHz / 2U;
+    runTicks(fixture.engine, kTicksPerBeatAt120);
+    CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 1U);
+    fixture.engine.pause();
+    runTicks(fixture.engine, kTicksPerBeatAt120 * 2U);
+    CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 1U);
+    fixture.engine.play();
+    runTicks(fixture.engine, kTicksPerBeatAt120);
+    CHECK(!fixture.engine.snapshot().preCountActive);
+}
+
+void testPreCountStopRestartsFullCountOnNextPlay() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::Internal;
+    fixture.state.bpm = 120U;
+    fixture.state.preCountSteps = 3U;
+    fixture.begin();
+
+    constexpr std::uint32_t kTicksPerBeatAt120 = config::kSchedulerFrequencyHz / 2U;
+    runTicks(fixture.engine, kTicksPerBeatAt120);
+    CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 2U);
+    fixture.engine.stop();
+    CHECK(!fixture.engine.snapshot().preCountActive);
+    fixture.engine.play();
+    CHECK(fixture.engine.snapshot().preCountActive);
+    CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 3U);
+}
+
+void testExternalPreCountCountsQuarterNotesAcrossPpqn() {
+    Fixture fixture;
+    fixture.state.source = ClockSource::External;
+    fixture.state.externalSync.lossMode = SyncLossMode::Freewheel;
+    fixture.state.preCountSteps = 2U;
+    fixture.begin();
+
+    for (std::uint8_t pulse = 0U; pulse < 4U; ++pulse) {
+        fixture.engine.acceptExternalPulse(120000U, 4U);
+    }
+    CHECK(fixture.engine.snapshot().preCountActive);
+    CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 1U);
+    CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], LOW);
+
+    for (std::uint8_t pulse = 0U; pulse < 4U; ++pulse) {
+        fixture.engine.acceptExternalPulse(120000U, 4U);
+    }
+    CHECK(!fixture.engine.snapshot().preCountActive);
+    CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 0U);
+    CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], LOW);
+    fixture.engine.processSchedulerTick();
+    CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], HIGH);
+}
+
 void testRepresentativeExternalTemposAndPpqn() {
     struct Case { std::uint32_t periodUs; std::uint8_t ppqn; };
     const std::array<Case, 12U> cases{{
@@ -690,6 +780,10 @@ int main() {
     UNITY_BEGIN();
     RUN_TEST(testMinuteLongMasterTimingHasNoDrift);
     RUN_TEST(testConfiguredGateLengthsReachPhysicalGpio);
+    RUN_TEST(testInternalPreCountSuppressesGatesAndStartsFromPhaseZero);
+    RUN_TEST(testPreCountPauseResumeContinuesInsteadOfRestarting);
+    RUN_TEST(testPreCountStopRestartsFullCountOnNextPlay);
+    RUN_TEST(testExternalPreCountCountsQuarterNotesAcrossPpqn);
     RUN_TEST(testRepresentativeExternalTemposAndPpqn);
     RUN_TEST(testFallingEdgeSelection);
     RUN_TEST(testGlitchesDoNotCorruptPeriodEstimator);

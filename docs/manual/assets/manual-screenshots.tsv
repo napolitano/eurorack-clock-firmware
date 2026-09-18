@@ -10,6 +10,8 @@ performance-independent-off	Independent channel disabled
 performance-independent-euclid-play	Independent Euclid channel while playing
 performance-independent-sequencer-play	Independent 64-step Sequencer while playing
 performance-one-clock-play	One Clock mode with Humanize while playing
+performance-pre-count-start	Pre-Count overlay at the start of a count beat
+performance-pre-count-shrink	Pre-Count overlay shrinking through the active beat
 performance-divider-bank-play	Divider Bank in prime-divider mode while playing
 performance-external-unlocked	External clock source before lock
 performance-external-locked	External clock source with lock

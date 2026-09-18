@@ -9,6 +9,8 @@ from __future__ import annotations
 
 import argparse
 import binascii
+import json
+import shutil
 import struct
 import subprocess
 import sys
@@ -21,12 +23,48 @@ DEFAULT_OUTPUT = ROOT / "docs" / "manual" / "assets"
 BUILD_DIR = ROOT / "build" / "simulator-headless"
 GENERATOR_BASENAME = "clock-manual-screenshot-generator"
 MANIFEST_NAME = "manual-screenshots.tsv"
+PRESET_NAME = "simulator-headless"
 
 
 def run(command: list[str]) -> None:
     """Execute one subprocess and fail immediately on errors."""
     print("+", " ".join(command))
     subprocess.run(command, cwd=ROOT, check=True)
+
+
+def preset_generator() -> str:
+    """Return the generator declared by the headless simulator configure preset."""
+    presets = json.loads((ROOT / "CMakePresets.json").read_text(encoding="utf-8"))
+    for preset in presets.get("configurePresets", []):
+        if preset.get("name") == PRESET_NAME:
+            generator = preset.get("generator")
+            if not generator:
+                raise RuntimeError(f"CMake preset {PRESET_NAME!r} does not declare a generator")
+            return str(generator)
+    raise RuntimeError(f"CMake configure preset {PRESET_NAME!r} was not found")
+
+
+def configured_generator(build_dir: Path) -> str | None:
+    """Read the generator recorded in an existing CMake build tree, if present."""
+    cache = build_dir / "CMakeCache.txt"
+    if not cache.is_file():
+        return None
+    for line in cache.read_text(encoding="utf-8", errors="replace").splitlines():
+        if line.startswith("CMAKE_GENERATOR:INTERNAL="):
+            return line.split("=", 1)[1].strip()
+    return None
+
+
+def ensure_compatible_build_tree(build_dir: Path = BUILD_DIR) -> None:
+    """Remove a stale headless build tree when it was configured with another generator."""
+    current = configured_generator(build_dir)
+    expected = preset_generator()
+    if current is not None and current != expected:
+        print(
+            f"Removing incompatible CMake build tree {build_dir}: "
+            f"configured with {current!r}, preset requires {expected!r}"
+        )
+        shutil.rmtree(build_dir)
 
 
 def generator_path() -> Path:
@@ -153,8 +191,9 @@ def generate(output_dir: Path, scale: int) -> int:
     if scale < 1:
         raise ValueError("scale must be at least 1")
 
-    run(["cmake", "--preset", "simulator-headless"])
-    run(["cmake", "--build", "--preset", "simulator-headless", "--target", GENERATOR_BASENAME])
+    ensure_compatible_build_tree()
+    run(["cmake", "--preset", PRESET_NAME])
+    run(["cmake", "--build", "--preset", PRESET_NAME, "--target", GENERATOR_BASENAME])
 
     executable = generator_path()
     if not executable.exists():

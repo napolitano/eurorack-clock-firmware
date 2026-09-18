@@ -90,6 +90,26 @@ void ClockEngine::acceptExternalPulseUnsafe(
         pulsesPerQuarterNote = 1U;
     }
 
+    if (preCountActive_) {
+        ++preCountExternalPulseCounter_;
+        if (preCountExternalPulseCounter_ >= pulsesPerQuarterNote) {
+            preCountExternalPulseCounter_ = 0U;
+            preCountPhaseQ32_ = 0U;
+            preCountRemainder_ = 0U;
+            if (preCountRemaining_ > 0U) {
+                --preCountRemaining_;
+            }
+            if (preCountRemaining_ == 0U) {
+                finishPreCountUnsafe();
+                externalReferenceQ32_ = masterPositionQ32_;
+                externalMusicalPositionQ32_ = 0U;
+                externalPulseRemainder_ = 0U;
+                externalPhaseInitialized_ = true;
+            }
+        }
+        return;
+    }
+
     if (!externalPhaseInitialized_) {
         externalReferenceQ32_ = masterPositionQ32_;
         externalMusicalPositionQ32_ = 0U;

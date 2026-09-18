@@ -70,6 +70,12 @@ private:
     /** @brief Draws one 8x8 shrinking Tap Tempo feedback frame beside the BPM. */
     void drawTapIndicator(std::int16_t x, std::int16_t y, std::uint8_t frame);
 
+    /** @brief Draws the centered shrinking silent count-in overlay. */
+    void drawPreCountOverlay(const engine::EngineSnapshot& engineSnapshot);
+
+    /** @brief Applies transient Performance overlays and presents the completed frame. */
+    void presentPerformanceFrame(const engine::EngineSnapshot& engineSnapshot);
+
     /** @brief Returns the one-character O/C/E/S status abbreviation for one channel mode. */
     static char statusModeCharacter(ChannelMode mode);
 

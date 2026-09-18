@@ -13,6 +13,7 @@
 #include <stdexcept>
 #include <string>
 
+#include "clock_core.h"
 #include "domain/default_configuration.h"
 #include "engine/clock_engine.h"
 #include "game/breakout_game.h"
@@ -212,6 +213,17 @@ private:
 
         reset();
         state_.transport = TransportState::Playing;
+        state_.operatingMode = OperatingMode::UnifiedClock;
+        state_.preCountSteps = 8U;
+        snapshot_.preCountActive = true;
+        snapshot_.preCountRemaining = 8U;
+        snapshot_.preCountPhaseQ32 = 0U;
+        renderCurrent("performance-pre-count-start", "Pre-Count overlay at the start of a count beat");
+        snapshot_.preCountPhaseQ32 = (core::kQ32One * 3ULL) / 4ULL;
+        renderCurrent("performance-pre-count-shrink", "Pre-Count overlay shrinking through the active beat");
+
+        reset();
+        state_.transport = TransportState::Playing;
         state_.operatingMode = OperatingMode::DividerBank;
         state_.dividerBank.bank = DividerBank::Primes;
         navigation_.selectedChannel = 7U;
@@ -350,6 +362,11 @@ private:
             navigation_.screen = ui::Screen::Settings;
             navigation_.settingsPage = kPages[index];
             navigation_.cursor = 0U;
+            if (kPages[index] == ui::SettingsPage::Master) {
+                state_.preCountSteps = 8U;
+                navigation_.cursor = 5U;
+                navigation_.scrollOffset = 2U;
+            }
             if (kPages[index] == ui::SettingsPage::Sync) {
                 // Keep the release-manual screenshot focused on the timing controls
                 // most likely to change between releases, including SMOOTHING.

@@ -161,7 +161,7 @@ def check_v1_scope_contract(errors: list[str]) -> None:
         ROOT / 'docs/USER_GUIDE.md': ('Product boundary: timing rather than analog CV', 'not a missing V1 feature'),
         ROOT / 'docs/CONFIGURATION.md': ('Analog/CV product boundary', '16-bit DAC-class'),
         ROOT / 'docs/ROADMAP.md': ('V1 feature freeze', 'digital timing, gate, and trigger'),
-        ROOT / 'docs/V1_FORWARD_COMPATIBILITY.md': ('2,531 bytes', '60 bytes', 'schema v8'),
+        ROOT / 'docs/V1_FORWARD_COMPATIBILITY.md': ('2,540 bytes', '59 bytes', 'schema v9'),
     }
     for path, needles in required.items():
         if not path.is_file():

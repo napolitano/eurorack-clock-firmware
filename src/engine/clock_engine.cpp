@@ -82,7 +82,14 @@ void ClockEngine::updateChannel(
 
 void ClockEngine::play() {
     hal::InterruptLock interruptLock;
+    if (playing_) {
+        return;
+    }
+    const bool freshStart = restartPending_;
     playing_ = true;
+    if (freshStart) {
+        startPreCountUnsafe();
+    }
 }
 
 void ClockEngine::pause() {
@@ -97,6 +104,11 @@ void ClockEngine::pause() {
 void ClockEngine::stop() {
     hal::InterruptLock interruptLock;
     playing_ = false;
+    preCountActive_ = false;
+    preCountRemaining_ = 0U;
+    preCountPhaseQ32_ = 0U;
+    preCountRemainder_ = 0U;
+    preCountExternalPulseCounter_ = 0U;
     for (std::size_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
         setGateState(channelIndex, false);
     }
@@ -133,6 +145,32 @@ void ClockEngine::processSchedulerTick() {
     if (configuration_.source == ClockSource::External &&
         !externalLocked_ &&
         configuration_.syncLossMode == SyncLossMode::Stop) {
+        return;
+    }
+
+    if (preCountActive_) {
+        const std::uint64_t preCountIncrementQ32 = core::calculateMasterIncrementMilliBpmQ32(
+            effectiveBpmMilli(),
+            configuration_.beatUnit,
+            config::kSchedulerFrequencyHz,
+            preCountRemainder_);
+        preCountPhaseQ32_ += preCountIncrementQ32;
+
+        const bool drivenByExternalPulses =
+            configuration_.source != ClockSource::Internal && externalLocked_;
+        while (preCountPhaseQ32_ >= core::kQ32One) {
+            preCountPhaseQ32_ -= core::kQ32One;
+            if (drivenByExternalPulses) {
+                continue;
+            }
+            if (preCountRemaining_ > 0U) {
+                --preCountRemaining_;
+            }
+            if (preCountRemaining_ == 0U) {
+                finishPreCountUnsafe();
+                break;
+            }
+        }
         return;
     }
 
@@ -188,6 +226,9 @@ EngineSnapshot ClockEngine::snapshot() const {
     result.masterBeatSerial = masterBeatSerial_;
     result.masterBeat = masterBeat_;
     result.masterBar = masterBar_;
+    result.preCountActive = preCountActive_;
+    result.preCountRemaining = preCountRemaining_;
+    result.preCountPhaseQ32 = preCountPhaseQ32_;
     result.externalLocked = externalLocked_;
     result.externalResetHeld = externalResetGate_;
     result.externalBpmMilli = externalBpmMilli_;
@@ -342,6 +383,21 @@ void ClockEngine::scheduleChannelFromCurrentPosition(
             : static_cast<std::uint8_t>((eventSerial - 1ULL) % cycleLength);
     }
 }
+void ClockEngine::startPreCountUnsafe() {
+    preCountRemaining_ = configuration_.preCountSteps;
+    preCountPhaseQ32_ = 0U;
+    preCountRemainder_ = 0U;
+    preCountExternalPulseCounter_ = 0U;
+    preCountActive_ = preCountRemaining_ != 0U;
+}
+void ClockEngine::finishPreCountUnsafe() {
+    preCountActive_ = false;
+    preCountRemaining_ = 0U;
+    preCountPhaseQ32_ = 0U;
+    preCountRemainder_ = 0U;
+    preCountExternalPulseCounter_ = 0U;
+    resetRuntime();
+}
 
 void ClockEngine::resetRuntime() {
 #ifdef CLOCK_HOST_TEST
@@ -377,6 +433,7 @@ void ClockEngine::copyConfigurationUnsafe(const ClockState& state) {
     configuration_.bpm = state.bpm;
     configuration_.beatsPerBar = state.masterMeter.beats;
     configuration_.beatUnit = state.masterMeter.unit;
+    configuration_.preCountSteps = state.preCountSteps;
     configuration_.source = state.source;
     configuration_.syncLossMode = state.externalSync.lossMode;
     configuration_.operatingMode = state.operatingMode;

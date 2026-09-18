@@ -181,6 +181,8 @@ struct ClockState {
     std::uint16_t bpm = 120U;
     TempoRangeSettings tempoRange{};
     MeterSettings masterMeter{4U, 4U};
+    /** Number of silent master beats counted before a STOP->PLAY start emits gates. */
+    std::uint8_t preCountSteps = 0U;
     TransportState transport = TransportState::Stopped;
     ClockSource source = ClockSource::Auto;
     ExternalSyncSettings externalSync{};

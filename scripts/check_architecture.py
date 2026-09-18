@@ -33,6 +33,8 @@ MAX_CPP_LINES = 450
 IMPLEMENTATION_COMPANION_HEADERS = {
     "persistent_state_codec.cpp": "persistent_state_service.h",
     "persistent_state_migration.cpp": "persistent_state_service.h",
+    "persistent_state_migration_v8.cpp": "persistent_state_service.h",
+    "persistent_state_service_begin.cpp": "persistent_state_service.h",
     "oled_display_transport.cpp": "oled_display.h",
     "oled_display_controller_model.cpp": "oled_display.h",
     "screensaver_spectrum.cpp": "screensaver_renderer.h",
@@ -47,6 +49,7 @@ IMPLEMENTATION_COMPANION_HEADERS = {
     "egg_journey_render.cpp": "egg_journey_game.h",
     "clock_engine_timing.cpp": "clock_engine.h",
     "clock_engine_sync.cpp": "clock_engine.h",
+    "performance_renderer_precount.cpp": "performance_renderer.h",
     "ui_controller_navigation.cpp": "ui_controller.h",
     "ui_controller_display.cpp": "ui_controller.h",
     "ui_controller_presets.cpp": "ui_controller.h",

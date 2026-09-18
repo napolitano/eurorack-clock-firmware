@@ -299,6 +299,12 @@ Transport has three states: **PLAY, PAUSE, STOP**.
 
 CLOCK persists the working configuration but never restores PLAY on power-up. Flash commits are also deferred while transport is PLAYING so erase/program work cannot block the live gate path.
 
+### Pre-Count
+
+`SETTINGS → MODE & CLOCK → PRE COUNT` controls an optional silent count-in. `OFF` preserves the immediate-start behavior; active values run from **1 through 64 beats**. A fresh STOP→PLAY starts the count at the configured master tempo. During the count-in CLOCK advances only the count-in timing reference: **all eight gate outputs remain LOW and the musical pattern position remains at phase zero**. PAUSE freezes an active count and PLAY resumes it; STOP cancels it, so the next PLAY starts the full configured count again.
+
+While Pre-Count is active, the Performance screen keeps the normal context visible outside a centered overlay. A large outlined circle contains the remaining beat count and shrinks over each beat; the next beat restores the full circle with the decremented number. When the count reaches zero the overlay disappears and normal gate generation starts from the shared phase-zero boundary. With a locked external clock, Pre-Count counts incoming quarter-note time according to the configured PPQN rather than free-running from the fallback BPM.
+
 ## 17. External SYNC and RST
 
 Open `SETTINGS → GENERAL SETTINGS → SYNC` to configure external timing.

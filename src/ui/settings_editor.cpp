@@ -180,6 +180,10 @@ void SettingsEditor::adjustMaster(const std::uint8_t rowIndex, const std::int8_t
             static_cast<int>(kBeatUnitOptions.size() - 1U)));
         state_.masterMeter.unit = kBeatUnitOptions[newIndex];
         engine_.updateConfiguration(state_, true);
+    } else if (rowIndex == 5U) {
+        state_.preCountSteps = static_cast<std::uint8_t>(clampInt(
+            static_cast<int>(state_.preCountSteps) + delta, 0, 64));
+        engine_.updateConfiguration(state_, false);
     }
 }
 

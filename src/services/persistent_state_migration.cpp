@@ -1,6 +1,6 @@
 /**
  * @file persistent_state_migration.cpp
- * @brief Backward-compatible v3/v4/v5/v6/v7 to v8 persistence migration helpers.
+ * @brief Backward-compatible v3/v4/v5/v6/v7/v8 to v9 persistence migration helpers.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -43,15 +43,16 @@ bool isAllowedLegacyPresetCharacter(const char character) {
 
 
 
+
 bool PersistentStateService::deserializeV7State(
     const std::array<std::uint8_t, kV7StatePayloadSize>& payload,
     ClockState& state) {
-    static_assert(kStatePayloadSize == kV7StatePayloadSize + 1U);
+    static_assert(kV8StatePayloadSize == kV7StatePayloadSize + 1U);
 
-    std::array<std::uint8_t, kStatePayloadSize> upgraded{};
+    std::array<std::uint8_t, kV8StatePayloadSize> upgraded{};
     std::copy(payload.begin(), payload.end(), upgraded.begin());
     upgraded[kV7StatePayloadSize] = static_cast<std::uint8_t>(defaults::kExternalSyncSmoothing);
-    return deserializeState(upgraded, state);
+    return deserializeV8State(upgraded, state);
 }
 
 bool PersistentStateService::deserializeV7CurrentRecord(
