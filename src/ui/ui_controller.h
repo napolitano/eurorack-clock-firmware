@@ -185,6 +185,8 @@ private:
     std::uint32_t lastRenderAtMs_ = 0U;
     std::uint8_t lastRenderedChannelStep_ = 0xFFU;
     bool lastRenderedExternalLocked_ = false;
+    bool lastRenderedPreCountActive_ = false;
+    std::uint8_t lastRenderedPreCountRemaining_ = 0U;
     bool hasRenderedEngineStatus_ = false;
     DiagnosticSnapshot lastDiagnosticSnapshot_{};
     bool hasRenderedDiagnosticSnapshot_ = false;

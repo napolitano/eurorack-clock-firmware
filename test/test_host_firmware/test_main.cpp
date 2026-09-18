@@ -2947,6 +2947,81 @@ void testPerformanceRendererShowsCenteredShrinkingPreCountOverlay() {
     CHECK(display.framebufferForTest() == normalFrame);
 }
 
+void testPreCountAnimationInvalidatesFramesAndClearsOnCompletion() {
+    resetFakes();
+    prepareDisplaySuccess();
+
+    hal::OledDisplay display;
+    CHECK(display.begin());
+    ClockState state = makeDefaultState();
+    state.preCountSteps = 2U;
+    state.transport = TransportState::Stopped;
+
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    engine::ClockEngine engine(gates);
+    engine.begin(state);
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    services::PersistentStateService persistence(storage);
+    persistence.begin();
+    ui::UiRenderer renderer(display, persistence);
+    ui::UiController controller(state, engine, renderer, persistence);
+
+    std::uint32_t nowMs = 1000U;
+    controller.invalidate();
+    controller.serviceRendering(nowMs);
+
+    hal::ControlSample sample{};
+    sample.transportButton = pressedEdge();
+    controller.processControls(sample, ++nowMs);
+    CHECK_EQ(state.transport, TransportState::Playing);
+    CHECK(engine.snapshot().preCountActive);
+
+    nowMs += config::kDisplayRefreshMinimumMs + 1U;
+    controller.serviceRendering(nowMs);
+    const auto initialCountFrame = display.framebufferForTest();
+
+    const std::uint32_t ticksPerBeat = static_cast<std::uint32_t>(
+        (60ULL * config::kSchedulerFrequencyHz) / state.bpm);
+    runEngineTicks(engine, ticksPerBeat / 2U);
+    nowMs += 300U;
+
+    // No explicit controller.invalidate(): the phase-driven overlay must keep
+    // requesting frames by itself while Pre-Count is advancing.
+    controller.serviceRendering(nowMs);
+    const auto animatedCountFrame = display.framebufferForTest();
+    CHECK(animatedCountFrame != initialCountFrame);
+
+    // PAUSE freezes the Pre-Count phase; background scheduler ticks must not make
+    // the overlay move until PLAY resumes.
+    sample = {};
+    sample.transportButton = pressedEdge();
+    controller.processControls(sample, ++nowMs);
+    CHECK_EQ(state.transport, TransportState::Paused);
+    nowMs += config::kDisplayRefreshMinimumMs + 1U;
+    controller.serviceRendering(nowMs);
+    const auto pausedFrame = display.framebufferForTest();
+    runEngineTicks(engine, ticksPerBeat / 2U);
+    nowMs += 300U;
+    controller.serviceRendering(nowMs);
+    CHECK(display.framebufferForTest() == pausedFrame);
+
+    sample = {};
+    sample.transportButton = pressedEdge();
+    controller.processControls(sample, ++nowMs);
+    CHECK_EQ(state.transport, TransportState::Playing);
+    runEngineTicks(engine, ticksPerBeat * 2U);
+    CHECK(!engine.snapshot().preCountActive);
+
+    // Completion is another engine-only state edge. The controller must redraw
+    // once more to erase the final circle and return to the normal Performance UI.
+    const auto staleOverlayFrame = display.framebufferForTest();
+    nowMs += 1100U;
+    controller.serviceRendering(nowMs);
+    CHECK(display.framebufferForTest() != staleOverlayFrame);
+}
+
 void testPerformanceRendererShowsMeasuredExternalBpmWhileLockedAndFreewheeling() {
     resetFakes(); prepareDisplaySuccess();
 
@@ -4687,6 +4762,7 @@ int main() {
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
     RUN_TEST(testPerformanceRendererShowsCenteredShrinkingPreCountOverlay);
+    RUN_TEST(testPreCountAnimationInvalidatesFramesAndClearsOnCompletion);
     RUN_TEST(testPerformanceRendererShowsMeasuredExternalBpmWhileLockedAndFreewheeling);
     RUN_TEST(testTapTempoPreservesClockSourceAndPersistence);
     RUN_TEST(testTapIndicatorStartsOnSecondTapAndRestartsEveryFollowingTap);

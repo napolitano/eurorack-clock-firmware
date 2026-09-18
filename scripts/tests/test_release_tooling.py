@@ -176,8 +176,8 @@ class ProjectMetadataTests(unittest.TestCase):
         self.assertIn("test_settings=62", result.stdout)
         self.assertIn("test_screensavers=19", result.stdout)
         self.assertIn("test_easter_eggs=36", result.stdout)
-        self.assertIn("test_host_firmware=30", result.stdout)
-        self.assertIn("total=424", result.stdout)
+        self.assertIn("test_host_firmware=31", result.stdout)
+        self.assertIn("total=425", result.stdout)
 
 
 

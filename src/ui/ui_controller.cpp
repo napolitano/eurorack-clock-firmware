@@ -91,66 +91,6 @@ void UiController::processControls(
     }
 }
 
-void UiController::serviceRendering(const std::uint32_t nowMs) {
-    serviceTapTempoFeedback(nowMs);
-    if (serviceStopModeDisplay(nowMs)) {
-        return;
-    }
-
-    const engine::EngineSnapshot snapshot = engine_.snapshot();
-
-    if (navigation_.screen == Screen::Performance) {
-        const ChannelMode mode = state_.operatingMode == OperatingMode::Independent
-            ? state_.channels[navigation_.selectedChannel].common.mode
-            : ChannelMode::Clock;
-        const std::uint8_t currentStep = snapshot.channelStep[navigation_.selectedChannel];
-        const bool playbackStepIsVisible =
-            state_.operatingMode == OperatingMode::Independent &&
-            (mode == ChannelMode::Euclid || mode == ChannelMode::Sequencer);
-
-        if (!hasRenderedEngineStatus_ ||
-            snapshot.externalLocked != lastRenderedExternalLocked_ ||
-            (playbackStepIsVisible && currentStep != lastRenderedChannelStep_)) {
-            invalidate();
-        }
-        lastRenderedExternalLocked_ = snapshot.externalLocked;
-        lastRenderedChannelStep_ = currentStep;
-        hasRenderedEngineStatus_ = true;
-    }
-
-    DiagnosticSnapshot diagnostics{};
-    const bool diagnosticsVisible =
-        navigation_.screen == Screen::Settings &&
-        (navigation_.settingsPage == SettingsPage::DiagnosticsInputs ||
-         navigation_.settingsPage == SettingsPage::DiagnosticsOutputs);
-    if (diagnosticsVisible) {
-        if (externalInputs_ != nullptr) {
-            diagnostics.syncHigh = externalInputs_->syncLevelHigh();
-            diagnostics.resetHigh = externalInputs_->resetLevelHigh();
-        }
-        if (gateOutputs_ != nullptr) {
-            for (std::size_t index = 0U; index < diagnostics.outputs.size(); ++index) {
-                diagnostics.outputs[index] = gateOutputs_->channelStateHigh(index);
-            }
-        }
-        if (!hasRenderedDiagnosticSnapshot_ || diagnostics != lastDiagnosticSnapshot_) {
-            invalidate();
-        }
-        lastDiagnosticSnapshot_ = diagnostics;
-        hasRenderedDiagnosticSnapshot_ = true;
-    } else {
-        hasRenderedDiagnosticSnapshot_ = false;
-    }
-
-    if (!renderDirty_ || nowMs - lastRenderAtMs_ < config::kDisplayRefreshMinimumMs) {
-        return;
-    }
-
-    renderer_.render(state_, navigation_, snapshot, diagnostics);
-    lastRenderAtMs_ = nowMs;
-    renderDirty_ = false;
-}
-
 const NavigationState& UiController::navigation() const {
     return navigation_;
 }

@@ -22,8 +22,8 @@ This is the developer-facing Native entry point. Beta.4 deliberately makes timin
 | `test_settings` | 62 | settings boundaries, encoder/display device preferences, enum transitions, invariants and channel/mode editor contracts |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | intro launch gating, reset state, output safety and game-specific controls |
-| `test_host_firmware` | 30 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
-| **Total** | **424** | public Native inventory |
+| `test_host_firmware` | 31 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
+| **Total** | **425** | public Native inventory |
 
 The default Native configuration executes more than **223,000 assertions**. `scripts/check_test_inventory.py` rejects a total regression below 340 cases and also enforces minimum sizes for every visible suite.
 

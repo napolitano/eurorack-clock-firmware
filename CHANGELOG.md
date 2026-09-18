@@ -10,6 +10,13 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Pre-Count display
+
+- Keep the Performance-screen Pre-Count overlay animating from the live engine phase instead of rendering only on unrelated UI invalidations.
+- Force a final redraw when Pre-Count completes so the shrinking circle and count value are removed immediately.
+- Freeze redraw churn while PAUSED, then resume phase-driven animation on PLAY.
+- Add a controller-level regression covering animation progress, PAUSE freeze, resume, and overlay cleanup without explicit UI invalidation.
+
 ### Build and manual tooling
 
 - Standardize CI and release headless-simulator jobs on the `simulator-headless` CMake preset so the screenshot generator and prior simulator steps always use the same Ninja build tree.
