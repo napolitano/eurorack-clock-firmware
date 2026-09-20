@@ -85,6 +85,7 @@ Planned scope and implementation sequence:
 
 - configurable 1–64-beat Pre-Count with silent gate suppression and a centered static popover that shows the remaining count plus meter-step progress; external Pre-Count uses the configured master-meter beat unit, not a hard-coded quarter note;
 - **Stage 1 — preset-based Groove Engine (implemented in current 1.1 development):** read-only factory groove library with explicit `OFF`; in **One Clock** the selected groove is global, while **Independent** owns it per channel. Divider Bank remains groove-free;
+- **Stage-1 UI contract:** active Groove is surfaced on Performance as `G:<preset>` (lower-left for Clock/One Clock, above the step strip for Euclid/Sequencer). Channel settings are flattened into non-selectable visual sections ordered by musical relevance: Timing first for Clock/One Clock; mode controls first for Euclid/Sequencer; Output last. Rate and Clock meter values are edited in place; `GROOVE >` and Sequencer `PATTERN >` remain focused submenus;
 - grid-aware classic drum-machine-style swing with a musically familiar straight-to-deep range;
 - Groove Amount to scale a stored pattern from straight through exaggerated timing;
 - pattern rotation/phase so related channels can share one groove with different starting positions;

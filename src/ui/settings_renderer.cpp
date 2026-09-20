@@ -15,6 +15,7 @@
 
 #include "services/template_service.h"
 #include "ui/menu_model.h"
+#include "ui/menu_model_channel.h"
 #include "ui/preset_name_alphabet.h"
 #include "ui_text.h"
 
@@ -62,7 +63,6 @@ void drawUpdateQr(hal::OledDisplay& display) {
 }  // namespace
 
 SettingsRenderer::SettingsRenderer(hal::OledDisplay& display) : display_(display) {}
-
 namespace {
 
 void drawDiagnosticBox(
@@ -164,15 +164,38 @@ void SettingsRenderer::renderSettings(
     }
 
     display_.drawHorizontalLine(0, 9, hal::OledDisplay::kWidth);
+    const ChannelMode channelMode = state.channels[navigation.selectedChannel].common.mode;
     const std::uint8_t itemCount = settingsPageItemCount(
         navigation.settingsPage,
-        state.channels[navigation.selectedChannel].common.mode,
+        channelMode,
         navigation.highScoreResetAvailable);
+    const bool groupedPage = navigation.settingsPage == SettingsPage::Channel ||
+        navigation.settingsPage == SettingsPage::UnifiedClock;
+    const std::uint8_t visibleRows = groupedPage ? 3U : kVisibleSettingsRows;
+    std::int16_t y = 11;
+    SettingsSection renderedSection = SettingsSection::None;
 
-    for (std::uint8_t visibleRow = 0U; visibleRow < kVisibleSettingsRows; ++visibleRow) {
+    for (std::uint8_t visibleRow = 0U; visibleRow < visibleRows; ++visibleRow) {
         const std::uint8_t rowIndex = navigation.scrollOffset + visibleRow;
         if (rowIndex >= itemCount) {
             break;
+        }
+
+        if (groupedPage) {
+            const SettingsSection section = settingsRowSection(
+                navigation.settingsPage, channelMode, rowIndex);
+            if (section != SettingsSection::None && section != renderedSection) {
+                display_.drawText(1, y, settingsSectionLabel(section));
+                const hal::TextBounds headingBounds = display_.measureText(
+                    settingsSectionLabel(section), 0, y);
+                const std::int16_t lineX = static_cast<std::int16_t>(
+                    4 + static_cast<std::int16_t>(headingBounds.width));
+                if (lineX < 123) {
+                    display_.drawHorizontalLine(lineX, static_cast<std::int16_t>(y + 4), 123 - lineX);
+                }
+                y = static_cast<std::int16_t>(y + 7);
+                renderedSection = section;
+            }
         }
 
         const MenuRow row = buildMenuRow(
@@ -181,7 +204,6 @@ void SettingsRenderer::renderSettings(
             navigation.selectedChannel,
             state,
             navigation.highScoreResetAvailable);
-        const std::int16_t y = static_cast<std::int16_t>(11 + static_cast<int>(visibleRow) * 10);
         const bool selected = rowIndex == navigation.cursor;
 
         if (selected) {
@@ -189,29 +211,28 @@ void SettingsRenderer::renderSettings(
         }
         display_.drawText(8, y, row.label);
 
-        if (row.value[0] == '\0') {
-            continue;
+        if (row.value[0] != '\0') {
+            const hal::TextBounds valueBounds = display_.measureText(row.value, 0, y);
+            const std::int16_t valueX = 121 - static_cast<std::int16_t>(valueBounds.width);
+            if (selected && navigation.editing) {
+                display_.fillRectangle(valueX - 1, y - 1, static_cast<std::int16_t>(valueBounds.width + 2U), 9);
+                display_.setTextColor(hal::PixelColor::Black);
+                display_.drawText(valueX, y, row.value);
+                display_.setTextColor(hal::PixelColor::White);
+            } else {
+                display_.drawText(valueX, y, row.value);
+            }
         }
-
-        const hal::TextBounds valueBounds = display_.measureText(row.value, 0, y);
-        const std::int16_t valueX = 121 - static_cast<std::int16_t>(valueBounds.width);
-        if (selected && navigation.editing) {
-            display_.fillRectangle(valueX - 1, y - 1, static_cast<std::int16_t>(valueBounds.width + 2U), 9);
-            display_.setTextColor(hal::PixelColor::Black);
-            display_.drawText(valueX, y, row.value);
-            display_.setTextColor(hal::PixelColor::White);
-        } else {
-            display_.drawText(valueX, y, row.value);
-        }
+        y = static_cast<std::int16_t>(y + (groupedPage ? 9 : 10));
     }
 
-    if (itemCount > kVisibleSettingsRows) {
+    if (itemCount > visibleRows) {
         constexpr std::int16_t kScrollY = 11;
         constexpr std::int16_t kScrollHeight = 50;
         display_.drawVerticalLine(127, kScrollY, kScrollHeight);
 
         const std::uint8_t thumbHeight = static_cast<std::uint8_t>(
-            (kScrollHeight * kVisibleSettingsRows) / itemCount);
+            (kScrollHeight * visibleRows) / itemCount);
         const std::uint8_t thumbY = static_cast<std::uint8_t>(
             static_cast<unsigned>(kScrollY) +
             ((static_cast<unsigned>(kScrollHeight) - thumbHeight) * navigation.cursor) /

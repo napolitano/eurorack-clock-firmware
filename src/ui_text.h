@@ -256,6 +256,10 @@ enum class TextId : std::uint16_t {
     Groove,
     GroovePreset,
     Amount,
+    Pattern,
+    Timing,
+    Output,
+    GroovePrefix,
     Count
 };
 
@@ -298,7 +302,7 @@ inline constexpr TextCatalog kEnglishUs{{
     "PRESETS", "DISPLAY", "SYSTEM", "GENERAL SETTINGS", "DIAGNOSTICS", "INPUTS", "OUTPUTS", "RST", "CHANNEL SETTINGS", "LICENSES", "UPDATES",
     "RST MODE", "TRIGGER", "GATE",
     "ENCODER DIR", "NORMAL", "REVERSED", "ORIENTATION", "0 DEG", "180 DEG",
-    "HI-SCORES", "CLEAR HI-SCORES?", "GROOVE", "PRESET", "AMOUNT"
+    "HI-SCORES", "CLEAR HI-SCORES?", "GROOVE", "PRESET", "AMOUNT", "PATTERN", "TIMING", "OUTPUT", "G:"
 }};
 
 /**

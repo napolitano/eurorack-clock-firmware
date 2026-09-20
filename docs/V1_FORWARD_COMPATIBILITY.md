@@ -29,14 +29,14 @@ The boundaries are now centralized in `src/hal/persistent_layout.h` and guarded 
 
 ## Exact V1 state budget
 
-Current development schema v9 uses:
+Current development schema v10 uses:
 
-- serialized `ClockState` payload: **256 bytes**;
-- CURRENT record: **268 bytes**;
-- one named preset record: **284 bytes**;
-- CURRENT + eight presets: **2,540 bytes**.
+- serialized `ClockState` payload: **283 bytes**;
+- CURRENT record: **295 bytes**;
+- one named preset record: **311 bytes**;
+- CURRENT + eight presets: **2,783 bytes**.
 
-The next fixed region begins at byte 3,072, so only **532 bytes** remain between the current preset area and the legacy-score compatibility region.
+The next fixed region begins at byte 3,072, so only **289 bytes** remain between the current preset area and the legacy-score compatibility region.
 
 Every byte added naively to the serialized ClockState payload is repeated once in CURRENT and once in each of eight presets. It therefore consumes **9 logical-image bytes**. The maximum safe in-place payload growth before colliding with the next region is only:
 
@@ -44,11 +44,11 @@ Every byte added naively to the serialized ClockState payload is repeated once i
 floor(289 / 9) = 32 bytes
 ```
 
-This is now a tested V1 contract (`kMaximumInPlaceStatePayloadGrowthBytes == 59`). It corrects the misleading assumption that all unused bytes in the 8-KiB image are available to grow the state record.
+This is now a tested V1 contract (`kMaximumInPlaceStatePayloadGrowthBytes == 32`). It corrects the misleading assumption that all unused bytes in the 8-KiB image are available to grow the state record.
 
 ## Consequence for post-1.0 Sequencer/Groove work
 
-Eight channels × 64 Sequencer steps = **512 steps**. Even one extra byte of metadata per step would require 512 bytes for one state and 4,608 bytes when repeated across CURRENT + eight presets. Step Probability, gate length/tie, trigger conditions, and custom Groove data therefore require extension records or another explicit layout redesign - not incremental growth of the repeated schema-v9 ClockState payload.
+Eight channels × 64 Sequencer steps = **512 steps**. Even one extra byte of metadata per step would require 512 bytes for one state and 4,608 bytes when repeated across CURRENT + eight presets. Step Probability, gate length/tie, trigger conditions, and custom Groove data therefore require extension records or another explicit layout redesign - not incremental growth of the repeated schema-v10 ClockState payload.
 
 Accepted future approaches include:
 
@@ -69,7 +69,7 @@ Accordingly, 99 slots are **architecturally plausible but not yet release-proven
 
 - define the bounded Custom-groove representation and exact serialized byte count;
 - keep groove payloads outside the repeated CURRENT/eight-preset `ClockState` records;
-- preserve migration from schema v9 and supported 1.0.x records;
+- preserve migration from schema v10, schema v9 and supported 1.0.x records;
 - prove the enlarged logical-image/BSS cost with a real STM32F401 ELF and the existing memory gate;
 - keep overwrite/delete power-loss-safe under the A/B commit contract;
 - add explicit persistence tests for create/load/rename/overwrite/delete, `NO` cancellation and interrupted commits.
@@ -93,7 +93,7 @@ Post-1.0 storage-heavy rhythm data must therefore remain outside the small hot-p
 ## Public-contract decisions frozen for V1
 
 - Hardware Rev 1 remains gate/trigger focused; no analog CV subsystem is required for 1.0.
-- Persistent schema v9 is the current development write format. Stable 1.0.x schema v8, schema v7, and the earlier supported formats remain explicit migration sources for upgrades.
+- Persistent schema v10 is the current 1.1 development write format. Schema v9, stable 1.0.x schema v8, schema v7, and the earlier supported formats remain explicit migration sources for upgrades.
 - Boot always enters STOP regardless of stored transport history.
 - CURRENT and eight named presets remain the user-facing persistence model.
 - No future 1.x feature may silently invalidate V1 presets; migration or explicit compatibility handling is required.

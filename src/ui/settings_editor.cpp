@@ -56,7 +56,7 @@ void SettingsEditor::adjust(
             adjustScreensaver(rowIndex, delta);
             break;
         case SettingsPage::Channel:
-            adjustCommonChannel(channelIndex, rowIndex, delta);
+            adjustFlatChannel(channelIndex, rowIndex, delta);
             break;
         case SettingsPage::Rate:
             adjustRate(channelIndex, rowIndex, delta);
@@ -113,19 +113,19 @@ bool SettingsEditor::executeSequencerCommand(
 
     ChannelConfig& channel = state_.channels[channelIndex];
 
-    if (rowIndex == 3U) {
+    if (rowIndex == 1U) {
         channel.sequencer.pattern = core::invertPattern(
             channel.sequencer.pattern,
             channel.sequencer.length);
-    } else if (rowIndex == 4U) {
+    } else if (rowIndex == 2U) {
         channel.sequencer.pattern = 0U;
-    } else if (rowIndex == 5U) {
+    } else if (rowIndex == 3U) {
         channel.sequencer.pattern = core::alternatingPattern(channel.sequencer.length, true);
-    } else if (rowIndex == 6U) {
+    } else if (rowIndex == 4U) {
         sequencerClipboard_ = channel.sequencer.pattern;
         sequencerClipboardValid_ = true;
         return true;
-    } else if (rowIndex == 7U && sequencerClipboardValid_) {
+    } else if (rowIndex == 5U && sequencerClipboardValid_) {
         channel.sequencer.pattern = core::clampPattern(
             sequencerClipboard_,
             channel.sequencer.length);
@@ -386,17 +386,7 @@ void SettingsEditor::adjustUnifiedClock(
     } else if (rowIndex == 4U) {
         settings.swingPercent = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(settings.swingPercent) + delta, 0, 50));
-    } else if (rowIndex == 5U) {
-        const std::size_t currentIndex = findGateLengthOptionIndex(settings.gateLengthMs);
-        const std::size_t newIndex = static_cast<std::size_t>(clampInt(
-            static_cast<int>(currentIndex) + delta,
-            0,
-            static_cast<int>(kGateLengthOptionsMs.size() - 1U)));
-        settings.gateLengthMs = kGateLengthOptionsMs[newIndex];
     } else if (rowIndex == 6U) {
-        settings.phasePercent = static_cast<std::uint8_t>(clampInt(
-            static_cast<int>(settings.phasePercent) + delta, 0, 99));
-    } else if (rowIndex == 7U) {
         std::size_t currentIndex = 0U;
         for (std::size_t index = 0U; index < kHumanizeOptionsUs.size(); ++index) {
             if (kHumanizeOptionsUs[index] == settings.humanizeUs) {
@@ -409,6 +399,16 @@ void SettingsEditor::adjustUnifiedClock(
             0,
             static_cast<int>(kHumanizeOptionsUs.size() - 1U)));
         settings.humanizeUs = kHumanizeOptionsUs[newIndex];
+    } else if (rowIndex == 7U) {
+        const std::size_t currentIndex = findGateLengthOptionIndex(settings.gateLengthMs);
+        const std::size_t newIndex = static_cast<std::size_t>(clampInt(
+            static_cast<int>(currentIndex) + delta,
+            0,
+            static_cast<int>(kGateLengthOptionsMs.size() - 1U)));
+        settings.gateLengthMs = kGateLengthOptionsMs[newIndex];
+    } else if (rowIndex == 8U) {
+        settings.phasePercent = static_cast<std::uint8_t>(clampInt(
+            static_cast<int>(settings.phasePercent) + delta, 0, 99));
     } else {
         return;
     }

@@ -7,6 +7,7 @@
  */
 
 #include "ui/menu_model.h"
+#include "ui/menu_model_channel.h"
 
 #include <cstdio>
 
@@ -46,7 +47,7 @@ const char* settingsPageTitle(const SettingsPage page) {
         case SettingsPage::Rate: return text::get(text::TextId::Rate);
         case SettingsPage::Clock: return text::get(text::TextId::ModeClockLong);
         case SettingsPage::Euclid: return text::get(text::TextId::ModeEuclidLong);
-        case SettingsPage::Sequencer: return text::get(text::TextId::ModeSequencerLong);
+        case SettingsPage::Sequencer: return text::get(text::TextId::Pattern);
         case SettingsPage::UnifiedClock: return text::get(text::TextId::ModeUnifiedLong);
         case SettingsPage::Groove: return text::get(text::TextId::Groove);
         case SettingsPage::DividerBank: return text::get(text::TextId::ModeDividerLong);
@@ -72,11 +73,11 @@ std::uint8_t settingsPageItemCount(
         case SettingsPage::Info: return 6U;
         case SettingsPage::Licenses: return 7U;
         case SettingsPage::Updates: return 1U;
-        case SettingsPage::Channel: return mode == ChannelMode::Off ? 1U : 10U;
+        case SettingsPage::Channel: return channelMenuItemCount(mode);
         case SettingsPage::Rate: return 3U;
         case SettingsPage::Clock: return 2U;
         case SettingsPage::Euclid: return 3U;
-        case SettingsPage::Sequencer: return 8U;
+        case SettingsPage::Sequencer: return 6U;
         case SettingsPage::UnifiedClock: return 9U;
         case SettingsPage::Groove: return 3U;
         case SettingsPage::DividerBank: return 3U;
@@ -266,41 +267,7 @@ MenuRow buildMenuRow(
     } else if (page == SettingsPage::Updates) {
         copyText(row.label, sizeof(row.label), text::TextId::Updates);
     } else if (page == SettingsPage::Channel) {
-        constexpr text::TextId kLabels[] = {
-            text::TextId::Mode, text::TextId::Rate, text::TextId::ModeConfig,
-            text::TextId::Swing, text::TextId::Probability, text::TextId::Gate,
-            text::TextId::Phase, text::TextId::Reset, text::TextId::Mute};
-        if (rowIndex == 9U) {
-            copyText(row.label, sizeof(row.label), text::TextId::Groove);
-            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-            return row;
-        }
-        copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
-        if (rowIndex == 0U) {
-            std::snprintf(row.value, sizeof(row.value), "%s", channelModeLongLabel(channel.common.mode));
-        } else if (rowIndex == 1U) {
-            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-        } else if (rowIndex == 2U) {
-            std::snprintf(row.label, sizeof(row.label), "%s", channelModeLongLabel(channel.common.mode));
-            if (channel.common.mode != ChannelMode::Off) {
-                copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-            }
-        } else if (rowIndex == 3U) {
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::PercentFormat), channel.common.swingPercent);
-        } else if (rowIndex == 4U) {
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::PercentFormat), channel.common.probabilityPercent);
-        } else if (rowIndex == 5U) {
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::MillisecondsFormat), channel.common.gateLengthMs);
-        } else if (rowIndex == 6U) {
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::PercentFormat), channel.common.phasePercent);
-        } else if (rowIndex == 7U) {
-            copyText(
-                row.value,
-                sizeof(row.value),
-                channel.common.resetMode == ResetMode::Global ? text::TextId::Global : text::TextId::SyncFree);
-        } else {
-            copyText(row.value, sizeof(row.value), channel.common.muted ? text::TextId::On : text::TextId::Off);
-        }
+        row = buildFlatChannelMenuRow(rowIndex, channel);
     } else if (page == SettingsPage::Rate) {
         if (rowIndex == 0U) {
             copyText(row.label, sizeof(row.label), text::TextId::DivideMultiply);
@@ -335,8 +302,6 @@ MenuRow buildMenuRow(
     } else if (page == SettingsPage::Sequencer) {
         constexpr text::TextId kLabels[] = {
             text::TextId::Editor,
-            text::TextId::Length,
-            text::TextId::Rotate,
             text::TextId::Invert,
             text::TextId::Clear,
             text::TextId::FillAlternate,
@@ -345,21 +310,12 @@ MenuRow buildMenuRow(
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
         if (rowIndex == 0U) {
             copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-        } else if (rowIndex == 1U) {
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.sequencer.length);
-        } else if (rowIndex == 2U) {
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.sequencer.rotation);
         }
     } else if (page == SettingsPage::UnifiedClock) {
         constexpr text::TextId kLabels[] = {
             text::TextId::Mode, text::TextId::DivideMultiply, text::TextId::PolyNumerator,
-            text::TextId::PolyDenominator, text::TextId::Swing, text::TextId::Gate,
-            text::TextId::Phase, text::TextId::Humanize};
-        if (rowIndex == 8U) {
-            copyText(row.label, sizeof(row.label), text::TextId::Groove);
-            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-            return row;
-        }
+            text::TextId::PolyDenominator, text::TextId::Swing, text::TextId::Groove,
+            text::TextId::Humanize, text::TextId::Gate, text::TextId::Phase};
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
         if (rowIndex == 0U) {
             copyText(row.value, sizeof(row.value), text::TextId::ModeUnifiedLong);
@@ -374,13 +330,17 @@ MenuRow buildMenuRow(
         } else if (rowIndex == 4U) {
             std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::PercentFormat), state.unifiedClock.swingPercent);
         } else if (rowIndex == 5U) {
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::MillisecondsFormat), state.unifiedClock.gateLengthMs);
+            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
         } else if (rowIndex == 6U) {
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::PercentFormat), state.unifiedClock.phasePercent);
-        } else if (state.unifiedClock.humanizeUs == 0U) {
-            copyText(row.value, sizeof(row.value), text::TextId::Off);
+            if (state.unifiedClock.humanizeUs == 0U) {
+                copyText(row.value, sizeof(row.value), text::TextId::Off);
+            } else {
+                std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::MicrosecondsFormat), state.unifiedClock.humanizeUs);
+            }
+        } else if (rowIndex == 7U) {
+            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::MillisecondsFormat), state.unifiedClock.gateLengthMs);
         } else {
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::MicrosecondsFormat), state.unifiedClock.humanizeUs);
+            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::PercentFormat), state.unifiedClock.phasePercent);
         }
     } else if (page == SettingsPage::Groove) {
         row = buildGrooveMenuRow(rowIndex, selectedChannel, state);

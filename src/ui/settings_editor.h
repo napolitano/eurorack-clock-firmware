@@ -79,6 +79,9 @@ private:
     /** @brief Adjusts STOP-mode screensaver and OLED timeout preferences. */
     void adjustScreensaver(std::uint8_t rowIndex, std::int8_t delta);
 
+    /** @brief Adjusts one row in the flattened priority-ordered Channel menu. */
+    void adjustFlatChannel(std::uint8_t channelIndex, std::uint8_t rowIndex, std::int8_t delta);
+
     /** @brief Adjusts one common channel-settings row. */
     void adjustCommonChannel(std::uint8_t channelIndex, std::uint8_t rowIndex, std::int8_t delta);
 

@@ -64,6 +64,9 @@ private:
     /** @brief Draws a compact 5x7 padlock icon. */
     void drawLockIcon(std::int16_t x, std::int16_t y);
 
+    /** @brief Draws the active groove preset at the requested lower-screen position. */
+    void drawGrooveStatus(const GrooveSettings& settings, std::int16_t y);
+
     /** @brief Draws the ONE CLOCK humanize status icon. */
     void drawHumanizeIcon(std::int16_t x, std::int16_t y);
 

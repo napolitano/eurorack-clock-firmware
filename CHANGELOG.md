@@ -18,6 +18,11 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Bound combined Swing + Groove displacement so event timestamps remain monotonic and gate lengths cannot consume the next rising edge.
 - Advance persistence to schema v10 while preserving the complete v9 payload as a migration prefix; migrated v9 and older states inject Groove `OFF`, amount 100%, rotation 0.
 - Add Groove timing, ownership, menu, clamp, persistence and migration regressions.
+- Show the active groove as `G:<preset>` on the Performance screen: lower-left for Clock/One Clock and directly above the Euclid/Sequencer pattern strip; hide the label for `OFF` or 0% Amount.
+- Flatten per-channel settings into priority-ordered, sectioned menus: Clock/One Clock start with Timing, Euclid and Sequencer start with their mode-specific controls, and Output controls remain last.
+- Remove the extra `RATE >` and `CLOCK >` navigation layers by editing rate, polyrhythm and meter values directly in the channel menu. Keep `GROOVE >` as a focused timing submenu and `PATTERN >` as the Sequencer editor/operation submenu.
+- Render `TIMING`, mode-specific and `OUTPUT` section headings as non-selectable orientation labels so grouping costs no encoder click.
+- Add navigation, menu-order and framebuffer regressions for the flattened hierarchy and active-groove Performance label.
 
 ### Pre-Count display
 

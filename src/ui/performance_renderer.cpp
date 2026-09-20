@@ -207,6 +207,7 @@ void PerformanceRenderer::render(
                 hal::OledDisplay::kWidth - static_cast<std::int16_t>(rateBounds.width) - 1);
             display_.drawText(rateX, contextY, rateText);
         }
+        drawGrooveStatus(selectedChannel.common.groove, 55);
         presentPerformanceFrame(state, engineSnapshot);
         return;
     }
@@ -223,6 +224,8 @@ void PerformanceRenderer::render(
             hal::OledDisplay::kWidth - static_cast<std::int16_t>(detailBounds.width) - 1),
         contextY,
         detailText);
+
+    drawGrooveStatus(selectedChannel.common.groove, 43);
 
     const std::uint8_t currentStep = engineSnapshot.channelStep[navigation.selectedChannel];
     if (configuredChannel.common.mode == ChannelMode::Euclid) {

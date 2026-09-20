@@ -1462,9 +1462,10 @@ void testMenuModelAndFormatters() {
     state.channels[0].common.mode=ChannelMode::Euclid; (void)ui::buildMenuRow(ui::SettingsPage::Channel,0U,0U,state);
     state.channels[0].common.mode=ChannelMode::Sequencer; (void)ui::buildMenuRow(ui::SettingsPage::Channel,0U,0U,state);
     state.channels[0].common.mode=ChannelMode::Off;
-    const auto offModeConfigRow = ui::buildMenuRow(ui::SettingsPage::Channel,2U,0U,state);
-    CHECK_EQ(std::strlen(offModeConfigRow.value), 0U);
-        state.channels[0].common.muted=false; (void)ui::buildMenuRow(ui::SettingsPage::Channel,7U,0U,state);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Channel, ChannelMode::Off), 1U);
+    const auto offModeRow = ui::buildMenuRow(ui::SettingsPage::Channel,0U,0U,state);
+    CHECK(std::strcmp(offModeRow.value, "OFF") == 0);
+    state.channels[0].common.muted=false;
     (void)ui::buildMenuRow(static_cast<ui::SettingsPage>(99),0U,0U,state);
 
     for (std::size_t i=0;i<kRateOptions.size();++i) { state.channels[0].common.rate.mode=kRateOptions[i].mode; state.channels[0].common.rate.factor=kRateOptions[i].factor; CHECK_EQ(ui::findRateOptionIndex(state.channels[0].common),i); }
@@ -2523,13 +2524,13 @@ void testOneClockHumanizeAndTempoLimits() {
     }
     CHECK(maximumTick > minimumTick);
 
-    const auto humanizeRow = ui::buildMenuRow(ui::SettingsPage::UnifiedClock, 7U, 0U, state);
+    const auto humanizeRow = ui::buildMenuRow(ui::SettingsPage::UnifiedClock, 6U, 0U, state);
     CHECK(std::strcmp(humanizeRow.label, "HUMANIZE") == 0);
     CHECK(std::strstr(humanizeRow.value, "2000") != nullptr);
-    editor.adjust(ui::SettingsPage::UnifiedClock, 7U, 0U, -1);
+    editor.adjust(ui::SettingsPage::UnifiedClock, 6U, 0U, -1);
     CHECK_EQ(state.unifiedClock.humanizeUs, 1000U);
     state.unifiedClock.humanizeUs = 0U;
-    const auto humanizeOffRow = ui::buildMenuRow(ui::SettingsPage::UnifiedClock, 7U, 0U, state);
+    const auto humanizeOffRow = ui::buildMenuRow(ui::SettingsPage::UnifiedClock, 6U, 0U, state);
     CHECK(std::strcmp(humanizeOffRow.value, "OFF") == 0);
 
     // A stored Humanize value has no timing effect outside One Clock.
@@ -2952,6 +2953,57 @@ std::size_t countFramebufferPixels(
     return count;
 }
 
+
+void testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition() {
+    resetFakes();
+    prepareDisplaySuccess();
+
+    ClockState state = makeDefaultState();
+    state.transport = TransportState::Playing;
+    ui::NavigationState navigation{};
+    engine::EngineSnapshot snapshot{};
+
+    hal::OledDisplay display;
+    CHECK(display.begin());
+    ui::PerformanceRenderer renderer(display);
+
+    // Plain CLOCK: the active preset belongs in the far lower-left status area.
+    state.channels[0].common.mode = ChannelMode::Clock;
+    state.channels[0].common.groove = {GroovePreset::PocketA, 100U, 0U};
+    renderer.render(state, navigation, snapshot);
+    const auto activeClockFrame = display.framebufferForTest();
+    CHECK(countFramebufferPixels(activeClockFrame, 0, 54, 80, 10) > 0U);
+
+    state.channels[0].common.groove.amountPercent = 0U;
+    renderer.render(state, navigation, snapshot);
+    const auto disabledClockFrame = display.framebufferForTest();
+    CHECK(countFramebufferPixels(activeClockFrame, 0, 54, 80, 10) >
+          countFramebufferPixels(disabledClockFrame, 0, 54, 80, 10));
+
+    // EUCLID/SEQ keep the bottom row for the pattern strip, so Groove sits above it.
+    state.channels[0].common.mode = ChannelMode::Euclid;
+    state.channels[0].common.groove = {GroovePreset::PocketB, 100U, 0U};
+    renderer.render(state, navigation, snapshot);
+    const auto activeEuclidFrame = display.framebufferForTest();
+    CHECK(countFramebufferPixels(activeEuclidFrame, 0, 42, 80, 9) > 0U);
+
+    state.channels[0].common.groove.preset = GroovePreset::Off;
+    renderer.render(state, navigation, snapshot);
+    const auto disabledEuclidFrame = display.framebufferForTest();
+    CHECK(countFramebufferPixels(activeEuclidFrame, 0, 42, 80, 9) >
+          countFramebufferPixels(disabledEuclidFrame, 0, 42, 80, 9));
+
+    state.channels[0].common.mode = ChannelMode::Sequencer;
+    state.channels[0].common.groove = {GroovePreset::PocketC, 100U, 0U};
+    renderer.render(state, navigation, snapshot);
+    CHECK(countFramebufferPixels(display.framebufferForTest(), 0, 42, 80, 9) > 0U);
+
+    // One Clock uses its global Groove assignment in the same lower-left CLOCK position.
+    state.operatingMode = OperatingMode::UnifiedClock;
+    state.unifiedClock.groove = {GroovePreset::Swing58, 100U, 0U};
+    renderer.render(state, navigation, snapshot);
+    CHECK(countFramebufferPixels(display.framebufferForTest(), 0, 54, 80, 10) > 0U);
+}
 
 void testPerformanceRendererShowsStaticPreCountPopoverAndMeterProgress() {
     resetFakes(); prepareDisplaySuccess();
@@ -3646,7 +3698,8 @@ void testUiControllerFlows() {
         state.channels[controller.navigation().selectedChannel].common.mode,
         ChannelMode::Euclid);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
-    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Euclid);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
+    CHECK_EQ(controller.navigation().cursor, 1U);
 
     // Selecting the already active mode needs no destructive-change confirmation.
     controllerReset(controller, now);
@@ -3852,8 +3905,8 @@ void testUiControllerFlows() {
     state.operatingMode = OperatingMode::Independent;
     engine.updateConfiguration(state, true);
 
-    // The selected channel page exposes only mode-relevant branches. OFF has only
-    // MODE, while active modes expose RATE, their own mode page, and common timing.
+    // The selected channel page is flat and mode-aware. OFF has only MODE;
+    // active modes expose their priority-ordered parameters without RATE/CLOCK subpages.
     std::uint8_t selectedChannel = controller.navigation().selectedChannel;
     state.channels[selectedChannel].common.mode = ChannelMode::Off;
     engine.updateChannel(selectedChannel, state.channels[selectedChannel], true);
@@ -3871,73 +3924,59 @@ void testUiControllerFlows() {
     controllerConfirmModeYes(controller, now);
     CHECK_EQ(state.channels[selectedChannel].common.mode, ChannelMode::Clock);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
-    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Channel, ChannelMode::Clock), 10U);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Channel, ChannelMode::Clock), 13U);
 
-    // RATE and CLOCK settings remain ordinary push-to-edit pages.
+    // RATE and CLOCK meter values are now edited directly on CHANNEL. No extra
+    // push is needed to enter either a RATE or CLOCK settings page.
     controllerOpenSettingsChord(controller, now);
     controllerTurn(controller, 1, now); // Channel
     controllerShortPress(controller, now);
-    controllerTurn(controller, 1, now); // RATE
-    controllerShortPress(controller, now);
-    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Rate);
+    controllerTurn(controller, 1, now); // DIV/MULT
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
     controllerShortPress(controller, now);
     CHECK(controller.navigation().editing);
     controllerTurn(controller, 1, now);
     controllerShortPress(controller, now);
     CHECK(!controller.navigation().editing);
-    controllerReset(controller, now); // Rate -> Channel
-    controllerTurn(controller, 2, now); // mode-specific CLOCK page
+    controllerTurn(controller, 5, now); // METER BEATS at row 6
     controllerShortPress(controller, now);
-    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Clock);
-    controllerReset(controller, now);
+    CHECK(controller.navigation().editing);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    CHECK(!controller.navigation().editing);
     controllerReset(controller, now); // Channel -> Root
     controllerReset(controller, now); // Root -> Performance
 
-    // EUCLID and SEQ expose only their own mode-specific page from CHANNEL.
-    for (const ChannelMode mode : {ChannelMode::Euclid, ChannelMode::Sequencer}) {
-        state.channels[selectedChannel].common.mode = mode;
-        engine.updateChannel(selectedChannel, state.channels[selectedChannel], true);
-        controllerOpenSettingsChord(controller, now);
-        controllerTurn(controller, 1, now); // Channel
-        controllerShortPress(controller, now);
-        controllerTurn(controller, 2, now); // mode-specific page
-        controllerShortPress(controller, now);
-        CHECK_EQ(
-            controller.navigation().settingsPage,
-            mode == ChannelMode::Euclid ? ui::SettingsPage::Euclid : ui::SettingsPage::Sequencer);
-        controllerReset(controller, now); // mode page -> Channel
-        controllerReset(controller, now); // Channel -> Root
-        controllerReset(controller, now); // Root -> Performance
-    }
-
-    // TAP no longer has a long-press shortcut. Holding it without turning must
-    // never leave Performance; mode-specific parameters are reached through menus.
+    // EUCLID and SEQ put their mode-specific controls first, followed by TIMING
+    // and OUTPUT. Groove remains a real submenu and BACK restores its row.
     state.channels[selectedChannel].common.mode = ChannelMode::Euclid;
     engine.updateChannel(selectedChannel, state.channels[selectedChannel], true);
-    sample = {};
-    sample.tapButton = pressedEdge();
-    controller.processControls(sample, now++);
-    sample = {};
-    sample.tapButton = heldButton();
-    controller.processControls(sample, now + 1500U);
-    CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
-    sample = {};
-    sample.tapButton = releasedEdge();
-    controller.processControls(sample, now + 1501U);
-    CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
-    now += 1502U;
+    controllerOpenSettingsChord(controller, now);
+    controllerTurn(controller, 1, now); // Channel
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
+    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Channel,1U,selectedChannel,state).label,"STEPS") == 0);
+    controllerTurn(controller, 8, now); // GROOVE
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
+    CHECK_EQ(controller.navigation().cursor, 8U);
+    controllerReset(controller, now);
+    controllerReset(controller, now);
 
-    // Sequencer editor, page navigation, and command execution remain accessible
-    // through CHANNEL -> SEQUENCER -> EDITOR without a long-press gesture.
     state.channels[selectedChannel].common.mode = ChannelMode::Sequencer;
     state.channels[selectedChannel].sequencer.length = 64U;
     engine.updateChannel(selectedChannel, state.channels[selectedChannel], true);
     controllerOpenSettingsChord(controller, now);
     controllerTurn(controller, 1, now);
     controllerShortPress(controller, now); // Channel
-    controllerTurn(controller, 2, now);
-    controllerShortPress(controller, now); // Sequencer page
-    controllerShortPress(controller, now); // Editor
+    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Channel,1U,selectedChannel,state).label,"LENGTH") == 0);
+    controllerTurn(controller, 3, now); // PATTERN
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Sequencer);
+    CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::Sequencer), "PATTERN") == 0);
+    controllerShortPress(controller, now); // EDITOR
     CHECK_EQ(controller.navigation().screen, ui::Screen::SequencerEditor);
     controllerTurn(controller, 5, now);
     controllerShortPress(controller, now);
@@ -3958,11 +3997,30 @@ void testUiControllerFlows() {
     CHECK_EQ(controller.navigation().sequencerPage, 0U);
     controllerReset(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Sequencer);
-    controllerTurn(controller, 3, now); // INVERT
+    controllerTurn(controller, 1, now); // INVERT
     controllerShortPress(controller, now);
-    controllerReset(controller, now); // Sequencer -> Channel
+    controllerReset(controller, now); // Pattern -> Channel
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
+    CHECK_EQ(controller.navigation().cursor, 3U);
     controllerReset(controller, now); // Channel -> Root
     controllerReset(controller, now); // Root -> Performance
+
+    // TAP no longer has a long-press shortcut. Holding it without turning must
+    // never leave Performance; mode-specific parameters are reached through menus.
+    state.channels[selectedChannel].common.mode = ChannelMode::Euclid;
+    engine.updateChannel(selectedChannel, state.channels[selectedChannel], true);
+    sample = {};
+    sample.tapButton = pressedEdge();
+    controller.processControls(sample, now++);
+    sample = {};
+    sample.tapButton = heldButton();
+    controller.processControls(sample, now + 1500U);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
+    sample = {};
+    sample.tapButton = releasedEdge();
+    controller.processControls(sample, now + 1501U);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
+    now += 1502U;
 
     // Transport and tap tempo remain dedicated only on Performance.
     sample = {};
@@ -4843,6 +4901,7 @@ int main() {
     RUN_TEST(testEngineAuditRegressions);
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
+    RUN_TEST(testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition);
     RUN_TEST(testPerformanceRendererShowsStaticPreCountPopoverAndMeterProgress);
     RUN_TEST(testPreCountPopoverRedrawsAtBeatBoundariesAndClearsOnCompletion);
     RUN_TEST(testPerformanceRendererShowsMeasuredExternalBpmWhileLockedAndFreewheeling);

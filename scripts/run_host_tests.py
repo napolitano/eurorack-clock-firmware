@@ -309,9 +309,11 @@ def settings_sources() -> list[Path]:
     return realtime_sources() + [
         ROOT / "src/domain/clock_labels.cpp",
         ROOT / "src/ui/settings_editor.cpp",
+        ROOT / "src/ui/settings_editor_channel.cpp",
         ROOT / "src/ui/settings_editor_sync.cpp",
         ROOT / "src/ui/settings_editor_groove.cpp",
         ROOT / "src/ui/menu_model.cpp",
+        ROOT / "src/ui/menu_model_channel.cpp",
         ROOT / "src/ui/menu_model_sync.cpp",
         ROOT / "src/ui/menu_model_groove.cpp",
         ROOT / "src/ui/text_formatter.cpp",
