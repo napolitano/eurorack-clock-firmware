@@ -17,6 +17,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add a meter-aware step row along the bottom of the popover: exactly the active beat is filled while all other beats remain outlined, with the marker wrapping to the first position on each master-meter bar.
 - Keep beat-boundary redraws and the final completion redraw deterministic so the popover updates only when visible state changes.
 - Update framebuffer/controller regressions and deterministic manual screenshots for the new presentation.
+- Make external Pre-Count advance in configured master-meter beats instead of hard-coded quarter notes; derive each accepted SYNC pulse from PPQN and `METER UNIT`, including sparse pulses that span multiple meter beats.
+- Keep scheduler interpolation from double-advancing Pre-Count while a selected external clock is locked, and add realtime regressions across half-, quarter-, eighth- and sixteenth-note master units plus 24 PPQN.
 
 ### Manual archive hygiene
 

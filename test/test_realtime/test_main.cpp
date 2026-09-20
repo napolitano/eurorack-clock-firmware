@@ -183,28 +183,77 @@ void testPreCountStopRestartsFullCountOnNextPlay() {
     CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 3U);
 }
 
-void testExternalPreCountCountsQuarterNotesAcrossPpqn() {
-    Fixture fixture;
-    fixture.state.source = ClockSource::External;
-    fixture.state.externalSync.lossMode = SyncLossMode::Freewheel;
-    fixture.state.preCountSteps = 2U;
-    fixture.begin();
+void testExternalPreCountFollowsMasterMeterBeatUnitAcrossPpqn() {
+    struct Case final {
+        std::uint8_t beatUnit;
+        std::uint8_t ppqn;
+        std::uint8_t pulsesPerMasterBeat;
+    };
 
-    for (std::uint8_t pulse = 0U; pulse < 4U; ++pulse) {
-        fixture.engine.acceptExternalPulse(120000U, 4U);
+    // External Pre-Count counts the configured master-meter beat, not a hard-coded
+    // quarter note. These cases cover half-, quarter- and eighth-note master beats
+    // plus the high-resolution 24-PPQN path.
+    const std::array<Case, 4U> cases{{
+        {2U, 4U, 8U},
+        {4U, 4U, 4U},
+        {8U, 4U, 2U},
+        {8U, 24U, 12U},
+    }};
+
+    for (const Case item : cases) {
+        Fixture fixture;
+        fixture.state.source = ClockSource::External;
+        fixture.state.externalSync.lossMode = SyncLossMode::Freewheel;
+        fixture.state.masterMeter = {4U, item.beatUnit};
+        fixture.state.preCountSteps = 2U;
+        fixture.begin();
+
+        for (std::uint8_t pulse = 1U; pulse < item.pulsesPerMasterBeat; ++pulse) {
+            fixture.engine.acceptExternalPulse(120000U, item.ppqn);
+        }
+        CHECK(fixture.engine.snapshot().preCountActive);
+        CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 2U);
+
+        // Once external pulses own the count, scheduler interpolation must not also
+        // advance it. Otherwise sparse PPQN sources would double-count progress.
+        runTicks(fixture.engine, config::kSchedulerFrequencyHz);
+        CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 2U);
+
+        fixture.engine.acceptExternalPulse(120000U, item.ppqn);
+        CHECK(fixture.engine.snapshot().preCountActive);
+        CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 1U);
+        CHECK_EQ(fixture.engine.snapshot().masterPositionQ32, 0U);
+        CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], LOW);
+
+        for (std::uint8_t pulse = 0U; pulse < item.pulsesPerMasterBeat; ++pulse) {
+            fixture.engine.acceptExternalPulse(120000U, item.ppqn);
+        }
+        CHECK(!fixture.engine.snapshot().preCountActive);
+        CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 0U);
+        CHECK_EQ(fixture.engine.snapshot().masterPositionQ32, 0U);
+        CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], LOW);
+        fixture.engine.processSchedulerTick();
+        CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], HIGH);
     }
-    CHECK(fixture.engine.snapshot().preCountActive);
-    CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 1U);
+
+    // A sparse 1-PPQN source spans multiple master beats when the meter unit is
+    // smaller than a quarter note. One quarter-note edge must therefore be able to
+    // consume more than one Pre-Count beat without losing phase.
+    Fixture sixteenthFixture;
+    sixteenthFixture.state.source = ClockSource::External;
+    sixteenthFixture.state.externalSync.lossMode = SyncLossMode::Freewheel;
+    sixteenthFixture.state.masterMeter = {4U, 16U};
+    sixteenthFixture.state.preCountSteps = 5U;
+    sixteenthFixture.begin();
+
+    sixteenthFixture.engine.acceptExternalPulse(120000U, 1U);
+    CHECK(sixteenthFixture.engine.snapshot().preCountActive);
+    CHECK_EQ(sixteenthFixture.engine.snapshot().preCountRemaining, 1U);
     CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], LOW);
 
-    for (std::uint8_t pulse = 0U; pulse < 4U; ++pulse) {
-        fixture.engine.acceptExternalPulse(120000U, 4U);
-    }
-    CHECK(!fixture.engine.snapshot().preCountActive);
-    CHECK_EQ(fixture.engine.snapshot().preCountRemaining, 0U);
-    CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], LOW);
-    fixture.engine.processSchedulerTick();
-    CHECK_EQ(fakefw::pinValues[pinmap::kGateChannelPins[0]], HIGH);
+    sixteenthFixture.engine.acceptExternalPulse(120000U, 1U);
+    CHECK(!sixteenthFixture.engine.snapshot().preCountActive);
+    CHECK_EQ(sixteenthFixture.engine.snapshot().preCountRemaining, 0U);
 }
 
 void testRepresentativeExternalTemposAndPpqn() {
@@ -783,7 +832,7 @@ int main() {
     RUN_TEST(testInternalPreCountSuppressesGatesAndStartsFromPhaseZero);
     RUN_TEST(testPreCountPauseResumeContinuesInsteadOfRestarting);
     RUN_TEST(testPreCountStopRestartsFullCountOnNextPlay);
-    RUN_TEST(testExternalPreCountCountsQuarterNotesAcrossPpqn);
+    RUN_TEST(testExternalPreCountFollowsMasterMeterBeatUnitAcrossPpqn);
     RUN_TEST(testRepresentativeExternalTemposAndPpqn);
     RUN_TEST(testFallingEdgeSelection);
     RUN_TEST(testGlitchesDoNotCorruptPeriodEstimator);

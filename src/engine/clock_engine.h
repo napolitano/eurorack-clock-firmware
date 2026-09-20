@@ -263,7 +263,7 @@ private:
     volatile std::uint8_t preCountRemaining_ = 0U;
     volatile std::uint64_t preCountPhaseQ32_ = 0U;
     volatile std::uint64_t preCountRemainder_ = 0U;
-    volatile std::uint8_t preCountExternalPulseCounter_ = 0U;
+    volatile std::uint32_t preCountExternalPulseRemainder_ = 0U;
     volatile std::uint64_t masterPositionQ32_ = 0U;
     volatile std::uint64_t globalScheduleEpochQ32_ = 0U;
     volatile std::uint64_t masterBeatPhaseQ32_ = 0U;

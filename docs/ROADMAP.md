@@ -81,21 +81,24 @@ The hard all-PASS HIL gate starts with **1.5.0**. Release candidates and stable 
 
 **Goal:** make timing feel a first-class musical parameter rather than a single alternating delay value.
 
-Planned scope:
+Planned scope and implementation sequence:
 
-- configurable 1–64-beat Pre-Count with silent gate suppression and a centered static popover that shows the remaining count plus meter-step progress;
+- configurable 1–64-beat Pre-Count with silent gate suppression and a centered static popover that shows the remaining count plus meter-step progress; external Pre-Count uses the configured master-meter beat unit, not a hard-coded quarter note;
+- **Stage 1 — preset-based Groove Engine:** start with a curated factory groove library and no custom editor. In **One Clock** the selected groove is global; in channel-oriented operation the groove is selected per channel. Every groove assignment can be disabled explicitly with `OFF`;
 - grid-aware classic drum-machine-style swing with a musically familiar straight-to-deep range;
-- a substantial curated factory groove library rather than a handful of renamed swing values;
-- editable custom groove patterns with deterministic per-step microtiming;
 - Groove Amount to scale a stored pattern from straight through exaggerated timing;
 - pattern rotation/phase so related channels can share one groove with different starting positions;
+- **Stage 2 — Preset / Custom split:** keep factory presets read-only and add user-defined Custom grooves. Custom editing uses a graphical grid with movable timing markers rather than a text/number list;
+- Custom groove storage targets **99 user slots** if the packed persistence record and real target memory budget permit it. Custom slots must support save, load, rename, overwrite and delete. Overwrite and delete require an explicit `YES / NO` confirmation before the durable record is changed;
 - Humanize remains a separate stochastic layer and is never conflated with deterministic groove timing.
 
 Dependencies and constraints:
 
 - event timestamps must remain monotonic and bounded by the scheduler contract;
 - custom groove persistence must use extension records or another migration-safe layout rather than silently enlarging the repeated schema-v9 ClockState payload;
-- the UI must remain usable on the 128×64 display without turning the performance surface into a DAW-style editor.
+- the 99-slot target is conditional on a compact bounded record format and a real STM32F401 ELF/RAM check. The existing 8-KiB logical image may grow only through an explicit layout revision and no further than the documented 12-KiB policy ceiling;
+- the UI must remain usable on the 128×64 display. The Stage-2 custom editor may use a graphical grid/marker view, but must remain bounded and purpose-built rather than becoming a general DAW-style editor;
+- destructive custom-groove operations must remain transactional: `NO` leaves persistent data untouched, while `YES` performs exactly one requested overwrite/delete operation.
 
 Definition of done:
 

@@ -91,21 +91,32 @@ void ClockEngine::acceptExternalPulseUnsafe(
     }
 
     if (preCountActive_) {
-        ++preCountExternalPulseCounter_;
-        if (preCountExternalPulseCounter_ >= pulsesPerQuarterNote) {
-            preCountExternalPulseCounter_ = 0U;
-            preCountPhaseQ32_ = 0U;
-            preCountRemainder_ = 0U;
-            if (preCountRemaining_ > 0U) {
-                --preCountRemaining_;
-            }
-            if (preCountRemaining_ == 0U) {
-                finishPreCountUnsafe();
-                externalReferenceQ32_ = masterPositionQ32_;
-                externalMusicalPositionQ32_ = 0U;
-                externalPulseRemainder_ = 0U;
-                externalPhaseInitialized_ = true;
-            }
+        // Convert every accepted external pulse into the same master-beat Q32
+        // domain used by internal timing. A quarter note therefore advances one
+        // beat in 4/4, two beats in */8, four in */16 and half a beat in */2.
+        // This preserves PPQN precision without hard-coding quarter-note count-in.
+        const std::uint32_t pulseNumerator =
+            static_cast<std::uint32_t>(4U) * pulsesPerQuarterNote;
+        const std::uint32_t pulseDenominator =
+            configuration_.beatUnit != 0U ? configuration_.beatUnit : 4U;
+        const std::uint64_t pulseIntervalQ32 = core::calculateNextIntervalQ32(
+            pulseNumerator,
+            pulseDenominator,
+            preCountExternalPulseRemainder_);
+        preCountPhaseQ32_ += pulseIntervalQ32;
+        preCountRemainder_ = 0U;
+
+        while (preCountPhaseQ32_ >= core::kQ32One && preCountRemaining_ > 0U) {
+            preCountPhaseQ32_ -= core::kQ32One;
+            --preCountRemaining_;
+        }
+
+        if (preCountRemaining_ == 0U) {
+            finishPreCountUnsafe();
+            externalReferenceQ32_ = masterPositionQ32_;
+            externalMusicalPositionQ32_ = 0U;
+            externalPulseRemainder_ = 0U;
+            externalPhaseInitialized_ = true;
         }
         return;
     }

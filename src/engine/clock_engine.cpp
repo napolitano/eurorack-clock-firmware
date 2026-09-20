@@ -108,7 +108,7 @@ void ClockEngine::stop() {
     preCountRemaining_ = 0U;
     preCountPhaseQ32_ = 0U;
     preCountRemainder_ = 0U;
-    preCountExternalPulseCounter_ = 0U;
+    preCountExternalPulseRemainder_ = 0U;
     for (std::size_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
         setGateState(channelIndex, false);
     }
@@ -149,20 +149,20 @@ void ClockEngine::processSchedulerTick() {
     }
 
     if (preCountActive_) {
+        // Locked external pulses own Pre-Count progress; do not double-advance it.
+        const bool drivenByExternalPulses =
+            configuration_.source != ClockSource::Internal && externalLocked_;
+        if (drivenByExternalPulses) {
+            return;
+        }
         const std::uint64_t preCountIncrementQ32 = core::calculateMasterIncrementMilliBpmQ32(
             effectiveBpmMilli(),
             configuration_.beatUnit,
             config::kSchedulerFrequencyHz,
             preCountRemainder_);
         preCountPhaseQ32_ += preCountIncrementQ32;
-
-        const bool drivenByExternalPulses =
-            configuration_.source != ClockSource::Internal && externalLocked_;
         while (preCountPhaseQ32_ >= core::kQ32One) {
             preCountPhaseQ32_ -= core::kQ32One;
-            if (drivenByExternalPulses) {
-                continue;
-            }
             if (preCountRemaining_ > 0U) {
                 --preCountRemaining_;
             }
@@ -387,7 +387,7 @@ void ClockEngine::startPreCountUnsafe() {
     preCountRemaining_ = configuration_.preCountSteps;
     preCountPhaseQ32_ = 0U;
     preCountRemainder_ = 0U;
-    preCountExternalPulseCounter_ = 0U;
+    preCountExternalPulseRemainder_ = 0U;
     preCountActive_ = preCountRemaining_ != 0U;
 }
 void ClockEngine::finishPreCountUnsafe() {
@@ -395,7 +395,7 @@ void ClockEngine::finishPreCountUnsafe() {
     preCountRemaining_ = 0U;
     preCountPhaseQ32_ = 0U;
     preCountRemainder_ = 0U;
-    preCountExternalPulseCounter_ = 0U;
+    preCountExternalPulseRemainder_ = 0U;
     resetRuntime();
 }
 

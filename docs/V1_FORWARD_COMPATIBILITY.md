@@ -59,6 +59,23 @@ Accepted future approaches include:
 
 The design must preserve migration from the supported pre-V1 formats, the v7 release-prep format, stable 1.0.x schema v8, and the current schema-v9 development format. Raw C++ structs and compiler bitfields remain prohibited for durable storage.
 
+## 1.1 custom-groove slot target
+
+The accepted 1.1 UX target is **up to 99 named Custom groove slots**, with rename, overwrite and delete support and explicit `YES / NO` confirmation before destructive overwrite/delete operations. This is a target for the Stage-2 custom editor, not permission to enlarge `ClockState`.
+
+The current persistence policy leaves at most **4,096 additional logical bytes** between the V1 8-KiB image and the 12-KiB architectural ceiling. If all 99 Custom slots were stored entirely in that extension, the absolute mathematical ceiling would be about **41 bytes per slot before any shared directory/header overhead** (`4096 / 99`). A realistic fixed-slot design therefore needs a record at or below roughly 40 bytes, or a compact variable/sparse representation. The final feasibility depends on the still-open Custom-groove grid length, marker resolution, name encoding and record-integrity metadata.
+
+Accordingly, 99 slots are **architecturally plausible but not yet release-proven**. Before Stage 2 is approved, the implementation must:
+
+- define the bounded Custom-groove representation and exact serialized byte count;
+- keep groove payloads outside the repeated CURRENT/eight-preset `ClockState` records;
+- preserve migration from schema v9 and supported 1.0.x records;
+- prove the enlarged logical-image/BSS cost with a real STM32F401 ELF and the existing memory gate;
+- keep overwrite/delete power-loss-safe under the A/B commit contract;
+- add explicit persistence tests for create/load/rename/overwrite/delete, `NO` cancellation and interrupted commits.
+
+If the final groove representation cannot satisfy that budget safely, the slot count must be reduced or the storage architecture changed deliberately; it must not be achieved by weakening the persistence or memory gates.
+
 ## RAM consequence of increasing the logical image
 
 `PersistentStorage` deliberately owns one complete staging image in BSS so Flash commits do not create multi-kilobyte stack frames. V1 therefore reserves **8 KiB static RAM** for persistence staging.
