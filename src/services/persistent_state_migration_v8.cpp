@@ -38,12 +38,12 @@ bool isAllowedV8PresetCharacter(const char character) {
 bool PersistentStateService::deserializeV8State(
     const std::array<std::uint8_t, kV8StatePayloadSize>& payload,
     ClockState& state) {
-    static_assert(kStatePayloadSize == kV8StatePayloadSize + 1U);
+    static_assert(kV9StatePayloadSize == kV8StatePayloadSize + 1U);
 
-    std::array<std::uint8_t, kStatePayloadSize> upgraded{};
+    std::array<std::uint8_t, kV9StatePayloadSize> upgraded{};
     std::copy(payload.begin(), payload.end(), upgraded.begin());
     upgraded[kV8StatePayloadSize] = defaults::kPreCountSteps;
-    return deserializeState(upgraded, state);
+    return deserializeV9State(upgraded, state);
 }
 
 bool PersistentStateService::deserializeV8CurrentRecord(

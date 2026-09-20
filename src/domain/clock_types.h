@@ -74,6 +74,25 @@ enum class SyncLossMode : std::uint8_t { Stop, Freewheel, Internal };
 /** @brief Selects how strongly successive external-clock periods are smoothed. */
 enum class SyncSmoothing : std::uint8_t { Off, Low, Medium, Full };
 
+/** @brief Selects one read-only Stage-1 factory groove; OFF disables groove timing. */
+enum class GroovePreset : std::uint8_t {
+    Off = 0U,
+    Swing54,
+    Swing58,
+    Swing62,
+    Swing66,
+    PocketA,
+    PocketB,
+    PocketC
+};
+
+/** @brief Deterministic factory-groove assignment. */
+struct GrooveSettings {
+    GroovePreset preset = GroovePreset::Off;
+    std::uint8_t amountPercent = 100U;
+    std::uint8_t rotation = 0U;
+};
+
 /** @brief Musical meter expressed as numerator and note-value denominator. */
 struct MeterSettings {
     std::uint8_t beats = 4U;
@@ -93,6 +112,7 @@ struct CommonChannelSettings {
     ChannelMode mode = ChannelMode::Clock;
     RateSettings rate{};
     std::uint8_t swingPercent = 0U;
+    GrooveSettings groove{};
     std::uint8_t probabilityPercent = 100U;
     std::uint16_t gateLengthMs = 10U;
     std::uint8_t phasePercent = 0U;
@@ -124,6 +144,7 @@ struct SequencerSettings {
 struct UnifiedClockSettings {
     RateSettings rate{};
     std::uint8_t swingPercent = 0U;
+    GrooveSettings groove{};
     std::uint16_t gateLengthMs = 10U;
     std::uint8_t phasePercent = 0U;
     /** Maximum per-output timing displacement applied only in ONE CLOCK mode. */

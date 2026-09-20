@@ -26,6 +26,18 @@ void PersistentStateService::begin() {
         currentRecord.size()) && deserializeCurrentRecord(currentRecord, loadedCurrent);
 
     if (!hasStoredCurrentState_) {
+        std::array<std::uint8_t, kV9CurrentRecordSize> v9Record{};
+        if (storage_.readBytes(
+                kCurrentRecordOffset,
+                v9Record.data(),
+                v9Record.size()) &&
+            deserializeV9CurrentRecord(v9Record, loadedCurrent)) {
+            hasStoredCurrentState_ = true;
+            migrationNeeded = true;
+        }
+    }
+
+    if (!hasStoredCurrentState_) {
         std::array<std::uint8_t, kV8CurrentRecordSize> v8Record{};
         if (storage_.readBytes(
                 kCurrentRecordOffset,
@@ -112,7 +124,7 @@ void PersistentStateService::begin() {
     }
     writePending_ = false;
 
-    // Build a canonical v9 records area in PersistentStorage's bounded staging
+    // Build a canonical v10 records area in PersistentStorage's bounded staging
     // buffer while records are being inspected. If no old schema is found the
     // transaction is simply discarded. This avoids keeping migrated copies of all
     // eight ClockState objects or an 8-KiB storage image on the call stack.
@@ -135,6 +147,16 @@ void PersistentStateService::begin() {
             presetOffset(slotIndex),
             record.data(),
             record.size()) && deserializePresetRecord(record, name, loadedPreset);
+
+        if (!presetValid_[slotIndex]) {
+            std::array<std::uint8_t, kV9PresetRecordSize> v9Record{};
+            presetValid_[slotIndex] = storage_.readBytes(
+                kV9CurrentRecordSize + static_cast<std::size_t>(slotIndex) * kV9PresetRecordSize,
+                v9Record.data(),
+                v9Record.size()) &&
+                deserializeV9PresetRecord(v9Record, name, loadedPreset);
+            loadedPriorSchema = presetValid_[slotIndex];
+        }
 
         if (!presetValid_[slotIndex]) {
             std::array<std::uint8_t, kV8PresetRecordSize> v8Record{};

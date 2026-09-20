@@ -49,6 +49,7 @@ enum class SettingsPage : std::uint8_t {
     Euclid,
     Sequencer,
     UnifiedClock,
+    Groove,
     DividerBank
 };
 
@@ -59,6 +60,7 @@ enum class ModeFunction : std::uint8_t {
     Euclid,
     Sequencer,
     UnifiedClock,
+    Groove,
     DividerBank
 };
 

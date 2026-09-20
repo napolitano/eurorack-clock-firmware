@@ -73,6 +73,9 @@ void SettingsEditor::adjust(
         case SettingsPage::UnifiedClock:
             adjustUnifiedClock(rowIndex, delta);
             break;
+        case SettingsPage::Groove:
+            adjustGroove(channelIndex, rowIndex, delta);
+            break;
         case SettingsPage::DividerBank:
             adjustDividerBank(rowIndex, delta);
             break;

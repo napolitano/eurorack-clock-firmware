@@ -40,6 +40,10 @@ bool isPersistentStateValid(const ClockState& state) {
         state.unifiedClock.rate.numerator == 0U || state.unifiedClock.rate.numerator > 16U ||
         state.unifiedClock.rate.denominator == 0U || state.unifiedClock.rate.denominator > 16U ||
         state.unifiedClock.swingPercent > 50U ||
+        static_cast<std::uint8_t>(state.unifiedClock.groove.preset) >
+            static_cast<std::uint8_t>(GroovePreset::PocketC) ||
+        state.unifiedClock.groove.amountPercent > 100U ||
+        state.unifiedClock.groove.rotation >= 16U ||
         state.unifiedClock.phasePercent > 99U ||
         state.unifiedClock.humanizeUs > config::kMaximumHumanizeUs ||
         static_cast<std::uint8_t>(state.dividerBank.bank) >
@@ -61,7 +65,12 @@ bool isPersistentStateValid(const ClockState& state) {
             channel.common.rate.factor == 0U || channel.common.rate.factor > 32U ||
             channel.common.rate.numerator == 0U || channel.common.rate.numerator > 16U ||
             channel.common.rate.denominator == 0U || channel.common.rate.denominator > 16U ||
-            channel.common.swingPercent > 50U || channel.common.probabilityPercent > 100U ||
+            channel.common.swingPercent > 50U ||
+            static_cast<std::uint8_t>(channel.common.groove.preset) >
+                static_cast<std::uint8_t>(GroovePreset::PocketC) ||
+            channel.common.groove.amountPercent > 100U ||
+            channel.common.groove.rotation >= 16U ||
+            channel.common.probabilityPercent > 100U ||
             channel.common.phasePercent > 99U ||
             static_cast<std::uint8_t>(channel.common.resetMode) > static_cast<std::uint8_t>(ResetMode::Free) ||
             channel.clock.meter.beats < 1U || channel.clock.meter.beats > 16U ||

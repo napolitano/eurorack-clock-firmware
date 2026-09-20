@@ -18,11 +18,11 @@
 namespace clockfw::services {
 namespace {
 
-/** Four-byte CURRENT magic value "CUR9" stored little-endian. */
-constexpr std::uint32_t kCurrentMagic = 0x39525543UL;
+/** Four-byte CURRENT magic value "CU10" stored little-endian. */
+constexpr std::uint32_t kCurrentMagic = 0x30315543UL;
 
-/** Four-byte preset magic value "PRE9" stored little-endian. */
-constexpr std::uint32_t kPresetMagic = 0x39455250UL;
+/** Four-byte preset magic value "PR10" stored little-endian. */
+constexpr std::uint32_t kPresetMagic = 0x30315250UL;
 
 /** Reflected CRC-32 polynomial used by Ethernet/ZIP and many embedded formats. */
 constexpr std::uint32_t kCrcPolynomial = 0xEDB88320UL;
@@ -207,6 +207,18 @@ PersistentStateService::serializeState(const ClockState& state) {
     // an exact prefix and can migrate without rewriting any earlier field.
     writer.write8(state.preCountSteps);
 
+    // Stage-1 Groove state is appended in schema v10 so the complete v9 payload
+    // remains an exact prefix for migration. One global assignment is followed
+    // by the eight independent-channel assignments.
+    writer.write8(static_cast<std::uint8_t>(state.unifiedClock.groove.preset));
+    writer.write8(state.unifiedClock.groove.amountPercent);
+    writer.write8(state.unifiedClock.groove.rotation);
+    for (const ChannelConfig& channel : state.channels) {
+        writer.write8(static_cast<std::uint8_t>(channel.common.groove.preset));
+        writer.write8(channel.common.groove.amountPercent);
+        writer.write8(channel.common.groove.rotation);
+    }
+
     // A schema-size mismatch is a programmer error and should fail at compile/test time.
     (void)writer.position();
     return payload;
@@ -274,6 +286,14 @@ bool PersistentStateService::deserializeState(
     candidate.device.displayRotated180 = reader.read8() != 0U;
     candidate.externalSync.smoothing = static_cast<SyncSmoothing>(reader.read8());
     candidate.preCountSteps = reader.read8();
+    candidate.unifiedClock.groove.preset = static_cast<GroovePreset>(reader.read8());
+    candidate.unifiedClock.groove.amountPercent = reader.read8();
+    candidate.unifiedClock.groove.rotation = reader.read8();
+    for (ChannelConfig& channel : candidate.channels) {
+        channel.common.groove.preset = static_cast<GroovePreset>(reader.read8());
+        channel.common.groove.amountPercent = reader.read8();
+        channel.common.groove.rotation = reader.read8();
+    }
 
     if (reader.position() != kStatePayloadSize || !isStateValid(candidate)) {
         return false;

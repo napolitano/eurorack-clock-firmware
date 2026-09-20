@@ -47,6 +47,9 @@ inline constexpr RateSettings kUnifiedClockRate{ClockRatioMode::Multiply, 1U, 1U
 /** Factory shared-clock swing percentage. */
 inline constexpr std::uint8_t kUnifiedClockSwingPercent = 0U;
 
+/** Factory shared-clock deterministic groove assignment. */
+inline constexpr GrooveSettings kUnifiedClockGroove{};
+
 /** Factory shared-clock gate length. */
 inline constexpr std::uint16_t kUnifiedClockGateLengthMs = 10U;
 
@@ -89,6 +92,9 @@ inline constexpr RateSettings kChannelRate{ClockRatioMode::Multiply, 1U, 1U, 1U}
 
 /** Factory channel swing percentage. */
 inline constexpr std::uint8_t kSwingPercent = 0U;
+
+/** Factory per-channel deterministic groove assignment. */
+inline constexpr GrooveSettings kChannelGroove{};
 
 /** Factory trigger probability. */
 inline constexpr std::uint8_t kProbabilityPercent = 100U;

@@ -97,6 +97,9 @@ private:
     /** @brief Adjusts one shared eight-output clock setting. */
     void adjustUnifiedClock(std::uint8_t rowIndex, std::int8_t delta);
 
+    /** @brief Adjusts the active global/per-channel Stage-1 Groove assignment. */
+    void adjustGroove(std::uint8_t channelIndex, std::uint8_t rowIndex, std::int8_t delta);
+
     /** @brief Adjusts one fixed divider-bank setting. */
     void adjustDividerBank(std::uint8_t rowIndex, std::int8_t delta);
 

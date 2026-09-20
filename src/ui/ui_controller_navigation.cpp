@@ -136,6 +136,10 @@ void UiController::backFromSettings() {
                navigation_.settingsPage == SettingsPage::Euclid ||
                navigation_.settingsPage == SettingsPage::Sequencer) {
         navigation_.settingsPage = SettingsPage::Channel;
+    } else if (navigation_.settingsPage == SettingsPage::Groove) {
+        navigation_.settingsPage = state_.operatingMode == OperatingMode::UnifiedClock
+            ? SettingsPage::UnifiedClock
+            : SettingsPage::Channel;
     } else if (navigation_.settingsPage == SettingsPage::Channel ||
                navigation_.settingsPage == SettingsPage::UnifiedClock ||
                navigation_.settingsPage == SettingsPage::DividerBank) {
@@ -256,10 +260,17 @@ void UiController::activateCurrentSetting() {
             }
             // OFF has no mode-specific parameters. Keep the user on the common
             // channel page rather than opening an unrelated editor.
+        } else if (navigation_.cursor == 9U) {
+            openSettingsPage(SettingsPage::Groove);
         } else {
             navigation_.editing = !navigation_.editing;
             invalidate();
         }
+        return;
+    }
+
+    if (navigation_.settingsPage == SettingsPage::UnifiedClock && navigation_.cursor == 8U) {
+        openSettingsPage(SettingsPage::Groove);
         return;
     }
 

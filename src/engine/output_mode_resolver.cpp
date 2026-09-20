@@ -44,6 +44,7 @@ ChannelConfig makeUnifiedClockChannel(const ClockState& state) {
     channel.common.mode = ChannelMode::Clock;
     channel.common.rate = state.unifiedClock.rate;
     channel.common.swingPercent = state.unifiedClock.swingPercent;
+    channel.common.groove = state.unifiedClock.groove;
     channel.common.probabilityPercent = 100U;
     channel.common.gateLengthMs = state.unifiedClock.gateLengthMs;
     channel.common.phasePercent = state.unifiedClock.phasePercent;

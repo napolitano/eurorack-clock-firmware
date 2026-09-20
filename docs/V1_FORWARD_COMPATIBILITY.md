@@ -9,7 +9,7 @@ This audit does **not** implement post-1.0 features. It records the constraints 
 
 ## Result
 
-The current V1 runtime is suitable for release qualification, with one important persistence constraint: **post-1.0 per-step metadata must not be added by simply expanding the repeated ClockState record.** The 1.1 development line uses schema v9 for the small persistent Pre-Count field, but this does not change the constraint. There is a clean migration path, but the V1 logical layout does not contain enough repeated-record headroom for that approach.
+The current V1 runtime is suitable for release qualification, with one important persistence constraint: **post-1.0 per-step metadata must not be added by simply expanding the repeated ClockState record.** The 1.1 development line uses schema v10 for Pre-Count plus the small Stage-1 Groove assignments, but this does not change the constraint. There is a clean migration path, but the V1 logical layout does not contain enough repeated-record headroom for that approach.
 
 No V1 feature must be added to solve this now. The correct action before 1.0 is to freeze and test the current layout, document the migration boundary, and require a new schema/layout design when the first storage-heavy 1.x feature is implemented.
 
@@ -41,7 +41,7 @@ The next fixed region begins at byte 3,072, so only **532 bytes** remain between
 Every byte added naively to the serialized ClockState payload is repeated once in CURRENT and once in each of eight presets. It therefore consumes **9 logical-image bytes**. The maximum safe in-place payload growth before colliding with the next region is only:
 
 ```text
-floor(532 / 9) = 59 bytes
+floor(289 / 9) = 32 bytes
 ```
 
 This is now a tested V1 contract (`kMaximumInPlaceStatePayloadGrowthBytes == 59`). It corrects the misleading assumption that all unused bytes in the 8-KiB image are available to grow the state record.
@@ -104,7 +104,7 @@ Post-1.0 storage-heavy rhythm data must therefore remain outside the small hot-p
 - one centralized persistent logical-layout header;
 - compile-time region-order and non-overlap checks;
 - explicit tested constants for V1 state/preset footprint and in-place growth ceiling;
-- documentation that distinguishes physical Flash headroom from actually usable schema-v9 repeated-record headroom;
+- documentation that distinguishes physical Flash headroom from actually usable schema-v10 repeated-record headroom;
 - a release roadmap that forbids new musical features during V1 qualification.
 
 ## Open qualification work - not architecture blockers

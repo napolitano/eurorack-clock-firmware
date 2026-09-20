@@ -299,18 +299,7 @@ void ClockEngine::fireChannelEvent(const std::size_t channelIndex) {
 
     setGateState(channelIndex, true);
 
-    const std::uint64_t baseIntervalUs = calculateBaseIntervalUs(channelIndex);
-    const std::uint8_t swingPercent = channel.common.swingPercent > 50U
-        ? 50U
-        : channel.common.swingPercent;
-    const std::uint64_t shortestSwingIntervalUs =
-        (baseIntervalUs * (100ULL - swingPercent)) / 100ULL;
-    const std::uint64_t humanizeUs = effectiveHumanizeUs(channelIndex);
-    const std::uint64_t humanizePairAllowanceUs = humanizeUs * 2ULL;
-    const std::uint64_t shortestActualIntervalUs =
-        shortestSwingIntervalUs > humanizePairAllowanceUs
-            ? shortestSwingIntervalUs - humanizePairAllowanceUs
-            : config::kSchedulerTickUs;
+    const std::uint64_t shortestActualIntervalUs = calculateShortestActualIntervalUs(channelIndex);
 
     const std::uint32_t gateTicks = core::calculateGatePulseTicks(
         channel.common.gateLengthMs,

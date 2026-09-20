@@ -31,6 +31,7 @@ void initializeFactoryDefaults(ClockState& state) {
     state.unifiedClock = {
         defaults::kUnifiedClockRate,
         defaults::kUnifiedClockSwingPercent,
+        defaults::kUnifiedClockGroove,
         defaults::kUnifiedClockGateLengthMs,
         defaults::kUnifiedClockPhasePercent};
     state.dividerBank = {
@@ -51,6 +52,7 @@ void initializeFactoryDefaults(ClockState& state) {
         channel.common.mode = defaults::kChannelMode;
         channel.common.rate = defaults::kChannelRate;
         channel.common.swingPercent = defaults::kSwingPercent;
+        channel.common.groove = defaults::kChannelGroove;
         channel.common.probabilityPercent = defaults::kProbabilityPercent;
         channel.common.gateLengthMs = defaults::kGateLengthMs;
         channel.common.phasePercent = defaults::kPhasePercent;

@@ -12,6 +12,7 @@
 
 #include "clock_core.h"
 #include "config.h"
+#include "domain/groove_catalog.h"
 
 namespace clockfw::engine {
 
@@ -142,6 +143,22 @@ std::uint64_t ClockEngine::calculateEventPositionQ32(
     const std::uint64_t swingOffsetQ32 = (eventSerial & 1ULL) != 0ULL
         ? calculateSwingDeltaQ32(channelIndex, baseIntervalQ32)
         : 0U;
+    const GrooveSettings& grooveSettings =
+        configuration_.channels[channelIndex].common.groove;
+    const std::uint16_t groovePermille = groove::delayPermille(
+        grooveSettings.preset,
+        eventSerial,
+        grooveSettings.amountPercent,
+        grooveSettings.rotation);
+    const std::uint64_t requestedGrooveQ32 =
+        (baseIntervalQ32 * groovePermille) / 1000ULL;
+    const std::uint64_t minimumIntervalQ32 = minimumOutputIntervalQ32();
+    const std::uint64_t maximumCombinedDelayQ32 = baseIntervalQ32 > minimumIntervalQ32
+        ? baseIntervalQ32 - minimumIntervalQ32
+        : 0U;
+    const std::uint64_t grooveOffsetQ32 = swingOffsetQ32 >= maximumCombinedDelayQ32
+        ? 0U
+        : std::min(requestedGrooveQ32, maximumCombinedDelayQ32 - swingOffsetQ32);
 
     if (runtime.scheduleEpochQ32 > UINT64_MAX - phaseOffsetQ32) {
         return UINT64_MAX;
@@ -151,23 +168,25 @@ std::uint64_t ClockEngine::calculateEventPositionQ32(
         return UINT64_MAX;
     }
     const std::uint64_t nominalPositionQ32 = phasePositionQ32 + baseOffsetQ32;
-    if (swingOffsetQ32 > UINT64_MAX - nominalPositionQ32) {
+    if (swingOffsetQ32 > UINT64_MAX - nominalPositionQ32 ||
+        grooveOffsetQ32 > UINT64_MAX - nominalPositionQ32 - swingOffsetQ32) {
         return UINT64_MAX;
     }
-    const std::uint64_t swungPositionQ32 = nominalPositionQ32 + swingOffsetQ32;
+    const std::uint64_t shapedPositionQ32 =
+        nominalPositionQ32 + swingOffsetQ32 + grooveOffsetQ32;
     const std::int64_t humanizeOffsetQ32 = calculateHumanizeOffsetQ32(channelIndex, eventSerial);
     if (humanizeOffsetQ32 >= 0) {
         const std::uint64_t delayQ32 = static_cast<std::uint64_t>(humanizeOffsetQ32);
-        return delayQ32 > UINT64_MAX - swungPositionQ32
+        return delayQ32 > UINT64_MAX - shapedPositionQ32
             ? UINT64_MAX
-            : swungPositionQ32 + delayQ32;
+            : shapedPositionQ32 + delayQ32;
     }
 
     const std::uint64_t advanceQ32 = static_cast<std::uint64_t>(-humanizeOffsetQ32);
     const std::uint64_t earliestPositionQ32 = phasePositionQ32;
-    return advanceQ32 >= swungPositionQ32 - earliestPositionQ32
+    return advanceQ32 >= shapedPositionQ32 - earliestPositionQ32
         ? earliestPositionQ32
-        : swungPositionQ32 - advanceQ32;
+        : shapedPositionQ32 - advanceQ32;
 }
 
 std::uint64_t ClockEngine::calculateBaseIntervalUs(const std::size_t channelIndex) const {
@@ -190,6 +209,29 @@ std::uint64_t ClockEngine::calculateBaseIntervalUs(const std::size_t channelInde
     return std::max<std::uint64_t>(intervalUs, config::kSchedulerTickUs);
 }
 
+std::uint64_t ClockEngine::calculateShortestActualIntervalUs(
+    const std::size_t channelIndex) const {
+    const ChannelConfig& channel = configuration_.channels[channelIndex];
+    const std::uint64_t baseIntervalUs = calculateBaseIntervalUs(channelIndex);
+    const std::uint8_t swingPercent = std::min<std::uint8_t>(channel.common.swingPercent, 50U);
+    const std::uint64_t swingDelayUs = (baseIntervalUs * swingPercent) / 100ULL;
+    const std::uint16_t groovePermille = groove::maximumDelayPermille(
+        channel.common.groove.preset,
+        channel.common.groove.amountPercent);
+    const std::uint64_t grooveDelayUs = (baseIntervalUs * groovePermille) / 1000ULL;
+    const std::uint64_t deterministicDelayUs = std::min<std::uint64_t>(
+        swingDelayUs + grooveDelayUs,
+        baseIntervalUs > config::kSchedulerTickUs
+            ? baseIntervalUs - config::kSchedulerTickUs
+            : 0U);
+    const std::uint64_t shortestShapedIntervalUs = baseIntervalUs - deterministicDelayUs;
+    const std::uint64_t humanizePairAllowanceUs =
+        static_cast<std::uint64_t>(effectiveHumanizeUs(channelIndex)) * 2ULL;
+    return shortestShapedIntervalUs > humanizePairAllowanceUs
+        ? shortestShapedIntervalUs - humanizePairAllowanceUs
+        : config::kSchedulerTickUs;
+}
+
 
 
 std::uint16_t ClockEngine::effectiveHumanizeUs(const std::size_t channelIndex) const {
@@ -201,16 +243,25 @@ std::uint16_t ClockEngine::effectiveHumanizeUs(const std::size_t channelIndex) c
     const ChannelConfig& channel = configuration_.channels[channelIndex];
     const std::uint64_t baseIntervalUs = calculateBaseIntervalUs(channelIndex);
     const std::uint8_t swingPercent = std::min<std::uint8_t>(channel.common.swingPercent, 50U);
-    const std::uint64_t shortestSwingIntervalUs =
-        (baseIntervalUs * (100ULL - swingPercent)) / 100ULL;
-    if (shortestSwingIntervalUs <= config::kSchedulerTickUs) {
+    const std::uint64_t swingDelayUs = (baseIntervalUs * swingPercent) / 100ULL;
+    const std::uint16_t groovePermille = groove::maximumDelayPermille(
+        channel.common.groove.preset,
+        channel.common.groove.amountPercent);
+    const std::uint64_t grooveDelayUs = (baseIntervalUs * groovePermille) / 1000ULL;
+    const std::uint64_t totalDelayUs = std::min<std::uint64_t>(
+        swingDelayUs + grooveDelayUs,
+        baseIntervalUs > config::kSchedulerTickUs
+            ? baseIntervalUs - config::kSchedulerTickUs
+            : 0U);
+    const std::uint64_t shortestShapedIntervalUs = baseIntervalUs - totalDelayUs;
+    if (shortestShapedIntervalUs <= config::kSchedulerTickUs) {
         return 0U;
     }
 
-    // Adjacent events may receive opposite signed offsets. Reserve one complete
-    // scheduler quantum between them even at the shortest swung interval.
+    // Adjacent events may receive opposite signed humanize offsets. Reserve one
+    // scheduler quantum even after deterministic Swing + Groove displacement.
     const std::uint64_t maximumSafeUs =
-        (shortestSwingIntervalUs - config::kSchedulerTickUs) / 2ULL;
+        (shortestShapedIntervalUs - config::kSchedulerTickUs) / 2ULL;
     const std::uint64_t quantizedSafeUs =
         (maximumSafeUs / config::kSchedulerTickUs) * config::kSchedulerTickUs;
     const std::uint64_t configuredUs = std::min<std::uint64_t>(

@@ -262,6 +262,29 @@ void writeTestUint32Le(std::uint8_t* const destination, const std::uint32_t valu
 
 
 template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
+std::array<std::uint8_t, LegacySize> makeLegacyV9Record(
+    const std::array<std::uint8_t, CurrentSize>& current) {
+    constexpr std::size_t kV10PayloadSize = 283U;
+    constexpr std::size_t kV9PayloadSize = 256U;
+    static_assert(kV10PayloadSize == kV9PayloadSize + 27U);
+    std::array<std::uint8_t, LegacySize> legacy{};
+    if constexpr (PayloadOffset == 8U) {
+        writeTestUint32Le(legacy.data(), 0x39525543UL);  // "CUR9"
+    } else {
+        std::copy_n(current.begin() + 8, 16U, legacy.begin() + 8);
+        writeTestUint32Le(legacy.data(), 0x39455250UL);  // "PRE9"
+    }
+    legacy[4] = 9U;
+    legacy[5] = current[5];
+    writeTestUint16Le(legacy.data() + 6U, static_cast<std::uint16_t>(kV9PayloadSize));
+    std::copy_n(current.begin() + static_cast<std::ptrdiff_t>(PayloadOffset),
+                kV9PayloadSize,
+                legacy.begin() + static_cast<std::ptrdiff_t>(PayloadOffset));
+    writeTestUint32Le(legacy.data() + LegacySize - 4U, testCrc32(legacy.data(), LegacySize - 4U));
+    return legacy;
+}
+
+template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
 std::array<std::uint8_t, LegacySize> makeLegacyV8Record(
     const std::array<std::uint8_t, CurrentSize>& current) {
     constexpr std::size_t kV9PayloadSize = 256U;
@@ -561,12 +584,12 @@ void testPersistentLayoutV1ForwardCompatibilityContract() {
     CHECK_EQ(hal::persistent_layout::kMaximumImageBytes, 12288U);
     CHECK_EQ(hal::persistent_layout::kLegacyScoreRegionOffset, 3072U);
     CHECK_EQ(hal::persistent_layout::kLeaderboardRegionOffset, 4096U);
-    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 256U);
-    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 268U);
-    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 284U);
-    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2540U);
-    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 532U);
-    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 59U);
+    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 283U);
+    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 295U);
+    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 311U);
+    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2783U);
+    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 289U);
+    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 32U);
 }
 
 void testPersistentStorageTransactionalUpdate() {
@@ -909,8 +932,8 @@ void testPersistentStorageAndStateService() {
     hal::PersistentStorage::failNextReadForTest();
     CHECK(!fullReload.renamePreset(2U, "READFAIL"));
 
-    constexpr std::size_t kCurrentRecordSizeForTest = 268U;
-    constexpr std::size_t kPresetRecordSizeForTest = 284U;
+    constexpr std::size_t kCurrentRecordSizeForTest = 295U;
+    constexpr std::size_t kPresetRecordSizeForTest = 311U;
     constexpr std::size_t kPreset2OffsetForTest =
         kCurrentRecordSizeForTest + 2U * kPresetRecordSizeForTest;
     std::uint8_t presetMagicByte = 0U;
@@ -953,6 +976,8 @@ void testPersistentStorageAndStateService() {
 
 
 void testPersistentV3Migration() {
+    constexpr std::size_t kV10CurrentSize = 295U;
+    constexpr std::size_t kV10PresetSize = 311U;
     constexpr std::size_t kV9CurrentSize = 268U;
     constexpr std::size_t kV9PresetSize = 284U;
     constexpr std::size_t kV8CurrentSize = 267U;
@@ -967,6 +992,7 @@ void testPersistentV3Migration() {
     constexpr std::size_t kV4PresetSize = 273U;
     constexpr std::size_t kV3CurrentSize = 253U;
     constexpr std::size_t kV3PresetSize = 269U;
+    constexpr std::size_t kV10PresetOffset = kV10CurrentSize;
     constexpr std::size_t kV9PresetOffset = kV9CurrentSize;
     constexpr std::size_t kV8PresetOffset = kV8CurrentSize;
     constexpr std::size_t kV7PresetOffset = kV7CurrentSize;
@@ -976,9 +1002,8 @@ void testPersistentV3Migration() {
     constexpr std::size_t kV3PresetOffset = kV3CurrentSize;
     constexpr std::size_t kScoreOffset = 3072U;
 
-    // Seed a v9 record using the production serializer, strip the appended
-    // Pre-Count byte to obtain v8, then strip SYNC smoothing for v7 and derive
-    // each older schema in turn.
+    // Seed a v10 record using the production serializer, strip the appended
+    // Stage-1 Groove fields to obtain v9, then derive each older schema in turn.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage seedStorage;
     services::PersistentStateService seed(seedStorage);
@@ -996,10 +1021,12 @@ void testPersistentV3Migration() {
     CHECK(seed.savePreset(0U, "MIGRATE", legacyState));
     seed.service(5000U);
 
-    std::array<std::uint8_t, kV9CurrentSize> v9Current{};
-    std::array<std::uint8_t, kV9PresetSize> v9Preset{};
-    CHECK(seedStorage.readBytes(0U, v9Current.data(), v9Current.size()));
-    CHECK(seedStorage.readBytes(kV9PresetOffset, v9Preset.data(), v9Preset.size()));
+    std::array<std::uint8_t, kV10CurrentSize> v10Current{};
+    std::array<std::uint8_t, kV10PresetSize> v10Preset{};
+    CHECK(seedStorage.readBytes(0U, v10Current.data(), v10Current.size()));
+    CHECK(seedStorage.readBytes(kV10PresetOffset, v10Preset.data(), v10Preset.size()));
+    const auto v9Current = makeLegacyV9Record<kV10CurrentSize, kV9CurrentSize, 8U>(v10Current);
+    const auto v9Preset = makeLegacyV9Record<kV10PresetSize, kV9PresetSize, 24U>(v10Preset);
     const auto v8Current = makeLegacyV8Record<kV9CurrentSize, kV8CurrentSize, 8U>(v9Current);
     const auto v8Preset = makeLegacyV8Record<kV9PresetSize, kV8PresetSize, 24U>(v9Preset);
     const auto v7Current = makeLegacyV7Record<kV8CurrentSize, kV7CurrentSize, 8U>(v8Current);
@@ -1017,7 +1044,22 @@ void testPersistentV3Migration() {
         0x52U, 0x41U, 0x49U, 0x44U, 1U, 2U, 3U, 4U,
         5U, 6U, 7U, 8U, 9U, 10U, 11U, 12U};
 
-    // v8 -> v9: stable 1.0.x state survives unchanged and Pre-Count defaults
+    // v9 -> v10: early 1.1 Pre-Count state survives and Groove defaults to OFF.
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage legacyV9Storage;
+    CHECK(legacyV9Storage.writeBytes(0U, v9Current.data(), v9Current.size()));
+    CHECK(legacyV9Storage.writeBytes(kV9PresetOffset, v9Preset.data(), v9Preset.size()));
+    services::PersistentStateService migratedV9(legacyV9Storage);
+    migratedV9.begin();
+    ClockState restoredV9 = makeDefaultState();
+    CHECK(migratedV9.restoreCurrentState(restoredV9));
+    CHECK_EQ(restoredV9.bpm, 143U);
+    CHECK_EQ(restoredV9.unifiedClock.groove.preset, GroovePreset::Off);
+    CHECK_EQ(restoredV9.unifiedClock.groove.amountPercent, 100U);
+    CHECK_EQ(restoredV9.channels[2].common.groove.preset, GroovePreset::Off);
+    CHECK(migratedV9.presetExists(0U));
+
+    // v8 -> v10: stable 1.0.x state survives unchanged; Pre-Count and Groove default
     // to OFF so upgrading firmware never delays an existing user's next PLAY.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV8Storage;
@@ -1031,14 +1073,14 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV8.externalSync.smoothing, legacyState.externalSync.smoothing);
     CHECK_EQ(restoredV8.preCountSteps, 0U);
     CHECK(migratedV8.presetExists(0U));
-    std::array<std::uint8_t, kV9CurrentSize> migratedV8ToV9Current{};
-    std::array<std::uint8_t, kV9PresetSize> migratedV8ToV9Preset{};
+    std::array<std::uint8_t, kV10CurrentSize> migratedV8ToV9Current{};
+    std::array<std::uint8_t, kV10PresetSize> migratedV8ToV9Preset{};
     CHECK(legacyV8Storage.readBytes(0U, migratedV8ToV9Current.data(), migratedV8ToV9Current.size()));
-    CHECK(legacyV8Storage.readBytes(kV9PresetOffset, migratedV8ToV9Preset.data(), migratedV8ToV9Preset.size()));
-    CHECK_EQ(migratedV8ToV9Current[4], 9U);
-    CHECK_EQ(migratedV8ToV9Preset[4], 9U);
+    CHECK(legacyV8Storage.readBytes(kV10PresetOffset, migratedV8ToV9Preset.data(), migratedV8ToV9Preset.size()));
+    CHECK_EQ(migratedV8ToV9Current[4], 10U);
+    CHECK_EQ(migratedV8ToV9Preset[4], 10U);
 
-    // v7 -> v9: all prior musical/device state survives, SYNC smoothing receives
+    // v7 -> v10: all prior musical/device state survives, SYNC smoothing receives
     // the release-safe LOW default, and Pre-Count receives OFF before rewrite.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV7Storage;
@@ -1053,12 +1095,12 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV7.externalSync.smoothing, SyncSmoothing::Low);
     CHECK(migratedV7.presetExists(0U));
     CHECK_EQ(restoredV7.preCountSteps, 0U);
-    std::array<std::uint8_t, kV9CurrentSize> migratedV7ToV9Current{};
-    std::array<std::uint8_t, kV9PresetSize> migratedV7ToV9Preset{};
+    std::array<std::uint8_t, kV10CurrentSize> migratedV7ToV9Current{};
+    std::array<std::uint8_t, kV10PresetSize> migratedV7ToV9Preset{};
     CHECK(legacyV7Storage.readBytes(0U, migratedV7ToV9Current.data(), migratedV7ToV9Current.size()));
-    CHECK(legacyV7Storage.readBytes(kV9PresetOffset, migratedV7ToV9Preset.data(), migratedV7ToV9Preset.size()));
-    CHECK_EQ(migratedV7ToV9Current[4], 9U);
-    CHECK_EQ(migratedV7ToV9Preset[4], 9U);
+    CHECK(legacyV7Storage.readBytes(kV10PresetOffset, migratedV7ToV9Preset.data(), migratedV7ToV9Preset.size()));
+    CHECK_EQ(migratedV7ToV9Current[4], 10U);
+    CHECK_EQ(migratedV7ToV9Preset[4], 10U);
 
     // A CRC-valid current record with a semantically invalid payload must be rejected.
     // This exercises the post-decode semantic-validation path independently of CRC checks.
@@ -1075,7 +1117,7 @@ void testPersistentV3Migration() {
     invalidV6.begin();
     CHECK(!invalidV6.hasStoredCurrentState());
 
-    // v6 -> v9: musical state is preserved and new device preferences default safely.
+    // v6 -> v10: musical state is preserved and new device preferences default safely.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV6Storage;
     CHECK(legacyV6Storage.writeBytes(0U, v6Current.data(), v6Current.size()));
@@ -1091,14 +1133,14 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV6.externalSync.smoothing, SyncSmoothing::Low);
     CHECK_EQ(restoredV6.preCountSteps, 0U);
     CHECK(migratedV6.presetExists(0U));
-    std::array<std::uint8_t, kV9CurrentSize> migratedV6ToV9Current{};
-    std::array<std::uint8_t, kV9PresetSize> migratedV6ToV9Preset{};
+    std::array<std::uint8_t, kV10CurrentSize> migratedV6ToV9Current{};
+    std::array<std::uint8_t, kV10PresetSize> migratedV6ToV9Preset{};
     CHECK(legacyV6Storage.readBytes(0U, migratedV6ToV9Current.data(), migratedV6ToV9Current.size()));
-    CHECK(legacyV6Storage.readBytes(kV9PresetOffset, migratedV6ToV9Preset.data(), migratedV6ToV9Preset.size()));
-    CHECK_EQ(migratedV6ToV9Current[4], 9U);
-    CHECK_EQ(migratedV6ToV9Preset[4], 9U);
+    CHECK(legacyV6Storage.readBytes(kV10PresetOffset, migratedV6ToV9Preset.data(), migratedV6ToV9Preset.size()));
+    CHECK_EQ(migratedV6ToV9Current[4], 10U);
+    CHECK_EQ(migratedV6ToV9Preset[4], 10U);
 
-    // v5 -> v9: user state remains intact; newer fields receive safe defaults.
+    // v5 -> v10: user state remains intact; newer fields receive safe defaults.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV5Storage;
     CHECK(legacyV5Storage.writeBytes(0U, v5Current.data(), v5Current.size()));
@@ -1115,14 +1157,14 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV5.externalSync.smoothing, SyncSmoothing::Low);
     CHECK_EQ(restoredV5.preCountSteps, 0U);
     CHECK(migratedV5.presetExists(0U));
-    std::array<std::uint8_t, kV9CurrentSize> migratedV9Current{};
-    std::array<std::uint8_t, kV9PresetSize> migratedV9Preset{};
+    std::array<std::uint8_t, kV10CurrentSize> migratedV9Current{};
+    std::array<std::uint8_t, kV10PresetSize> migratedV9Preset{};
     CHECK(legacyV5Storage.readBytes(0U, migratedV9Current.data(), migratedV9Current.size()));
-    CHECK(legacyV5Storage.readBytes(kV9PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
-    CHECK_EQ(migratedV9Current[4], 9U);
-    CHECK_EQ(migratedV9Preset[4], 9U);
+    CHECK(legacyV5Storage.readBytes(kV10PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
+    CHECK_EQ(migratedV9Current[4], 10U);
+    CHECK_EQ(migratedV9Preset[4], 10U);
 
-    // v4 -> v9: user BPM remains intact and newer preferences receive factory defaults.
+    // v4 -> v10: user BPM remains intact and newer preferences receive factory defaults.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV4Storage;
     CHECK(legacyV4Storage.writeBytes(0U, v4Current.data(), v4Current.size()));
@@ -1141,11 +1183,11 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV4.preCountSteps, 0U);
     CHECK(migratedV4.presetExists(0U));
     CHECK(legacyV4Storage.readBytes(0U, migratedV9Current.data(), migratedV9Current.size()));
-    CHECK(legacyV4Storage.readBytes(kV9PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
-    CHECK_EQ(migratedV9Current[4], 9U);
-    CHECK_EQ(migratedV9Preset[4], 9U);
+    CHECK(legacyV4Storage.readBytes(kV10PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
+    CHECK_EQ(migratedV9Current[4], 10U);
+    CHECK_EQ(migratedV9Preset[4], 10U);
 
-    // v3 -> v9 through all intermediate layouts, preserving the independent high-score area.
+    // v3 -> v10 through all intermediate layouts, preserving the independent high-score area.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyStorage;
     CHECK(legacyStorage.writeBytes(0U, v3Current.data(), v3Current.size()));
@@ -1190,9 +1232,9 @@ void testPersistentV3Migration() {
     CHECK(legacyStorage.readBytes(kScoreOffset, scoreAfter.data(), scoreAfter.size()));
     CHECK(scoreAfter == scoreMarker);
     CHECK(legacyStorage.readBytes(0U, migratedV9Current.data(), migratedV9Current.size()));
-    CHECK(legacyStorage.readBytes(kV9PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
-    CHECK_EQ(migratedV9Current[4], 9U);
-    CHECK_EQ(migratedV9Preset[4], 9U);
+    CHECK(legacyStorage.readBytes(kV10PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
+    CHECK_EQ(migratedV9Current[4], 10U);
+    CHECK_EQ(migratedV9Preset[4], 10U);
 
     // A damaged v3 CURRENT must not prevent a valid v3 preset from being recovered.
     auto corruptCurrent = v3Current;
@@ -3829,7 +3871,7 @@ void testUiControllerFlows() {
     controllerConfirmModeYes(controller, now);
     CHECK_EQ(state.channels[selectedChannel].common.mode, ChannelMode::Clock);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
-    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Channel, ChannelMode::Clock), 9U);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Channel, ChannelMode::Clock), 10U);
 
     // RATE and CLOCK settings remain ordinary push-to-edit pages.
     controllerOpenSettingsChord(controller, now);

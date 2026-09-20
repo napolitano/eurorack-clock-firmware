@@ -10,6 +10,15 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Groove Engine Stage 1
+
+- Add the first preset-based deterministic Groove Engine for 1.1 development. One Clock owns one shared groove; Independent mode owns groove settings per channel; Divider Bank remains groove-free.
+- Add read-only factory presets `SWING 54`, `SWING 58`, `SWING 62`, `SWING 66`, `POCKET A`, `POCKET B`, and `POCKET C`, plus explicit `OFF`.
+- Add `AMOUNT` (0-100%) and `ROTATE` controls without merging deterministic Groove timing with the separate Humanize layer.
+- Bound combined Swing + Groove displacement so event timestamps remain monotonic and gate lengths cannot consume the next rising edge.
+- Advance persistence to schema v10 while preserving the complete v9 payload as a migration prefix; migrated v9 and older states inject Groove `OFF`, amount 100%, rotation 0.
+- Add Groove timing, ownership, menu, clamp, persistence and migration regressions.
+
 ### Pre-Count display
 
 - Replace the shrinking-circle animation with a static black square popover framed by a one-pixel white border.

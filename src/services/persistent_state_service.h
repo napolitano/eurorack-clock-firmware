@@ -38,14 +38,14 @@ public:
     /** Maximum number of user-visible characters in one preset name. */
     static constexpr std::size_t kPresetNameLength = 16U;
 
-    /** Serialized v9 payload bytes for one complete ClockState. */
-    static constexpr std::size_t kCurrentStatePayloadBytes = 256U;
+    /** Serialized v10 payload bytes for one complete ClockState. */
+    static constexpr std::size_t kCurrentStatePayloadBytes = 283U;
 
     /** Durable CURRENT record bytes: header + state payload + CRC-32. */
-    static constexpr std::size_t kCurrentRecordBytes = 268U;
+    static constexpr std::size_t kCurrentRecordBytes = 295U;
 
     /** Durable named-preset record bytes: header + name + state payload + CRC-32. */
-    static constexpr std::size_t kPresetRecordBytes = 284U;
+    static constexpr std::size_t kPresetRecordBytes = 311U;
 
     /** Bytes occupied by CURRENT plus all eight V1 named presets. */
     static constexpr std::size_t kSettingsPresetFootprintBytes =
@@ -186,7 +186,13 @@ private:
     static constexpr std::size_t kPresetRecordSize = kPresetRecordBytes;
 
     /** Stable CURRENT record schema version. */
-    static constexpr std::uint8_t kSchemaVersion = 9U;
+    static constexpr std::uint8_t kSchemaVersion = 10U;
+
+    /** v9 schema used by early 1.1 development before Stage-1 Groove persistence. */
+    static constexpr std::uint8_t kV9SchemaVersion = 9U;
+    static constexpr std::size_t kV9StatePayloadSize = 256U;
+    static constexpr std::size_t kV9CurrentRecordSize = 268U;
+    static constexpr std::size_t kV9PresetRecordSize = 284U;
 
     /** v8 schema used by 1.0.x before persistent Pre-Count was added. */
     static constexpr std::uint8_t kV8SchemaVersion = 8U;
@@ -300,6 +306,22 @@ private:
     /** @brief Validates and extracts one named user preset record. */
     static bool deserializePresetRecord(
         const std::array<std::uint8_t, kPresetRecordSize>& record,
+        char* name,
+        ClockState& state);
+
+    /** @brief Upgrades a v9 payload by injecting Stage-1 Groove defaults. */
+    static bool deserializeV9State(
+        const std::array<std::uint8_t, kV9StatePayloadSize>& payload,
+        ClockState& state);
+
+    /** @brief Validates and upgrades one v9 CURRENT record. */
+    static bool deserializeV9CurrentRecord(
+        const std::array<std::uint8_t, kV9CurrentRecordSize>& record,
+        ClockState& state);
+
+    /** @brief Validates and upgrades one named v9 preset record. */
+    static bool deserializeV9PresetRecord(
+        const std::array<std::uint8_t, kV9PresetRecordSize>& record,
         char* name,
         ClockState& state);
 
@@ -432,7 +454,7 @@ static_assert(
         hal::persistent_layout::kLegacyScoreRegionOffset,
     "CURRENT plus named presets overlap the legacy score region.");
 static_assert(
-    PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes == 59U,
+    PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes == 32U,
     "V1 persistence headroom changed; update the forward-compatibility analysis.");
 
 }  // namespace clockfw::services

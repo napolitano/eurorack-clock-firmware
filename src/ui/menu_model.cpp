@@ -15,6 +15,7 @@
 #include "domain/clock_options.h"
 #include "ui/text_formatter.h"
 #include "ui/menu_model_sync.h"
+#include "ui/menu_model_groove.h"
 #include "ui_text.h"
 #include "version.h"
 
@@ -47,6 +48,7 @@ const char* settingsPageTitle(const SettingsPage page) {
         case SettingsPage::Euclid: return text::get(text::TextId::ModeEuclidLong);
         case SettingsPage::Sequencer: return text::get(text::TextId::ModeSequencerLong);
         case SettingsPage::UnifiedClock: return text::get(text::TextId::ModeUnifiedLong);
+        case SettingsPage::Groove: return text::get(text::TextId::Groove);
         case SettingsPage::DividerBank: return text::get(text::TextId::ModeDividerLong);
         case SettingsPage::Root:
         default: return text::get(text::TextId::RootSettings);
@@ -70,12 +72,13 @@ std::uint8_t settingsPageItemCount(
         case SettingsPage::Info: return 6U;
         case SettingsPage::Licenses: return 7U;
         case SettingsPage::Updates: return 1U;
-        case SettingsPage::Channel: return mode == ChannelMode::Off ? 1U : 9U;
+        case SettingsPage::Channel: return mode == ChannelMode::Off ? 1U : 10U;
         case SettingsPage::Rate: return 3U;
         case SettingsPage::Clock: return 2U;
         case SettingsPage::Euclid: return 3U;
         case SettingsPage::Sequencer: return 8U;
-        case SettingsPage::UnifiedClock: return 8U;
+        case SettingsPage::UnifiedClock: return 9U;
+        case SettingsPage::Groove: return 3U;
         case SettingsPage::DividerBank: return 3U;
         default: return 0U;
     }
@@ -264,15 +267,14 @@ MenuRow buildMenuRow(
         copyText(row.label, sizeof(row.label), text::TextId::Updates);
     } else if (page == SettingsPage::Channel) {
         constexpr text::TextId kLabels[] = {
-            text::TextId::Mode,
-            text::TextId::Rate,
-            text::TextId::ModeConfig,
-            text::TextId::Swing,
-            text::TextId::Probability,
-            text::TextId::Gate,
-            text::TextId::Phase,
-            text::TextId::Reset,
-            text::TextId::Mute};
+            text::TextId::Mode, text::TextId::Rate, text::TextId::ModeConfig,
+            text::TextId::Swing, text::TextId::Probability, text::TextId::Gate,
+            text::TextId::Phase, text::TextId::Reset, text::TextId::Mute};
+        if (rowIndex == 9U) {
+            copyText(row.label, sizeof(row.label), text::TextId::Groove);
+            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
+            return row;
+        }
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
         if (rowIndex == 0U) {
             std::snprintf(row.value, sizeof(row.value), "%s", channelModeLongLabel(channel.common.mode));
@@ -350,14 +352,14 @@ MenuRow buildMenuRow(
         }
     } else if (page == SettingsPage::UnifiedClock) {
         constexpr text::TextId kLabels[] = {
-            text::TextId::Mode,
-            text::TextId::DivideMultiply,
-            text::TextId::PolyNumerator,
-            text::TextId::PolyDenominator,
-            text::TextId::Swing,
-            text::TextId::Gate,
-            text::TextId::Phase,
-            text::TextId::Humanize};
+            text::TextId::Mode, text::TextId::DivideMultiply, text::TextId::PolyNumerator,
+            text::TextId::PolyDenominator, text::TextId::Swing, text::TextId::Gate,
+            text::TextId::Phase, text::TextId::Humanize};
+        if (rowIndex == 8U) {
+            copyText(row.label, sizeof(row.label), text::TextId::Groove);
+            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
+            return row;
+        }
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
         if (rowIndex == 0U) {
             copyText(row.value, sizeof(row.value), text::TextId::ModeUnifiedLong);
@@ -380,6 +382,8 @@ MenuRow buildMenuRow(
         } else {
             std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::MicrosecondsFormat), state.unifiedClock.humanizeUs);
         }
+    } else if (page == SettingsPage::Groove) {
+        row = buildGrooveMenuRow(rowIndex, selectedChannel, state);
     } else if (page == SettingsPage::DividerBank) {
         constexpr text::TextId kLabels[] = {
             text::TextId::Mode,
