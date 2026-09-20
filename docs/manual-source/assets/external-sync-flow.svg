@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 430" role="img" aria-labelledby="title desc">
+<title id="title">CLOCK external synchronization flow</title><desc id="desc">Current GPIO EXTI synchronization path with separate pending analog input hardware qualification.</desc>
+<style>.h{font:700 28px Ubuntu,Arial,sans-serif;fill:#111}.t{font:20px Ubuntu,Arial,sans-serif;fill:#222}.s{font:16px Ubuntu,Arial,sans-serif;fill:#555}.box{fill:#fff;stroke:#555;stroke-width:3}.todo{fill:#fff4e6;stroke:#d97706;stroke-width:3;stroke-dasharray:9 6}.done{fill:#ecf8ef;stroke:#2e8b57;stroke-width:3}.arrow{stroke:#555;stroke-width:3;fill:none;marker-end:url(#a)}</style>
+<defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0 0 L8 3 L0 6 Z" fill="#555"/></marker></defs>
+<text x="640" y="40" text-anchor="middle" class="h">External Sync — hardware qualification vs. implemented capture path</text>
+<g transform="translate(25 110)"><rect width="170" height="90" rx="12" class="box"/><text x="85" y="42" text-anchor="middle" class="t">Eurorack clock</text><text x="85" y="68" text-anchor="middle" class="s">SYNC IN</text></g>
+<g transform="translate(230 95)"><rect width="190" height="120" rx="12" class="todo"/><text x="95" y="42" text-anchor="middle" class="t">Comparator</text><text x="95" y="70" text-anchor="middle" class="s">conditioned level</text><text x="95" y="96" text-anchor="middle" class="s">analog HIL pending</text></g>
+<g transform="translate(455 95)"><rect width="205" height="120" rx="12" class="done"/><text x="102.5" y="38" text-anchor="middle" class="t">GPIO EXTI</text><text x="102.5" y="66" text-anchor="middle" class="s">timestamp + level queue</text><text x="102.5" y="92" text-anchor="middle" class="s">implemented</text></g>
+<g transform="translate(695 95)"><rect width="215" height="120" rx="12" class="done"/><text x="107.5" y="38" text-anchor="middle" class="t">Sync tracker</text><text x="107.5" y="66" text-anchor="middle" class="s">PPQN / lock / loss / tempo</text><text x="107.5" y="92" text-anchor="middle" class="s">implemented</text></g>
+<g transform="translate(945 95)"><rect width="300" height="120" rx="12" class="done"/><text x="150" y="38" text-anchor="middle" class="t">ClockEngine</text><text x="150" y="66" text-anchor="middle" class="s">monotonic timeline</text><text x="150" y="92" text-anchor="middle" class="s">musical phase alignment</text></g>
+<path d="M195 155 H230 M420 155 H455 M660 155 H695 M910 155 H945" class="arrow"/>
+<g transform="translate(475 285)"><rect width="410" height="90" rx="12" class="done"/><text x="205" y="38" text-anchor="middle" class="t">Native simulator pulse source</text><text x="205" y="65" text-anchor="middle" class="s">injects conditioned events into the implemented path</text></g>
+<path d="M680 285 V240 H802 V215" class="arrow"/>
+</svg>

@@ -21,8 +21,8 @@ from lxml import etree
 import update_manual_galleries
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SOURCE = ROOT / "docs" / "manual" / "clock-user-manual.odt"
-DEFAULT_ASSETS = ROOT / "docs" / "manual" / "assets"
+DEFAULT_SOURCE = ROOT / "docs" / "manual-source" / "clock-user-manual.odt"
+DEFAULT_ASSETS = ROOT / "docs" / "manual-source" / "assets"
 
 NS = {
     "draw": "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0",

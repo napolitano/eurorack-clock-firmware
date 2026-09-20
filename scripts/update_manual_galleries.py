@@ -16,8 +16,8 @@ from pathlib import Path
 from lxml import etree
 
 ROOT = Path(__file__).resolve().parents[1]
-MANUAL = ROOT / "docs/manual/clock-user-manual.odt"
-ASSETS = ROOT / "docs/manual/assets"
+MANUAL = ROOT / "docs/manual-source/clock-user-manual.odt"
+ASSETS = ROOT / "docs/manual-source/assets"
 IMAGE_WIDTH_IN = 1.43
 IMAGE_HEIGHT_IN = 0.715
 TABLE_WIDTH_IN = 3.19

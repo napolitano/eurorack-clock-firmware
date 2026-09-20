@@ -2911,11 +2911,13 @@ std::size_t countFramebufferPixels(
 }
 
 
-void testPerformanceRendererShowsCenteredShrinkingPreCountOverlay() {
+void testPerformanceRendererShowsStaticPreCountPopoverAndMeterProgress() {
     resetFakes(); prepareDisplaySuccess();
 
     ClockState state = makeDefaultState();
     state.transport = TransportState::Playing;
+    state.preCountSteps = 8U;
+    state.masterMeter.beats = 4U;
     ui::NavigationState navigation{};
     engine::EngineSnapshot snapshot{};
 
@@ -2930,31 +2932,51 @@ void testPerformanceRendererShowsCenteredShrinkingPreCountOverlay() {
     snapshot.preCountRemaining = 8U;
     snapshot.preCountPhaseQ32 = 0U;
     renderer.render(state, navigation, snapshot);
-    const auto largeCircleFrame = display.framebufferForTest();
-    CHECK(largeCircleFrame != normalFrame);
+    const auto firstBeatFrame = display.framebufferForTest();
+    CHECK(firstBeatFrame != normalFrame);
 
+    // The popover is deliberately static within one beat: engine phase changes must
+    // not alter the framebuffer anymore.
     snapshot.preCountPhaseQ32 = (core::kQ32One * 3ULL) / 4ULL;
     renderer.render(state, navigation, snapshot);
-    const auto smallCircleFrame = display.framebufferForTest();
-    CHECK(smallCircleFrame != largeCircleFrame);
+    CHECK(display.framebufferForTest() == firstBeatFrame);
+
+    // 4/4 uses one filled active-step cell plus three outlines; the filled marker
+    // moves to the next fixed meter position on the next count beat.
+    constexpr std::int16_t kStepRowY = 52;
+    const auto beatOneFrame = display.framebufferForTest();
+    CHECK(countFramebufferPixels(beatOneFrame, 49, kStepRowY, 6, 4) >
+          countFramebufferPixels(beatOneFrame, 57, kStepRowY, 6, 4));
 
     snapshot.preCountRemaining = 7U;
     renderer.render(state, navigation, snapshot);
-    CHECK(display.framebufferForTest() != smallCircleFrame);
+    const auto secondBeatFrame = display.framebufferForTest();
+    CHECK(secondBeatFrame != firstBeatFrame);
+    CHECK(countFramebufferPixels(secondBeatFrame, 57, kStepRowY, 6, 4) >
+          countFramebufferPixels(beatOneFrame, 57, kStepRowY, 6, 4));
+    CHECK(countFramebufferPixels(secondBeatFrame, 49, kStepRowY, 6, 4) <
+          countFramebufferPixels(beatOneFrame, 49, kStepRowY, 6, 4));
 
+    // The row must remain representable at the supported maximum 16-beat meter.
+    state.masterMeter.beats = 16U;
+    renderer.render(state, navigation, snapshot);
+    const auto sixteenBeatFrame = display.framebufferForTest();
+    CHECK(countFramebufferPixels(sixteenBeatFrame, 37, 51, 54, 7) > 0U);
+
+    state.masterMeter.beats = 4U;
     snapshot.preCountActive = false;
     renderer.render(state, navigation, snapshot);
     CHECK(display.framebufferForTest() == normalFrame);
 
     // Defensive snapshot contract: an active flag with no remaining count must not
-    // draw a stale overlay. This covers the second early-return condition explicitly.
+    // draw a stale popover.
     snapshot.preCountActive = true;
     snapshot.preCountRemaining = 0U;
     renderer.render(state, navigation, snapshot);
     CHECK(display.framebufferForTest() == normalFrame);
 }
 
-void testPreCountAnimationInvalidatesFramesAndClearsOnCompletion() {
+void testPreCountPopoverRedrawsAtBeatBoundariesAndClearsOnCompletion() {
     resetFakes();
     prepareDisplaySuccess();
 
@@ -2994,14 +3016,18 @@ void testPreCountAnimationInvalidatesFramesAndClearsOnCompletion() {
     runEngineTicks(engine, ticksPerBeat / 2U);
     nowMs += 300U;
 
-    // No explicit controller.invalidate(): the phase-driven overlay must keep
-    // requesting frames by itself while Pre-Count is advancing.
+    // No beat boundary occurred, so the static popover must not request a new frame.
     controller.serviceRendering(nowMs);
-    const auto animatedCountFrame = display.framebufferForTest();
-    CHECK(animatedCountFrame != initialCountFrame);
+    CHECK(display.framebufferForTest() == initialCountFrame);
 
-    // PAUSE freezes the Pre-Count phase; background scheduler ticks must not make
-    // the overlay move until PLAY resumes.
+    runEngineTicks(engine, ticksPerBeat / 2U);
+    CHECK(engine.snapshot().preCountRemaining == 1U);
+    nowMs += config::kDisplayRefreshMinimumMs + 1U;
+    controller.serviceRendering(nowMs);
+    const auto secondCountFrame = display.framebufferForTest();
+    CHECK(secondCountFrame != initialCountFrame);
+
+    // PAUSE leaves the current count beat frozen. Scheduler ticks cannot advance it.
     sample = {};
     sample.transportButton = pressedEdge();
     controller.processControls(sample, ++nowMs);
@@ -3009,7 +3035,7 @@ void testPreCountAnimationInvalidatesFramesAndClearsOnCompletion() {
     nowMs += config::kDisplayRefreshMinimumMs + 1U;
     controller.serviceRendering(nowMs);
     const auto pausedFrame = display.framebufferForTest();
-    runEngineTicks(engine, ticksPerBeat / 2U);
+    runEngineTicks(engine, ticksPerBeat);
     nowMs += 300U;
     controller.serviceRendering(nowMs);
     CHECK(display.framebufferForTest() == pausedFrame);
@@ -3018,19 +3044,18 @@ void testPreCountAnimationInvalidatesFramesAndClearsOnCompletion() {
     sample.transportButton = pressedEdge();
     controller.processControls(sample, ++nowMs);
     CHECK_EQ(state.transport, TransportState::Playing);
-    runEngineTicks(engine, ticksPerBeat * 2U);
+    runEngineTicks(engine, ticksPerBeat);
     CHECK(!engine.snapshot().preCountActive);
 
-    // Completion is another engine-only state edge. The controller must redraw
-    // once more to erase the final circle and return to the normal Performance UI.
+    // Completion is an engine-only state edge. The controller must redraw once more
+    // to erase the final popover and return to the normal Performance UI.
     const auto staleOverlayFrame = display.framebufferForTest();
-    nowMs += 1100U;
+    nowMs += config::kDisplayRefreshMinimumMs + 1U;
     controller.serviceRendering(nowMs);
     CHECK(display.framebufferForTest() != staleOverlayFrame);
 
-    // Rendering must also leave the phase-driven Performance path cleanly when the
-    // user opens ordinary Settings. Besides guarding against an accidental global
-    // Pre-Count invalidation loop, this exercises the non-diagnostics Settings path.
+    // Rendering must also leave the Performance-only Pre-Count invalidation path
+    // cleanly when the user opens ordinary Settings.
     controllerOpenSettingsChord(controller, nowMs);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
     nowMs += config::kDisplayRefreshMinimumMs + 1U;
@@ -4776,8 +4801,8 @@ int main() {
     RUN_TEST(testEngineAuditRegressions);
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
-    RUN_TEST(testPerformanceRendererShowsCenteredShrinkingPreCountOverlay);
-    RUN_TEST(testPreCountAnimationInvalidatesFramesAndClearsOnCompletion);
+    RUN_TEST(testPerformanceRendererShowsStaticPreCountPopoverAndMeterProgress);
+    RUN_TEST(testPreCountPopoverRedrawsAtBeatBoundariesAndClearsOnCompletion);
     RUN_TEST(testPerformanceRendererShowsMeasuredExternalBpmWhileLockedAndFreewheeling);
     RUN_TEST(testTapTempoPreservesClockSourceAndPersistence);
     RUN_TEST(testTapIndicatorStartsOnSecondTapAndRestartsEveryFollowingTap);

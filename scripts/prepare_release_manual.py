@@ -22,8 +22,9 @@ except ImportError as exc:  # pragma: no cover - exercised by CLI diagnostics
     raise SystemExit("Pillow is required: python -m pip install pillow") from exc
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_SOURCE = ROOT / "docs" / "manual" / "clock-user-manual.odt"
+DEFAULT_SOURCE = ROOT / "docs" / "manual-source" / "clock-user-manual.odt"
 VERSION_HEADER = ROOT / "src" / "version.h"
+STABLE_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 VERSION_DEFINE_RE = re.compile(r'^#define\s+CLOCK_FIRMWARE_VERSION\s+"([^"]+)"\s*$', re.MULTILINE)
 COVERAGE_VERSION_RE = re.compile(
     r"firmware\s+([0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z]+(?:[.-][0-9A-Za-z]+)*)?)",
@@ -266,8 +267,16 @@ def stamp_odt(source: Path, destination: Path, version: str, *, allow_font_subst
                 temp_path.unlink()
 
 
+def is_stable_release(version: str) -> bool:
+    """Return whether *version* is a final X.Y.Z release rather than a prerelease."""
+    return STABLE_VERSION_RE.fullmatch(version) is not None
+
+
 def default_output(version: str) -> Path:
-    return ROOT / "docs" / "manual" / "releases" / version / f"clock-user-manual.{version}.odt"
+    """Return the default frozen-manual path without polluting the stable archive."""
+    if is_stable_release(version):
+        return ROOT / "docs" / "manual" / f"clock-user-manual.{version}.odt"
+    return ROOT / "build" / "manual" / f"clock-user-manual.{version}.odt"
 
 
 def main() -> int:

@@ -16,6 +16,7 @@ from pathlib import Path, PurePosixPath
 from urllib.parse import quote
 
 ROOT = Path(__file__).resolve().parents[1]
+STABLE_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 VERSION_RE = re.compile(r'#define\s+CLOCK_FIRMWARE_VERSION\s+"([^"]+)"')
 LINK_RE = re.compile(r'(!?)\[([^\]]+)\]\(([^)]+)\)')
 TARGET_RE = re.compile(r'\]\(([^)]+)\)')
@@ -40,7 +41,7 @@ class WikiPage:
 PAGES = (
     WikiPage('README.md', 'Home', 'Home', 'Start here'),
     WikiPage('docs/USER_GUIDE.md', 'User-Guide', 'User Guide', 'Start here'),
-    WikiPage('docs/manual/README.md', 'Manual-and-Downloads', 'Manual & Downloads', 'Start here'),
+    WikiPage('docs/manual-source/README.md', 'Manual-and-Downloads', 'Manual & Downloads', 'Start here'),
     WikiPage('docs/ROADMAP.md', 'Roadmap', 'Roadmap', 'Start here'),
     WikiPage('docs/ARCHITECTURE.md', 'Architecture', 'Architecture', 'Engineering'),
     WikiPage('docs/TIMING.md', 'Timing', 'Timing', 'Engineering'),
@@ -171,13 +172,20 @@ def generated_notice(page: WikiPage, repository: str, ref: str, server_url: str)
 def manual_download_notice(version: str, repository: str, ref: str, server_url: str) -> str:
     """Build the prominent current ODT-manual download block for the Wiki manual page."""
     relative = PurePosixPath(
-        f'docs/manual/releases/{version}/clock-user-manual.{version}.odt'
+        f'docs/manual/clock-user-manual.{version}.odt'
     )
     source = ROOT / Path(*relative.parts)
     if not source.is_file():
-        raise SystemExit(
-            f'Frozen Wiki manual source missing: {relative}. '
-            'Run scripts/prepare_release_manual.py before publishing the Wiki.'
+        if STABLE_VERSION_RE.fullmatch(version):
+            raise SystemExit(
+                f'Frozen stable-release Wiki manual source missing: {relative}. '
+                'Run scripts/prepare_release_manual.py before publishing the Wiki.'
+            )
+        return (
+            '> [!NOTE]\n'
+            f'> CLOCK {version} is a prerelease development line. '
+            'Prerelease manuals are generated as publication artifacts and are not kept in '
+            '`docs/manual/`; use the repository User Guide for the live development state.\n\n'
         )
     url = repository_url(server_url, repository, ref, relative, raw=True)
     return (
@@ -235,8 +243,11 @@ def validate_output(output: Path, version: str) -> None:
         if 'generated from' not in text[:1200]:
             raise SystemExit(f'{page.slug}.md: generated-source notice is missing')
     manual = (output / 'Manual-and-Downloads.md').read_text(encoding='utf-8')
-    if f'clock-user-manual.{version}.odt' not in manual or '/raw/' not in manual:
-        raise SystemExit('Manual-and-Downloads.md: current ODT download link is missing')
+    if STABLE_VERSION_RE.fullmatch(version):
+        if f'clock-user-manual.{version}.odt' not in manual or '/raw/' not in manual:
+            raise SystemExit('Manual-and-Downloads.md: current stable ODT download link is missing')
+    elif 'prerelease development line' not in manual:
+        raise SystemExit('Manual-and-Downloads.md: prerelease manual policy notice is missing')
     sidebar = (output / '_Sidebar.md').read_text(encoding='utf-8')
     if f'CLOCK {version}' not in sidebar:
         raise SystemExit('_Sidebar.md: current firmware version is missing')

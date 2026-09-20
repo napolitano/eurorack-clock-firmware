@@ -134,7 +134,7 @@ void PerformanceRenderer::render(
     if (state.operatingMode == OperatingMode::Independent &&
         configuredChannel.common.mode == ChannelMode::Off) {
         drawTempoText("---", hal::DisplayFont::TempoLarge, kClockTempoTopY);
-        presentPerformanceFrame(engineSnapshot);
+        presentPerformanceFrame(state, engineSnapshot);
         return;
     }
 
@@ -193,7 +193,7 @@ void PerformanceRenderer::render(
 
     if (dividerView) {
         drawDividerBankSlots(state);
-        presentPerformanceFrame(engineSnapshot);
+        presentPerformanceFrame(state, engineSnapshot);
         return;
     }
 
@@ -207,7 +207,7 @@ void PerformanceRenderer::render(
                 hal::OledDisplay::kWidth - static_cast<std::int16_t>(rateBounds.width) - 1);
             display_.drawText(rateX, contextY, rateText);
         }
-        presentPerformanceFrame(engineSnapshot);
+        presentPerformanceFrame(state, engineSnapshot);
         return;
     }
 
@@ -237,7 +237,7 @@ void PerformanceRenderer::render(
             kPatternTopY);
     }
 
-    presentPerformanceFrame(engineSnapshot);
+    presentPerformanceFrame(state, engineSnapshot);
 }
 
 void PerformanceRenderer::drawDividerBankSlots(const ClockState& state) {

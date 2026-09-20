@@ -23,9 +23,9 @@ flowchart TB
 
 This makes the simulator useful for UI work, timing regression checks, persistence workflows, long-duration virtual-time tests, and general firmware integration without a connected module.
 
-![CLOCK simulator developer scope](manual/assets/simulator-scope.svg)
+![CLOCK simulator developer scope](manual-source/assets/simulator-scope.svg)
 
-![CLOCK simulator power, sync and reset model](manual/assets/power-sync-reset.svg)
+![CLOCK simulator power, sync and reset model](manual-source/assets/power-sync-reset.svg)
 
 ## What is simulated today
 

@@ -49,7 +49,7 @@ class WikiGenerationTests(unittest.TestCase):
             text = (output / 'Manual-and-Downloads.md').read_text(encoding='utf-8')
             expected = f'clock-user-manual.{version}.odt'
             self.assertIn(expected, text)
-            self.assertIn(f'https://github.com/owner/clock/raw/deadbeef/docs/manual/releases/{version}/{expected}', text)
+            self.assertIn(f'https://github.com/owner/clock/raw/deadbeef/docs/manual/{expected}', text)
 
     def test_home_also_offers_current_odt_download(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
@@ -57,6 +57,13 @@ class WikiGenerationTests(unittest.TestCase):
             version = build_wiki.build(output, 'owner/clock', 'deadbeef', 'https://github.com')
             text = (output / 'Home.md').read_text(encoding='utf-8')
             self.assertIn(f'clock-user-manual.{version}.odt', text)
+
+    def test_prerelease_manual_notice_does_not_require_archive_snapshot(self) -> None:
+        text = build_wiki.manual_download_notice(
+            '1.1.0-beta.1', 'owner/clock', 'deadbeef', 'https://github.com'
+        )
+        self.assertIn('prerelease development line', text)
+        self.assertNotIn('clock-user-manual.1.1.0-beta.1.odt](', text)
 
     def test_mapped_markdown_links_become_wiki_links(self) -> None:
         rendered = build_wiki.rewrite_links(
@@ -71,23 +78,23 @@ class WikiGenerationTests(unittest.TestCase):
 
     def test_html_asset_links_are_rewritten(self) -> None:
         rendered = build_wiki.rewrite_links(
-            '<img src="docs/manual/assets/front-panel-anatomy.svg">',
+            '<img src="docs/manual-source/assets/front-panel-anatomy.svg">',
             Path('README.md'),
             'owner/clock',
             'deadbeef',
             'https://github.com',
         )
-        self.assertIn('src="https://github.com/owner/clock/raw/deadbeef/docs/manual/assets/front-panel-anatomy.svg"', rendered)
+        self.assertIn('src="https://github.com/owner/clock/raw/deadbeef/docs/manual-source/assets/front-panel-anatomy.svg"', rendered)
 
     def test_non_wiki_asset_links_stay_on_exact_repository_commit(self) -> None:
         rendered = build_wiki.rewrite_links(
-            '![Panel](docs/manual/assets/front-panel-anatomy.svg)',
+            '![Panel](docs/manual-source/assets/front-panel-anatomy.svg)',
             Path('README.md'),
             'owner/clock',
             'deadbeef',
             'https://github.com',
         )
-        self.assertIn('https://github.com/owner/clock/raw/deadbeef/docs/manual/assets/front-panel-anatomy.svg', rendered)
+        self.assertIn('https://github.com/owner/clock/raw/deadbeef/docs/manual-source/assets/front-panel-anatomy.svg', rendered)
 
 
 if __name__ == '__main__':

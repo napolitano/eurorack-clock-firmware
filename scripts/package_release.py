@@ -411,7 +411,7 @@ def finalize_release(args: argparse.Namespace) -> int:
     copy_required(ROOT / "LICENSE.md", out_dir / "LICENSE.md", "Firmware license")
     copy_required(ROOT / "NOTICE.txt", out_dir / "NOTICE.txt", "Required notice")
     copy_required(ROOT / "THIRD_PARTY_NOTICES.md", out_dir / "THIRD_PARTY_NOTICES.md", "Third-party notices")
-    copy_required(ROOT / "docs" / "manual" / "LICENSE.md", out_dir / "MANUAL-LICENSE.md", "Manual license")
+    copy_required(ROOT / "docs" / "manual-source" / "LICENSE.md", out_dir / "MANUAL-LICENSE.md", "Manual license")
     for filename in STATIC_LICENSE_FILES:
         copy_required(ROOT / "third_party" / filename, out_dir / filename, filename)
 

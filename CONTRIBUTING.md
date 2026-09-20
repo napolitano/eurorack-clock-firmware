@@ -47,7 +47,7 @@ pio run -e blackpill_f401cc_spi
 
 ## Documentation changes
 
-Update the documentation in the same change when behavior, wiring, settings, persistence schema, simulator controls, architecture, or build procedure changes. Mermaid diagrams belong in Markdown; reusable publication artwork belongs in `docs/manual/assets/` as plain SVG.
+Update the documentation in the same change when behavior, wiring, settings, persistence schema, simulator controls, architecture, or build procedure changes. Mermaid diagrams belong in Markdown; reusable publication artwork belongs in `docs/manual-source/assets/` as plain SVG.
 
 ## Commit hygiene
 

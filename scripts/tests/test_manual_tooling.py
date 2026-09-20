@@ -35,28 +35,54 @@ REFRESH = load("refresh_manual_screenshots", ROOT / "scripts" / "refresh_manual_
 class ManualToolingTests(unittest.TestCase):
     def setUp(self) -> None:
         self.version = PREPARE.current_version()
-        self.working = ROOT / "docs" / "manual" / "clock-user-manual.odt"
+        self.working = ROOT / "docs" / "manual-source" / "clock-user-manual.odt"
         self.frozen = (
-            ROOT / "docs" / "manual" / "releases" / self.version /
-            f"clock-user-manual.{self.version}.odt"
+            ROOT / "docs" / "manual" / f"clock-user-manual.{self.version}.odt"
         )
 
     def test_working_manual_exists(self) -> None:
         self.assertTrue(self.working.is_file())
 
     def test_existing_frozen_manuals_match_their_version_scope(self) -> None:
-        releases = ROOT / "docs" / "manual" / "releases"
-        frozen_manuals = sorted(releases.glob("*/clock-user-manual.*.odt"))
+        archive = ROOT / "docs" / "manual"
+        frozen_manuals = sorted(archive.glob("clock-user-manual.*.odt"))
         self.assertTrue(frozen_manuals)
         for manual in frozen_manuals:
-            version = manual.parent.name
+            version = manual.name.removeprefix("clock-user-manual.").removesuffix(".odt")
             self.assertEqual(manual.name, f"clock-user-manual.{version}.odt")
             CHECK.validate_odt(manual, version)
 
+    def test_manual_directory_contains_only_stable_release_manuals(self) -> None:
+        archive = ROOT / "docs" / "manual"
+        release_records = ROOT / "docs" / "releases"
+        stable_versions = {
+            path.name
+            for path in release_records.iterdir()
+            if path.is_dir()
+            and PREPARE.is_stable_release(path.name)
+            and (path / "RELEASE_SUMMARY.md").is_file()
+        }
+        expected_files = {f"clock-user-manual.{version}.odt" for version in stable_versions}
+        actual_entries = {path.name for path in archive.iterdir()}
+        self.assertEqual(actual_entries, expected_files)
+        self.assertTrue(all(path.is_file() for path in archive.iterdir()))
+        self.assertEqual({"1.0.0", "1.0.1"}, stable_versions)
+
+    def test_prerelease_manual_defaults_outside_archive(self) -> None:
+        version = "1.1.0-beta.1"
+        self.assertFalse(PREPARE.is_stable_release(version))
+        self.assertEqual(
+            PREPARE.default_output(version),
+            ROOT / "build" / "manual" / f"clock-user-manual.{version}.odt",
+        )
+        self.assertEqual(
+            BUILD.default_source(version),
+            ROOT / "build" / "manual" / f"clock-user-manual.{version}.odt",
+        )
+
     def test_prepare_output_path_is_version_scoped(self) -> None:
         expected = (
-            ROOT / "docs" / "manual" / "releases" / self.version /
-            f"clock-user-manual.{self.version}.odt"
+            ROOT / "docs" / "manual" / f"clock-user-manual.{self.version}.odt"
         )
         self.assertEqual(PREPARE.default_output(self.version), expected)
         self.assertEqual(BUILD.default_source(self.version), expected)
@@ -145,6 +171,9 @@ class ManualToolingTests(unittest.TestCase):
         self.assertIn("scripts/check_user_manual.py", workflow)
         self.assertIn('clock-user-manual.${VERSION}.odt', workflow)
         self.assertIn('clock-user-manual.${VERSION}.pdf', workflow)
+        self.assertIn('if [[ "${VERSION}" == *-* ]]', workflow)
+        self.assertIn('docs/manual-source/clock-user-manual.odt', workflow)
+        self.assertIn('Missing frozen stable-release manual', workflow)
         self.assertIn("--require-ubuntu-fonts", workflow)
         self.assertLess(
             workflow.index("scripts/generate_manual_screenshots.py"),
@@ -173,7 +202,7 @@ class ManualToolingTests(unittest.TestCase):
 
     def test_direct_manual_screenshot_contract_is_complete(self) -> None:
         targets = REFRESH.direct_frame_targets(
-            self.working, ROOT / "docs" / "manual" / "assets"
+            self.working, ROOT / "docs" / "manual-source" / "assets"
         )
         self.assertEqual(len(targets), len(REFRESH.DIRECT_SCREENSHOTS))
         self.assertIn("ManualImage15", targets)
@@ -186,7 +215,7 @@ class ManualToolingTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             output = Path(directory) / "manual.odt"
             direct_count, gallery_count = REFRESH.refresh(
-                self.working, output, ROOT / "docs" / "manual" / "assets"
+                self.working, output, ROOT / "docs" / "manual-source" / "assets"
             )
             self.assertEqual(direct_count, len(REFRESH.DIRECT_SCREENSHOTS))
             self.assertEqual(gallery_count, 22)
@@ -199,11 +228,11 @@ class ManualToolingTests(unittest.TestCase):
                 href = frame.get(f"{{{ns['xlink']}}}href")
                 self.assertEqual(
                     archive.read(href),
-                    (ROOT / "docs" / "manual" / "assets" / "settings-sync.png").read_bytes(),
+                    (ROOT / "docs" / "manual-source" / "assets" / "settings-sync.png").read_bytes(),
                 )
                 self.assertEqual(
                     archive.read("Pictures/gallery_manualgalleryscreensavers_01_01.png"),
-                    (ROOT / "docs" / "manual" / "assets" / "screensaver-clock.png").read_bytes(),
+                    (ROOT / "docs" / "manual-source" / "assets" / "screensaver-clock.png").read_bytes(),
                 )
 
     def test_manual_screenshot_generator_recovers_from_generator_mismatch(self) -> None:

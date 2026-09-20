@@ -16,7 +16,7 @@ from xml.sax.saxutils import escape
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LAYOUT = ROOT / "sim" / "panel_layout.ini"
-DEFAULT_OUTPUT = ROOT / "docs" / "manual" / "assets" / "front-panel-anatomy.svg"
+DEFAULT_OUTPUT = ROOT / "docs" / "manual-source" / "assets" / "front-panel-anatomy.svg"
 ACCENT = "#0B4FC0"  # existing CLOCK manual accent
 
 

@@ -29,7 +29,7 @@ Do not hide required safety or qualification information inside collapsible bloc
 
 - Production OLED screenshots must come from the real framebuffer/renderer.
 - Pixel UI screenshots are enlarged with nearest-neighbor scaling.
-- Reusable explanatory diagrams are plain SVG under `docs/manual/assets/`.
+- Reusable explanatory diagrams are plain SVG under `docs/manual-source/assets/`.
 - SVGs must not embed fonts, scripts, external resources, or raster data unless there is a documented reason.
 - Conceptual front-panel diagrams must not be presented as manufacturing drawings.
 - Every Markdown image needs meaningful alt text.

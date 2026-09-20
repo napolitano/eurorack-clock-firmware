@@ -24,7 +24,7 @@ ODT_MIMETYPE = b"application/vnd.oasis.opendocument.text"
 VERSION_TEXT_RE = re.compile(r"\b[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\b")
 ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_URL = "https://github.com/napolitano/eurorack-clock-firmware"
-REPOSITORY_QR = ROOT / "docs" / "manual" / "assets" / "repository-qr.png"
+REPOSITORY_QR = ROOT / "docs" / "manual-source" / "assets" / "repository-qr.png"
 
 PRERELEASE_VERSION_RE = re.compile(
     r"\b[0-9]+\.[0-9]+\.[0-9]+-(?:alpha|beta|rc)\.[0-9]+\b",

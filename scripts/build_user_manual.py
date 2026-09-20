@@ -16,6 +16,7 @@ from pathlib import Path
 import check_user_manual
 
 ROOT = Path(__file__).resolve().parents[1]
+STABLE_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 VERSION_RE = re.compile(r'^#define\s+CLOCK_FIRMWARE_VERSION\s+"([^"]+)"\s*$', re.MULTILINE)
 
 def current_version() -> str:
@@ -26,7 +27,9 @@ def current_version() -> str:
     return match.group(1)
 
 def default_source(version: str) -> Path:
-    return ROOT / "docs" / "manual" / "releases" / version / f"clock-user-manual.{version}.odt"
+    if STABLE_VERSION_RE.fullmatch(version):
+        return ROOT / "docs" / "manual" / f"clock-user-manual.{version}.odt"
+    return ROOT / "build" / "manual" / f"clock-user-manual.{version}.odt"
 
 
 def libreoffice_binary() -> str:

@@ -7,7 +7,8 @@ on:
   workflow_dispatch:
   push:
     paths:
-      - "docs/manual/**"
+      - "docs/manual-source/**"
+      - "docs/manual/*.odt"
       - "scripts/prepare_release_manual.py"
       - "scripts/generate_manual_screenshots.py"
       - "scripts/refresh_manual_screenshots.py"
@@ -46,7 +47,7 @@ jobs:
           VERSION="$(python scripts/version.py)"
           python scripts/prepare_release_manual.py \
             --version "${VERSION}" \
-            --source docs/manual/clock-user-manual.odt \
+            --source docs/manual-source/clock-user-manual.odt \
             --output "/tmp/clock-user-manual.${VERSION}.odt"
           python scripts/refresh_manual_screenshots.py \
             --source "/tmp/clock-user-manual.${VERSION}.odt" \

@@ -23,7 +23,7 @@ Every generated content page ends with the canonical centered **From Munich with
 The generated **User Manual** Wiki page contains a prominent download link to the version-frozen ODT manual for the exact source commit being published:
 
 ```text
-docs/manual/releases/<version>/clock-user-manual.<version>.odt
+docs/manual/clock-user-manual.<version>.odt  # final stable releases only
 ```
 
 Wiki generation fails when that frozen ODT is missing. This prevents the Wiki from advertising a manual whose version does not match the firmware/documentation baseline.

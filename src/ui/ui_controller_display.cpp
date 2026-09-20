@@ -62,18 +62,13 @@ void UiController::serviceRendering(const std::uint32_t nowMs) {
             snapshot.preCountActive != lastRenderedPreCountActive_ ||
             snapshot.preCountRemaining != lastRenderedPreCountRemaining_;
 
-        // The Pre-Count circle is a phase-driven animation. Unlike channel-step and
-        // external-lock changes, its radius changes continuously without any user
-        // input. Keep requesting frames while the transport advances the count; the
-        // normal display refresh limiter below caps the actual OLED update rate. The
-        // state-change edge is also required to erase the final overlay when the
-        // Pre-Count completes. While PAUSED, phase is frozen and no periodic redraw is
-        // necessary.
+        // The Pre-Count popover is intentionally static between beat boundaries.
+        // Redraw only when active/remaining state changes; this updates the number and
+        // meter-progress cells and guarantees one final frame that clears the popover.
         if (!hasRenderedEngineStatus_ ||
             snapshot.externalLocked != lastRenderedExternalLocked_ ||
             (playbackStepIsVisible && currentStep != lastRenderedChannelStep_) ||
-            preCountStateChanged ||
-            (snapshot.preCountActive && snapshot.playing)) {
+            preCountStateChanged) {
             invalidate();
         }
         lastRenderedExternalLocked_ = snapshot.externalLocked;

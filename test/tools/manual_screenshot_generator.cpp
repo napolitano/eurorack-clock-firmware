@@ -218,9 +218,9 @@ private:
         snapshot_.preCountActive = true;
         snapshot_.preCountRemaining = 8U;
         snapshot_.preCountPhaseQ32 = 0U;
-        renderCurrent("performance-pre-count-start", "Pre-Count overlay at the start of a count beat");
-        snapshot_.preCountPhaseQ32 = (core::kQ32One * 3ULL) / 4ULL;
-        renderCurrent("performance-pre-count-shrink", "Pre-Count overlay shrinking through the active beat");
+        renderCurrent("performance-pre-count-start", "Pre-Count popover at the first beat of a 4/4 count");
+        snapshot_.preCountRemaining = 7U;
+        renderCurrent("performance-pre-count-progress", "Pre-Count popover after the second beat of a 4/4 count");
 
         reset();
         state_.transport = TransportState::Playing;

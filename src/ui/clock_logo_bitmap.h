@@ -5,7 +5,7 @@
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
  *
- * Source: docs/manual/assets/clock-logo.svg
+ * Source: docs/manual-source/assets/clock-logo.svg
  * SVG SHA-256: d1ff8d2431b1972cae4487fb043253af9e2fb9b96dea2b6f83aefa9361b916a9
  * Raster target: 128x41 px; alpha threshold: 128; cropped to x=7..118, y=8..32.
  */

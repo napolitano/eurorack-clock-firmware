@@ -20,6 +20,7 @@ ROOT = Path(__file__).resolve().parents[1]
 README_FOOTER = '<h6 align="center">From Munich with &#9829;</h6>'
 MARKDOWN_LINK_RE = re.compile(r'!?(?:\[[^\]]*\])\(([^)]+)\)')
 HTML_LINK_RE = re.compile(r'(?:href|src)="([^"]+)"')
+STABLE_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
 VERSION_RE = re.compile(r'^#define\s+CLOCK_FIRMWARE_VERSION\s+"([^"]+)"\s*$', re.MULTILINE)
 
 CANONICAL_PROJECT_NAME = 'South Signal Lab CLOCK'
@@ -95,13 +96,13 @@ def check_readme_footers(errors: list[str]) -> None:
 
 def check_manual_svgs(errors: list[str]) -> None:
     """Require manual SVG assets to be valid, scalable, and accessibility-labelled."""
-    assets = ROOT / 'docs' / 'manual' / 'assets'
+    assets = ROOT / 'docs' / 'manual-source' / 'assets'
     if not assets.is_dir():
-        errors.append('docs/manual/assets: directory missing')
+        errors.append('docs/manual-source/assets: directory missing')
         return
     svg_paths = sorted(assets.glob('*.svg'))
     if not svg_paths:
-        errors.append('docs/manual/assets: no SVG illustrations found')
+        errors.append('docs/manual-source/assets: no SVG illustrations found')
         return
     namespace = {'svg': 'http://www.w3.org/2000/svg'}
     for path in svg_paths:
@@ -129,7 +130,7 @@ def check_generated_front_panel(errors: list[str]) -> None:
     result = subprocess.run(command, text=True, capture_output=True)
     if result.returncode != 0:
         detail = (result.stderr or result.stdout).strip()
-        errors.append(f'docs/manual/assets/front-panel-anatomy.svg: generated illustration is stale ({detail})')
+        errors.append(f'docs/manual-source/assets/front-panel-anatomy.svg: generated illustration is stale ({detail})')
 
 
 def check_version_identity(errors: list[str]) -> None:
@@ -314,6 +315,33 @@ def check_wiki_publication_contract(errors: list[str]) -> None:
         if match and f'clock-user-manual.{match.group(1)}.odt' not in manual:
             errors.append('generated Wiki: current version-frozen ODT download is missing')
 
+
+def check_manual_archive_contract(errors: list[str]) -> None:
+    """Keep docs/manual limited to final release manuals with matching release records."""
+    archive = ROOT / 'docs/manual'
+    releases = ROOT / 'docs/releases'
+    if not archive.is_dir():
+        errors.append('docs/manual: stable release manual archive is missing')
+        return
+    stable_versions = {
+        path.name
+        for path in releases.iterdir()
+        if path.is_dir()
+        and STABLE_VERSION_RE.fullmatch(path.name)
+        and (path / 'RELEASE_SUMMARY.md').is_file()
+    }
+    expected = {f'clock-user-manual.{version}.odt' for version in stable_versions}
+    actual = {path.name for path in archive.iterdir()}
+    if actual != expected:
+        errors.append(
+            'docs/manual: expected only stable release manuals '
+            f'{sorted(expected)}, found {sorted(actual)}'
+        )
+    for path in archive.iterdir():
+        if not path.is_file():
+            errors.append(f'docs/manual/{path.name}: archive entries must be files')
+
+
 def main() -> int:
     """Run all documentation quality checks and return a shell-friendly status code."""
     errors: list[str] = []
@@ -326,6 +354,7 @@ def main() -> int:
     check_v1_scope_contract(errors)
     check_hil_qualification_contract(errors)
     check_project_metadata(errors)
+    check_manual_archive_contract(errors)
     check_wiki_publication_contract(errors)
     if errors:
         print('Documentation check failed:', file=sys.stderr)
@@ -334,7 +363,7 @@ def main() -> int:
         return 1
     print('Documentation check passed.')
     print(f'  Markdown files checked: {len(markdown_files())}')
-    print(f'  Manual SVGs checked: {len(list((ROOT / "docs/manual/assets").glob("*.svg")))}')
+    print(f'  Manual SVGs checked: {len(list((ROOT / "docs/manual-source/assets").glob("*.svg")))}')
     print('  README footer, local links, fences, SVG accessibility, version identity, and citation metadata: PASS')
     return 0
 

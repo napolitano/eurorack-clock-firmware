@@ -241,7 +241,7 @@ python scripts/check_release_summary.py docs/releases/<version>/RELEASE_SUMMARY.
 python scripts/prepare_release_manual.py
 ```
 
-The summary explains what CLOCK is and the important changes from a user perspective; the detailed engineering history remains in `CHANGELOG.md`. Manual preparation creates `docs/manual/releases/<version>/clock-user-manual.<version>.odt`. The tag workflow requires both version-matched sources and blocks publication when either is missing or stale.
+The summary explains what CLOCK is and the important changes from a user perspective; the detailed engineering history remains in `CHANGELOG.md`. For a final stable release, manual preparation creates and commits `docs/manual/clock-user-manual.<version>.odt`; Alpha, Beta and RC manuals are generated transiently and are not archived there. The tag workflow requires the stable frozen ODT when publishing a final release and always requires the version-matched release summary.
 
 For a tag build the workflow:
 

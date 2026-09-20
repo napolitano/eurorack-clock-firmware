@@ -19,7 +19,7 @@ import zlib
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_OUTPUT = ROOT / "docs" / "manual" / "assets"
+DEFAULT_OUTPUT = ROOT / "docs" / "manual-source" / "assets"
 BUILD_DIR = ROOT / "build" / "simulator-headless"
 GENERATOR_BASENAME = "clock-manual-screenshot-generator"
 MANIFEST_NAME = "manual-screenshots.tsv"
@@ -231,7 +231,7 @@ def main() -> int:
         "--output",
         type=Path,
         default=DEFAULT_OUTPUT,
-        help="Destination directory (default: docs/manual/assets)",
+        help="Destination directory (default: docs/manual-source/assets)",
     )
     parser.add_argument(
         "--scale",

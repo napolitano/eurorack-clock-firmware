@@ -186,9 +186,9 @@ On Performance, the first TAP starts a tempo-measurement sequence without visual
 
 The performance screen stays intentionally sparse: timing authority/lock, selected context, meter, transport, BPM and only the non-default timing modifiers that matter at that moment. Euclid and Sequencer add a live pattern strip at the bottom.
 
-![One Clock performance screen showing master mode, 4/4, PLAY, 124 BPM, 9% Swing and x1 rate.](docs/manual/assets/performance-one-clock-play.png)
+![One Clock performance screen showing master mode, 4/4, PLAY, 124 BPM, 9% Swing and x1 rate.](docs/manual-source/assets/performance-one-clock-play.png)
 
-For the complete interaction flow, mode-selection confirmation, presets, settings and screen reference, use the [User Manual](docs/manual/README.md).
+For the complete interaction flow, mode-selection confirmation, presets, settings and screen reference, use the [User Manual](docs/manual-source/README.md).
 
 ## Presets, recovery and templates
 
@@ -281,7 +281,7 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 
 | Document | Purpose |
 | --- | --- |
-| [User Manual](docs/manual/README.md) | Publication manual, generated UI assets, ODT/PDF release workflow |
+| [User Manual](docs/manual-source/README.md) | Publication manual, generated UI assets, ODT/PDF release workflow |
 | [User Guide](docs/USER_GUIDE.md) | Repository-native operating reference |
 | [Timing](docs/TIMING.md) | Normative scheduler and timing contract |
 | [Architecture](docs/ARCHITECTURE.md) | Firmware boundaries and responsibilities |
@@ -295,7 +295,7 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | [Release Process](docs/RELEASE_PROCESS.md) | Firmware flavor matrix, manual/licensing payload, provenance and GitHub publication contract |
 | [Doxygen](Doxyfile) | Source-level API documentation |
 
-The curated manual screenshots are generated from the **real production framebuffer**, not redrawn mockups. Their catalog and human-readable descriptions live in [`docs/manual/assets/manual-screenshots.tsv`](docs/manual/assets/manual-screenshots.tsv).
+The curated manual screenshots are generated from the **real production framebuffer**, not redrawn mockups. Their catalog and human-readable descriptions live in [`docs/manual-source/assets/manual-screenshots.tsv`](docs/manual-source/assets/manual-screenshots.tsv).
 
 ## Hardware target
 
@@ -324,7 +324,7 @@ CLOCK is developed independently by South Signal Lab. If the firmware, documenta
 
 The canonical software identity is **South Signal Lab CLOCK**. Citation metadata is provided in [`CITATION.cff`](CITATION.cff) and [`codemeta.json`](codemeta.json).
 
-Firmware source is licensed under the **PolyForm Noncommercial License 1.0.0**; see [`LICENSE.md`](LICENSE.md). The manual and its publication assets have their own documentation license described under [`docs/manual/LICENSE.md`](docs/manual/LICENSE.md). Third-party components retain their respective upstream licenses.
+Firmware source is licensed under the **PolyForm Noncommercial License 1.0.0**; see [`LICENSE.md`](LICENSE.md). The manual and its publication assets have their own documentation license described under [`docs/manual-source/LICENSE.md`](docs/manual-source/LICENSE.md). Third-party components retain their respective upstream licenses.
 
 Because PolyForm Noncommercial restricts commercial use, this repository is **source-available**, not OSI open-source. That distinction is intentional and documented rather than hidden behind a generic "open source" label.
 

@@ -134,15 +134,24 @@ jobs:
       - name: Build versioned user manual artifacts
         run: |
           VERSION="$(python scripts/version.py)"
-          MANUAL_SOURCE="docs/manual/releases/${VERSION}/clock-user-manual.${VERSION}.odt"
-          test -f "${MANUAL_SOURCE}" || {
-            echo "Missing frozen release manual: ${MANUAL_SOURCE}" >&2
-            echo "Run: python scripts/prepare_release_manual.py" >&2
-            exit 1
-          }
           STAMPED_MANUAL="build/release-manual/clock-user-manual.${VERSION}.stamped.odt"
           REFRESHED_MANUAL="build/release-manual/clock-user-manual.${VERSION}.odt"
           mkdir -p "$(dirname "${REFRESHED_MANUAL}")"
+          if [[ "${VERSION}" == *-* ]]; then
+            # Prerelease manuals are publication artifacts, not repository archive entries.
+            MANUAL_SOURCE="build/release-manual/clock-user-manual.${VERSION}.source.odt"
+            python scripts/prepare_release_manual.py \
+              --version "${VERSION}" \
+              --source docs/manual-source/clock-user-manual.odt \
+              --output "${MANUAL_SOURCE}"
+          else
+            MANUAL_SOURCE="docs/manual/clock-user-manual.${VERSION}.odt"
+            test -f "${MANUAL_SOURCE}" || {
+              echo "Missing frozen stable-release manual: ${MANUAL_SOURCE}" >&2
+              echo "Run: python scripts/prepare_release_manual.py" >&2
+              exit 1
+            }
+          fi
           python scripts/prepare_release_manual.py \
             --version "${VERSION}" \
             --source "${MANUAL_SOURCE}" \

@@ -12,13 +12,23 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Pre-Count display
 
-- Keep the Performance-screen Pre-Count overlay animating from the live engine phase instead of rendering only on unrelated UI invalidations.
-- Force a final redraw when Pre-Count completes so the shrinking circle and count value are removed immediately.
-- Freeze redraw churn while PAUSED, then resume phase-driven animation on PLAY.
-- Add a controller-level regression covering animation progress, PAUSE freeze, resume, and overlay cleanup without explicit UI invalidation.
+- Replace the shrinking-circle animation with a static black square popover framed by a one-pixel white border.
+- Show the remaining count as the only large numeric element; remove phase-driven size animation and the associated continuous redraw churn.
+- Add a meter-aware step row along the bottom of the popover: exactly the active beat is filled while all other beats remain outlined, with the marker wrapping to the first position on each master-meter bar.
+- Keep beat-boundary redraws and the final completion redraw deterministic so the popover updates only when visible state changes.
+- Update framebuffer/controller regressions and deterministic manual screenshots for the new presentation.
+
+### Manual archive hygiene
+
+- Keep `docs/manual/` limited to final stable-release ODTs; remove historical Alpha/Beta manual snapshots from the repository archive.
+- Treat Alpha, Beta and RC manuals as transient publication artifacts generated from `docs/manual-source/clock-user-manual.odt`.
+- Require a committed frozen ODT only for final `X.Y.Z` releases, while keeping prerelease publishing and Wiki generation functional without archive growth.
+- Add documentation/tooling regressions that reject prerelease files in the stable manual archive.
 
 ### Build and manual tooling
 
+- Separate the editable manual workspace from the published manual archive: `docs/manual-source/` now contains the working ODT and publication assets, while `docs/manual/` contains only versioned ODT manuals with matching curated release records.
+- Remove obsolete intermediate Alpha/Beta manual snapshots and add a tooling regression that rejects unversioned files, subdirectories, or undocumented release manuals in `docs/manual/`.
 - Restore the hard 90% source decision-branch coverage gate after the Pre-Count rendering fix by extending regression coverage for zero-count overlay defense and the Settings/non-Performance rendering path; do not lower the threshold.
 - Standardize CI and release headless-simulator jobs on the `simulator-headless` CMake preset so the screenshot generator and prior simulator steps always use the same Ninja build tree.
 - Make manual screenshot generation recover automatically from an existing `build/simulator-headless` cache created with a different CMake generator, preventing `Ninja` versus `Unix Makefiles` cache collisions.

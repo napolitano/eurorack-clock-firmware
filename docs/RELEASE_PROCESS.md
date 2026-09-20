@@ -48,7 +48,7 @@ Every release PlatformIO environment also emits `firmware.map`. `BUILD-INFO.txt`
 The frozen release manual lives at:
 
 ```text
-docs/manual/releases/<version>/clock-user-manual.<version>.odt
+docs/manual/clock-user-manual.<version>.odt  # final stable releases only
 ```
 
 The release workflow regenerates the complete deterministic OLED screenshot catalog from the exact tagged firmware source. It then re-stamps the frozen ODT with the release runner's required Ubuntu fonts, refreshes every generated screenshot embedded in that build copy (including the Screensaver and Easter-egg galleries), validates the refreshed ODT, builds both the versioned ODT and PDF, and validates the exported PDF before publication. The manual contains the firmware license, third-party license notices, and a QR code to the source repository before the Colophon. This refresh happens on every release build; checked-in screenshots are not trusted as the publication source of truth.

@@ -83,7 +83,7 @@ The hard all-PASS HIL gate starts with **1.5.0**. Release candidates and stable 
 
 Planned scope:
 
-- configurable 1–64-beat Pre-Count with silent gate suppression and centered shrinking-circle performance overlay;
+- configurable 1–64-beat Pre-Count with silent gate suppression and a centered static popover that shows the remaining count plus meter-step progress;
 - grid-aware classic drum-machine-style swing with a musically familiar straight-to-deep range;
 - a substantial curated factory groove library rather than a handful of renamed swing values;
 - editable custom groove patterns with deterministic per-step microtiming;

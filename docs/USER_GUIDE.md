@@ -16,7 +16,7 @@ CLOCK is a 10 HP, eight-output Eurorack master clock, rhythm generator, and gate
 - **Independent** — each output independently runs Clock, Euclid, Sequencer, or Off.
 - **Divider Bank** — one shared source produces eight fixed divisions from a selectable family.
 
-![Diagram showing the three CLOCK output topologies: One Clock, Independent, and Divider Bank.](manual/assets/operating-modes.svg)
+![Diagram showing the three CLOCK output topologies: One Clock, Independent, and Divider Bank.](manual-source/assets/operating-modes.svg)
 
 The important design choice is that Independent does **not** mean eight unrelated free-running clocks. Clock, Euclid, and Sequencer channels remain anchored to the same master timeline, so rate changes, resets, and mixed rhythmic functions can stay musically related.
 
@@ -48,7 +48,7 @@ For the frozen V1/post-1.0 boundary, see [`ROADMAP.md`](ROADMAP.md).
 
 ## 4. Front panel
 
-![Numbered CLOCK front-panel illustration showing the OLED at the upper left, encoder at the upper right, PLAY/TAP/STOP buttons below them, SYNC and RST inputs in the middle, and eight output jacks with red activity LEDs in a 4×2 matrix.](manual/assets/front-panel-anatomy.svg)
+![Numbered CLOCK front-panel illustration showing the OLED at the upper left, encoder at the upper right, PLAY/TAP/STOP buttons below them, SYNC and RST inputs in the middle, and eight output jacks with red activity LEDs in a 4×2 matrix.](manual-source/assets/front-panel-anatomy.svg)
 
 | No. | Element | Function |
 | ---: | --- | --- |
@@ -70,7 +70,7 @@ CLOCK always powers up in **STOP**. Stored configuration is restored, but a prev
 
 The boot sequence initializes the scheduler in STOP and keeps all eight gate source GPIOs LOW until startup is complete. Because the final pin map has no MCU-controlled shared `/OE`, firmware safety is enforced directly at the eight source GPIOs. This prevents a normal power-up from becoming eight accidental triggers in a patched rack.
 
-![Boot screen halfway through its one-second progress sequence, showing the CLOCK wordmark and the two-pixel progress bar at the bottom.](manual/assets/boot-500.png)
+![Boot screen halfway through its one-second progress sequence, showing the CLOCK wordmark and the two-pixel progress bar at the bottom.](manual-source/assets/boot-500.png)
 
 The normal boot screen lasts about one second. Holding the encoder push continuously through the complete boot sequence enters the compile-time selected Easter egg; see [Section 20](#20-hidden-boot-easter-eggs).
 
@@ -78,7 +78,7 @@ The normal boot screen lasts about one second. Holding the encoder push continuo
 
 The Performance screen is deliberately sparse. It keeps the information required while playing visible and moves configuration detail into contextual pages.
 
-![Independent Clock performance screen while playing: master badge, selected channel and Clock pictogram, 4/4 meter, PLAY state, centered BPM, and only relevant non-default timing modifiers.](manual/assets/performance-independent-clock-play.png)
+![Independent Clock performance screen while playing: master badge, selected channel and Clock pictogram, 4/4 meter, PLAY state, centered BPM, and only relevant non-default timing modifiers.](manual-source/assets/performance-independent-clock-play.png)
 
 The header shows:
 
@@ -95,19 +95,19 @@ Clock uses the larger BPM role. Euclid and Sequencer use a smaller tempo role be
 
 ### Euclid performance view
 
-![Independent Euclid performance screen while playing, with a live step strip along the bottom: filled cells are hits, outlined cells are rests, and the underline marks the current step.](manual/assets/performance-independent-euclid-play.png)
+![Independent Euclid performance screen while playing, with a live step strip along the bottom: filled cells are hits, outlined cells are rests, and the underline marks the current step.](manual-source/assets/performance-independent-euclid-play.png)
 
 The strip is rendered from the same Euclidean pattern data used by the scheduler, so the display is not a decorative approximation of the rhythm.
 
 ### Sequencer performance view
 
-![Independent 64-step Sequencer performance screen while playing, with the active 16-step gate block and a lower block indicator showing which 16-step segment of the longer pattern is active.](manual/assets/performance-independent-sequencer-play.png)
+![Independent 64-step Sequencer performance screen while playing, with the active 16-step gate block and a lower block indicator showing which 16-step segment of the longer pattern is active.](manual-source/assets/performance-independent-sequencer-play.png)
 
 For lengths above 16 steps, the lowest display rows show the active 16-step block. A 64-step sequence therefore exposes four logical display segments.
 
 ### STOP
 
-![Independent Clock performance screen in STOP, with transport stopped and no beat animation.](manual/assets/performance-independent-clock-stop.png)
+![Independent Clock performance screen in STOP, with transport stopped and no beat animation.](manual-source/assets/performance-independent-clock-stop.png)
 
 With factory display preferences, STOP-mode inactivity starts the configured screensaver after 2 minutes, dims the OLED after 5 minutes, and powers the OLED panel off after 10 minutes. Any front-panel interaction or conditioned SYNC/RST transition wakes it immediately.
 
@@ -137,7 +137,7 @@ Only the value currently being edited is inverted. Whole-row inversion is avoide
 
 In Independent topology, a short encoder push opens the eight-channel overview. All channels remain visible in a 2×4 grid; each tile contains only its number and mode pictogram. The selected tile is fully inverted.
 
-![Independent channel overview showing all eight channels at once in a 2×4 grid, with the selected channel fully inverted.](manual/assets/channel-overview-independent.png)
+![Independent channel overview showing all eight channels at once in a 2×4 grid, with the selected channel fully inverted.](manual-source/assets/channel-overview-independent.png)
 
 Turn the encoder to move the highlight. Short press commits the highlighted channel and returns to Performance. Long press opens that channel's settings directly.
 
@@ -145,8 +145,8 @@ One Clock and Divider Bank are global topologies, so their overview deliberately
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/channel-overview-one-clock.png" alt="One Clock global overview showing the large One Clock pictogram and mode name." width="256"><br><sub><b>One Clock:</b> one shared configuration drives all outputs.</sub></td>
-<td align="center"><img src="manual/assets/channel-overview-divider-bank.png" alt="Divider Bank global overview showing the large Divider Bank pictogram and mode name." width="256"><br><sub><b>Divider Bank:</b> one source feeds the eight fixed divider outputs.</sub></td>
+<td align="center"><img src="manual-source/assets/channel-overview-one-clock.png" alt="One Clock global overview showing the large One Clock pictogram and mode name." width="256"><br><sub><b>One Clock:</b> one shared configuration drives all outputs.</sub></td>
+<td align="center"><img src="manual-source/assets/channel-overview-divider-bank.png" alt="Divider Bank global overview showing the large Divider Bank pictogram and mode name." width="256"><br><sub><b>Divider Bank:</b> one source feeds the eight fixed divider outputs.</sub></td>
 </tr>
 </table>
 
@@ -167,15 +167,15 @@ One Clock and Divider Bank change the global output topology. Clock, Euclid, Seq
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/mode-select-one-clock.png" alt="Six-function mode palette with One Clock selected." width="220"><br><sub>One Clock selected</sub></td>
-<td align="center"><img src="manual/assets/mode-select-euclid.png" alt="Six-function mode palette with Euclid selected." width="220"><br><sub>Euclid selected</sub></td>
-<td align="center"><img src="manual/assets/mode-select-divider-bank.png" alt="Six-function mode palette with Divider Bank selected." width="220"><br><sub>Divider Bank selected</sub></td>
+<td align="center"><img src="manual-source/assets/mode-select-one-clock.png" alt="Six-function mode palette with One Clock selected." width="220"><br><sub>One Clock selected</sub></td>
+<td align="center"><img src="manual-source/assets/mode-select-euclid.png" alt="Six-function mode palette with Euclid selected." width="220"><br><sub>Euclid selected</sub></td>
+<td align="center"><img src="manual-source/assets/mode-select-divider-bank.png" alt="Six-function mode palette with Divider Bank selected." width="220"><br><sub>Divider Bank selected</sub></td>
 </tr>
 </table>
 
 Releasing TAP does not silently mutate the running setup. If the highlighted function differs from the active function, CLOCK opens `CHANGE MODE?` with **NO** selected by default.
 
-![Mode-change confirmation dialog showing CHANGE MODE? with NO selected as the safe default.](manual/assets/mode-change-confirm-no.png)
+![Mode-change confirmation dialog showing CHANGE MODE? with NO selected as the safe default.](manual-source/assets/mode-change-confirm-no.png)
 
 After confirmation CLOCK opens the most useful destination: Euclid goes to algorithm settings, Sequencer to its editor, One Clock to shared settings, Divider Bank to divider-family settings, while Clock and Off return to Performance.
 
@@ -201,7 +201,7 @@ Integer and rational rates use fixed/integer timing with remainder retention. CL
 
 One Clock is the factory topology and the quickest way to use CLOCK as an eight-way master clock multiple.
 
-![One Clock performance screen while playing, showing the shared master tempo and Humanize indicator while all eight physical outputs are driven from one common clock configuration.](manual/assets/performance-one-clock-play.png)
+![One Clock performance screen while playing, showing the shared master tempo and Humanize indicator while all eight physical outputs are driven from one common clock configuration.](manual-source/assets/performance-one-clock-play.png)
 
 One shared configuration controls all eight outputs:
 
@@ -223,7 +223,7 @@ It applies small deterministic per-output timing displacement while keeping the 
 
 Divider Bank is intentionally simple: choose one divider family and one shared gate length, then patch the eight outputs.
 
-![Divider Bank performance screen in the PRIME family, showing eight compact output slots below the centered BPM with ×1 followed by the selected fixed prime divisions.](manual/assets/performance-divider-bank-play.png)
+![Divider Bank performance screen in the PRIME family, showing eight compact output slots below the centered BPM with ×1 followed by the selected fixed prime divisions.](manual-source/assets/performance-divider-bank-play.png)
 
 | Family | OUT 1–8 |
 | --- | --- |
@@ -251,7 +251,7 @@ A simple 16-step / 4-hit pattern gives four evenly distributed hits. Rotation mo
 
 Each Sequencer channel stores a binary gate pattern of up to 64 steps. The active sequence length is 1–64 steps.
 
-![Sequencer editor showing one 16-step page of the 64-step binary gate pattern with a movable cursor and gate/rest states.](manual/assets/sequencer-editor.png)
+![Sequencer editor showing one 16-step page of the 64-step binary gate pattern with a movable cursor and gate/rest states.](manual-source/assets/sequencer-editor.png)
 
 The editor is divided into four possible pages:
 
@@ -285,7 +285,7 @@ These parameters are shared by Independent Clock/Euclid/Sequencer channels unles
 
 The Settings-root **PHASE RESET** command applies that global musical reset immediately without stopping to erase or replace any saved configuration. It is intentionally distinct from **FACTORY RESET**, which is a destructive maintenance action under `INFO`.
 
-![Timing reference diagram comparing the ideal grid with Swing and Phase offsets and showing One Clock Humanize as small per-output displacement around the common reference.](manual/assets/timing-swing-phase.svg)
+![Timing reference diagram comparing the ideal grid with Swing and Phase offsets and showing One Clock Humanize as small per-output displacement around the common reference.](manual-source/assets/timing-swing-phase.svg)
 
 ## 16. Transport and Tap Tempo
 
@@ -303,7 +303,7 @@ CLOCK persists the working configuration but never restores PLAY on power-up. Fl
 
 `SETTINGS → MODE & CLOCK → PRE COUNT` controls an optional silent count-in. `OFF` preserves the immediate-start behavior; active values run from **1 through 64 beats**. A fresh STOP→PLAY starts the count at the configured master tempo. During the count-in CLOCK advances only the count-in timing reference: **all eight gate outputs remain LOW and the musical pattern position remains at phase zero**. PAUSE freezes an active count and PLAY resumes it; STOP cancels it, so the next PLAY starts the full configured count again.
 
-While Pre-Count is active, the Performance screen keeps the normal context visible outside a centered overlay. A large outlined circle contains the remaining beat count and shrinks over each beat; the next beat restores the full circle with the decremented number. When the count reaches zero the overlay disappears and normal gate generation starts from the shared phase-zero boundary. With a locked external clock, Pre-Count counts incoming quarter-note time according to the configured PPQN rather than free-running from the fallback BPM.
+While Pre-Count is active, the Performance screen keeps the normal context visible around a centered square popover. The popover is black with a one-pixel white border and shows the remaining beat count without any phase animation. Along its lower edge, one cell per master-meter beat visualizes the current step: exactly the active beat is filled and all other beats remain outlined. In 4/4 the four fixed positions therefore read as Tick–Tack–Tack–Tack, with the filled marker moving through the bar and returning to the first position on the next bar. When the count reaches zero the popover disappears and normal gate generation starts from the shared phase-zero boundary. With a locked external clock, Pre-Count counts incoming quarter-note time according to the configured PPQN rather than free-running from the fallback BPM.
 
 ## 17. External SYNC and RST
 
@@ -334,9 +334,9 @@ SYNC/RST transitions are captured by GPIO interrupts and consumed at the determi
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/performance-external-unlocked.png" alt="Performance screen with external source selected but no valid lock yet." width="220"><br><sub>External selected, not yet locked</sub></td>
-<td align="center"><img src="manual/assets/performance-external-locked.png" alt="Performance screen in slave mode with the external-lock padlock visible." width="220"><br><sub>External slave locked</sub></td>
-<td align="center"><img src="manual/assets/settings-sync.png" alt="SYNC settings page showing the upper portion of the external timing configuration." width="220"><br><sub>SYNC/RST configuration</sub></td>
+<td align="center"><img src="manual-source/assets/performance-external-unlocked.png" alt="Performance screen with external source selected but no valid lock yet." width="220"><br><sub>External selected, not yet locked</sub></td>
+<td align="center"><img src="manual-source/assets/performance-external-locked.png" alt="Performance screen in slave mode with the external-lock padlock visible." width="220"><br><sub>External slave locked</sub></td>
+<td align="center"><img src="manual-source/assets/settings-sync.png" alt="SYNC settings page showing the upper portion of the external timing configuration." width="220"><br><sub>SYNC/RST configuration</sub></td>
 </tr>
 </table>
 
@@ -355,8 +355,8 @@ Preset names can contain up to 16 characters. Saving over an occupied slot requi
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/preset-name-entry.png" alt="Preset-name editor showing the horizontal character band used to enter a name with the encoder." width="256"><br><sub>Preset name entry</sub></td>
-<td align="center"><img src="manual/assets/preset-overwrite-confirm.png" alt="Preset overwrite confirmation dialog with NO selected as the safe default." width="256"><br><sub>Occupied-slot confirmation</sub></td>
+<td align="center"><img src="manual-source/assets/preset-name-entry.png" alt="Preset-name editor showing the horizontal character band used to enter a name with the encoder." width="256"><br><sub>Preset name entry</sub></td>
+<td align="center"><img src="manual-source/assets/preset-overwrite-confirm.png" alt="Preset overwrite confirmation dialog with NO selected as the safe default." width="256"><br><sub>Occupied-slot confirmation</sub></td>
 </tr>
 </table>
 
@@ -387,40 +387,40 @@ The configured order is constrained to `START <= DIM <= OFF`. Any front-panel ac
 
 Four additional visual modes are available: **MAKE MUSIC** builds `MAKE·MUSIC·NOT·WAR` one character at a time and continues row by row; **LABYRINTH** repeatedly generates and draws a random perfect maze; **STARFIELD** scrolls three parallax depth layers; and **FIREWORKS** launches a pixel rocket from changing positions before an upper-screen burst.
 
-![Screensaver settings page showing the selected animation and the STOP-mode start, dim, and OLED-off timing values.](manual/assets/settings-screensaver.png)
+![Screensaver settings page showing the selected animation and the STOP-mode start, dim, and OLED-off timing values.](manual-source/assets/settings-screensaver.png)
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-clock.png" alt="CLOCK screensaver with eight independently phased oscilloscope-style digital traces." width="220"><br><sub>CLOCK — eight phased digital traces</sub></td>
-<td align="center"><img src="manual/assets/screensaver-plug.png" alt="PLUG screensaver showing a damped plucked string between fixed endpoints." width="220"><br><sub>PLUG — damped plucked string</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-clock.png" alt="CLOCK screensaver with eight independently phased oscilloscope-style digital traces." width="220"><br><sub>CLOCK — eight phased digital traces</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-plug.png" alt="PLUG screensaver showing a damped plucked string between fixed endpoints." width="220"><br><sub>PLUG — damped plucked string</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-heartbeat.png" alt="HEARTBEAT screensaver showing the animated heart pulse." width="220"><br><sub>HEARTBEAT — animated pulse</sub></td>
-<td align="center"><img src="manual/assets/screensaver-acid.png" alt="ACID screensaver showing the rotating gravity-driven bouncing smiley." width="220"><br><sub>ACID — bouncing smiley physics</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-heartbeat.png" alt="HEARTBEAT screensaver showing the animated heart pulse." width="220"><br><sub>HEARTBEAT — animated pulse</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-acid.png" alt="ACID screensaver showing the rotating gravity-driven bouncing smiley." width="220"><br><sub>ACID — bouncing smiley physics</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-spectrum.png" alt="SPECTRUM screensaver showing the synthetic segmented spectrum bars and peak markers." width="220"><br><sub>SPECTRUM — 16-band spectrum with peaks</sub></td>
-<td align="center"><img src="manual/assets/screensaver-field.png" alt="FIELD screensaver showing dense moving monochrome scalar-field contours." width="220"><br><sub>FIELD — moving metaball field</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-spectrum.png" alt="SPECTRUM screensaver showing the synthetic segmented spectrum bars and peak markers." width="220"><br><sub>SPECTRUM — 16-band spectrum with peaks</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-field.png" alt="FIELD screensaver showing dense moving monochrome scalar-field contours." width="220"><br><sub>FIELD — moving metaball field</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-blox.png" alt="BLOX screensaver showing falling triangle-built bodies accumulating on the display." width="220"><br><sub>BLOX — falling geometric bodies</sub></td>
-<td align="center"><img src="manual/assets/screensaver-matrix.png" alt="MATRIX screensaver showing original monochrome procedural digital rain." width="220"><br><sub>MATRIX — procedural digital rain</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-blox.png" alt="BLOX screensaver showing falling triangle-built bodies accumulating on the display." width="220"><br><sub>BLOX — falling geometric bodies</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-matrix.png" alt="MATRIX screensaver showing original monochrome procedural digital rain." width="220"><br><sub>MATRIX — procedural digital rain</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-cube-cover.png" alt="CUBE COVER screensaver filling the OLED with small cube tiles." width="220"><br><sub>CUBE COVER — tiled cube fill</sub></td>
-<td align="center"><img src="manual/assets/screensaver-fractal.png" alt="FRACTAL screensaver progressively revealing a curated Barnsley-fern crop." width="220"><br><sub>FRACTAL — progressive fern reveal</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-cube-cover.png" alt="CUBE COVER screensaver filling the OLED with small cube tiles." width="220"><br><sub>CUBE COVER — tiled cube fill</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-fractal.png" alt="FRACTAL screensaver progressively revealing a curated Barnsley-fern crop." width="220"><br><sub>FRACTAL — progressive fern reveal</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-orbit.png" alt="ORBIT screensaver showing the sparse animated orbital display." width="220"><br><sub>ORBIT — sparse orbital motion</sub></td>
-<td align="center"><img src="manual/assets/screensaver-make-music.png" alt="MAKE MUSIC screensaver progressively building the MAKE MUSIC NOT WAR text stream with mid-dot separators." width="220"><br><sub>MAKE MUSIC — progressive text stream</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-orbit.png" alt="ORBIT screensaver showing the sparse animated orbital display." width="220"><br><sub>ORBIT — sparse orbital motion</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-make-music.png" alt="MAKE MUSIC screensaver progressively building the MAKE MUSIC NOT WAR text stream with mid-dot separators." width="220"><br><sub>MAKE MUSIC — progressive text stream</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-labyrinth.png" alt="LABYRINTH screensaver showing a generated perfect maze." width="220"><br><sub>LABYRINTH — generated maze</sub></td>
-<td align="center"><img src="manual/assets/screensaver-starfield.png" alt="STARFIELD screensaver showing three layers of parallax stars." width="220"><br><sub>STARFIELD — three-depth parallax</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-labyrinth.png" alt="LABYRINTH screensaver showing a generated perfect maze." width="220"><br><sub>LABYRINTH — generated maze</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-starfield.png" alt="STARFIELD screensaver showing three layers of parallax stars." width="220"><br><sub>STARFIELD — three-depth parallax</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/screensaver-fireworks.png" alt="FIREWORKS screensaver showing an upper-screen pixel burst." width="220"><br><sub>FIREWORKS — pixel rocket and burst</sub></td>
-<td align="center"><img src="manual/assets/power-off.png" alt="OLED OFF display-protection state with the panel blank." width="220"><br><sub>OLED OFF — final display-protection stage</sub></td>
+<td align="center"><img src="manual-source/assets/screensaver-fireworks.png" alt="FIREWORKS screensaver showing an upper-screen pixel burst." width="220"><br><sub>FIREWORKS — pixel rocket and burst</sub></td>
+<td align="center"><img src="manual-source/assets/power-off.png" alt="OLED OFF display-protection state with the panel blank." width="220"><br><sub>OLED OFF — final display-protection stage</sub></td>
 </tr>
 </table>
 
@@ -432,16 +432,16 @@ The four ranked games — **Pixel Raid, Formula 1, Breakout, and Egg Journey** �
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/pixel-raid-intro.png" alt="Pixel Raid retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Pixel Raid — ranked arcade shooter</sub></td>
-<td align="center"><img src="manual/assets/formula-1-intro.png" alt="Formula 1 retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Formula 1 — ranked driving game</sub></td>
+<td align="center"><img src="manual-source/assets/pixel-raid-intro.png" alt="Pixel Raid retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Pixel Raid — ranked arcade shooter</sub></td>
+<td align="center"><img src="manual-source/assets/formula-1-intro.png" alt="Formula 1 retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Formula 1 — ranked driving game</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/breakout-intro.png" alt="Breakout retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Breakout — ranked brick game</sub></td>
-<td align="center"><img src="manual/assets/egg-journey-intro.png" alt="Egg Journey retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Egg Journey — ranked lunar runner</sub></td>
+<td align="center"><img src="manual-source/assets/breakout-intro.png" alt="Breakout retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Breakout — ranked brick game</sub></td>
+<td align="center"><img src="manual-source/assets/egg-journey-intro.png" alt="Egg Journey retro intro with its game-specific pixel motif and scrolling marquee." width="220"><br><sub>Egg Journey — ranked lunar runner</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/beatknecht-intro.png" alt="BEATKNECHT retro intro shown before the eight-channel rhythm utility starts." width="220"><br><sub>BEATKNECHT — eight-channel rhythm utility</sub></td>
-<td align="center"><img src="manual/assets/arcade-top-100.png" alt="Shared scrollable Top 100 presentation used by the four ranked arcade games." width="220"><br><sub>Top 100 — shared ranked leaderboard</sub></td>
+<td align="center"><img src="manual-source/assets/beatknecht-intro.png" alt="BEATKNECHT retro intro shown before the eight-channel rhythm utility starts." width="220"><br><sub>BEATKNECHT — eight-channel rhythm utility</sub></td>
+<td align="center"><img src="manual-source/assets/arcade-top-100.png" alt="Shared scrollable Top 100 presentation used by the four ranked arcade games." width="220"><br><sub>Top 100 — shared ranked leaderboard</sub></td>
 </tr>
 </table>
 
@@ -455,11 +455,11 @@ After a ranked Easter egg has been launched at least once, the Settings root gai
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/formula-1-crash.png" alt="Formula 1 crash frame showing the visible collision burst used during recovery." width="220"><br><sub>Formula 1 crash recovery</sub></td>
-<td align="center"><img src="manual/assets/breakout-modifier.png" alt="Breakout action frame with the enlarged paddle and a falling speed modifier." width="220"><br><sub>Breakout modifier</sub></td>
+<td align="center"><img src="manual-source/assets/formula-1-crash.png" alt="Formula 1 crash frame showing the visible collision burst used during recovery." width="220"><br><sub>Formula 1 crash recovery</sub></td>
+<td align="center"><img src="manual-source/assets/breakout-modifier.png" alt="Breakout action frame with the enlarged paddle and a falling speed modifier." width="220"><br><sub>Breakout modifier</sub></td>
 </tr>
 <tr>
-<td align="center"><img src="manual/assets/egg-journey.png" alt="Egg Journey gameplay frame showing the jumping egg, lunar terrain, and an incoming asteroid." width="220"><br><sub>Egg Journey gameplay</sub></td>
+<td align="center"><img src="manual-source/assets/egg-journey.png" alt="Egg Journey gameplay frame showing the jumping egg, lunar terrain, and an incoming asteroid." width="220"><br><sub>Egg Journey gameplay</sub></td>
 <td align="center"><sub><b>Leaderboard management</b><br>After a ranked Easter egg has been launched once, Settings exposes a guarded HI-SCORES / CLEAR action.</sub></td>
 </tr>
 </table>
@@ -481,9 +481,9 @@ Pixel Raid, Formula 1, Breakout, and Egg Journey keep all gate source GPIOs mute
 
 <table>
 <tr>
-<td align="center"><img src="manual/assets/settings-info.png" alt="INFO page showing the CLOCK product identity, version, and author entries." width="220"><br><sub>Identity</sub></td>
-<td align="center"><img src="manual/assets/settings-licenses.png" alt="Licenses page listing the firmware and bundled third-party license information." width="220"><br><sub>Licenses</sub></td>
-<td align="center"><img src="manual/assets/settings-updates.png" alt="Updates page showing the full-screen QR code used to reach the project update location." width="220"><br><sub>Updates</sub></td>
+<td align="center"><img src="manual-source/assets/settings-info.png" alt="INFO page showing the CLOCK product identity, version, and author entries." width="220"><br><sub>Identity</sub></td>
+<td align="center"><img src="manual-source/assets/settings-licenses.png" alt="Licenses page listing the firmware and bundled third-party license information." width="220"><br><sub>Licenses</sub></td>
+<td align="center"><img src="manual-source/assets/settings-updates.png" alt="Updates page showing the full-screen QR code used to reach the project update location." width="220"><br><sub>Updates</sub></td>
 </tr>
 </table>
 
@@ -514,6 +514,6 @@ These software safeguards do not replace physical validation. Representative har
 
 ## 24. License
 
-Firmware source is licensed under the **PolyForm Noncommercial License 1.0.0**. The Required Notice is `Required Notice: Copyright © 2026 Axel Napolitano.` See [`../LICENSE.md`](../LICENSE.md), [`../NOTICE.txt`](../NOTICE.txt), and [`LICENSING.md`](LICENSING.md). The publication manual and documentation artwork use the documentation license described in [`manual/LICENSE.md`](manual/LICENSE.md). Third-party components retain their upstream licenses and notices.
+Firmware source is licensed under the **PolyForm Noncommercial License 1.0.0**. The Required Notice is `Required Notice: Copyright © 2026 Axel Napolitano.` See [`../LICENSE.md`](../LICENSE.md), [`../NOTICE.txt`](../NOTICE.txt), and [`LICENSING.md`](LICENSING.md). The publication manual and documentation artwork use the documentation license described in [`manual-source/LICENSE.md`](manual-source/LICENSE.md). Third-party components retain their upstream licenses and notices.
 
 <h6 align="center">From Munich with &#9829;</h6>

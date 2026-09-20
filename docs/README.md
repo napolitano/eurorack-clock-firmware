@@ -24,7 +24,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 | understand citation, DOI, and project identity | [`PROJECT_IDENTITY.md`](PROJECT_IDENTITY.md) |
 | review the release and feature plan | [`ROADMAP.md`](ROADMAP.md) |
 | understand or maintain the generated GitHub Wiki | [`WIKI.md`](WIKI.md) |
-| maintain or publish the end-user manual | [`manual/README.md`](manual/README.md) |
+| maintain or publish the end-user manual | [`manual-source/README.md`](manual-source/README.md) |
 | write or review repository documentation | [`DOCUMENTATION_STYLE.md`](DOCUMENTATION_STYLE.md) |
 | contribute to CLOCK | [`../CONTRIBUTING.md`](../CONTRIBUTING.md) |
 | review security reporting | [`../.github/SECURITY.md`](../.github/SECURITY.md) |
@@ -56,7 +56,7 @@ CLOCK documentation follows a few explicit rules:
 2. User-visible behavior is described from the actual production implementation, not from intended behavior.
 3. Prototype limitations are called out with GitHub admonitions rather than hidden in prose.
 4. GitHub-native Mermaid is preferred for architecture and software-flow diagrams.
-5. The maintained typeset manual lives in [`manual/clock-user-manual.odt`](manual/clock-user-manual.odt); reusable artwork stays as SVG in [`manual/assets/`](manual/assets/) so it can be reused without raster degradation. The numbered front-panel drawing is generated from the simulator layout and must not be hand-positioned independently.
+5. The maintained typeset manual lives in [`manual-source/clock-user-manual.odt`](manual-source/clock-user-manual.odt); reusable artwork stays as SVG in [`manual-source/assets/`](manual-source/assets/) so it can be reused without raster degradation. The numbered front-panel drawing is generated from the simulator layout and must not be hand-positioned independently.
 6. OLED screenshots must come from the production renderer/framebuffer and use nearest-neighbor enlargement. Every screenshot needs meaningful alt text or an adjacent caption that tells the reader what state is visible and why it matters.
 7. Mechanical drawings must distinguish **conceptual/manual artwork** from manufacturing drawings.
 8. Source API documentation is Doxygen-compatible; public declarations carry a concise `@brief` plus parameters/return semantics where relevant.
@@ -67,14 +67,14 @@ CLOCK documentation follows a few explicit rules:
 
 ## Manual assets
 
-The SVGs in [`manual/assets/`](manual/assets/) are deliberately source-controlled plain SVG rather than embedded binary artwork. Current prepared illustrations:
+The SVGs in [`manual-source/assets/`](manual-source/assets/) are deliberately source-controlled plain SVG rather than embedded binary artwork. Current prepared illustrations:
 
-- [`front-panel-anatomy.svg`](manual/assets/front-panel-anatomy.svg) — numbered cobalt-blue front-panel key generated from `sim/panel_layout.ini`
-- [`operating-modes.svg`](manual/assets/operating-modes.svg)
-- [`timing-swing-phase.svg`](manual/assets/timing-swing-phase.svg)
-- [`external-sync-flow.svg`](manual/assets/external-sync-flow.svg)
-- [`persistence-ab.svg`](manual/assets/persistence-ab.svg)
-- [`simulator-scope.svg`](manual/assets/simulator-scope.svg)
+- [`front-panel-anatomy.svg`](manual-source/assets/front-panel-anatomy.svg) — numbered cobalt-blue front-panel key generated from `sim/panel_layout.ini`
+- [`operating-modes.svg`](manual-source/assets/operating-modes.svg)
+- [`timing-swing-phase.svg`](manual-source/assets/timing-swing-phase.svg)
+- [`external-sync-flow.svg`](manual-source/assets/external-sync-flow.svg)
+- [`persistence-ab.svg`](manual-source/assets/persistence-ab.svg)
+- [`simulator-scope.svg`](manual-source/assets/simulator-scope.svg)
 
 
 Additional engineering references:

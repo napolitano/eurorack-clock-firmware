@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1100 520" role="img" aria-labelledby="title desc">
+<title id="title">CLOCK timing concepts</title><desc id="desc">Reference grid compared with straight timing, swing, phase shift and One Clock humanize.</desc>
+<style>.h{font:700 28px Ubuntu,Arial,sans-serif;fill:#111}.l{font:20px Ubuntu,Arial,sans-serif;fill:#222}.s{font:16px Ubuntu,Arial,sans-serif;fill:#555}.grid{stroke:#bbb;stroke-width:2}.major{stroke:#666;stroke-width:3}.gate{stroke:#007fff;stroke-width:5}.alt{stroke:#d45500;stroke-width:5}.human{stroke:#6b4ca5;stroke-width:5}</style>
+<text x="550" y="38" text-anchor="middle" class="h">Musical reference grid vs. emitted gates</text>
+<g transform="translate(185 70)"><path d="M0 0 V390 M150 0 V390 M300 0 V390 M450 0 V390 M600 0 V390 M750 0 V390" class="major"/><path d="M75 0 V390 M225 0 V390 M375 0 V390 M525 0 V390 M675 0 V390" class="grid"/></g>
+<text x="30" y="125" class="l">Reference</text><text x="30" y="205" class="l">0% Swing</text><text x="30" y="285" class="l">Swing</text><text x="30" y="365" class="l">Phase</text><text x="30" y="445" class="l">Humanize</text>
+<g transform="translate(185 0)"><path d="M0 100 h750" class="grid"/><path d="M0 180 h750" class="grid"/><path d="M0 260 h750" class="grid"/><path d="M0 340 h750" class="grid"/><path d="M0 420 h750" class="grid"/>
+<g class="gate"><path d="M0 165 v30 M150 165 v30 M300 165 v30 M450 165 v30 M600 165 v30 M750 165 v30"/></g>
+<g class="alt"><path d="M0 245 v30 M178 245 v30 M300 245 v30 M478 245 v30 M600 245 v30 M750 245 v30"/></g>
+<g class="gate"><path d="M40 325 v30 M190 325 v30 M340 325 v30 M490 325 v30 M640 325 v30"/></g>
+<g class="human"><path d="M0 405 v30 M148 405 v30 M304 405 v30 M447 405 v30 M603 405 v30 M748 405 v30"/></g></g>
+<text x="185" y="495" class="s">Grid stays ideal and unswung. Swing / phase / Humanize are visible as displacement from the reference.</text>
+</svg>
