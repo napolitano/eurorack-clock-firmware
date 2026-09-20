@@ -23,6 +23,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Remove the extra `RATE >` and `CLOCK >` navigation layers by editing rate, polyrhythm and meter values directly in the channel menu. Keep `GROOVE >` as a focused timing submenu and `PATTERN >` as the Sequencer editor/operation submenu.
 - Render `TIMING`, mode-specific and `OUTPUT` section headings as non-selectable orientation labels so grouping costs no encoder click.
 - Add navigation, menu-order and framebuffer regressions for the flattened hierarchy and active-groove Performance label.
+- Rework grouped settings rendering around a six-line visual budget: section headings and parameter rows now use the same 9-pixel baseline spacing, eliminating heading/row overlap while using the previously idle final text line.
+- Make grouped-menu scrolling line-budget aware so section transitions never push a heading or selected row below the 64-pixel viewport; add regression coverage for Clock, Euclid and One Clock viewport capacity.
 
 ### Pre-Count display
 

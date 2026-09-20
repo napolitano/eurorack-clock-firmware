@@ -347,17 +347,37 @@ void UiController::confirmHighScoreClear(const std::uint32_t nowMs) {
 void UiController::normalizeScrollOffset() {
     const bool groupedPage = navigation_.settingsPage == SettingsPage::Channel ||
         navigation_.settingsPage == SettingsPage::UnifiedClock;
-    const std::uint8_t visibleRows = groupedPage ? 3U : 5U;
     const ChannelMode mode = state_.channels[navigation_.selectedChannel].common.mode;
     const std::uint8_t itemCount = settingsPageItemCount(
         navigation_.settingsPage, mode, navigation_.highScoreResetAvailable);
+
+    if (!groupedPage) {
+        constexpr std::uint8_t kVisibleRows = 5U;
+        if (navigation_.cursor < navigation_.scrollOffset) {
+            navigation_.scrollOffset = navigation_.cursor;
+        }
+        if (navigation_.cursor >= navigation_.scrollOffset + kVisibleRows) {
+            navigation_.scrollOffset = static_cast<std::uint8_t>(navigation_.cursor - (kVisibleRows - 1U));
+        }
+        if (itemCount <= kVisibleRows) {
+            navigation_.scrollOffset = 0U;
+        }
+        return;
+    }
+
     if (navigation_.cursor < navigation_.scrollOffset) {
         navigation_.scrollOffset = navigation_.cursor;
     }
-    if (navigation_.cursor >= navigation_.scrollOffset + visibleRows) {
-        navigation_.scrollOffset = static_cast<std::uint8_t>(navigation_.cursor - (visibleRows - 1U));
+    while (navigation_.scrollOffset < itemCount) {
+        const std::uint8_t visibleRows = groupedSettingsVisibleItemCount(
+            navigation_.settingsPage, mode, navigation_.scrollOffset, itemCount);
+        if (visibleRows == 0U || navigation_.cursor < navigation_.scrollOffset + visibleRows) {
+            break;
+        }
+        ++navigation_.scrollOffset;
     }
-    if (itemCount <= visibleRows) {
+    if (groupedSettingsVisibleItemCount(
+            navigation_.settingsPage, mode, 0U, itemCount) == itemCount) {
         navigation_.scrollOffset = 0U;
     }
 }

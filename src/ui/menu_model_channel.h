@@ -68,4 +68,11 @@ SettingsSection settingsRowSection(SettingsPage page, ChannelMode mode, std::uin
 /** @brief Returns the localized non-selectable heading for one visual settings group. */
 const char* settingsSectionLabel(SettingsSection section);
 
+/** @brief Returns how many selectable rows fit in the six-line grouped settings viewport. */
+std::uint8_t groupedSettingsVisibleItemCount(
+    SettingsPage page,
+    ChannelMode mode,
+    std::uint8_t startRow,
+    std::uint8_t itemCount);
+
 }  // namespace clockfw::ui

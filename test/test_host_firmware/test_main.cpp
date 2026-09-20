@@ -3957,6 +3957,7 @@ void testUiControllerFlows() {
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
     CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Channel,1U,selectedChannel,state).label,"STEPS") == 0);
     controllerTurn(controller, 8, now); // GROOVE
+    CHECK_EQ(controller.navigation().scrollOffset, 4U);
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
     controllerReset(controller, now);

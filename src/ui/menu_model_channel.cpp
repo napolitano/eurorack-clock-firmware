@@ -224,6 +224,32 @@ SettingsSection settingsRowSection(
     return SettingsSection::None;
 }
 
+std::uint8_t groupedSettingsVisibleItemCount(
+    const SettingsPage page,
+    const ChannelMode mode,
+    const std::uint8_t startRow,
+    const std::uint8_t itemCount) {
+    constexpr std::uint8_t kVisualLineBudget = 6U;
+    std::uint8_t visualLines = 0U;
+    std::uint8_t visibleItems = 0U;
+    SettingsSection renderedSection = SettingsSection::None;
+
+    for (std::uint8_t rowIndex = startRow; rowIndex < itemCount; ++rowIndex) {
+        const SettingsSection section = settingsRowSection(page, mode, rowIndex);
+        const bool needsHeading = section != SettingsSection::None && section != renderedSection;
+        const std::uint8_t requiredLines = static_cast<std::uint8_t>(1U + (needsHeading ? 1U : 0U));
+        if (static_cast<std::uint8_t>(visualLines + requiredLines) > kVisualLineBudget) {
+            break;
+        }
+        visualLines = static_cast<std::uint8_t>(visualLines + requiredLines);
+        ++visibleItems;
+        if (section != SettingsSection::None) {
+            renderedSection = section;
+        }
+    }
+    return visibleItems;
+}
+
 const char* settingsSectionLabel(const SettingsSection section) {
     switch (section) {
         case SettingsSection::Timing: return text::get(text::TextId::Timing);

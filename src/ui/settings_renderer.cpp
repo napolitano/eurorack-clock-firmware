@@ -166,12 +166,12 @@ void SettingsRenderer::renderSettings(
     display_.drawHorizontalLine(0, 9, hal::OledDisplay::kWidth);
     const ChannelMode channelMode = state.channels[navigation.selectedChannel].common.mode;
     const std::uint8_t itemCount = settingsPageItemCount(
-        navigation.settingsPage,
-        channelMode,
-        navigation.highScoreResetAvailable);
+        navigation.settingsPage, channelMode, navigation.highScoreResetAvailable);
     const bool groupedPage = navigation.settingsPage == SettingsPage::Channel ||
         navigation.settingsPage == SettingsPage::UnifiedClock;
-    const std::uint8_t visibleRows = groupedPage ? 3U : kVisibleSettingsRows;
+    const std::uint8_t visibleRows = groupedPage
+        ? groupedSettingsVisibleItemCount(navigation.settingsPage, channelMode, navigation.scrollOffset, itemCount)
+        : kVisibleSettingsRows;
     std::int16_t y = 11;
     SettingsSection renderedSection = SettingsSection::None;
 
@@ -193,7 +193,7 @@ void SettingsRenderer::renderSettings(
                 if (lineX < 123) {
                     display_.drawHorizontalLine(lineX, static_cast<std::int16_t>(y + 4), 123 - lineX);
                 }
-                y = static_cast<std::int16_t>(y + 7);
+                y = static_cast<std::int16_t>(y + 9);
                 renderedSection = section;
             }
         }
