@@ -188,14 +188,13 @@ void SettingsRenderer::renderSettings(
                 if (visibleRow > 0U) {
                     y = static_cast<std::int16_t>(y + 2);  // 4 px total above non-sticky heading.
                 }
-                display_.drawText(1, y, settingsSectionLabel(section));
-                const hal::TextBounds headingBounds = display_.measureText(
-                    settingsSectionLabel(section), 0, y);
-                const std::int16_t lineX = static_cast<std::int16_t>(
-                    4 + static_cast<std::int16_t>(headingBounds.width));
-                if (lineX < 123) {
-                    display_.drawHorizontalLine(lineX, static_cast<std::int16_t>(y + 4), 123 - lineX);
-                }
+                constexpr std::int16_t kSettingsTextX = 6;
+                constexpr std::int16_t kSettingsRightX = 123;
+                display_.drawText(kSettingsTextX, y, settingsSectionLabel(section));
+                display_.drawHorizontalLine(
+                    kSettingsTextX,
+                    static_cast<std::int16_t>(y + 7),
+                    static_cast<std::int16_t>(kSettingsRightX - kSettingsTextX + 1));
                 y = static_cast<std::int16_t>(y + 9);
                 renderedSection = section;
             }
@@ -210,7 +209,7 @@ void SettingsRenderer::renderSettings(
         if (selected) {
             display_.drawCharacter(0, y, '>');
         }
-        display_.drawText(8, y, row.label);
+        display_.drawText(6, y, row.label);
 
         if (row.value[0] != '\0') {
             const hal::TextBounds valueBounds = display_.measureText(row.value, 0, y);

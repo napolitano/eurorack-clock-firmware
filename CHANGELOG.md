@@ -10,6 +10,10 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Changed
+
+- Refined flat grouped settings typography: section headings and option labels now share the same left text anchor, the cursor owns a separate gutter, and section headings use a full-width one-pixel underline instead of an inline rule. The existing 4 px section margin remains unchanged except for sticky headings at the top of the viewport.
+
 ### Fixed
 
 - Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v10 2,783-byte repeated-state footprint and 32-byte in-place growth ceiling.

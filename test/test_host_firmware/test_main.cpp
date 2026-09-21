@@ -2979,15 +2979,26 @@ void testGroupedSettingsRenderFourPixelMarginUnlessHeadingIsSticky() {
     // MODE occupies y=11..17. TIMING begins at y=22, leaving y=18..21
     // completely blank across the content area: a real 4 px top margin.
     CHECK_EQ(countFramebufferPixels(nonStickyFrame, 0, 18, 124, 4), 0U);
-    CHECK(countFramebufferPixels(nonStickyFrame, 0, 22, 124, 7) > 0U);
+    CHECK_EQ(countFramebufferPixels(nonStickyFrame, 0, 22, 6, 7), 0U);
+    CHECK(countFramebufferPixels(nonStickyFrame, 6, 22, 118, 7) > 0U);
+    // Section labels share the same x=6 text anchor as option labels and use
+    // a dedicated underline below the seven-pixel glyph box.
+    CHECK_EQ(countFramebufferPixels(nonStickyFrame, 6, 29, 118, 1), 118U);
+    // The following RATE label is flush with the section label, while the
+    // x=0..4 gutter remains reserved for the selection cursor only.
+    CHECK_EQ(countFramebufferPixels(nonStickyFrame, 1, 31, 5, 7), 0U);
+    CHECK(countFramebufferPixels(nonStickyFrame, 6, 31, 50, 7) > 0U);
 
     navigation.cursor = 1U;
     navigation.scrollOffset = 1U;
     renderer.renderSettings(state, navigation);
     const auto stickyFrame = display.framebufferForTest();
     // Scrolling into TIMING makes its heading sticky at the viewport top.
-    // No four-pixel margin is inserted above it.
-    CHECK(countFramebufferPixels(stickyFrame, 0, 11, 124, 7) > 0U);
+    // No four-pixel margin is inserted above it, but the same flush text
+    // anchor and underline treatment still apply.
+    CHECK_EQ(countFramebufferPixels(stickyFrame, 0, 11, 6, 7), 0U);
+    CHECK(countFramebufferPixels(stickyFrame, 6, 11, 118, 7) > 0U);
+    CHECK_EQ(countFramebufferPixels(stickyFrame, 6, 18, 118, 1), 118U);
 }
 
 void testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition() {
