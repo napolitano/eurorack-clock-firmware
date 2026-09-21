@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v1.0.1
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 450 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 479 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -25,13 +25,13 @@ Compiler branches:  4288/5562 (77.09%, informational only)
 
 The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on the exact tagged source before publishing. Local pre-release verification covers the changed host renderer regression, the 96-case external-SYNC suite, release/manual tooling, documentation policies, and both headless simulator tests; the authoritative 1.0.1 repository-wide percentages are therefore produced by the release CI rather than copied forward from 1.0.0.
 
-Current 1.1 development working baseline after the grouped Channel-settings hierarchy and its navigation regressions:
+Current 1.1 development working baseline after configurable external-input roles, the HARDWARE submenu, inverted Settings selection and their regression coverage:
 
 ```text
-Executable lines:   7667/7915 (96.87%)
-Functions:            642/652  (98.47%)
-Decision branches:   4626/5140 (90.00%)
-Compiler branches:   4627/5994 (77.19%, informational only)
+Executable lines:   7937/8197 (96.83%)
+Functions:            664/675  (98.37%)
+Decision branches:   4828/5364 (90.01%)
+Compiler branches:   4829/6239 (77.40%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.
@@ -67,7 +67,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - application boot lifecycle, safe display-failure path, scheduler callback and STM32Cube entry-point/platform-I/O glue
 - all `ClockEngine` public methods and OFF/CLOCK/EUC/SEQ behavior
 - pause/stop, external-loss STOP/FREE behavior, bar progression/wrap and GLOBAL/FREE reset handling
-- all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 78-case Settings suite also locks down min/max coupling, enum boundaries, SYNC smoothing labels and cross-setting invariants
+- all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 88-case Settings suite also locks down min/max coupling, enum boundaries, SYNC smoothing labels and cross-setting invariants
 - tap tempo and all factory templates
 - all menu pages, labels, compact formatters and localization fallback
 - performance, pictographic 2×4 channel overview, six-function 2×3 mode palette, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Blox/Matrix/Cube Cover/Fractal/Orbit/Make Music/Labyrinth/Starfield/Fireworks screensaver effects, preset overwrite/name-band, templates and sequencer render paths
@@ -79,14 +79,14 @@ The complete firmware variants compile the real production `.cpp` files against 
 - complete deterministic timing/pattern core invariants
 - sixteenth-note base-rate semantics for Euclid/Sequencer (`x1`: 16 steps per 4/4 bar)
 - complete CURRENT-state persistence plus CRC/schema validation and 8 named user preset slots, including screensaver mode/start/dim/off plus device-local encoder-direction/OLED-orientation preferences
-- schema-v3/v4/v5/v6/v7/v8 to schema-v9 CURRENT/preset migration, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
+- schema-v10 to schema-v11 migration for configurable input roles, schema-v9 to schema-v10 Groove migration, the earlier v8/v7/v6/v5/v4/v3 migration chain, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
 - external-sync regression cases for 20/120/999 BPM, 1/2/4/24 PPQN, jitter, adaptive lock timeout, queue overflow/reacquisition, timestamp wraparound, effective-tempo gate release, monotonic scheduler time, phase alignment, ISR-safe pulse entry, and PPQN interpretation
-- atomic external-SYNC behavior at 1/20/30/60/120/240/300/600/900/999 BPM, strong deterministic jitter, alternating/chaotic periods, abrupt tempo changes, duplicate timestamps, glitch storms, runtime PPQN/edge changes, lock-loss policies and continuity recovery
+- 114-case atomic input/SYNC behavior: external clocks at 1/20/30/60/120/240/300/600/900/999 BPM plus configurable SYNC/RESET/RUN/START/STOP/RESTART/TAP roles on either physical input, role-change queue invalidation, input exclusivity, level-authoritative RUN, timestamp-preserving TAP, jitter/glitches, runtime PPQN/edge changes, loss policies and continuity recovery
 - external-SYNC `SMOOTHING` OFF/LOW/MEDIUM/FULL weighting, factory LOW default, live smoothing changes after lock, and menu-label coverage for all four modes
 - continuous external-tempo movement including 60->180 and 180->60 ramps, slow drift, repeated tempo steps, ramp-plus-jitter and 24-PPQN acceleration; permanently asserted SYNC is checked for one-edge behavior and natural lock timeout rather than a synthetic pulse train
 - dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, encoder NORMAL/REVERSED plus TIM4 detent-recovery/fast-turn backlog behavior, exact OLED 0°/180° transfer-frame rotation, and atomic button debounce/queue behavior
 - nominal LM393-front-end design-model checks for the documented resistor/hysteresis network, including end-to-end modeled 2.5 V, 3 V and 4 V clocks at low/nominal/maximum supported tempo; this remains explicitly separate from physical comparator HIL
-- ISR-safe external reset with configurable rising-edge TRIGGER or level-sensitive GATE semantics, startup-HIGH handling, queue saturation, deterministic RST-over-SYNC priority, and PLAY-transport preservation
+- ISR-safe external reset on either physical input with configurable TRIGGER/GATE semantics, startup-HIGH handling, queue saturation, deterministic RESET-before-SYNC priority, and role removal/reassignment behavior
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release
 - channel overview selection, TAP-turn six-function palette, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, and preset overwrite/save/load/name-band workflow
 - 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht PLAY/PAUSE/STOP, guarded NO/YES Beatknecht exit confirmation, launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, first-launch-gated HI-SCORES/CLEAR behavior, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-source-muted life-loss safety
@@ -109,7 +109,7 @@ The host matrix is also compiled and executed with:
 -Werror
 ```
 
-ASan/UBSan runs cover the deterministic core and complete I2C, SPI, and fixed-I2C/reset-pin firmware variants. Any memory-safety or undefined-behavior finding fails CI.
+ASan/UBSan runs cover every named Native suite plus the complete legacy-I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin firmware variants. Any memory-safety or undefined-behavior finding fails CI.
 
 
 ## Native simulator integration

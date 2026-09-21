@@ -31,9 +31,11 @@ MAX_CPP_LINES = 450
 # Deliberate implementation splits may share the public class header instead of
 # introducing fake one-to-one headers that expose no additional interface.
 IMPLEMENTATION_COMPANION_HEADERS = {
+    "external_sync_controller_inputs.cpp": "external_sync_controller.h",
     "persistent_state_codec.cpp": "persistent_state_service.h",
     "persistent_state_migration.cpp": "persistent_state_service.h",
     "persistent_state_migration_v8.cpp": "persistent_state_service.h",
+    "persistent_state_migration_v10.cpp": "persistent_state_service.h",
     "persistent_state_service_begin.cpp": "persistent_state_service.h",
     "oled_display_transport.cpp": "oled_display.h",
     "oled_display_controller_model.cpp": "oled_display.h",

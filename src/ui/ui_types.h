@@ -33,6 +33,8 @@ enum class Screen : std::uint8_t {
 enum class SettingsPage : std::uint8_t {
     Root,
     General,
+    InputAssignments,
+    Hardware,
     Diagnostics,
     DiagnosticsInputs,
     DiagnosticsOutputs,

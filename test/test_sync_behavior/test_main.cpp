@@ -1141,6 +1141,306 @@ void testHeldHighSyncCannotManufactureFallingEdgeClock() {
     CHECK(!fixture.engine.snapshot().externalLocked);
 }
 
+
+void testSyncRoleCanUsePhysicalInput2() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Sync};
+    fixture.begin();
+    fixture.engine.stop();
+
+    fixture.inputs.injectResetEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    fixture.inputs.injectResetEdgeForTest(2000U, false);
+    fixture.sync.processSchedulerTick(2000U);
+    fixture.inputs.injectResetEdgeForTest(501000U, true);
+    fixture.sync.processSchedulerTick(501000U);
+
+    CHECK(fixture.engine.snapshot().externalLocked);
+    CHECK_NEAR(fixture.sync.filteredBpmMilli(), 120000U, 1U);
+}
+
+void testResetRoleCanUsePhysicalInput1() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Reset, InputFunction::Off};
+    fixture.state.externalSync.resetMode = ExternalResetMode::Trigger;
+    fixture.begin();
+    const std::uint32_t before = fixture.engine.resetRuntimeCountForTest();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK_EQ(fixture.engine.resetRuntimeCountForTest(), before + 1U);
+}
+
+void testRunRoleTracksPhysicalLevel() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Run, InputFunction::Off};
+    fixture.begin();
+    fixture.engine.stop();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(fixture.engine.snapshot().playing);
+    TransportState transition = TransportState::Stopped;
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Playing);
+
+    fixture.inputs.injectSyncEdgeForTest(2000U, false);
+    fixture.sync.processSchedulerTick(2000U);
+    CHECK(!fixture.engine.snapshot().playing);
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Stopped);
+}
+
+void testStartAndStopRolesGenerateTransportCommands() {
+    Fixture start;
+    start.state.inputs = {InputFunction::Start, InputFunction::Off};
+    start.begin();
+    start.engine.stop();
+    start.inputs.injectSyncEdgeForTest(1000U, true);
+    start.sync.processSchedulerTick(1000U);
+    CHECK(start.engine.snapshot().playing);
+
+    Fixture stop;
+    stop.state.inputs = {InputFunction::Stop, InputFunction::Off};
+    stop.begin();
+    CHECK(stop.engine.snapshot().playing);
+    stop.inputs.injectSyncEdgeForTest(1000U, true);
+    stop.sync.processSchedulerTick(1000U);
+    CHECK(!stop.engine.snapshot().playing);
+}
+
+void testRestartRoleResetsPhaseAndStartsTransport() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Restart, InputFunction::Off};
+    fixture.begin();
+    for (std::uint32_t i = 0U; i < 100U; ++i) {
+        fixture.engine.processSchedulerTick();
+    }
+    const std::uint32_t before = fixture.engine.resetRuntimeCountForTest();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(fixture.engine.snapshot().playing);
+    CHECK(fixture.engine.resetRuntimeCountForTest() > before);
+}
+
+void testTapRolePreservesCaptureTimestamp() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Tap, InputFunction::Off};
+    fixture.begin();
+
+    fixture.inputs.injectSyncEdgeForTest(123456U, true);
+    fixture.sync.processSchedulerTick(123456U);
+    std::uint32_t timestampUs = 0U;
+    CHECK(fixture.sync.consumeTapRequest(timestampUs));
+    CHECK_EQ(timestampUs, 123456U);
+    CHECK(!fixture.sync.consumeTapRequest(timestampUs));
+}
+
+void testOffRoleIgnoresPhysicalEdges() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Off};
+    fixture.begin();
+    fixture.engine.stop();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.inputs.injectResetEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(!fixture.engine.snapshot().playing);
+    CHECK(!fixture.engine.snapshot().externalLocked);
+    std::uint32_t timestampUs = 0U;
+    CHECK(!fixture.sync.consumeTapRequest(timestampUs));
+}
+
+void testRoleChangeDiscardsQueuedEdgesFromPreviousMeaning() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Sync, InputFunction::Off};
+    fixture.begin();
+    fixture.engine.stop();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.state.inputs = {InputFunction::Start, InputFunction::Off};
+    fixture.sync.updateConfiguration(fixture.state);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(!fixture.engine.snapshot().playing);
+
+    fixture.inputs.injectSyncEdgeForTest(2000U, false);
+    fixture.sync.processSchedulerTick(2000U);
+    fixture.inputs.injectSyncEdgeForTest(3000U, true);
+    fixture.sync.processSchedulerTick(3000U);
+    CHECK(fixture.engine.snapshot().playing);
+}
+
+void testFirstEdgeAfterBeginIsNotDiscardedForAssignedRole() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Start, InputFunction::Off};
+    fixture.begin();
+    fixture.engine.stop();
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(fixture.engine.snapshot().playing);
+}
+
+void testRunRoleCanUsePhysicalInput2AndReassertAfterManualTransport() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Run};
+    fixture.begin();
+    fixture.engine.stop();
+
+    fixture.inputs.injectResetEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(fixture.engine.snapshot().playing);
+    fixture.sync.processSchedulerTick(1100U);
+    CHECK(fixture.engine.snapshot().playing);
+
+    fixture.engine.stop();
+    fixture.sync.notifyManualTransportState(TransportState::Stopped);
+    fixture.sync.processSchedulerTick(1200U);
+    CHECK(fixture.engine.snapshot().playing);
+}
+
+
+void testTransportRolesCanUsePhysicalInput2() {
+    struct Case { InputFunction function; bool startsPlaying; bool stopsPlaying; bool producesTap; };
+    constexpr Case cases[] = {
+        {InputFunction::Start, true, false, false},
+        {InputFunction::Stop, false, true, false},
+        {InputFunction::Restart, true, false, false},
+        {InputFunction::Tap, false, false, true},
+    };
+    for (const auto& entry : cases) {
+        Fixture fixture;
+        fixture.state.inputs = {InputFunction::Off, entry.function};
+        fixture.begin();
+        if (entry.function == InputFunction::Start || entry.function == InputFunction::Tap) {
+            fixture.engine.stop();
+        }
+        const std::uint32_t beforeReset = fixture.engine.resetRuntimeCountForTest();
+        fixture.inputs.injectResetEdgeForTest(7777U, true);
+        fixture.sync.processSchedulerTick(7777U);
+        if (entry.startsPlaying) {
+            CHECK(fixture.engine.snapshot().playing);
+        }
+        if (entry.stopsPlaying) {
+            CHECK(!fixture.engine.snapshot().playing);
+        }
+        if (entry.function == InputFunction::Restart) {
+            CHECK(fixture.engine.resetRuntimeCountForTest() > beforeReset);
+        }
+        std::uint32_t timestampUs = 0U;
+        if (entry.producesTap) {
+            CHECK(fixture.sync.consumeTapRequest(timestampUs));
+            CHECK_EQ(timestampUs, 7777U);
+        } else {
+            CHECK(!fixture.sync.consumeTapRequest(timestampUs));
+        }
+    }
+}
+
+void testTransportRolesIgnoreFallingAndContinuityMarkers() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Start, InputFunction::Off};
+    fixture.begin();
+    fixture.engine.stop();
+    fixture.inputs.injectSyncEdgeForTest(1000U, false);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(!fixture.engine.snapshot().playing);
+
+    // Overflow/continuity marker without a positive edge must not synthesize START.
+    for (std::uint32_t i = 0U; i < 64U; ++i) {
+        fixture.inputs.injectSyncEdgeForTest(2000U + i, false);
+    }
+    fixture.sync.processSchedulerTick(3000U);
+    CHECK(!fixture.engine.snapshot().playing);
+}
+
+void testResetGateRoleTracksBothLevelsOnPhysicalInput2() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Reset};
+    fixture.state.externalSync.resetMode = ExternalResetMode::Gate;
+    fixture.begin();
+    fixture.inputs.injectResetEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(fixture.engine.snapshot().externalResetHeld);
+    fixture.inputs.injectResetEdgeForTest(2000U, false);
+    fixture.sync.processSchedulerTick(2000U);
+    CHECK(!fixture.engine.snapshot().externalResetHeld);
+}
+
+void testResetRoleRemovalReleasesAppliedGate() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Reset};
+    fixture.state.externalSync.resetMode = ExternalResetMode::Gate;
+    fixture.begin();
+    fixture.inputs.injectResetEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(fixture.engine.snapshot().externalResetHeld);
+
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Off};
+    fixture.sync.updateConfiguration(fixture.state);
+    fixture.sync.processSchedulerTick(2000U);
+    CHECK(!fixture.engine.snapshot().externalResetHeld);
+}
+
+void testRunRoleNoAssignmentAndStableLevelAreNoOps() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Off};
+    fixture.begin();
+    fixture.sync.processSchedulerTick(1000U);
+    fixture.sync.processSchedulerTick(1100U);
+    CHECK(fixture.engine.snapshot().playing);
+
+    Fixture run;
+    run.state.inputs = {InputFunction::Run, InputFunction::Off};
+    run.begin();
+    run.inputs.injectSyncEdgeForTest(2000U, true);
+    run.sync.processSchedulerTick(2000U);
+    CHECK(run.engine.snapshot().playing);
+    run.sync.processSchedulerTick(2100U);
+    CHECK(run.engine.snapshot().playing);
+}
+
+void testFillRoleIsDrainedButDoesNothing() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Fill, InputFunction::Off};
+    fixture.begin();
+    fixture.engine.stop();
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(!fixture.engine.snapshot().playing);
+    CHECK(!fixture.engine.snapshot().externalLocked);
+}
+
+
+void testFillRoleOnPhysicalInput2IsDrainedButDoesNothing() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Fill};
+    fixture.begin();
+    fixture.engine.stop();
+    fixture.inputs.injectResetEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(!fixture.engine.snapshot().playing);
+    CHECK(!fixture.engine.snapshot().externalLocked);
+}
+
+void testInput2OnlyRoleChangeInvalidatesQueuedMeaning() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Sync};
+    fixture.begin();
+    fixture.engine.stop();
+    fixture.inputs.injectResetEdgeForTest(1000U, true);
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Start};
+    fixture.sync.updateConfiguration(fixture.state);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(!fixture.engine.snapshot().playing);
+    fixture.inputs.injectResetEdgeForTest(2000U, false);
+    fixture.sync.processSchedulerTick(2000U);
+    fixture.inputs.injectResetEdgeForTest(3000U, true);
+    fixture.sync.processSchedulerTick(3000U);
+    CHECK(fixture.engine.snapshot().playing);
+}
+
 void testExternalInputActivitySequenceTracksSyncAndReset() {
     hal::ExternalInputCapture inputs;
     CHECK_EQ(inputs.activitySequence(), 0U);
@@ -1253,6 +1553,24 @@ int main() {
     RUN_TEST(testHeldHighSyncCreatesOnlyOneSelectedEdge);
     RUN_TEST(testHeldHighSyncAfterLockEventuallyTimesOut);
     RUN_TEST(testHeldHighSyncCannotManufactureFallingEdgeClock);
+    RUN_TEST(testSyncRoleCanUsePhysicalInput2);
+    RUN_TEST(testResetRoleCanUsePhysicalInput1);
+    RUN_TEST(testRunRoleTracksPhysicalLevel);
+    RUN_TEST(testStartAndStopRolesGenerateTransportCommands);
+    RUN_TEST(testRestartRoleResetsPhaseAndStartsTransport);
+    RUN_TEST(testTapRolePreservesCaptureTimestamp);
+    RUN_TEST(testOffRoleIgnoresPhysicalEdges);
+    RUN_TEST(testRoleChangeDiscardsQueuedEdgesFromPreviousMeaning);
+    RUN_TEST(testFirstEdgeAfterBeginIsNotDiscardedForAssignedRole);
+    RUN_TEST(testRunRoleCanUsePhysicalInput2AndReassertAfterManualTransport);
+    RUN_TEST(testTransportRolesCanUsePhysicalInput2);
+    RUN_TEST(testTransportRolesIgnoreFallingAndContinuityMarkers);
+    RUN_TEST(testResetGateRoleTracksBothLevelsOnPhysicalInput2);
+    RUN_TEST(testResetRoleRemovalReleasesAppliedGate);
+    RUN_TEST(testRunRoleNoAssignmentAndStableLevelAreNoOps);
+    RUN_TEST(testFillRoleIsDrainedButDoesNothing);
+    RUN_TEST(testFillRoleOnPhysicalInput2IsDrainedButDoesNothing);
+    RUN_TEST(testInput2OnlyRoleChangeInvalidatesQueuedMeaning);
     RUN_TEST(testExternalInputActivitySequenceTracksSyncAndReset);
     std::cout << "SYNC behavior assertions: " << checks << "\n";
     return UNITY_END();

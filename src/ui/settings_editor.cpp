@@ -43,8 +43,11 @@ void SettingsEditor::adjust(
     }
 
     switch (page) {
-        case SettingsPage::General:
-            adjustGeneral(rowIndex, delta);
+        case SettingsPage::InputAssignments:
+            adjustInputAssignments(rowIndex, delta);
+            break;
+        case SettingsPage::Hardware:
+            adjustHardware(rowIndex, delta);
             break;
         case SettingsPage::Master:
             adjustMaster(rowIndex, delta);
@@ -88,6 +91,7 @@ void SettingsEditor::adjust(
             adjustDividerBank(rowIndex, delta);
             break;
         case SettingsPage::Root:
+        case SettingsPage::General:
         case SettingsPage::Channel:
         case SettingsPage::SequencerPattern:
         case SettingsPage::UnifiedClock:
@@ -148,14 +152,44 @@ bool SettingsEditor::executeSequencerCommand(
     return true;
 }
 
-void SettingsEditor::adjustGeneral(const std::uint8_t rowIndex, const std::int8_t delta) {
+void SettingsEditor::adjustInputAssignments(
+    const std::uint8_t rowIndex,
+    const std::int8_t delta) {
+    if (delta == 0 || rowIndex > 1U) {
+        return;
+    }
+
+    InputFunction& selected = rowIndex == 0U ? state_.inputs.input1 : state_.inputs.input2;
+    const InputFunction other = rowIndex == 0U ? state_.inputs.input2 : state_.inputs.input1;
+    const int direction = delta > 0 ? 1 : -1;
+    int remaining = delta > 0 ? delta : -delta;
+
+    while (remaining-- > 0) {
+        int candidate = static_cast<int>(selected);
+        while (true) {
+            candidate += direction;
+            if (candidate < static_cast<int>(InputFunction::Off) ||
+                candidate > static_cast<int>(InputFunction::Tap)) {
+                candidate = static_cast<int>(selected);
+                break;
+            }
+            const InputFunction function = static_cast<InputFunction>(candidate);
+            if (function != other || function == InputFunction::Off) {
+                break;
+            }
+        }
+        selected = static_cast<InputFunction>(candidate);
+    }
+}
+
+void SettingsEditor::adjustHardware(const std::uint8_t rowIndex, const std::int8_t delta) {
     if (delta == 0) {
         return;
     }
-    if (rowIndex == 4U) {
+    if (rowIndex == 0U) {
         const int value = state_.device.encoderDirectionReversed ? 1 : 0;
         state_.device.encoderDirectionReversed = clampInt(value + delta, 0, 1) != 0;
-    } else if (rowIndex == 5U) {
+    } else if (rowIndex == 1U) {
         const int value = state_.device.displayRotated180 ? 1 : 0;
         state_.device.displayRotated180 = clampInt(value + delta, 0, 1) != 0;
     }

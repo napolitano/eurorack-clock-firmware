@@ -33,4 +33,11 @@ const char* channelModeLongLabel(ChannelMode mode);
  */
 const char* clockSourceLabel(ClockSource source);
 
+/**
+ * @brief Returns the user-visible label for an assignable external-input role.
+ * @param function Input role to format.
+ * @return Static null-terminated label.
+ */
+const char* inputFunctionLabel(InputFunction function);
+
 }  // namespace clockfw

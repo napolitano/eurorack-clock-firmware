@@ -68,6 +68,30 @@ enum class SyncEdge : std::uint8_t { Rising, Falling };
 /** @brief Selects external reset interpretation after the comparator. */
 enum class ExternalResetMode : std::uint8_t { Trigger, Gate };
 
+/**
+ * @brief Assignable semantic roles for the two conditioned comparator inputs.
+ *
+ * Fill is reserved for the later Euclid/Sequencer fill feature and is not
+ * selectable in the current 1.1 development UI.
+ */
+enum class InputFunction : std::uint8_t {
+    Off,
+    Sync,
+    Reset,
+    Run,
+    Start,
+    Stop,
+    Restart,
+    Tap,
+    Fill
+};
+
+/** @brief Global role assignment for the two electrically equivalent inputs. */
+struct ExternalInputAssignments {
+    InputFunction input1 = InputFunction::Sync;
+    InputFunction input2 = InputFunction::Reset;
+};
+
 /** @brief Selects transport behavior after the external clock is lost. */
 enum class SyncLossMode : std::uint8_t { Stop, Freewheel, Internal };
 
@@ -207,6 +231,7 @@ struct ClockState {
     TransportState transport = TransportState::Stopped;
     ClockSource source = ClockSource::Auto;
     ExternalSyncSettings externalSync{};
+    ExternalInputAssignments inputs{};
     UnifiedClockSettings unifiedClock{};
     DividerBankSettings dividerBank{};
     DisplayPreferences display{};

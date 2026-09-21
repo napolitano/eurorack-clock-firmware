@@ -41,6 +41,12 @@ inline constexpr TransportState kTransportState = TransportState::Stopped;
 /** Factory master clock source. */
 inline constexpr ClockSource kClockSource = ClockSource::Auto;
 
+/** Factory semantic role of physical comparator input 1 (PA8 / legacy SYNC net). */
+inline constexpr InputFunction kInput1Function = InputFunction::Sync;
+
+/** Factory semantic role of physical comparator input 2 (PA9 / legacy RST net). */
+inline constexpr InputFunction kInput2Function = InputFunction::Reset;
+
 /** Factory shared-clock rate used in One Clock mode. */
 inline constexpr RateSettings kUnifiedClockRate{ClockRatioMode::Multiply, 1U, 1U, 1U};
 

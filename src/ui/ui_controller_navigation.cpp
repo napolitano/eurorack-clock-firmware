@@ -122,8 +122,11 @@ void UiController::backFromSettings() {
                navigation_.settingsPage == SettingsPage::Preferences ||
                navigation_.settingsPage == SettingsPage::Info) {
         navigation_.settingsPage = SettingsPage::Root;
+    } else if (navigation_.settingsPage == SettingsPage::Sync) {
+        navigation_.settingsPage = SettingsPage::InputAssignments;
     } else if (navigation_.settingsPage == SettingsPage::Master ||
-               navigation_.settingsPage == SettingsPage::Sync ||
+               navigation_.settingsPage == SettingsPage::InputAssignments ||
+               navigation_.settingsPage == SettingsPage::Hardware ||
                navigation_.settingsPage == SettingsPage::Screensaver ||
                navigation_.settingsPage == SettingsPage::Diagnostics) {
         navigation_.settingsPage = SettingsPage::General;
@@ -173,6 +176,23 @@ void UiController::backFromSettings() {
     } else if (previousPage == SettingsPage::SequencerPattern &&
                navigation_.settingsPage == SettingsPage::Sequencer) {
         navigation_.cursor = 2U;
+    } else if (navigation_.settingsPage == SettingsPage::InputAssignments &&
+               previousPage == SettingsPage::Sync) {
+        navigation_.cursor = 2U;
+    } else if (navigation_.settingsPage == SettingsPage::General) {
+        if (previousPage == SettingsPage::Master) {
+            navigation_.cursor = 0U;
+        } else if (previousPage == SettingsPage::InputAssignments) {
+            navigation_.cursor = 1U;
+        } else if (previousPage == SettingsPage::Screensaver) {
+            navigation_.cursor = 2U;
+        } else if (previousPage == SettingsPage::Diagnostics) {
+            navigation_.cursor = 3U;
+        } else if (previousPage == SettingsPage::Hardware) {
+            navigation_.cursor = 4U;
+        } else {
+            navigation_.cursor = 0U;
+        }
     } else if (navigation_.settingsPage == SettingsPage::Channel) {
         const ChannelMode mode = state_.channels[navigation_.selectedChannel].common.mode;
         if (previousPage == SettingsPage::ChannelTiming) {
@@ -234,15 +254,30 @@ void UiController::activateCurrentSetting() {
         if (navigation_.cursor == 0U) {
             openSettingsPage(SettingsPage::Master);
         } else if (navigation_.cursor == 1U) {
-            openSettingsPage(SettingsPage::Sync);
+            openSettingsPage(SettingsPage::InputAssignments);
         } else if (navigation_.cursor == 2U) {
             openSettingsPage(SettingsPage::Screensaver);
         } else if (navigation_.cursor == 3U) {
             openSettingsPage(SettingsPage::Diagnostics);
         } else {
+            openSettingsPage(SettingsPage::Hardware);
+        }
+        return;
+    }
+
+    if (navigation_.settingsPage == SettingsPage::InputAssignments) {
+        if (navigation_.cursor == 2U) {
+            openSettingsPage(SettingsPage::Sync);
+        } else {
             navigation_.editing = !navigation_.editing;
             invalidate();
         }
+        return;
+    }
+
+    if (navigation_.settingsPage == SettingsPage::Hardware) {
+        navigation_.editing = !navigation_.editing;
+        invalidate();
         return;
     }
 
@@ -369,7 +404,6 @@ void UiController::activateCurrentSetting() {
     }
 }
 
-
 void UiController::confirmHighScoreClear(const std::uint32_t nowMs) {
     if (navigation_.cursor == 0U || leaderboard_ == nullptr) {
         openSettingsPage(SettingsPage::Root, navigation_.highScoreResetAvailable ? 4U : 0U);
@@ -384,7 +418,6 @@ void UiController::confirmHighScoreClear(const std::uint32_t nowMs) {
     navigation_.highScoreResetAvailable = leaderboard_->hasPersistentRecord();
     openSettingsPage(SettingsPage::Root, navigation_.highScoreResetAvailable ? 4U : 0U);
 }
-
 
 
 void UiController::normalizeScrollOffset() {
@@ -405,7 +438,6 @@ void UiController::normalizeScrollOffset() {
     }
 }
 
-
 void UiController::applySelectedTemplate(const std::uint32_t nowMs) {
     (void)services::TemplateService::apply(navigation_.cursor, state_);
     engine_.updateConfiguration(state_, true);
@@ -413,8 +445,6 @@ void UiController::applySelectedTemplate(const std::uint32_t nowMs) {
     navigation_.screen = Screen::Performance;
     invalidate();
 }
-
-
 
 
 }  // namespace clockfw::ui

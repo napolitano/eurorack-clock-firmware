@@ -10,6 +10,26 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Configurable inputs and hardware settings
+
+- Treat the two Rev-1 LM393 comparator paths as globally configurable `INPUT 1` / `INPUT 2` roles while preserving the physical SYNC/PA8 and RST/PA9 net identities and factory `SYNC / RESET` assignment.
+- Add selectable `OFF`, `SYNC`, `RESET`, `RUN`, `START`, `STOP`, `RESTART`, and `TAP` roles; reserve `FILL` for the later Fill feature without exposing it in current selection/persistence.
+- Enforce active-role uniqueness across both inputs in the Settings editor and persistence validation; allow `OFF` on both inputs.
+- Keep SYNC on the existing PPQN/edge/filter/smoothing/loss path and RESET on TRIGGER/GATE semantics; make RUN level-authoritative and START/STOP/RESTART/TAP positive-edge commands.
+- Preserve exact capture timestamps for external TAP and route them through the existing Tap Tempo estimator.
+- Discard queued electrical edges on role reassignment so a pulse captured under one role can never be reinterpreted under another.
+- Add `GENERAL SETTINGS → INPUTS` with direct INPUT 1/2 role editing and `CONFIG >` for shared external timing/reset parameters.
+- Add `GENERAL SETTINGS → HARDWARE` and move ENCODER DIR / ORIENTATION into it.
+- Replace the left Settings cursor with full-row inversion, reclaiming horizontal display width; active value editing is counter-inverted inside the selected row.
+- Advance current development persistence to schema v11; migrate schema-v10 records by injecting the factory `SYNC / RESET` roles. The repeated CURRENT + eight-preset footprint is now 2,801 bytes with 30 bytes of remaining in-place payload growth.
+- Regenerate deterministic manual screenshots for GENERAL, INPUTS, input CONFIG and HARDWARE from the production framebuffer.
+
+### Validation
+
+- Native inventory: **479 named tests**; Input/SYNC suite **114 / 5,160**, Settings **88 / 261**, complete host firmware **35** cases across all tested display variants.
+- Repository coverage: **96.83% executable lines / 98.37% functions / 90.01% source decision branches**; the 95/95/90 gates remain unchanged.
+- Full ASan/UBSan Native/firmware matrix passes, including legacy I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin variants.
+
 ### Changed
 
 - Reworked Channel/One Clock settings from the interim flat section list into one deliberate hierarchy level per musical group. Clock/One Clock prioritize `TIMING >`, Euclid and Sequencer prioritize their mode page, and `OUTPUT >` remains last; the Channel root therefore stays short while preserving the same importance ordering.
@@ -18,7 +38,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 ### Fixed
 
 - Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v10 2,783-byte repeated-state footprint and 32-byte in-place growth ceiling.
-- Updated development and coverage documentation to the current 450-case Native inventory.
+- Updated development and coverage documentation to the current 479-case Native inventory.
 
 ### Groove Engine Stage 1
 

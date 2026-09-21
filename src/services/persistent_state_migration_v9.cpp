@@ -10,6 +10,8 @@
 
 #include <algorithm>
 
+#include "defaults.h"
+
 namespace clockfw::services {
 namespace {
 
@@ -36,7 +38,7 @@ bool isAllowedV9PresetCharacter(const char character) {
 bool PersistentStateService::deserializeV9State(
     const std::array<std::uint8_t, kV9StatePayloadSize>& payload,
     ClockState& state) {
-    static_assert(kStatePayloadSize == kV9StatePayloadSize + 27U);
+    static_assert(kStatePayloadSize == kV9StatePayloadSize + 29U);
     std::array<std::uint8_t, kStatePayloadSize> upgraded{};
     std::copy(payload.begin(), payload.end(), upgraded.begin());
     std::size_t position = kV9StatePayloadSize;
@@ -45,6 +47,8 @@ bool PersistentStateService::deserializeV9State(
         upgraded[position++] = 100U;
         upgraded[position++] = 0U;
     }
+    upgraded[position++] = static_cast<std::uint8_t>(defaults::kInput1Function);
+    upgraded[position++] = static_cast<std::uint8_t>(defaults::kInput2Function);
     return deserializeState(upgraded, state);
 }
 

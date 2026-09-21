@@ -121,7 +121,7 @@ The maintained manual follows this user-oriented publication structure:
 7. Euclidean patterns
 8. Gate Sequencer
 9. Swing, phase, probability, and reset semantics
-10. Internal / External / Auto sync
+10. Configurable external inputs and Internal / External / Auto sync
 11. Presets and persistence
 12. Display and screensavers
 13. Configuration reference

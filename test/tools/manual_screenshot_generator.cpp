@@ -305,11 +305,13 @@ private:
     }
 
     void renderSettingsStates() {
-        constexpr std::array<ui::SettingsPage, 20U> kPages{{
+        constexpr std::array<ui::SettingsPage, 22U> kPages{{
             ui::SettingsPage::Root,
             ui::SettingsPage::General,
-            ui::SettingsPage::Master,
+            ui::SettingsPage::InputAssignments,
             ui::SettingsPage::Sync,
+            ui::SettingsPage::Hardware,
+            ui::SettingsPage::Master,
             ui::SettingsPage::Preferences,
             ui::SettingsPage::Screensaver,
             ui::SettingsPage::Info,
@@ -326,11 +328,13 @@ private:
             ui::SettingsPage::UnifiedTiming,
             ui::SettingsPage::UnifiedOutput,
             ui::SettingsPage::DividerBank}};
-        constexpr std::array<const char*, 20U> kNames{{
+        constexpr std::array<const char*, 22U> kNames{{
             "settings-root",
             "settings-general",
+            "settings-inputs",
+            "settings-input-config",
+            "settings-hardware",
             "settings-master",
-            "settings-sync",
             "settings-preferences",
             "settings-screensaver",
             "settings-info",
@@ -347,11 +351,13 @@ private:
             "settings-one-clock-timing",
             "settings-one-clock-output",
             "settings-divider-bank"}};
-        constexpr std::array<const char*, 20U> kDescriptions{{
+        constexpr std::array<const char*, 22U> kDescriptions{{
             "Settings root",
             "General settings",
+            "Global input-role assignments",
+            "External input timing configuration",
+            "Hardware orientation and encoder settings",
             "Master clock settings",
-            "External Sync settings",
             "Preset settings",
             "Screensaver settings",
             "Firmware information",

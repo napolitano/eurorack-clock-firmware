@@ -83,7 +83,7 @@ The current hardware target is **0 V LOW / nominal +5 V HIGH** at OUT 1–8. The
 
 ## Analog/CV product boundary
 
-Hardware Rev 1 deliberately stops at digital timing I/O: eight 0/+5 V gate/trigger outputs plus dedicated conditioned SYNC and RST inputs. It does **not** add general parameter-CV inputs, analog CV/modulation outputs, or a general modulation matrix.
+Hardware Rev 1 deliberately stops at digital timing I/O: eight 0/+5 V gate/trigger outputs plus two LM393-conditioned digital comparator inputs. Their current PCB/net names remain SYNC and RST, but current 1.1 firmware exposes them globally as configurable INPUT 1 / INPUT 2 roles. They are **not** general parameter-CV inputs; analog CV/modulation outputs and a general modulation matrix remain outside the hardware contract.
 
 For analog modulation outputs, the project quality target would require an eight-channel 16-bit DAC-class path and two quad output-op-amp stages. A 12-bit MCP-class DAC is not accepted as a quality shortcut for this use. The current project estimate is roughly EUR 30-40 extra BOM cost before the additional fine-pitch SMD assembly, PCB routing, calibration, and validation effort. General CV inputs would add separate analog input-conditioning/routing and panel-I/O costs.
 
@@ -147,7 +147,7 @@ Use CLOCK's framework-independent encoded pin constants (`clockfw::mcu::PA7`, `c
 
 The SPI bus is deliberately limited to **1 MHz** for prototype/first-PCB bring-up margin. Both supported controller families permit substantially faster serial operation, but the prototype wiring is not treated as a controlled-impedance PCB interconnect.
 
-The final comparator outputs are fixed at PA8 for SYNC and PA9 for RST. Jack-detect contacts remain unassigned in firmware unless a later PCB revision routes dedicated detect signals.
+The final comparator outputs are physically fixed at PA8 for the SYNC-net path and PA9 for the RST-net path. These are hardware/net identities, not fixed musical roles: current 1.1 firmware factory-assigns them as `INPUT 1 = SYNC` and `INPUT 2 = RESET`, and the global INPUTS page may reassign supported digital roles. Jack-detect contacts remain unassigned in firmware unless a later PCB revision routes dedicated detect signals.
 
 ## `src/ui_text.h`
 

@@ -112,8 +112,8 @@ void SettingsRenderer::renderSettings(
         constexpr std::int16_t kHeight = 22;
         constexpr std::int16_t kGap = 8;
         constexpr std::int16_t kStartX = (128 - (kWidth * 2 + kGap)) / 2;
-        drawDiagnosticBox(display_, kStartX, 25, kWidth, kHeight, text::get(text::TextId::Sync), diagnostics.syncHigh);
-        drawDiagnosticBox(display_, kStartX + kWidth + kGap, 25, kWidth, kHeight, text::get(text::TextId::ResetShort), diagnostics.resetHigh);
+        drawDiagnosticBox(display_, kStartX, 25, kWidth, kHeight, text::get(text::TextId::Input1), diagnostics.syncHigh);
+        drawDiagnosticBox(display_, kStartX + kWidth + kGap, 25, kWidth, kHeight, text::get(text::TextId::Input2), diagnostics.resetHigh);
         display_.present();
         return;
     }
@@ -183,22 +183,30 @@ void SettingsRenderer::renderSettings(
             navigation.highScoreResetAvailable);
         const bool selected = rowIndex == navigation.cursor;
         if (selected) {
-            display_.drawCharacter(0, y, '>');
+            display_.fillRectangle(0, y - 1, 124, 9, hal::PixelColor::White);
+            display_.setTextColor(hal::PixelColor::Black);
         }
-        display_.drawText(6, y, row.label);
+        display_.drawText(2, y, row.label);
 
         if (row.value[0] != '\0') {
             const hal::TextBounds valueBounds = display_.measureText(row.value, 0, y);
             const std::int16_t valueX = 121 - static_cast<std::int16_t>(valueBounds.width);
             if (selected && navigation.editing) {
-                display_.fillRectangle(valueX - 1, y - 1, static_cast<std::int16_t>(valueBounds.width + 2U), 9);
-                display_.setTextColor(hal::PixelColor::Black);
-                display_.drawText(valueX, y, row.value);
+                // The selected row is inverted. Re-invert only the active value
+                // so edit mode remains visually distinct without a left cursor.
+                display_.fillRectangle(
+                    valueX - 1,
+                    y - 1,
+                    static_cast<std::int16_t>(valueBounds.width + 2U),
+                    9,
+                    hal::PixelColor::Black);
                 display_.setTextColor(hal::PixelColor::White);
+                display_.drawText(valueX, y, row.value);
             } else {
                 display_.drawText(valueX, y, row.value);
             }
         }
+        display_.setTextColor(hal::PixelColor::White);
         y = static_cast<std::int16_t>(y + 10);
     }
     if (itemCount > visibleRows) {

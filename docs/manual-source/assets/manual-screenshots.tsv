@@ -32,8 +32,10 @@ sequencer-editor	64-step Sequencer editor
 templates	Factory template selection
 settings-root	Settings root
 settings-general	General settings
+settings-inputs	Global input-role assignments
+settings-input-config	External input timing configuration
+settings-hardware	Hardware orientation and encoder settings
 settings-master	Master clock settings
-settings-sync	External Sync settings
 settings-preferences	Preset settings
 settings-screensaver	Screensaver settings
 settings-info	Firmware information

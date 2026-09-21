@@ -38,7 +38,7 @@ For a first patch:
 
 ## 3. Product boundary: timing rather than analog CV
 
-CLOCK is intentionally an eight-channel **digital timing, gate, and trigger instrument**. Hardware Rev 1 provides dedicated SYNC and RST inputs, but it does not provide general parameter-CV inputs, analog CV/modulation outputs, or a modulation matrix.
+CLOCK is intentionally an eight-channel **digital timing, gate, and trigger instrument**. Hardware Rev 1 provides two LM393-conditioned digital comparator inputs on the physical SYNC/PA8 and RST/PA9 nets. Current 1.1 firmware can assign their musical roles globally, but this does not turn them into general parameter-CV inputs; analog CV/modulation outputs and a general modulation matrix remain outside scope.
 
 That boundary protects both signal quality and DIY buildability. A quality eight-channel analog modulation-output path would require an eight-channel 16-bit DAC-class solution plus two quad output-op-amp stages; a 12-bit MCP-class implementation is not considered an acceptable quality compromise for this product direction. The project currently estimates roughly EUR 30-40 of additional BOM cost before the added fine-pitch SMD assembly, PCB, calibration, validation, and documentation burden. General parameter-CV inputs would also require additional analog front ends, routing, and panel I/O.
 
@@ -305,43 +305,50 @@ CLOCK persists the working configuration but never restores PLAY on power-up. Fl
 
 While Pre-Count is active, the Performance screen keeps the normal context visible around a centered square popover. The popover is black with a one-pixel white border and shows the remaining beat count without any phase animation. Along its lower edge, one cell per master-meter beat visualizes the current step: exactly the active beat is filled and all other beats remain outlined. In 4/4 the four fixed positions therefore read as Tick–Tack–Tack–Tack, with the filled marker moving through the bar and returning to the first position on the next bar. When the count reaches zero the popover disappears and normal gate generation starts from the shared phase-zero boundary. With a locked external clock, Pre-Count remains edge-owned and converts accepted SYNC pulses into the configured **master-meter beat unit** using PPQN. A quarter note is therefore one count beat in `/4`, two beats in `/8`, four beats in `/16`, and half a beat in `/2`; the scheduler does not double-advance the count between accepted external edges.
 
-## 17. External SYNC and RST
+## 17. Configurable external inputs
 
-Open `SETTINGS → GENERAL SETTINGS → SYNC` to configure external timing.
+Open `SETTINGS → GENERAL SETTINGS → INPUTS` to assign the two conditioned comparator inputs. The current board still has physical/net identities **SYNC/PA8** and **RST/PA9**; the firmware presents them as **INPUT 1** and **INPUT 2** so either electrical path can perform any supported digital input role. Factory assignment is `INPUT 1 = SYNC`, `INPUT 2 = RESET`.
 
-Available settings are:
+Current selectable roles are:
+
+- **OFF** — ignore the input;
+- **SYNC** — external clock acquisition;
+- **RESET** — phase reset using the configured `TRIGGER / GATE` semantics;
+- **RUN** — conditioned `HIGH = PLAY`, `LOW = STOP`;
+- **START** — positive edge starts transport;
+- **STOP** — positive edge stops transport;
+- **RESTART** — positive edge stops/restarts from phase zero;
+- **TAP** — positive edge enters the existing Tap Tempo estimator with the captured input timestamp.
+
+`FILL` is reserved for later Fill functionality and is not selectable in the current development firmware. Active roles are exclusive: a non-`OFF` role assigned to one input is skipped while editing the other. `OFF` may be assigned to both inputs.
+
+<table>
+<tr>
+<td align="center"><img src="manual-source/assets/settings-inputs.png" alt="INPUTS settings page with INPUT 1 assigned to SYNC and INPUT 2 assigned to RESET." width="220"><br><sub>Input-role assignments</sub></td>
+<td align="center"><img src="manual-source/assets/settings-input-config.png" alt="CONFIG page showing external timing and reset configuration." width="220"><br><sub>Shared input configuration</sub></td>
+</tr>
+</table>
+
+Choose `CONFIG >` from the INPUTS page for the shared timing/reset parameters:
 
 - **SOURCE** — `INTERNAL / EXTERNAL / AUTO` (factory default: `AUTO`)
 - **PPQN** — `1 / 2 / 4 / 24`
-- **EDGE** — rising / falling
+- **EDGE** — rising / falling for `SYNC`
 - **LOSS** — `STOP / FREE / INTERNAL`
 - **RST MODE** — `TRIGGER / GATE`
 - **FILTER** — 0–5000 µs in 250 µs steps
 - **SMOOTHING** — `OFF / LOW / MEDIUM / FULL` (factory default: `LOW`)
 - **TIMEOUT** — 200–5000 ms in 100 ms steps
 
-`TRIGGER` is the factory reset-input mode. One accepted inactive→active reset edge generates one reset; holding the conditioned reset signal HIGH does not repeat it.
+For a role assigned to `RESET`, `TRIGGER` generates one global phase reset for an accepted active edge; holding the input HIGH does not repeat it. `GATE` uses the current conditioned level: while HIGH, the timing engine is held in reset and all generated gates remain LOW; release restarts from phase zero. A channel configured with local `RESET = FREE` keeps its independent cycle position as defined by the existing reset policy.
 
-`GATE` treats the reset input as a held reset condition: while the conditioned input remains HIGH, the timing engine is held in reset and all generated gates remain LOW. Releasing the input restarts from phase zero.
+For a role assigned to `SYNC`, `AUTO` remains the factory clock source. Without a valid external lock, CLOCK runs from the configured internal BPM. The first accepted selected SYNC edge starts acquisition but does not advertise lock because no period can yet be measured. The second valid selected edge establishes period/BPM, acquires lock, resets external phase to zero and may start transport unless manual transport state takes precedence. While locked in `EXTERNAL` or `AUTO`, the Performance BPM display shows measured external tempo.
 
-`AUTO` is the factory clock source. Without a valid external lock, CLOCK runs from the configured internal BPM. The first accepted SYNC pulse starts acquisition but does **not** advertise a lock because no period can be measured yet. The second valid selected pulse establishes the first period, calculates the external BPM, acquires lock, resets the external phase to zero, and starts transport unless the user has explicitly stopped or paused it. While locked in `EXTERNAL` or `AUTO`, the large BPM display shows the measured external tempo. Tap Tempo updates the internal/fallback BPM only and never changes the selected clock source.
+`FILTER` and `SMOOTHING` solve different problems. `FILTER` rejects implausibly short electrical/glitch intervals. `SMOOTHING` controls how quickly measured tempo follows genuine period changes: `OFF` uses 100% of the newest period, `LOW` 75% new / 25% previous, `MEDIUM` 50% / 50%, and `FULL` 25% new / 75% previous. `LOW` remains the factory default.
 
-`FILTER` and `SMOOTHING` solve different problems. `FILTER` rejects implausibly short electrical/glitch intervals. `SMOOTHING` controls how quickly the measured tempo follows genuine period changes: `OFF` uses 100% of the newest period, `LOW` uses 75% new / 25% previous, `MEDIUM` uses 50% / 50%, and `FULL` uses 25% new / 75% previous. `LOW` is the factory default because it follows deliberate tempo moves quickly while still damping modest source jitter; `FULL` preserves the earlier, deliberately slow response.
+After external clock loss, `LOSS = STOP` stops transport; `LOSS = FREE` continues at the last measured external BPM and keeps that BPM on the Performance display; `LOSS = INTERNAL` returns to the configured fallback BPM. A role change discards queued edges captured under the previous assignment, so a pending clock edge cannot later be reinterpreted as START, STOP, RESTART or TAP. `RUN` is level-authoritative and therefore follows the current comparator level even if intermediate transitions were collapsed.
 
-After external loss, `LOSS = STOP` stops transport and forces normal STOP gate behavior; a later valid reacquisition may restart only when transport was still armed for external operation. A manual STOP or PAUSE takes precedence and is not undone by incoming SYNC. `LOSS = FREE` continues at the last measured external BPM and keeps that BPM on the Performance display after lock is lost, while `LOSS = INTERNAL` continues at the configured internal fallback BPM. RST remains phase-only: it resets or holds phase according to `RST MODE` and never changes PLAY/PAUSE/STOP by itself.
-
-SYNC/RST transitions are captured by GPIO interrupts and consumed at the deterministic 20 kHz scheduler boundary. External tempo is measured in the period domain with filtering, continuity handling, adaptive timeout, and timestamp-wrap-safe arithmetic. The effective loss timeout is at least long enough for slow valid sources; for example, 20 BPM at 1 PPQN produces one pulse every 3 seconds and must not falsely unlock between pulses.
-
-<table>
-<tr>
-<td align="center"><img src="manual-source/assets/performance-external-unlocked.png" alt="Performance screen with external source selected but no valid lock yet." width="220"><br><sub>External selected, not yet locked</sub></td>
-<td align="center"><img src="manual-source/assets/performance-external-locked.png" alt="Performance screen in slave mode with the external-lock padlock visible." width="220"><br><sub>External slave locked</sub></td>
-<td align="center"><img src="manual-source/assets/settings-sync.png" alt="SYNC settings page showing the upper portion of the external timing configuration." width="220"><br><sub>SYNC/RST configuration</sub></td>
-</tr>
-</table>
-
-> [!CAUTION]
-> Host tests verify the firmware semantics above, not the final analog input hardware. Comparator thresholds/hysteresis, physical signal integrity, final pin routing, external-SYNC capture latency/jitter, and jack-level output jitter remain HIL qualification items. Their status is visible but advisory to automated release builds through 1.4.x; the hard all-PASS gate starts with 1.5.0 release candidates/stable releases. Timer Input Capture is required only if the measured EXTI path cannot meet the V1 timing target.
+Both physical comparator paths are captured by GPIO EXTI with TIM5 microsecond timestamps and are consumed by the deterministic scheduler. Host tests prove this digital role/state-machine contract. Actual LM393 thresholds, propagation, jack-level timing and output jitter remain HIL evidence.
 
 ## 18. Presets, CURRENT, and templates
 
@@ -364,16 +371,18 @@ Factory templates currently include `ALL MASTER`, `CLOCK TREE`, `DIVIDERS`, `POL
 
 ## 19. Device orientation, screensaver, and display protection
 
-`SETTINGS → GENERAL SETTINGS` contains two persistent installation preferences in addition to the CLOCK, SYNC and SCREENSAVER subpages:
+`SETTINGS → GENERAL SETTINGS → HARDWARE` contains the two persistent installation preferences:
 
 - **ENCODER DIR** — `NORMAL / REVERSED`. `REVERSED` flips the user-facing rotary direction after quadrature decoding; detent recovery, bounce handling and Fast Turn buffering are unchanged.
 - **ORIENTATION** — `0 DEG / 180 DEG`. Firmware rotates the complete 128×64 transfer framebuffer before sending it to the OLED, so the boot screen, settings, screensavers and Easter eggs remain readable with the module mounted upside down. The controller itself stays in the proven `A1/C8` scan orientation; this avoids the mirrored-text behavior seen with controller-remap rotation on interchangeable SSD1306/SSD1315 modules.
+
+<p align="center"><img src="manual-source/assets/settings-hardware.png" alt="HARDWARE settings page with encoder direction and display orientation." width="220"><br><sub>Device-local hardware preferences</sub></p>
 
 Both preferences take effect immediately and survive power cycling. They are device-local: loading a named preset or applying a factory template does not change them. Factory defaults are `NORMAL` and `0 DEG`.
 
 ### Hardware diagnostics
 
-Open `SETTINGS → GENERAL SETTINGS → DIAGNOSTICS` for a live digital signal view. `INPUTS` shows the conditioned `SYNC` and `RST` levels as two centered rectangular indicators. `OUTPUTS` shows channels 1–8 as a 4×2 grid of rectangular indicators. An inactive signal is shown as an outlined rectangle; an active signal is filled with its label inverted.
+Open `SETTINGS → GENERAL SETTINGS → DIAGNOSTICS` for a live digital signal view. `INPUTS` shows the two conditioned comparator levels as centered `INPUT 1` and `INPUT 2` indicators, independent of their currently assigned musical roles. `OUTPUTS` shows channels 1–8 as a 4×2 grid of rectangular indicators. An inactive signal is shown as an outlined rectangle; an active signal is filled with its label inverted.
 
 The input page reports the digital comparator levels seen by the MCU; the output page reports the digital source levels actually written by firmware to the eight gate-output GPIOs. The current hardware does not provide ADC voltage measurements at these points, so Diagnostics deliberately does not display inferred voltage values.
 

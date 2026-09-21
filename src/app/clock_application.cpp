@@ -139,6 +139,11 @@ void ClockApplication::runOnce() {
         uiController_.invalidate();
     }
 
+    std::uint32_t externalTapTimestampUs = 0U;
+    if (externalSyncController_.consumeTapRequest(externalTapTimestampUs)) {
+        uiController_.registerExternalTapTempo(externalTapTimestampUs / 1000U);
+    }
+
     const hal::ControlSample controls = controlPanel_.sample(nowMs);
     const TransportState transportBeforeControls = state_.transport;
     uiController_.processControls(controls, nowMs);

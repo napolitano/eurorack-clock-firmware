@@ -263,6 +263,29 @@ void writeTestUint32Le(std::uint8_t* const destination, const std::uint32_t valu
 
 
 template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
+std::array<std::uint8_t, LegacySize> makeLegacyV10Record(
+    const std::array<std::uint8_t, CurrentSize>& current) {
+    constexpr std::size_t kV11PayloadSize = 285U;
+    constexpr std::size_t kV10PayloadSize = 283U;
+    static_assert(kV11PayloadSize == kV10PayloadSize + 2U);
+    std::array<std::uint8_t, LegacySize> legacy{};
+    if constexpr (PayloadOffset == 8U) {
+        writeTestUint32Le(legacy.data(), 0x30315543UL);  // "CU10"
+    } else {
+        std::copy_n(current.begin() + 8, 16U, legacy.begin() + 8);
+        writeTestUint32Le(legacy.data(), 0x30315250UL);  // "PR10"
+    }
+    legacy[4] = 10U;
+    legacy[5] = current[5];
+    writeTestUint16Le(legacy.data() + 6U, static_cast<std::uint16_t>(kV10PayloadSize));
+    std::copy_n(current.begin() + static_cast<std::ptrdiff_t>(PayloadOffset),
+                kV10PayloadSize,
+                legacy.begin() + static_cast<std::ptrdiff_t>(PayloadOffset));
+    writeTestUint32Le(legacy.data() + LegacySize - 4U, testCrc32(legacy.data(), LegacySize - 4U));
+    return legacy;
+}
+
+template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
 std::array<std::uint8_t, LegacySize> makeLegacyV9Record(
     const std::array<std::uint8_t, CurrentSize>& current) {
     constexpr std::size_t kV10PayloadSize = 283U;
@@ -526,6 +549,8 @@ void testDefaultsTemplatesAndServices() {
 
     CHECK(!state.device.encoderDirectionReversed);
     CHECK(!state.device.displayRotated180);
+    CHECK_EQ(state.inputs.input1, InputFunction::Sync);
+    CHECK_EQ(state.inputs.input2, InputFunction::Reset);
 
     for (std::size_t index = 0U; index < services::TemplateService::kTemplateCount; ++index) {
         ClockState templated{};
@@ -585,12 +610,12 @@ void testPersistentLayoutV1ForwardCompatibilityContract() {
     CHECK_EQ(hal::persistent_layout::kMaximumImageBytes, 12288U);
     CHECK_EQ(hal::persistent_layout::kLegacyScoreRegionOffset, 3072U);
     CHECK_EQ(hal::persistent_layout::kLeaderboardRegionOffset, 4096U);
-    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 283U);
-    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 295U);
-    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 311U);
-    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2783U);
-    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 289U);
-    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 32U);
+    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 285U);
+    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 297U);
+    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 313U);
+    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2801U);
+    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 271U);
+    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 30U);
 }
 
 void testPersistentStorageTransactionalUpdate() {
@@ -878,6 +903,14 @@ void testPersistentStorageAndStateService() {
     ClockState invalidPreCount = complete;
     invalidPreCount.preCountSteps = 65U;
     CHECK(!fullReload.savePreset(7U, "INVALID", invalidPreCount));
+    ClockState invalidInputs = complete;
+    invalidInputs.inputs = {InputFunction::Sync, InputFunction::Sync};
+    CHECK(!fullReload.savePreset(7U, "INVALID", invalidInputs));
+    invalidInputs.inputs = {InputFunction::Fill, InputFunction::Reset};
+    CHECK(!fullReload.savePreset(7U, "INVALID", invalidInputs));
+    invalidInputs.inputs = {InputFunction::Off, InputFunction::Off};
+    CHECK(fullReload.savePreset(7U, "OFF-OFF", invalidInputs));
+    CHECK(fullReload.clearPreset(7U));
     invalidDisplay = complete;
     invalidDisplay.display.dimAfterMinutes = 13U;
     invalidDisplay.display.offAfterMinutes = 12U;
@@ -933,8 +966,8 @@ void testPersistentStorageAndStateService() {
     hal::PersistentStorage::failNextReadForTest();
     CHECK(!fullReload.renamePreset(2U, "READFAIL"));
 
-    constexpr std::size_t kCurrentRecordSizeForTest = 295U;
-    constexpr std::size_t kPresetRecordSizeForTest = 311U;
+    constexpr std::size_t kCurrentRecordSizeForTest = services::PersistentStateService::kCurrentRecordBytes;
+    constexpr std::size_t kPresetRecordSizeForTest = services::PersistentStateService::kPresetRecordBytes;
     constexpr std::size_t kPreset2OffsetForTest =
         kCurrentRecordSizeForTest + 2U * kPresetRecordSizeForTest;
     std::uint8_t presetMagicByte = 0U;
@@ -977,6 +1010,8 @@ void testPersistentStorageAndStateService() {
 
 
 void testPersistentV3Migration() {
+    constexpr std::size_t kV11CurrentSize = 297U;
+    constexpr std::size_t kV11PresetSize = 313U;
     constexpr std::size_t kV10CurrentSize = 295U;
     constexpr std::size_t kV10PresetSize = 311U;
     constexpr std::size_t kV9CurrentSize = 268U;
@@ -993,6 +1028,7 @@ void testPersistentV3Migration() {
     constexpr std::size_t kV4PresetSize = 273U;
     constexpr std::size_t kV3CurrentSize = 253U;
     constexpr std::size_t kV3PresetSize = 269U;
+    constexpr std::size_t kV11PresetOffset = kV11CurrentSize;
     constexpr std::size_t kV10PresetOffset = kV10CurrentSize;
     constexpr std::size_t kV9PresetOffset = kV9CurrentSize;
     constexpr std::size_t kV8PresetOffset = kV8CurrentSize;
@@ -1022,10 +1058,12 @@ void testPersistentV3Migration() {
     CHECK(seed.savePreset(0U, "MIGRATE", legacyState));
     seed.service(5000U);
 
-    std::array<std::uint8_t, kV10CurrentSize> v10Current{};
-    std::array<std::uint8_t, kV10PresetSize> v10Preset{};
-    CHECK(seedStorage.readBytes(0U, v10Current.data(), v10Current.size()));
-    CHECK(seedStorage.readBytes(kV10PresetOffset, v10Preset.data(), v10Preset.size()));
+    std::array<std::uint8_t, kV11CurrentSize> v11Current{};
+    std::array<std::uint8_t, kV11PresetSize> v11Preset{};
+    CHECK(seedStorage.readBytes(0U, v11Current.data(), v11Current.size()));
+    CHECK(seedStorage.readBytes(kV11PresetOffset, v11Preset.data(), v11Preset.size()));
+    const auto v10Current = makeLegacyV10Record<kV11CurrentSize, kV10CurrentSize, 8U>(v11Current);
+    const auto v10Preset = makeLegacyV10Record<kV11PresetSize, kV10PresetSize, 24U>(v11Preset);
     const auto v9Current = makeLegacyV9Record<kV10CurrentSize, kV9CurrentSize, 8U>(v10Current);
     const auto v9Preset = makeLegacyV9Record<kV10PresetSize, kV9PresetSize, 24U>(v10Preset);
     const auto v8Current = makeLegacyV8Record<kV9CurrentSize, kV8CurrentSize, 8U>(v9Current);
@@ -1045,7 +1083,26 @@ void testPersistentV3Migration() {
         0x52U, 0x41U, 0x49U, 0x44U, 1U, 2U, 3U, 4U,
         5U, 6U, 7U, 8U, 9U, 10U, 11U, 12U};
 
-    // v9 -> v10: early 1.1 Pre-Count state survives and Groove defaults to OFF.
+    // v10 -> v11: Stage-1 Groove survives and configurable inputs receive factory roles.
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage legacyV10Storage;
+    CHECK(legacyV10Storage.writeBytes(0U, v10Current.data(), v10Current.size()));
+    CHECK(legacyV10Storage.writeBytes(kV10PresetOffset, v10Preset.data(), v10Preset.size()));
+    services::PersistentStateService migratedV10(legacyV10Storage);
+    migratedV10.begin();
+    ClockState restoredV10 = makeDefaultState();
+    CHECK(migratedV10.restoreCurrentState(restoredV10));
+    CHECK_EQ(restoredV10.inputs.input1, InputFunction::Sync);
+    CHECK_EQ(restoredV10.inputs.input2, InputFunction::Reset);
+    CHECK(migratedV10.presetExists(0U));
+    std::array<std::uint8_t, kV11CurrentSize> rewrittenV11Current{};
+    std::array<std::uint8_t, kV11PresetSize> rewrittenV11Preset{};
+    CHECK(legacyV10Storage.readBytes(0U, rewrittenV11Current.data(), rewrittenV11Current.size()));
+    CHECK(legacyV10Storage.readBytes(kV11PresetOffset, rewrittenV11Preset.data(), rewrittenV11Preset.size()));
+    CHECK_EQ(rewrittenV11Current[4], 11U);
+    CHECK_EQ(rewrittenV11Preset[4], 11U);
+
+    // v9 -> v11: early 1.1 Pre-Count state survives and Groove defaults to OFF.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV9Storage;
     CHECK(legacyV9Storage.writeBytes(0U, v9Current.data(), v9Current.size()));
@@ -1058,6 +1115,8 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV9.unifiedClock.groove.preset, GroovePreset::Off);
     CHECK_EQ(restoredV9.unifiedClock.groove.amountPercent, 100U);
     CHECK_EQ(restoredV9.channels[2].common.groove.preset, GroovePreset::Off);
+    CHECK_EQ(restoredV9.inputs.input1, InputFunction::Sync);
+    CHECK_EQ(restoredV9.inputs.input2, InputFunction::Reset);
     CHECK(migratedV9.presetExists(0U));
 
     // v8 -> v10: stable 1.0.x state survives unchanged; Pre-Count and Groove default
@@ -1073,13 +1132,15 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV8.bpm, 143U);
     CHECK_EQ(restoredV8.externalSync.smoothing, legacyState.externalSync.smoothing);
     CHECK_EQ(restoredV8.preCountSteps, 0U);
+    CHECK_EQ(restoredV8.inputs.input1, InputFunction::Sync);
+    CHECK_EQ(restoredV8.inputs.input2, InputFunction::Reset);
     CHECK(migratedV8.presetExists(0U));
-    std::array<std::uint8_t, kV10CurrentSize> migratedV8ToV9Current{};
-    std::array<std::uint8_t, kV10PresetSize> migratedV8ToV9Preset{};
+    std::array<std::uint8_t, kV11CurrentSize> migratedV8ToV9Current{};
+    std::array<std::uint8_t, kV11PresetSize> migratedV8ToV9Preset{};
     CHECK(legacyV8Storage.readBytes(0U, migratedV8ToV9Current.data(), migratedV8ToV9Current.size()));
-    CHECK(legacyV8Storage.readBytes(kV10PresetOffset, migratedV8ToV9Preset.data(), migratedV8ToV9Preset.size()));
-    CHECK_EQ(migratedV8ToV9Current[4], 10U);
-    CHECK_EQ(migratedV8ToV9Preset[4], 10U);
+    CHECK(legacyV8Storage.readBytes(kV11PresetOffset, migratedV8ToV9Preset.data(), migratedV8ToV9Preset.size()));
+    CHECK_EQ(migratedV8ToV9Current[4], 11U);
+    CHECK_EQ(migratedV8ToV9Preset[4], 11U);
 
     // v7 -> v10: all prior musical/device state survives, SYNC smoothing receives
     // the release-safe LOW default, and Pre-Count receives OFF before rewrite.
@@ -1096,12 +1157,12 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV7.externalSync.smoothing, SyncSmoothing::Low);
     CHECK(migratedV7.presetExists(0U));
     CHECK_EQ(restoredV7.preCountSteps, 0U);
-    std::array<std::uint8_t, kV10CurrentSize> migratedV7ToV9Current{};
-    std::array<std::uint8_t, kV10PresetSize> migratedV7ToV9Preset{};
+    std::array<std::uint8_t, kV11CurrentSize> migratedV7ToV9Current{};
+    std::array<std::uint8_t, kV11PresetSize> migratedV7ToV9Preset{};
     CHECK(legacyV7Storage.readBytes(0U, migratedV7ToV9Current.data(), migratedV7ToV9Current.size()));
-    CHECK(legacyV7Storage.readBytes(kV10PresetOffset, migratedV7ToV9Preset.data(), migratedV7ToV9Preset.size()));
-    CHECK_EQ(migratedV7ToV9Current[4], 10U);
-    CHECK_EQ(migratedV7ToV9Preset[4], 10U);
+    CHECK(legacyV7Storage.readBytes(kV11PresetOffset, migratedV7ToV9Preset.data(), migratedV7ToV9Preset.size()));
+    CHECK_EQ(migratedV7ToV9Current[4], 11U);
+    CHECK_EQ(migratedV7ToV9Preset[4], 11U);
 
     // A CRC-valid current record with a semantically invalid payload must be rejected.
     // This exercises the post-decode semantic-validation path independently of CRC checks.
@@ -1134,12 +1195,12 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV6.externalSync.smoothing, SyncSmoothing::Low);
     CHECK_EQ(restoredV6.preCountSteps, 0U);
     CHECK(migratedV6.presetExists(0U));
-    std::array<std::uint8_t, kV10CurrentSize> migratedV6ToV9Current{};
-    std::array<std::uint8_t, kV10PresetSize> migratedV6ToV9Preset{};
+    std::array<std::uint8_t, kV11CurrentSize> migratedV6ToV9Current{};
+    std::array<std::uint8_t, kV11PresetSize> migratedV6ToV9Preset{};
     CHECK(legacyV6Storage.readBytes(0U, migratedV6ToV9Current.data(), migratedV6ToV9Current.size()));
-    CHECK(legacyV6Storage.readBytes(kV10PresetOffset, migratedV6ToV9Preset.data(), migratedV6ToV9Preset.size()));
-    CHECK_EQ(migratedV6ToV9Current[4], 10U);
-    CHECK_EQ(migratedV6ToV9Preset[4], 10U);
+    CHECK(legacyV6Storage.readBytes(kV11PresetOffset, migratedV6ToV9Preset.data(), migratedV6ToV9Preset.size()));
+    CHECK_EQ(migratedV6ToV9Current[4], 11U);
+    CHECK_EQ(migratedV6ToV9Preset[4], 11U);
 
     // v5 -> v10: user state remains intact; newer fields receive safe defaults.
     hal::PersistentStorage::resetForTest();
@@ -1158,12 +1219,12 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV5.externalSync.smoothing, SyncSmoothing::Low);
     CHECK_EQ(restoredV5.preCountSteps, 0U);
     CHECK(migratedV5.presetExists(0U));
-    std::array<std::uint8_t, kV10CurrentSize> migratedV9Current{};
-    std::array<std::uint8_t, kV10PresetSize> migratedV9Preset{};
+    std::array<std::uint8_t, kV11CurrentSize> migratedV9Current{};
+    std::array<std::uint8_t, kV11PresetSize> migratedV9Preset{};
     CHECK(legacyV5Storage.readBytes(0U, migratedV9Current.data(), migratedV9Current.size()));
-    CHECK(legacyV5Storage.readBytes(kV10PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
-    CHECK_EQ(migratedV9Current[4], 10U);
-    CHECK_EQ(migratedV9Preset[4], 10U);
+    CHECK(legacyV5Storage.readBytes(kV11PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
+    CHECK_EQ(migratedV9Current[4], 11U);
+    CHECK_EQ(migratedV9Preset[4], 11U);
 
     // v4 -> v10: user BPM remains intact and newer preferences receive factory defaults.
     hal::PersistentStorage::resetForTest();
@@ -1184,9 +1245,9 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV4.preCountSteps, 0U);
     CHECK(migratedV4.presetExists(0U));
     CHECK(legacyV4Storage.readBytes(0U, migratedV9Current.data(), migratedV9Current.size()));
-    CHECK(legacyV4Storage.readBytes(kV10PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
-    CHECK_EQ(migratedV9Current[4], 10U);
-    CHECK_EQ(migratedV9Preset[4], 10U);
+    CHECK(legacyV4Storage.readBytes(kV11PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
+    CHECK_EQ(migratedV9Current[4], 11U);
+    CHECK_EQ(migratedV9Preset[4], 11U);
 
     // v3 -> v10 through all intermediate layouts, preserving the independent high-score area.
     hal::PersistentStorage::resetForTest();
@@ -1233,9 +1294,9 @@ void testPersistentV3Migration() {
     CHECK(legacyStorage.readBytes(kScoreOffset, scoreAfter.data(), scoreAfter.size()));
     CHECK(scoreAfter == scoreMarker);
     CHECK(legacyStorage.readBytes(0U, migratedV9Current.data(), migratedV9Current.size()));
-    CHECK(legacyStorage.readBytes(kV10PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
-    CHECK_EQ(migratedV9Current[4], 10U);
-    CHECK_EQ(migratedV9Preset[4], 10U);
+    CHECK(legacyStorage.readBytes(kV11PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
+    CHECK_EQ(migratedV9Current[4], 11U);
+    CHECK_EQ(migratedV9Preset[4], 11U);
 
     // A damaged v3 CURRENT must not prevent a valid v3 preset from being recovered.
     auto corruptCurrent = v3Current;
@@ -1384,7 +1445,7 @@ void testMenuModelAndFormatters() {
     ui::formatChannelDetail(state.channels[0], buffer, sizeof(buffer)); CHECK_EQ(std::strlen(buffer), 0U);
     ui::formatChannelSummary(state.channels[0], buffer, sizeof(buffer)); CHECK(std::strcmp(buffer, "OFF") == 0);
 
-    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::Diagnostics,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::DividerBank};
+    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::InputAssignments,ui::SettingsPage::Hardware,ui::SettingsPage::Diagnostics,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::DividerBank};
     state.source=ClockSource::External; state.externalSync.edge=SyncEdge::Falling; state.externalSync.lossMode=SyncLossMode::Stop;
     state.channels[0].common.resetMode=ResetMode::Free; state.channels[0].common.muted=true;
     for (auto page: pages) {
@@ -1418,11 +1479,13 @@ void testMenuModelAndFormatters() {
     const auto generalSync = ui::buildMenuRow(ui::SettingsPage::General, 1U, 0U, state);
     const auto generalSaver = ui::buildMenuRow(ui::SettingsPage::General, 2U, 0U, state);
     const auto generalDiagnostics = ui::buildMenuRow(ui::SettingsPage::General, 3U, 0U, state);
+    const auto generalHardware = ui::buildMenuRow(ui::SettingsPage::General, 4U, 0U, state);
     const auto diagnosticInputs = ui::buildMenuRow(ui::SettingsPage::Diagnostics, 0U, 0U, state);
     const auto diagnosticOutputs = ui::buildMenuRow(ui::SettingsPage::Diagnostics, 1U, 0U, state);
-    CHECK(std::strcmp(generalSync.label, "SYNC") == 0);
+    CHECK(std::strcmp(generalSync.label, "INPUTS") == 0);
     CHECK(std::strcmp(generalSaver.label, "SCREENSAVER") == 0);
     CHECK(std::strcmp(generalDiagnostics.label, "DIAGNOSTICS") == 0);
+    CHECK(std::strcmp(generalHardware.label, "HARDWARE") == 0);
     CHECK(std::strcmp(diagnosticInputs.label, "INPUTS") == 0);
     CHECK(std::strcmp(diagnosticOutputs.label, "OUTPUTS") == 0);
     const auto infoProduct = ui::buildMenuRow(ui::SettingsPage::Info, 0U, 0U, state);
@@ -2894,7 +2957,7 @@ void testRenderEveryScreenAndState() {
     renderer.render(state,nav,engine.snapshot());
     nav.screen=ui::Screen::SequencerEditor; state.channels[0].sequencer={20U,0U,0xAAAAULL}; for(std::uint8_t page=0;page<4U;++page){nav.sequencerPage=page;nav.sequencerCursor=7U;renderer.render(state,nav,engine.snapshot());}
     nav.screen=ui::Screen::Settings;
-    const ui::SettingsPage pages[]={ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::DividerBank};
+    const ui::SettingsPage pages[]={ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::InputAssignments,ui::SettingsPage::Hardware,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::DividerBank};
     for(auto page:pages){nav.settingsPage=page;const auto count=ui::settingsPageItemCount(page);for(std::uint8_t row=0;row<count;++row){nav.cursor=row;nav.scrollOffset=row>4U?static_cast<std::uint8_t>(row-4U):0U;nav.editing=(row&1U)!=0U;renderer.render(state,nav,engine.snapshot());}}
     ui::DiagnosticSnapshot diagnostics{};
     diagnostics.syncHigh = true;
@@ -3003,6 +3066,31 @@ void testHierarchicalSettingsRenderDistinctRootAndGroupPages() {
     renderer.renderSettings(state, navigation);
     const auto clockFrame = display.framebufferForTest();
     CHECK(outputFrame != clockFrame);
+}
+
+
+void testSettingsSelectionUsesFullRowInversionWithoutLeftCursor() {
+    resetFakes();
+    prepareDisplaySuccess();
+    ClockState state = makeDefaultState();
+    hal::OledDisplay display;
+    CHECK(display.begin());
+    ui::SettingsRenderer renderer(display);
+    ui::NavigationState navigation{};
+    navigation.screen = ui::Screen::Settings;
+    navigation.settingsPage = ui::SettingsPage::General;
+    navigation.cursor = 0U;
+    renderer.renderSettings(state, navigation);
+    const auto selectedFrame = display.framebufferForTest();
+
+    // Row 0 background occupies x=0..123 at y=10..18; the next row has no
+    // dedicated left cursor. This locks the recovered horizontal gutter.
+    CHECK(countFramebufferPixels(selectedFrame, 0, 10, 2, 9) > 0U);
+    CHECK_EQ(countFramebufferPixels(selectedFrame, 0, 20, 2, 9), 0U);
+
+    navigation.editing = true;
+    renderer.renderSettings(state, navigation);
+    CHECK(display.framebufferForTest() != selectedFrame);
 }
 
 void testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition() {
@@ -3922,7 +4010,29 @@ void testUiControllerFlows() {
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Root);
     controllerShortPress(controller, now);  // GENERAL SETTINGS
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::General);
+
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);  // INPUTS
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::InputAssignments);
+    CHECK_EQ(controller.navigation().cursor, 0U);
+    controllerTurn(controller, 2, now);
+    controllerShortPress(controller, now);  // CONFIG
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Sync);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::InputAssignments);
+    CHECK_EQ(controller.navigation().cursor, 2U);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::General);
+    CHECK_EQ(controller.navigation().cursor, 1U);
+
     controllerTurn(controller, 3, now);
+    controllerShortPress(controller, now);  // HARDWARE
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Hardware);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::General);
+    CHECK_EQ(controller.navigation().cursor, 4U);
+
+    controllerTurn(controller, -1, now);
     controllerShortPress(controller, now);  // DIAGNOSTICS
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Diagnostics);
     controllerShortPress(controller, now);  // INPUTS
@@ -5064,6 +5174,7 @@ int main() {
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
     RUN_TEST(testHierarchicalSettingsRenderDistinctRootAndGroupPages);
+    RUN_TEST(testSettingsSelectionUsesFullRowInversionWithoutLeftCursor);
     RUN_TEST(testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition);
     RUN_TEST(testPerformanceRendererShowsStaticPreCountPopoverAndMeterProgress);
     RUN_TEST(testPreCountPopoverRedrawsAtBeatBoundariesAndClearsOnCompletion);

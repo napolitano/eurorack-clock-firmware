@@ -114,7 +114,7 @@ The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly b
 pio test -e native
 ```
 
-The Native entry point contains **450 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 28 `test_realtime`, 96 `test_sync_behavior`, 28 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 51 `test_controls`, 78 `test_settings`, 19 `test_screensavers`, 36 `test_easter_eggs`, and 34 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite locks down immediate first-detent response from every electrical phase, immediate response after direction changes, counter wraparound, missed/extra-transition recovery, menu-entry encoder-push phase re-anchoring, long alternating single-detent sequences, fast-turn backlog handling, and device-level encoder inversion after detent decoding. Production STM32F401 builds use TIM4 encoder mode on PB6/PB7 so quadrature transitions are counted by hardware rather than by EXTI delivery. The Settings/host suites additionally cover deterministic OLED 0°/180° transfer rotation, Pre-Count settings/rendering, schema-v9 to schema-v10 migration for Stage-1 Groove assignments, schema-v8 to schema-v9 migration for persistent Pre-Count, schema-v7 smoothing migration, and the earlier schema migration chain.
+The Native entry point contains **479 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 28 `test_realtime`, 114 `test_sync_behavior`, 28 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 51 `test_controls`, 88 `test_settings`, 19 `test_screensavers`, 36 `test_easter_eggs`, and 35 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, configurable external-input roles, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite locks down immediate first-detent response, direction changes, counter wraparound, missed/coalesced-transition recovery, menu-entry phase re-anchoring and Fast Turn behavior. Production STM32F401 builds use TIM4 encoder mode on PB6/PB7. The Settings/host suites additionally cover the global `INPUTS >` and `HARDWARE >` pages, role exclusivity, full-row inverted Settings selection, deterministic OLED 0°/180° rotation, schema-v10 to schema-v11 migration for the configurable input assignments, schema-v9 to schema-v10 Groove migration, schema-v8 to schema-v9 Pre-Count migration, schema-v7 smoothing migration, and the earlier migration chain.
 
 Covered areas include:
 
@@ -127,7 +127,7 @@ Covered areas include:
 - permanently asserted SYNC input, including timeout after prior lock and prevention of synthetic repeated selected edges;
 - nominal LM393-front-end hysteresis and 2.5/3/4 V input behavior through a host-only electrical model;
 - fast-turn encoder bursts/backlog saturation and concurrent button-bounce activity without detent loss;
-- atomic settings limits and invariants for Clock, SYNC, screensaver, channel, Euclid, Sequencer, One Clock and Divider Bank pages;
+- atomic settings limits and invariants for Clock, INPUTS/CONFIG, HARDWARE, screensaver, channel, Euclid, Sequencer, One Clock and Divider Bank pages;
 - every screensaver renderer and all five Easter-egg launch/reset/control contracts;
 - complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes.
 
@@ -167,6 +167,8 @@ CI requires:
 - executable-line coverage >= **95%**
 - function coverage >= **95%**
 - non-throw decision-branch coverage >= **90%**
+
+Current 1.1 working baseline: **7937/8197 lines (96.83%)**, **664/675 functions (98.37%)**, and **4828/5364 decision branches (90.01%)**. Raw compiler branches are **4829/6239 (77.40%)** and remain informational.
 - AddressSanitizer = **clean**
 - UndefinedBehaviorSanitizer = **clean**
 

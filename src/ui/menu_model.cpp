@@ -33,11 +33,13 @@ void copyText(char* const destination, const std::size_t size, const text::TextI
 const char* settingsPageTitle(const SettingsPage page) {
     switch (page) {
         case SettingsPage::General: return text::get(text::TextId::GeneralSettings);
+        case SettingsPage::InputAssignments: return text::get(text::TextId::Inputs);
+        case SettingsPage::Hardware: return text::get(text::TextId::Hardware);
         case SettingsPage::Diagnostics: return text::get(text::TextId::Diagnostics);
         case SettingsPage::DiagnosticsInputs: return text::get(text::TextId::Inputs);
         case SettingsPage::DiagnosticsOutputs: return text::get(text::TextId::Outputs);
         case SettingsPage::Master: return text::get(text::TextId::ModeClockLong);
-        case SettingsPage::Sync: return text::get(text::TextId::Sync);
+        case SettingsPage::Sync: return text::get(text::TextId::InputConfig);
         case SettingsPage::Preferences: return text::get(text::TextId::Presets);
         case SettingsPage::Screensaver: return text::get(text::TextId::Screensaver);
         case SettingsPage::Info: return text::get(text::TextId::Info);
@@ -66,7 +68,9 @@ std::uint8_t settingsPageItemCount(
     const bool highScoreResetAvailable) {
     switch (page) {
         case SettingsPage::Root: return highScoreResetAvailable ? 6U : 5U;
-        case SettingsPage::General: return 6U;
+        case SettingsPage::General: return 5U;
+        case SettingsPage::InputAssignments: return 3U;
+        case SettingsPage::Hardware: return 2U;
         case SettingsPage::Diagnostics: return 2U;
         case SettingsPage::DiagnosticsInputs:
         case SettingsPage::DiagnosticsOutputs: return 0U;
@@ -130,20 +134,32 @@ MenuRow buildMenuRow(
     } else if (page == SettingsPage::General) {
         constexpr text::TextId kLabels[] = {
             text::TextId::ModeClockLong,
-            text::TextId::Sync,
+            text::TextId::Inputs,
             text::TextId::Screensaver,
             text::TextId::Diagnostics,
-            text::TextId::EncoderDirection,
-            text::TextId::Orientation};
+            text::TextId::Hardware};
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
-        if (rowIndex < 4U) {
+        copyText(row.value, sizeof(row.value), text::TextId::Arrow);
+    } else if (page == SettingsPage::InputAssignments) {
+        if (rowIndex == 0U) {
+            copyText(row.label, sizeof(row.label), text::TextId::Input1);
+            std::snprintf(row.value, sizeof(row.value), "%s", inputFunctionLabel(state.inputs.input1));
+        } else if (rowIndex == 1U) {
+            copyText(row.label, sizeof(row.label), text::TextId::Input2);
+            std::snprintf(row.value, sizeof(row.value), "%s", inputFunctionLabel(state.inputs.input2));
+        } else {
+            copyText(row.label, sizeof(row.label), text::TextId::InputConfig);
             copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-        } else if (rowIndex == 4U) {
+        }
+    } else if (page == SettingsPage::Hardware) {
+        if (rowIndex == 0U) {
+            copyText(row.label, sizeof(row.label), text::TextId::EncoderDirection);
             copyText(
                 row.value,
                 sizeof(row.value),
                 state.device.encoderDirectionReversed ? text::TextId::Reversed : text::TextId::Normal);
         } else {
+            copyText(row.label, sizeof(row.label), text::TextId::Orientation);
             copyText(
                 row.value,
                 sizeof(row.value),

@@ -26,9 +26,9 @@ The physical encoder and the external timing inputs deliberately use different c
 
 The PEC11L A/B contacts are wired to PB6/PB7 and decoded by **TIM4 encoder mode**. The timer counts quadrature transitions in hardware; foreground control processing converts the wrapping transition count into mechanical detents and applies detent-phase resynchronization plus the user `NORMAL / REVERSED` semantic direction. The encoder therefore does not depend on GPIO EXTI delivery or display-loop latency.
 
-Conditioned SYNC/RST inputs remain GPIO-interrupt driven. Their ISR work is limited to timestamping/queuing conditioned levels. The 20 kHz scheduler consumes those queues. RST has precedence over SYNC when both are pending at the same scheduler service boundary.
+Both conditioned comparator paths remain GPIO-interrupt driven. Their ISR work is limited to timestamping/queuing physical INPUT 1 / INPUT 2 levels; musical role interpretation happens in the 20 kHz scheduler. Factory roles remain SYNC/RESET, but either physical path may own a supported role. RESET processing retains precedence over SYNC when both assigned roles are pending at the same scheduler boundary; edge-controlled transport commands follow, with STOP winning simultaneous START/RESTART, and an assigned RUN level applied last as the authoritative transport state.
 
-The V1 baseline timestamps conditioned SYNC edges through GPIO EXTI. Final hardware qualification must measure the resulting capture and output jitter under representative worst-case load. Routing to a timer Input Capture capable pin remains a useful design option because hardware capture removes software IRQ-entry latency from the period measurement, but adopting it is required only if the measured EXTI path fails the V1 timing target.
+The current baseline timestamps conditioned comparator edges through GPIO EXTI; when one path owns the SYNC role, those timestamps feed the external-period estimator. Final hardware qualification must measure capture/output jitter under representative worst-case load. PA8 remains timer Input Capture capable, so hardware capture remains an escalation option if measured EXTI timing misses the requirement.
 
 ## Display transports
 

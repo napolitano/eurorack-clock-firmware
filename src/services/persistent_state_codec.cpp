@@ -18,11 +18,11 @@
 namespace clockfw::services {
 namespace {
 
-/** Four-byte CURRENT magic value "CU10" stored little-endian. */
-constexpr std::uint32_t kCurrentMagic = 0x30315543UL;
+/** Four-byte CURRENT magic value "CU11" stored little-endian. */
+constexpr std::uint32_t kCurrentMagic = 0x31315543UL;
 
-/** Four-byte preset magic value "PR10" stored little-endian. */
-constexpr std::uint32_t kPresetMagic = 0x30315250UL;
+/** Four-byte preset magic value "PR11" stored little-endian. */
+constexpr std::uint32_t kPresetMagic = 0x31315250UL;
 
 /** Reflected CRC-32 polynomial used by Ethernet/ZIP and many embedded formats. */
 constexpr std::uint32_t kCrcPolynomial = 0xEDB88320UL;
@@ -219,6 +219,11 @@ PersistentStateService::serializeState(const ClockState& state) {
         writer.write8(channel.common.groove.rotation);
     }
 
+    // Configurable comparator-input roles are appended in schema v11 so every
+    // schema-v10 payload remains an exact prefix for lossless migration.
+    writer.write8(static_cast<std::uint8_t>(state.inputs.input1));
+    writer.write8(static_cast<std::uint8_t>(state.inputs.input2));
+
     // A schema-size mismatch is a programmer error and should fail at compile/test time.
     (void)writer.position();
     return payload;
@@ -294,6 +299,8 @@ bool PersistentStateService::deserializeState(
         channel.common.groove.amountPercent = reader.read8();
         channel.common.groove.rotation = reader.read8();
     }
+    candidate.inputs.input1 = static_cast<InputFunction>(reader.read8());
+    candidate.inputs.input2 = static_cast<InputFunction>(reader.read8());
 
     if (reader.position() != kStatePayloadSize || !isStateValid(candidate)) {
         return false;

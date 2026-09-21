@@ -1,6 +1,6 @@
 /**
  * @file external_sync_controller.cpp
- * @brief Deterministic scheduler-side processing for external SYNC and RST inputs.
+ * @brief Deterministic scheduler-side processing for configurable external inputs.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -30,6 +30,24 @@ bool settingsEqual(
         first.timeoutMs == second.timeoutMs;
 }
 
+bool inputsEqual(
+    const ExternalInputAssignments& first,
+    const ExternalInputAssignments& second) {
+    return first.input1 == second.input1 && first.input2 == second.input2;
+}
+
+int assignmentIndex(
+    const ExternalInputAssignments& inputs,
+    const InputFunction function) {
+    if (inputs.input1 == function) {
+        return 0;
+    }
+    if (inputs.input2 == function) {
+        return 1;
+    }
+    return -1;
+}
+
 }  // namespace
 
 ExternalSyncController::ExternalSyncController(
@@ -39,17 +57,27 @@ ExternalSyncController::ExternalSyncController(
 
 void ExternalSyncController::begin(const ClockState& state) {
     foregroundSettings_ = state.externalSync;
+    foregroundInputs_ = state.inputs;
     foregroundFallbackBpmMilli_ = static_cast<std::uint32_t>(state.bpm) * 1000U;
     foregroundMinimumBpm_ = state.tempoRange.minimumBpm != 0U
         ? state.tempoRange.minimumBpm
         : 1U;
     foregroundSource_ = state.source;
+
     settings_ = foregroundSettings_;
+    inputs_ = foregroundInputs_;
     fallbackBpmMilli_ = foregroundFallbackBpmMilli_;
     minimumBpm_ = foregroundMinimumBpm_;
     source_ = foregroundSource_;
+
+    // Initial level-sensitive roles must be applied, but startup must not discard
+    // a real edge that arrived after ExternalInputCapture::begin().
     configurationDirty_ = true;
+    inputRolesChanged_ = false;
     resetGateApplied_ = false;
+    runLevelInitialized_ = false;
+    runLevelApplied_ = false;
+
     haveAcceptedPulse_ = false;
     externalLocked_ = false;
     lastAcceptedPulseUs_ = 0U;
@@ -57,6 +85,8 @@ void ExternalSyncController::begin(const ClockState& state) {
     filteredBpmMilli_ = 0U;
     autoTransportArmed_ = true;
     pendingTransportTransition_ = 0xFFU;
+    pendingTap_ = false;
+    pendingTapTimestampUs_ = 0U;
 }
 
 void ExternalSyncController::updateConfiguration(const ClockState& state) {
@@ -65,7 +95,9 @@ void ExternalSyncController::updateConfiguration(const ClockState& state) {
     const std::uint16_t requestedMinimumBpm = state.tempoRange.minimumBpm != 0U
         ? state.tempoRange.minimumBpm
         : 1U;
+
     if (settingsEqual(state.externalSync, foregroundSettings_) &&
+        inputsEqual(state.inputs, foregroundInputs_) &&
         requestedFallbackBpmMilli == foregroundFallbackBpmMilli_ &&
         requestedMinimumBpm == foregroundMinimumBpm_ &&
         state.source == foregroundSource_) {
@@ -74,9 +106,13 @@ void ExternalSyncController::updateConfiguration(const ClockState& state) {
 
     const bool timingInterpretationChanged =
         state.externalSync.pulsesPerQuarterNote != foregroundSettings_.pulsesPerQuarterNote ||
-        state.externalSync.edge != foregroundSettings_.edge;
+        state.externalSync.edge != foregroundSettings_.edge ||
+        assignmentIndex(state.inputs, InputFunction::Sync) !=
+            assignmentIndex(foregroundInputs_, InputFunction::Sync);
+    const bool rolesChanged = !inputsEqual(state.inputs, foregroundInputs_);
 
     foregroundSettings_ = state.externalSync;
+    foregroundInputs_ = state.inputs;
     foregroundFallbackBpmMilli_ = requestedFallbackBpmMilli;
     foregroundMinimumBpm_ = requestedMinimumBpm;
     foregroundSource_ = state.source;
@@ -84,15 +120,16 @@ void ExternalSyncController::updateConfiguration(const ClockState& state) {
     hal::InterruptLock interruptLock;
     const bool resetModeChanged = foregroundSettings_.resetMode != settings_.resetMode;
     settings_ = foregroundSettings_;
+    inputs_ = foregroundInputs_;
     fallbackBpmMilli_ = foregroundFallbackBpmMilli_;
     minimumBpm_ = foregroundMinimumBpm_;
     source_ = foregroundSource_;
-    configurationDirty_ = configurationDirty_ || resetModeChanged;
+    configurationDirty_ = configurationDirty_ || resetModeChanged || rolesChanged;
+    inputRolesChanged_ = inputRolesChanged_ || rolesChanged;
 
-    // PPQN and selected-edge changes alter the meaning of captured periods.
-    // Never smooth samples from two incompatible interpretations together.
-    // Other runtime settings (timeout, loss policy, glitch floor) preserve a
-    // valid lock because they do not redefine the period itself.
+    // A role change can turn already queued electrical edges into a different
+    // musical command. The scheduler discards those stale edges before interpreting
+    // the new assignment. Timing-role changes also invalidate clock acquisition.
     if (timingInterpretationChanged) {
         haveAcceptedPulse_ = false;
         externalLocked_ = false;
@@ -104,9 +141,22 @@ void ExternalSyncController::updateConfiguration(const ClockState& state) {
 }
 
 void ExternalSyncController::processSchedulerTick(const std::uint32_t nowUs) {
-    applyResetModeChange();
+    applyInputConfiguration();
+
+    // Preserve the historical reset-before-clock rule independently of which
+    // physical jack currently owns RESET or SYNC.
     processResetEdges();
+
+    // Edge-controlled transport commands are deterministic; STOP is processed
+    // after START/RESTART so a simultaneous STOP wins. RUN is applied last and is
+    // level-authoritative when assigned.
+    processTransportEdge(InputFunction::Start);
+    processTransportEdge(InputFunction::Restart);
+    processTransportEdge(InputFunction::Tap);
+    processTransportEdge(InputFunction::Stop);
     processSyncEdges();
+    processRunLevel();
+    drainInactiveInputs();
 
     if (!externalLocked_ || !haveAcceptedPulse_) {
         return;
@@ -115,7 +165,6 @@ void ExternalSyncController::processSchedulerTick(const std::uint32_t nowUs) {
     if (static_cast<std::uint32_t>(nowUs - lastAcceptedPulseUs_) < timeoutUs) {
         return;
     }
-
     loseExternalLockFromIsr();
 }
 
@@ -131,6 +180,11 @@ std::uint32_t ExternalSyncController::filteredBpmMilli() const {
 void ExternalSyncController::notifyManualTransportState(const TransportState transport) {
     hal::InterruptLock interruptLock;
     autoTransportArmed_ = transport == TransportState::Playing;
+    if (assignedInput(InputFunction::Run) >= 0) {
+        // A wired RUN level remains authoritative over a front-panel transport
+        // action; re-apply it at the next scheduler boundary.
+        runLevelInitialized_ = false;
+    }
 }
 
 bool ExternalSyncController::consumeTransportTransition(TransportState& transport) {
@@ -143,51 +197,25 @@ bool ExternalSyncController::consumeTransportTransition(TransportState& transpor
     return true;
 }
 
-void ExternalSyncController::processResetEdges() {
-    hal::ExternalInputEdge edge{};
-    bool sawEdge = false;
-    bool triggerRequested = false;
-    while (inputCapture_.popResetEdge(edge)) {
-        sawEdge = true;
-        if (settings_.resetMode == ExternalResetMode::Trigger) {
-            // Several comparator transitions may accumulate while TIM3 is delayed.
-            // They are not musically distinguishable inside one 50-us scheduler
-            // quantum, so collapse them to at most one expensive engine reset.
-            // Continuity loss is handled conservatively: a rising edge may have
-            // been among the dropped transitions, therefore perform one reset.
-            triggerRequested = triggerRequested || edge.high || edge.continuityLost;
-        }
+bool ExternalSyncController::consumeTapRequest(std::uint32_t& timestampUs) {
+    hal::InterruptLock interruptLock;
+    if (!pendingTap_) {
+        return false;
     }
-
-    if (settings_.resetMode == ExternalResetMode::Trigger) {
-        if (triggerRequested) {
-            engine_.resetGlobalPhaseFromIsr();
-        }
-        return;
-    }
-
-    if (!sawEdge) {
-        return;
-    }
-    // Gate reset is level-sensitive. The separately captured current comparator
-    // level is authoritative even if the edge queue overflowed and collapsed
-    // intermediate transitions.
-    const bool high = inputCapture_.resetLevelHigh();
-    if (high != resetGateApplied_) {
-        resetGateApplied_ = high;
-        engine_.setExternalResetGateFromIsr(high);
-    }
+    timestampUs = pendingTapTimestampUs_;
+    pendingTap_ = false;
+    return true;
 }
 
 void ExternalSyncController::processSyncEdges() {
+    const int inputIndex = assignedInput(InputFunction::Sync);
+    if (inputIndex < 0) {
+        return;
+    }
+
     hal::ExternalInputEdge edge{};
-    while (inputCapture_.popSyncEdge(edge)) {
+    while (popInputEdge(inputIndex, edge)) {
         if (edge.continuityLost) {
-            // A loss marker describes a boundary, not a trustworthy pulse. It may
-            // also have the opposite polarity from the selected edge because the
-            // queue captures CHANGE transitions. Reset acquisition and wait for the
-            // next real selected edge instead of manufacturing a long period across
-            // transitions that were dropped while the queue was saturated.
             if (externalLocked_) {
                 loseExternalLockFromIsr();
             } else {
@@ -225,9 +253,6 @@ void ExternalSyncController::processSyncEdges() {
         const std::uint64_t maximumSupportedPeriodUs = 60000000ULL /
             (static_cast<std::uint64_t>(config::kSupportedMinimumBpm) * ppqn);
         if (static_cast<std::uint64_t>(periodUs) > maximumSupportedPeriodUs) {
-            // Treat an out-of-range slow gap as a fresh acquisition boundary,
-            // never as a valid ultra-low tempo. This also keeps the arithmetic
-            // contract aligned with the documented 1..999 BPM technical range.
             if (externalLocked_) {
                 loseExternalLockFromIsr();
             }
@@ -242,12 +267,6 @@ void ExternalSyncController::processSyncEdges() {
         if (filteredPeriodQ8_ == 0U) {
             filteredPeriodQ8_ = periodQ8;
         } else {
-            // Period smoothing is user-selectable because external clocks range
-            // from precise digital masters to noisy/modulated analog sources.
-            // OFF    = 100% new sample
-            // LOW    =  75% new / 25% previous (factory default)
-            // MEDIUM =  50% new / 50% previous
-            // FULL   =  25% new / 75% previous (legacy behavior)
             switch (settings_.smoothing) {
                 case SyncSmoothing::Off:
                     filteredPeriodQ8_ = periodQ8;
@@ -264,6 +283,7 @@ void ExternalSyncController::processSyncEdges() {
                     break;
             }
         }
+
         const std::uint32_t filteredPeriodUs = static_cast<std::uint32_t>(
             (filteredPeriodQ8_ + 128U) >> 8U);
         filteredBpmMilli_ = calculateBpmMilli(filteredPeriodUs);
@@ -278,18 +298,51 @@ void ExternalSyncController::processSyncEdges() {
     }
 }
 
-void ExternalSyncController::applyResetModeChange() {
-    if (!configurationDirty_) {
-        return;
+int ExternalSyncController::assignedInput(const InputFunction function) const {
+    return assignmentIndex(inputs_, function);
+}
+
+bool ExternalSyncController::popInputEdge(
+    const int inputIndex,
+    hal::ExternalInputEdge& edge) {
+    if (inputIndex == 0) {
+        return inputCapture_.popSyncEdge(edge);
     }
-    configurationDirty_ = false;
-    if (settings_.resetMode == ExternalResetMode::Gate) {
-        resetGateApplied_ = inputCapture_.resetLevelHigh();
-        engine_.setExternalResetGateFromIsr(resetGateApplied_);
-    } else if (resetGateApplied_) {
-        resetGateApplied_ = false;
-        engine_.setExternalResetGateFromIsr(false);
+    if (inputIndex == 1) {
+        return inputCapture_.popResetEdge(edge);
     }
+    return false;
+}
+
+bool ExternalSyncController::inputLevelHigh(const int inputIndex) const {
+    return inputIndex == 0
+        ? inputCapture_.syncLevelHigh()
+        : (inputIndex == 1 && inputCapture_.resetLevelHigh());
+}
+
+void ExternalSyncController::drainInput(const int inputIndex) {
+    hal::ExternalInputEdge edge{};
+    while (popInputEdge(inputIndex, edge)) {
+    }
+}
+
+void ExternalSyncController::requestPlayFromInput() {
+    autoTransportArmed_ = true;
+    engine_.play();
+    pendingTransportTransition_ = static_cast<std::uint8_t>(TransportState::Playing);
+}
+
+void ExternalSyncController::requestStopFromInput() {
+    autoTransportArmed_ = false;
+    engine_.stop();
+    pendingTransportTransition_ = static_cast<std::uint8_t>(TransportState::Stopped);
+}
+
+void ExternalSyncController::requestRestartFromInput() {
+    autoTransportArmed_ = true;
+    engine_.stop();
+    engine_.play();
+    pendingTransportTransition_ = static_cast<std::uint8_t>(TransportState::Playing);
 }
 
 void ExternalSyncController::loseExternalLockFromIsr() {
@@ -342,7 +395,8 @@ std::uint32_t ExternalSyncController::calculateBpmMilli(const std::uint32_t peri
 std::uint32_t ExternalSyncController::effectiveTimeoutUs() const {
     constexpr std::uint64_t kMicrosPerMinute = 60000000ULL;
     constexpr std::uint64_t kMissedPulseTolerance = 2ULL;
-    const std::uint64_t configuredUs = static_cast<std::uint64_t>(settings_.timeoutMs) * 1000ULL;
+    const std::uint64_t configuredUs =
+        static_cast<std::uint64_t>(settings_.timeoutMs) * 1000ULL;
     const std::uint32_t ppqn = settings_.pulsesPerQuarterNote != 0U
         ? settings_.pulsesPerQuarterNote
         : 1U;

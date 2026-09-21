@@ -325,6 +325,10 @@ void UiController::stopTransport(const std::uint32_t nowMs) {
     invalidate();
 }
 
+void UiController::registerExternalTapTempo(const std::uint32_t timestampMs) {
+    registerTapTempo(timestampMs);
+}
+
 void UiController::registerTapTempo(const std::uint32_t nowMs) {
     const std::uint32_t sequenceIntervalMs =
         services::TapTempo::maximumSequenceIntervalMs(state_.tempoRange.minimumBpm);

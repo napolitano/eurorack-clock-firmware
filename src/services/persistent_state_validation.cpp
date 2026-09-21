@@ -29,7 +29,11 @@ bool isPersistentStateValid(const ClockState& state) {
         static_cast<std::uint8_t>(state.externalSync.edge) > static_cast<std::uint8_t>(SyncEdge::Falling) ||
         static_cast<std::uint8_t>(state.externalSync.lossMode) > static_cast<std::uint8_t>(SyncLossMode::Internal) ||
         static_cast<std::uint8_t>(state.externalSync.resetMode) > static_cast<std::uint8_t>(ExternalResetMode::Gate) ||
-        static_cast<std::uint8_t>(state.externalSync.smoothing) > static_cast<std::uint8_t>(SyncSmoothing::Full)) {
+        static_cast<std::uint8_t>(state.externalSync.smoothing) > static_cast<std::uint8_t>(SyncSmoothing::Full) ||
+        static_cast<std::uint8_t>(state.inputs.input1) > static_cast<std::uint8_t>(InputFunction::Tap) ||
+        static_cast<std::uint8_t>(state.inputs.input2) > static_cast<std::uint8_t>(InputFunction::Tap) ||
+        (state.inputs.input1 != InputFunction::Off &&
+         state.inputs.input1 == state.inputs.input2)) {
         return false;
     }
 

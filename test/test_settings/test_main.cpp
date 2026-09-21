@@ -12,6 +12,7 @@
 #include <Arduino.h>
 
 #include "domain/default_configuration.h"
+#include "domain/clock_labels.h"
 #include "engine/clock_engine.h"
 #include "hal/gate_output_driver.h"
 #include "ui/settings_editor.h"
@@ -40,10 +41,68 @@ struct Harness {
     }
 };
 
-void testGeneralEncoderDirectionCanBeReversed(){ Harness h; TEST_ASSERT_FALSE(h.state.device.encoderDirectionReversed); h.editor.adjust(ui::SettingsPage::General,4U,0U,1); TEST_ASSERT_TRUE(h.state.device.encoderDirectionReversed); }
-void testGeneralEncoderDirectionCanReturnToNormal(){ Harness h; h.state.device.encoderDirectionReversed=true; h.editor.adjust(ui::SettingsPage::General,4U,0U,-1); TEST_ASSERT_FALSE(h.state.device.encoderDirectionReversed); }
-void testGeneralDisplayOrientationCanRotate180(){ Harness h; TEST_ASSERT_FALSE(h.state.device.displayRotated180); h.editor.adjust(ui::SettingsPage::General,5U,0U,1); TEST_ASSERT_TRUE(h.state.device.displayRotated180); }
-void testGeneralDisplayOrientationCanReturnToZero(){ Harness h; h.state.device.displayRotated180=true; h.editor.adjust(ui::SettingsPage::General,5U,0U,-1); TEST_ASSERT_FALSE(h.state.device.displayRotated180); }
+void testHardwareEncoderDirectionCanBeReversed(){ Harness h; TEST_ASSERT_FALSE(h.state.device.encoderDirectionReversed); h.editor.adjust(ui::SettingsPage::Hardware,0U,0U,1); TEST_ASSERT_TRUE(h.state.device.encoderDirectionReversed); }
+void testHardwareEncoderDirectionCanReturnToNormal(){ Harness h; h.state.device.encoderDirectionReversed=true; h.editor.adjust(ui::SettingsPage::Hardware,0U,0U,-1); TEST_ASSERT_FALSE(h.state.device.encoderDirectionReversed); }
+void testHardwareDisplayOrientationCanRotate180(){ Harness h; TEST_ASSERT_FALSE(h.state.device.displayRotated180); h.editor.adjust(ui::SettingsPage::Hardware,1U,0U,1); TEST_ASSERT_TRUE(h.state.device.displayRotated180); }
+void testHardwareDisplayOrientationCanReturnToZero(){ Harness h; h.state.device.displayRotated180=true; h.editor.adjust(ui::SettingsPage::Hardware,1U,0U,-1); TEST_ASSERT_FALSE(h.state.device.displayRotated180); }
+void testInputAssignmentsDefaultToSyncAndReset(){ Harness h; TEST_ASSERT_EQUAL(InputFunction::Sync,h.state.inputs.input1); TEST_ASSERT_EQUAL(InputFunction::Reset,h.state.inputs.input2); const auto row1=ui::buildMenuRow(ui::SettingsPage::InputAssignments,0U,0U,h.state); const auto row2=ui::buildMenuRow(ui::SettingsPage::InputAssignments,1U,0U,h.state); TEST_ASSERT_TRUE(std::strcmp("SYNC",row1.value)==0); TEST_ASSERT_TRUE(std::strcmp("RESET",row2.value)==0); }
+void testInputAssignmentsSkipFunctionAlreadyUsedByOtherInput(){ Harness h; h.editor.adjust(ui::SettingsPage::InputAssignments,1U,0U,-1); TEST_ASSERT_EQUAL(InputFunction::Off,h.state.inputs.input2); h.editor.adjust(ui::SettingsPage::InputAssignments,0U,0U,1); TEST_ASSERT_EQUAL(InputFunction::Reset,h.state.inputs.input1); }
+void testInputAssignmentsAllowOffOnBothInputs(){ Harness h; h.state.inputs={InputFunction::Off,InputFunction::Reset}; h.editor.adjust(ui::SettingsPage::InputAssignments,1U,0U,-2); TEST_ASSERT_EQUAL(InputFunction::Off,h.state.inputs.input1); TEST_ASSERT_EQUAL(InputFunction::Off,h.state.inputs.input2); }
+void testFillIsReservedAndNotSelectableYet(){ Harness h; h.state.inputs={InputFunction::Tap,InputFunction::Off}; h.editor.adjust(ui::SettingsPage::InputAssignments,0U,0U,1); TEST_ASSERT_EQUAL(InputFunction::Tap,h.state.inputs.input1); }
+
+void testInputFunctionLabelsCoverAllRoles(){
+    struct Case { InputFunction function; const char* label; };
+    constexpr Case cases[] = {
+        {InputFunction::Off, "OFF"},
+        {InputFunction::Sync, "SYNC"},
+        {InputFunction::Reset, "RESET"},
+        {InputFunction::Run, "RUN"},
+        {InputFunction::Start, "START"},
+        {InputFunction::Stop, "STOP"},
+        {InputFunction::Restart, "RESTART"},
+        {InputFunction::Tap, "TAP"},
+        {InputFunction::Fill, "FILL"},
+    };
+    for (const auto& entry : cases) {
+        TEST_ASSERT_TRUE(std::strcmp(entry.label, inputFunctionLabel(entry.function)) == 0);
+    }
+    TEST_ASSERT_TRUE(std::strcmp("OFF", inputFunctionLabel(static_cast<InputFunction>(255U))) == 0);
+}
+
+void testInputAssignmentEditorCoversBothRowsAndBoundaries(){
+    Harness h;
+    h.state.inputs = {InputFunction::Off, InputFunction::Reset};
+    h.editor.adjust(ui::SettingsPage::InputAssignments, 0U, 0U, 1);
+    TEST_ASSERT_EQUAL(InputFunction::Sync, h.state.inputs.input1);
+    h.editor.adjust(ui::SettingsPage::InputAssignments, 1U, 0U, 1);
+    TEST_ASSERT_EQUAL(InputFunction::Run, h.state.inputs.input2);
+    h.editor.adjust(ui::SettingsPage::InputAssignments, 0U, 0U, -1);
+    TEST_ASSERT_EQUAL(InputFunction::Off, h.state.inputs.input1);
+    h.state.inputs.input1 = InputFunction::Tap;
+    h.editor.adjust(ui::SettingsPage::InputAssignments, 0U, 0U, 1);
+    TEST_ASSERT_EQUAL(InputFunction::Tap, h.state.inputs.input1);
+    h.state.inputs.input2 = InputFunction::Off;
+    h.editor.adjust(ui::SettingsPage::InputAssignments, 1U, 0U, -1);
+    TEST_ASSERT_EQUAL(InputFunction::Off, h.state.inputs.input2);
+}
+
+void testInputAssignmentEditorIgnoresZeroDeltaAndInvalidRow(){
+    Harness h;
+    const auto before = h.state.inputs;
+    h.editor.adjust(ui::SettingsPage::InputAssignments, 0U, 0U, 0);
+    h.editor.adjust(ui::SettingsPage::InputAssignments, 2U, 0U, 1);
+    TEST_ASSERT_EQUAL(before.input1, h.state.inputs.input1);
+    TEST_ASSERT_EQUAL(before.input2, h.state.inputs.input2);
+}
+
+void testHardwareEditorIgnoresUnknownRow(){
+    Harness h;
+    const auto before = h.state.device;
+    h.editor.adjust(ui::SettingsPage::Hardware, 2U, 0U, 1);
+    TEST_ASSERT_EQUAL(before.encoderDirectionReversed, h.state.device.encoderDirectionReversed);
+    TEST_ASSERT_EQUAL(before.displayRotated180, h.state.device.displayRotated180);
+}
+
 void testMasterTempoClampsAtConfiguredMaximum(){ Harness h; h.state.bpm=998U; h.state.tempoRange.maximumBpm=999U; h.editor.changeMasterTempo(10); TEST_ASSERT_EQUAL_UINT32(999U,h.state.bpm); }
 void testMasterTempoClampsAtConfiguredMinimum(){ Harness h; h.state.bpm=21U; h.state.tempoRange.minimumBpm=20U; h.editor.changeMasterTempo(-10); TEST_ASSERT_EQUAL_UINT32(20U,h.state.bpm); }
 void testMinimumBpmClampsAtTechnicalMinimum(){ Harness h; h.editor.adjust(ui::SettingsPage::Master,1U,0U,-127); TEST_ASSERT_EQUAL_UINT32(1U,h.state.tempoRange.minimumBpm); }
@@ -189,7 +248,7 @@ void testNestedGroupPagesExposeFormerGroupedParameters(){
 
 void testAllSettingsPageTitlesAndCountsAreReachable(){
     constexpr ui::SettingsPage pages[] = {
-        ui::SettingsPage::Root, ui::SettingsPage::General, ui::SettingsPage::Diagnostics,
+        ui::SettingsPage::Root, ui::SettingsPage::General, ui::SettingsPage::InputAssignments, ui::SettingsPage::Hardware, ui::SettingsPage::Diagnostics,
         ui::SettingsPage::DiagnosticsInputs, ui::SettingsPage::DiagnosticsOutputs, ui::SettingsPage::Master,
         ui::SettingsPage::Sync, ui::SettingsPage::Preferences, ui::SettingsPage::Screensaver,
         ui::SettingsPage::Info, ui::SettingsPage::Licenses, ui::SettingsPage::Updates,
@@ -268,14 +327,17 @@ void testMenuModelConditionalRowsCoverBothStates(){
     TEST_ASSERT_TRUE(std::strlen(row.label) > 0U);
 
     h.state.device.encoderDirectionReversed = true;
-    row = ui::buildMenuRow(ui::SettingsPage::General, 4U, 0U, h.state);
+    row = ui::buildMenuRow(ui::SettingsPage::Hardware, 0U, 0U, h.state);
     TEST_ASSERT_TRUE(std::strlen(row.value) > 0U);
     h.state.device.encoderDirectionReversed = false;
-    (void)ui::buildMenuRow(ui::SettingsPage::General, 4U, 0U, h.state);
+    (void)ui::buildMenuRow(ui::SettingsPage::Hardware, 0U, 0U, h.state);
     h.state.device.displayRotated180 = true;
-    (void)ui::buildMenuRow(ui::SettingsPage::General, 5U, 0U, h.state);
+    (void)ui::buildMenuRow(ui::SettingsPage::Hardware, 1U, 0U, h.state);
     h.state.device.displayRotated180 = false;
-    (void)ui::buildMenuRow(ui::SettingsPage::General, 5U, 0U, h.state);
+    (void)ui::buildMenuRow(ui::SettingsPage::Hardware, 1U, 0U, h.state);
+    (void)ui::buildMenuRow(ui::SettingsPage::InputAssignments, 0U, 0U, h.state);
+    (void)ui::buildMenuRow(ui::SettingsPage::InputAssignments, 1U, 0U, h.state);
+    (void)ui::buildMenuRow(ui::SettingsPage::InputAssignments, 2U, 0U, h.state);
 }
 
 void testGrooveOffRotationFormattingCoversZeroLength(){
@@ -288,7 +350,7 @@ void testGrooveOffRotationFormattingCoversZeroLength(){
 void testEditorDefensiveAndSearchBranchesAreReachable(){
     Harness h;
     const bool encoderBefore = h.state.device.encoderDirectionReversed;
-    h.editor.adjust(ui::SettingsPage::General, 4U, 0U, 0);
+    h.editor.adjust(ui::SettingsPage::Hardware, 0U, 0U, 0);
     TEST_ASSERT_EQUAL(encoderBefore, h.state.device.encoderDirectionReversed);
 
     h.state.display.screensaverMode = ScreensaverMode::Matrix;
@@ -305,6 +367,25 @@ void testEditorDefensiveAndSearchBranchesAreReachable(){
     h.editor.adjust(ui::SettingsPage::UnifiedTiming, 4U, 0U, 1);
 }
 
+
+void testScreensaverEditorCoversInvalidStoredModeAndOffDelayRow(){
+    Harness h;
+    h.state.display.screensaverMode = static_cast<ScreensaverMode>(255U);
+    h.editor.adjust(ui::SettingsPage::Screensaver, 0U, 0U, 1);
+    TEST_ASSERT_EQUAL(ScreensaverMode::Clock, h.state.display.screensaverMode);
+    h.state.display.dimAfterMinutes = 5U;
+    h.state.display.offAfterMinutes = 6U;
+    h.editor.adjust(ui::SettingsPage::Screensaver, 3U, 0U, 1);
+    TEST_ASSERT_EQUAL_UINT8(7U, h.state.display.offAfterMinutes);
+}
+
+void testUnifiedHumanizeEditorNormalizesUnknownStoredValue(){
+    Harness h;
+    h.state.unifiedClock.humanizeUs = 1234U;
+    h.editor.adjust(ui::SettingsPage::UnifiedTiming, 5U, 0U, 1);
+    TEST_ASSERT_EQUAL_UINT32(250U, h.state.unifiedClock.humanizeUs);
+}
+
 void testUnifiedClockSwingClampsAtFifty(){ Harness h; h.editor.adjust(ui::SettingsPage::UnifiedTiming,3U,0U,127); TEST_ASSERT_EQUAL_UINT8(50U,h.state.unifiedClock.swingPercent); }
 void testUnifiedClockHumanizeUsesCuratedOptions(){ Harness h; h.state.unifiedClock.humanizeUs=0U; h.editor.adjust(ui::SettingsPage::UnifiedTiming,5U,0U,4); TEST_ASSERT_EQUAL_UINT32(2000U,h.state.unifiedClock.humanizeUs); }
 void testDividerBankClampsAtPrimes(){ Harness h; h.state.dividerBank.bank=DividerBank::PowersOfTwo; h.editor.adjust(ui::SettingsPage::DividerBank,1U,0U,127); TEST_ASSERT_EQUAL(DividerBank::Primes,h.state.dividerBank.bank); }
@@ -315,7 +396,8 @@ void testNonEditablePageDoesNotChangeTempo(){ Harness h; const auto before=h.sta
 
 int main(){
     UNITY_BEGIN();
-    RUN_TEST(testGeneralEncoderDirectionCanBeReversed); RUN_TEST(testGeneralEncoderDirectionCanReturnToNormal); RUN_TEST(testGeneralDisplayOrientationCanRotate180); RUN_TEST(testGeneralDisplayOrientationCanReturnToZero);
+    RUN_TEST(testHardwareEncoderDirectionCanBeReversed); RUN_TEST(testHardwareEncoderDirectionCanReturnToNormal); RUN_TEST(testHardwareDisplayOrientationCanRotate180); RUN_TEST(testHardwareDisplayOrientationCanReturnToZero); RUN_TEST(testInputAssignmentsDefaultToSyncAndReset); RUN_TEST(testInputAssignmentsSkipFunctionAlreadyUsedByOtherInput); RUN_TEST(testInputAssignmentsAllowOffOnBothInputs); RUN_TEST(testFillIsReservedAndNotSelectableYet);
+    RUN_TEST(testInputFunctionLabelsCoverAllRoles); RUN_TEST(testInputAssignmentEditorCoversBothRowsAndBoundaries); RUN_TEST(testInputAssignmentEditorIgnoresZeroDeltaAndInvalidRow); RUN_TEST(testHardwareEditorIgnoresUnknownRow);
     RUN_TEST(testMasterTempoClampsAtConfiguredMaximum); RUN_TEST(testMasterTempoClampsAtConfiguredMinimum);
     RUN_TEST(testMinimumBpmClampsAtTechnicalMinimum); RUN_TEST(testMinimumBpmCannotExceedMaximum); RUN_TEST(testRaisingMinimumClampsCurrentTempo);
     RUN_TEST(testMaximumBpmClampsAtTechnicalMaximum); RUN_TEST(testMaximumBpmCannotFallBelowMinimum); RUN_TEST(testLoweringMaximumClampsCurrentTempo);
@@ -330,6 +412,7 @@ int main(){
     RUN_TEST(testSequencerLengthClampResetsInvalidRotation); RUN_TEST(testSequencerRotationClampsToLengthMinusOne); RUN_TEST(testSequencerToggleRejectsStepOutsideLength); RUN_TEST(testSequencerToggleFlipsValidStep); RUN_TEST(testSequencerPasteBeforeCopyIsRejected); RUN_TEST(testSequencerCopyPasteClampsPatternToTargetLength);
     RUN_TEST(testGrooveDefaultsOffAtFullAmount); RUN_TEST(testUnifiedGrooveEditorOwnsGlobalSettings); RUN_TEST(testIndependentGrooveEditorOwnsSelectedChannel); RUN_TEST(testGrooveAmountClampsZeroToHundred); RUN_TEST(testGrooveRotationClampsToPatternLength); RUN_TEST(testGroovePresetChangeNormalizesRotation); RUN_TEST(testGrooveMenuShapeIsStable); RUN_TEST(testChannelRootUsesModeAwareGroupPriority); RUN_TEST(testNestedGroupPagesExposeFormerGroupedParameters);
     RUN_TEST(testAllSettingsPageTitlesAndCountsAreReachable); RUN_TEST(testAllChannelRootRowsAreReachable); RUN_TEST(testGrooveMenuRowsAndNoOpBranchesAreReachable); RUN_TEST(testChannelHierarchyFallbacksAndActionLookupAreReachable); RUN_TEST(testMenuModelConditionalRowsCoverBothStates); RUN_TEST(testGrooveOffRotationFormattingCoversZeroLength); RUN_TEST(testEditorDefensiveAndSearchBranchesAreReachable);
+    RUN_TEST(testScreensaverEditorCoversInvalidStoredModeAndOffDelayRow); RUN_TEST(testUnifiedHumanizeEditorNormalizesUnknownStoredValue);
     RUN_TEST(testUnifiedClockSwingClampsAtFifty); RUN_TEST(testUnifiedClockHumanizeUsesCuratedOptions); RUN_TEST(testDividerBankClampsAtPrimes); RUN_TEST(testDividerBankGateLengthUsesCuratedOptions); RUN_TEST(testNonEditablePageDoesNotChangeTempo);
     return UNITY_END();
 }

@@ -14,7 +14,7 @@ This is the developer-facing Native entry point. Beta.4 deliberately makes timin
 | --- | ---: | --- |
 | `test_clock_core` | 44 | hardware-independent clock mathematics and exhaustive invariants |
 | `test_realtime` | 28 | deterministic scheduler/GPIO/SYNC/RST integration and stress behavior |
-| `test_sync_behavior` | 96 | exact and changing external clocks, permanent-HIGH behavior, jitter/glitches/loss, PPQN/edge semantics and nominal analogue-front-end behavior |
+| `test_sync_behavior` | 114 | exact/changing external clocks plus configurable INPUT 1/2 roles (SYNC/RESET/RUN/START/STOP/RESTART/TAP), role reassignment, jitter/glitches/loss, PPQN/edge semantics and nominal analogue-front-end behavior |
 | `test_swing` | 22 | swing pair mathematics and observable scheduler edge spacing |
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
 | `test_tap_tempo` | 24 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |

@@ -26,6 +26,18 @@ void PersistentStateService::begin() {
         currentRecord.size()) && deserializeCurrentRecord(currentRecord, loadedCurrent);
 
     if (!hasStoredCurrentState_) {
+        std::array<std::uint8_t, kV10CurrentRecordSize> v10Record{};
+        if (storage_.readBytes(
+                kCurrentRecordOffset,
+                v10Record.data(),
+                v10Record.size()) &&
+            deserializeV10CurrentRecord(v10Record, loadedCurrent)) {
+            hasStoredCurrentState_ = true;
+            migrationNeeded = true;
+        }
+    }
+
+    if (!hasStoredCurrentState_) {
         std::array<std::uint8_t, kV9CurrentRecordSize> v9Record{};
         if (storage_.readBytes(
                 kCurrentRecordOffset,
@@ -124,7 +136,7 @@ void PersistentStateService::begin() {
     }
     writePending_ = false;
 
-    // Build a canonical v10 records area in PersistentStorage's bounded staging
+    // Build a canonical v11 records area in PersistentStorage's bounded staging
     // buffer while records are being inspected. If no old schema is found the
     // transaction is simply discarded. This avoids keeping migrated copies of all
     // eight ClockState objects or an 8-KiB storage image on the call stack.
@@ -147,6 +159,16 @@ void PersistentStateService::begin() {
             presetOffset(slotIndex),
             record.data(),
             record.size()) && deserializePresetRecord(record, name, loadedPreset);
+
+        if (!presetValid_[slotIndex]) {
+            std::array<std::uint8_t, kV10PresetRecordSize> v10Record{};
+            presetValid_[slotIndex] = storage_.readBytes(
+                v10PresetOffset(slotIndex),
+                v10Record.data(),
+                v10Record.size()) &&
+                deserializeV10PresetRecord(v10Record, name, loadedPreset);
+            loadedPriorSchema = presetValid_[slotIndex];
+        }
 
         if (!presetValid_[slotIndex]) {
             std::array<std::uint8_t, kV9PresetRecordSize> v9Record{};

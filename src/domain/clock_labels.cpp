@@ -41,4 +41,19 @@ const char* clockSourceLabel(const ClockSource source) {
     }
 }
 
+const char* inputFunctionLabel(const InputFunction function) {
+    switch (function) {
+        case InputFunction::Sync: return text::get(text::TextId::Sync);
+        case InputFunction::Reset: return text::get(text::TextId::Reset);
+        case InputFunction::Run: return text::get(text::TextId::Run);
+        case InputFunction::Start: return text::get(text::TextId::InputStart);
+        case InputFunction::Stop: return text::get(text::TextId::InputStop);
+        case InputFunction::Restart: return text::get(text::TextId::Restart);
+        case InputFunction::Tap: return text::get(text::TextId::Tap);
+        case InputFunction::Fill: return text::get(text::TextId::Fill);
+        case InputFunction::Off:
+        default: return text::get(text::TextId::Off);
+    }
+}
+
 }  // namespace clockfw

@@ -28,6 +28,9 @@ void initializeFactoryDefaults(ClockState& state) {
         defaults::kExternalSyncSmoothing,
         defaults::kExternalSyncGlitchFilterUs,
         defaults::kExternalSyncTimeoutMs};
+    state.inputs = {
+        defaults::kInput1Function,
+        defaults::kInput2Function};
     state.unifiedClock = {
         defaults::kUnifiedClockRate,
         defaults::kUnifiedClockSwingPercent,

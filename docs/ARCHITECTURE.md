@@ -20,7 +20,7 @@ flowchart LR
 
 ## Product-level I/O boundary
 
-CLOCK Hardware Rev 1 is architected as a digital event instrument, not as a mixed-signal modulation generator. The eight output channels are gate/trigger outputs; the only analog-conditioned inputs in scope are SYNC and RST. General parameter-CV inputs, analog modulation outputs, and an analog modulation matrix are intentionally outside the V1 hardware contract.
+CLOCK Hardware Rev 1 is architected as a digital event instrument, not as a mixed-signal modulation generator. The eight output channels are gate/trigger outputs; the only analog-conditioned inputs in scope are the two LM393 comparator paths physically/net-named SYNC and RST. Current 1.1 firmware interprets them as configurable INPUT 1 / INPUT 2 digital roles with factory SYNC/RESET assignment. General parameter-CV inputs, analog modulation outputs, and an analog modulation matrix are intentionally outside the hardware contract.
 
 This matters architecturally: the timing core should not acquire dependencies on a future DAC/ADC subsystem simply to mirror feature sets from modulation-centric clock products. Internal cross-channel behavior can evolve post-1.0 as deterministic event processing while the HAL boundary remains digital. The product rationale and cost/buildability trade-off are recorded in [`ROADMAP.md`](ROADMAP.md).
 
@@ -253,9 +253,9 @@ Firmware budget: **224 KiB**. Persistence: **2 × 16 KiB**. Logical storage is 8
 
 The DFU upload helper emits separated firmware regions so ordinary firmware updates do not overwrite sectors 1/2.
 
-## External SYNC / RST boundary
+## Configurable external-input boundary
 
-The engine-side sync/global-reset semantics and the interrupt-driven digital capture boundary are implemented and simulator/host-testable. The final Rev 1 pin map routes conditioned SYNC to PA8 and RST to PA9:
+The engine-side clock/reset/transport input semantics and interrupt-driven digital capture boundary are implemented and simulator/host-testable. The final Rev 1 pin map still routes the physical SYNC-net comparator to PA8 and the RST-net comparator to PA9; current 1.1 firmware assigns musical roles only after capture:
 
 ```mermaid
 flowchart LR
@@ -271,7 +271,7 @@ flowchart LR
     Reset --> Engine
 ```
 
-The current firmware timestamps conditioned SYNC/RST levels from GPIO interrupts and queues them for deterministic scheduler-side consumption; foreground polling is not used. The PA8 EXTI path is the V1 baseline. PA8 is also timer-capable, so a later firmware revision can move SYNC timestamp production to timer input capture without changing the higher-level synchronization contract if HIL measurements ever justify it. RST does not require period-measurement precision and remains edge/level interrupt driven. The simulator's SQUARE/SINE/TRIANGLE generators do not emulate LM393 electrical characteristics.
+The current firmware timestamps both conditioned physical input paths from GPIO interrupts and queues them for deterministic scheduler-side consumption; foreground polling is not used. The global assignment layer maps those queues to `OFF / SYNC / RESET / RUN / START / STOP / RESTART / TAP`; `FILL` is reserved but not selectable yet. Active roles are exclusive across the two inputs and queued edges are discarded when roles change, preventing stale-event reinterpretation. `SYNC` uses the selected EDGE/PPQN/filter/smoothing/loss contract, `RESET` uses TRIGGER/GATE, `RUN` is level-authoritative, and START/STOP/RESTART/TAP are positive-edge commands. PA8 remains timer-capable, so a later firmware revision can move clock timestamp production to timer input capture if HIL measurements justify it. The simulator's SQUARE/SINE/TRIANGLE generators do not emulate LM393 electrical characteristics.
 
 ## Native simulator architecture
 

@@ -206,7 +206,7 @@ class ManualToolingTests(unittest.TestCase):
         )
         self.assertEqual(len(targets), len(REFRESH.DIRECT_SCREENSHOTS))
         self.assertIn("ManualImage15", targets)
-        self.assertEqual(REFRESH.DIRECT_SCREENSHOTS["ManualImage15"], "settings-sync.png")
+        self.assertEqual(REFRESH.DIRECT_SCREENSHOTS["ManualImage15"], "settings-input-config.png")
 
     def test_refresh_replaces_direct_frames_and_galleries(self) -> None:
         import zipfile
@@ -228,7 +228,7 @@ class ManualToolingTests(unittest.TestCase):
                 href = frame.get(f"{{{ns['xlink']}}}href")
                 self.assertEqual(
                     archive.read(href),
-                    (ROOT / "docs" / "manual-source" / "assets" / "settings-sync.png").read_bytes(),
+                    (ROOT / "docs" / "manual-source" / "assets" / "settings-input-config.png").read_bytes(),
                 )
                 self.assertEqual(
                     archive.read("Pictures/gallery_manualgalleryscreensavers_01_01.png"),

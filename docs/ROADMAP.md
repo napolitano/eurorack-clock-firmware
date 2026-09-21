@@ -85,6 +85,8 @@ Planned scope and implementation sequence:
 
 - configurable 1–64-beat Pre-Count with silent gate suppression and a centered static popover that shows the remaining count plus meter-step progress; external Pre-Count uses the configured master-meter beat unit, not a hard-coded quarter note;
 - **Stage 1 — preset-based Groove Engine (implemented in current 1.1 development):** read-only factory groove library with explicit `OFF`; in **One Clock** the selected groove is global, while **Independent** owns it per channel. Divider Bank remains groove-free;
+- **Configurable digital inputs (implemented in current 1.1 development):** the two Rev-1 comparator paths keep their physical SYNC/PA8 and RST/PA9 net identities, while `GENERAL SETTINGS → INPUTS` assigns global roles `OFF / SYNC / RESET / RUN / START / STOP / RESTART / TAP`; active roles are exclusive and `FILL` is reserved for the later Fill milestone. Factory assignment remains SYNC/RESET;
+- **Hardware/UI organization (implemented in current 1.1 development):** encoder direction and display orientation live under `GENERAL SETTINGS → HARDWARE`; Settings selection uses full-row inversion instead of a left cursor to reclaim horizontal pixels;
 - **Stage-1 UI contract:** active Groove is surfaced on Performance as `G:<preset>` (lower-left for Clock/One Clock, above the step strip for Euclid/Sequencer). Channel settings use one explicit hierarchy level per musical group, ordered by relevance: Clock/One Clock lead with `TIMING >`; Euclid/Sequencer lead with their mode-specific page; `OUTPUT >` remains last. `TIMING >` contains rate/polyrhythm/Swing and `GROOVE >`; Sequencer keeps `PATTERN >` inside `SEQUENCER >`;
 - grid-aware classic drum-machine-style swing with a musically familiar straight-to-deep range;
 - Groove Amount to scale a stored pattern from straight through exaggerated timing;
@@ -96,7 +98,7 @@ Planned scope and implementation sequence:
 Dependencies and constraints:
 
 - event timestamps must remain monotonic and bounded by the scheduler contract;
-- custom groove persistence must use extension records or another migration-safe layout rather than silently enlarging the repeated schema-v9 ClockState payload;
+- custom groove persistence must use extension records or another migration-safe layout rather than silently enlarging the repeated schema-v11 ClockState payload;
 - the 99-slot target is conditional on a compact bounded record format and a real STM32F401 ELF/RAM check. The existing 8-KiB logical image may grow only through an explicit layout revision and no further than the documented 12-KiB policy ceiling;
 - the UI must remain usable on the 128×64 display. The Stage-2 custom editor may use a graphical grid/marker view, but must remain bounded and purpose-built rather than becoming a general DAW-style editor;
 - destructive custom-groove operations must remain transactional: `NO` leaves persistent data untouched, while `YES` performs exactly one requested overwrite/delete operation.

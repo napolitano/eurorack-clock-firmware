@@ -38,7 +38,7 @@ This is an independent South Signal Lab development. It is not a firmware port f
 
 ### Why no general CV modulation?
 
-CLOCK deliberately stays in the **digital timing, gate, and trigger** domain. Hardware Rev 1 has SYNC and RST inputs, but no general parameter-CV inputs, analog modulation outputs, or CV modulation matrix. This is a product boundary, not a missing 1.0 feature.
+CLOCK deliberately stays in the **digital timing, gate, and trigger** domain. Hardware Rev 1 has two LM393-conditioned digital comparator inputs, physically/net-named SYNC and RST on the current PCB, but no general parameter-CV inputs, analog modulation outputs, or CV modulation matrix. In current 1.1 development their firmware roles are configurable globally; the factory assignment remains `INPUT 1 = SYNC`, `INPUT 2 = RESET`. This is a product boundary, not a general CV subsystem.
 
 A quality eight-channel analog modulation-output stage would move the module into a different cost and assembly class. Our quality target would require an eight-channel **16-bit DAC-class solution** plus two quad output-op-amp stages; a 12-bit MCP-class compromise is not considered good enough for this direction. The current project estimate is roughly **EUR 30-40 additional BOM cost**, before the wider impact of fine-pitch SMD assembly, PCB complexity, calibration, testing, and documentation. General CV parameter inputs would add their own analog front ends, routing, jacks, and validation scope.
 
@@ -73,7 +73,7 @@ The hard physical-HIL release gate deliberately starts at **1.5.0**; before then
 | --- | --- |
 | Format | Eurorack, 3U, 10 HP reference panel |
 | Outputs | 8 gate/clock outputs, target 0/+5 V, individual activity LEDs |
-| Inputs | Separate conditioned SYNC and RST inputs through the LM393 front end; no general parameter-CV inputs by design |
+| Inputs | Two LM393-conditioned digital comparator inputs; Rev 1 physical nets remain SYNC/PA8 and RST/PA9, while current 1.1 firmware assigns their musical roles globally |
 | MCU | STM32F401CCU6 Black Pill, 84 MHz Cortex-M4 |
 | Display | 128×64 SSD1306/SSD1315 over the final 4-wire SPI pin map |
 | Controls | Push encoder + PLAY/PAUSE + TAP + STOP/BACK |
@@ -143,25 +143,40 @@ For Euclid and Sequencer, `×1` uses a **sixteenth-note grid**. A 16-step patter
 
 The detailed timing contract is normative: [`docs/TIMING.md`](docs/TIMING.md).
 
-## External SYNC and RST
+## Configurable external inputs
 
-The firmware-side synchronization model supports:
+Hardware Rev 1 provides two electrically equivalent LM393-conditioned digital comparator paths. The current PCB/net names remain **SYNC on PA8** and **RST on PA9**, but current 1.1 firmware treats them as **INPUT 1** and **INPUT 2** at the product layer. Factory assignment remains `INPUT 1 = SYNC` and `INPUT 2 = RESET`, so existing patches keep their expected behavior.
+
+Open `SETTINGS → GENERAL SETTINGS → INPUTS` to assign a role. Current selectable roles are:
+
+- `OFF` — ignore the input;
+- `SYNC` — external clock acquisition through the existing PPQN/edge/filter/smoothing/loss pipeline;
+- `RESET` — external phase reset using the existing `TRIGGER / GATE` reset mode;
+- `RUN` — level-authoritative transport (`HIGH = PLAY`, `LOW = STOP`);
+- `START` — a positive edge starts transport;
+- `STOP` — a positive edge stops transport;
+- `RESTART` — a positive edge performs a deterministic stop/restart from phase zero;
+- `TAP` — a positive edge is fed, with its captured timestamp, into the same Tap Tempo estimator used by the front-panel TAP button.
+
+`FILL` is reserved in the input-role model for the later Euclid/Fill work, but is **not selectable or persistable yet**. Every active role is exclusive across the two inputs: if one input owns `SYNC`, `SYNC` is skipped while editing the other input. `OFF` is the only role that may be assigned twice.
+
+`INPUTS → CONFIG` contains the shared external timing/reset parameters:
 
 - source: `INTERNAL`, `EXTERNAL`, `AUTO` (factory default: `AUTO`);
 - PPQN: `1`, `2`, `4`, `24`;
-- rising/falling edge selection;
+- rising/falling edge selection for `SYNC`;
 - configurable glitch filter;
 - selectable period smoothing: `OFF`, `LOW`, `MEDIUM`, `FULL` (factory default: `LOW`);
 - lock-loss timeout;
 - loss policy: stop, freewheel or return to internal timing;
-- reset input as `TRIGGER` or `GATE`.
+- reset mode: `TRIGGER` or `GATE`.
 
-SYNC/RST edges are captured by GPIO interrupts and consumed in the deterministic scheduler. External tempo estimation is period-based and includes continuity handling, adaptive timeout and timestamp-wrap-safe arithmetic. `SMOOTHING` controls only the tempo-period averaging: `OFF` follows each valid period directly, `LOW` weights the new period 75%, `MEDIUM` 50%, and `FULL` 25%. The separate microsecond `FILTER` setting remains the electrical/glitch rejection control.
+Physical input transitions are captured by GPIO interrupts and timestamped before scheduler-side role interpretation. A role change discards already queued edges from the old assignment, so an electrical pulse captured as SYNC can never become START, STOP or TAP merely because the menu was changed before the scheduler consumed it. `RUN` is interpreted from the current conditioned level rather than from a reconstructed edge history.
 
 With `LOSS = FREE`, both the timing engine and the Performance BPM display retain the last measured external tempo after lock is lost. `LOSS = INTERNAL` returns both to the configured internal fallback BPM; `LOSS = STOP` stops transport.
 
 > [!CAUTION]
-> Host tests prove the software semantics, not the analog input stage. Comparator thresholds, signal integrity, final timer-capture routing and resulting output jitter remain real-hardware HIL qualification items. They are reported, but do not block automated releases before 1.5.0. See [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).
+> Host tests prove the digital firmware semantics, not the analog input stage. Comparator thresholds, signal integrity, physical input latency/jitter and resulting output jitter remain real-hardware HIL qualification items. The Rev 1 pin/net names SYNC/RST are hardware facts even when firmware assigns different musical roles. See [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).
 
 ## Controls and UI
 
@@ -178,7 +193,7 @@ The normal interaction grammar is deliberately small:
 | TAP | Tap Tempo | Modifier | Sequencer: previous 16-step page |
 | STOP/BACK | Stop + reset global phase | Back/cancel | Back/cancel |
 
-`SETTINGS → GENERAL SETTINGS` also contains **DIAGNOSTICS**, plus two persistent device-local installation preferences: **ENCODER DIR** (`NORMAL / REVERSED`) changes the semantic rotary direction without altering the quadrature decoder, and **ORIENTATION** (`0 DEG / 180 DEG`) rotates the OLED transfer framebuffer. `DIAGNOSTICS → INPUTS` shows the live conditioned SYNC/RST digital levels; `DIAGNOSTICS → OUTPUTS` shows the eight gate source levels in a 4×2 indicator grid. These preferences belong to the module itself and are deliberately not changed by named presets or factory templates.
+`SETTINGS → GENERAL SETTINGS` contains `INPUTS >`, `DIAGNOSTICS >` and `HARDWARE >`. `HARDWARE >` owns the two persistent device-local installation preferences: **ENCODER DIR** (`NORMAL / REVERSED`) changes semantic rotary direction after quadrature decoding, and **ORIENTATION** (`0 DEG / 180 DEG`) rotates the OLED transfer framebuffer. `DIAGNOSTICS → INPUTS` shows the live conditioned **INPUT 1 / INPUT 2** comparator levels; `DIAGNOSTICS → OUTPUTS` shows the eight gate source levels in a 4×2 indicator grid. Device-local hardware preferences are deliberately not changed by named presets or factory templates. Settings selection is shown by full-row inversion rather than a left-side cursor, reclaiming horizontal space on the 128×64 display.
 
 The Settings root action is named **PHASE RESET** because it only re-anchors the global musical phase; it does not erase settings or presets. The destructive **FACTORY RESET** action is deliberately buried as the final `INFO` item and requires explicit `NO / YES` confirmation with `NO` selected by default.
 
@@ -243,21 +258,21 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **400 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **479 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
 | `test_clock_core` | 44 | deterministic rate, Q32, probability, Euclid and sequencer mathematics |
-| `test_realtime` | 24 | scheduler, physical gate driver, SYNC/RST integration and queue stress |
-| `test_sync_behavior` | 84 | external-SYNC boundaries, changing tempo, jitter/glitches/loss, PPQN/edge changes, permanent-HIGH behavior, and nominal LM393-front-end voltage behavior |
-| `test_swing` | 22 | atomic swing mathematics plus observed engine edge spacing and pair-duration conservation |
+| `test_realtime` | 28 | scheduler, physical gate driver and realtime input/timing integration |
+| `test_sync_behavior` | 114 | external clock acquisition plus configurable INPUT 1/2 role semantics, transport commands, reset/run levels, jitter/glitches/loss and nominal LM393-front-end modeling |
+| `test_swing` | 28 | atomic swing/groove mathematics plus observed engine edge spacing and pair-duration conservation |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
-| `test_controls` | 51 | TIM4 quadrature counting on PB6/PB7, detent-phase resynchronization after missed/coalesced edges and encoder-push phase shifts, first-detent and direction-reversal recovery, counter wraparound, NORMAL/REVERSED recovery, alternating single-detent stress, fast-turn backlog/drain and saturation, button debounce/bounce/hold and simultaneous controls |
-| `test_settings` | 56 | settings limits, device-local encoder/display preferences, enum transitions, timing invariants, channel/Euclid/Sequencer edits and invalid-input behavior |
+| `test_controls` | 51 | TIM4 quadrature counting, detent recovery, fast-turn behavior, NORMAL/REVERSED direction and button debounce |
+| `test_settings` | 88 | settings boundaries, input-role exclusivity, INPUTS/HARDWARE navigation, device preferences, grouped channel settings and invalid-input behavior |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
-| `test_host_firmware` | 28 | complete firmware/UI/HAL/persistence scenarios against deterministic framework fakes |
+| `test_host_firmware` | 35 | complete firmware/UI/HAL/persistence scenarios, schema migration and framebuffer/navigation contracts against deterministic framework fakes |
 
 The default Native run executes more than **223,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
 
@@ -305,7 +320,7 @@ The current reference design uses:
 - 0.96-inch 128×64 SSD1306/SSD1315 OLED;
 - PEC11L-style push encoder;
 - three C&K D6R transport buttons;
-- separate conditioned SYNC and RST inputs;
+- two conditioned comparator inputs with factory SYNC/RESET roles and configurable global firmware assignments;
 - eight Thonkiconn-style output jacks;
 - eight 3 mm red activity LEDs;
 - 74HCT541-class 5 V output buffer;

@@ -67,8 +67,11 @@ public:
     bool executeSequencerCommand(std::uint8_t channelIndex, std::uint8_t rowIndex);
 
 private:
-    /** @brief Adjusts one device-local general preference row. */
-    void adjustGeneral(std::uint8_t rowIndex, std::int8_t delta);
+    /** @brief Adjusts one external-input role assignment. */
+    void adjustInputAssignments(std::uint8_t rowIndex, std::int8_t delta);
+
+    /** @brief Adjusts one device-local hardware preference row. */
+    void adjustHardware(std::uint8_t rowIndex, std::int8_t delta);
 
     /** @brief Adjusts one master-settings row. */
     void adjustMaster(std::uint8_t rowIndex, std::int8_t delta);

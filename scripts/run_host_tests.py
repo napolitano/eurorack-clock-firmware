@@ -155,6 +155,7 @@ def realtime_sources() -> list[Path]:
         "src/hal/platform_io.cpp",
         "src/hal/system_clock.cpp",
         "src/services/external_sync_controller.cpp",
+        "src/services/external_sync_controller_inputs.cpp",
     ]
     return [ROOT / item for item in relative]
 

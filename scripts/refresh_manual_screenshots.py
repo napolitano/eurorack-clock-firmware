@@ -45,7 +45,7 @@ DIRECT_SCREENSHOTS: dict[str, str] = {
     "ManualImage12": "performance-one-clock-play.png",
     "ManualImage13": "performance-divider-bank-play.png",
     "ManualImage14": "settings-root.png",
-    "ManualImage15": "settings-sync.png",
+    "ManualImage15": "settings-input-config.png",
     "ManualImage16": "preset-name-entry.png",
     "ManualImage17": "settings-screensaver.png",
     "ManualImage18": "arcade-top-100.png",

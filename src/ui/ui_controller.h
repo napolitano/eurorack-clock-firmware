@@ -69,6 +69,9 @@ public:
     /** @brief Returns current navigation state for diagnostics and tests. */
     const NavigationState& navigation() const;
 
+    /** @brief Feeds an externally captured TAP edge into the normal Tap Tempo estimator. */
+    void registerExternalTapTempo(std::uint32_t timestampMs);
+
 private:
     /** @brief Routes one encoder detent according to the active screen and edit state. */
     void handleEncoderDelta(std::int8_t delta, bool tapPressed);
