@@ -59,6 +59,7 @@
 #include "ui/performance_renderer.h"
 #include "ui/preset_name_alphabet.h"
 #include "ui/settings_editor.h"
+#include "ui/settings_renderer.h"
 #include "ui/screensaver_renderer.h"
 #include "ui/text_formatter.h"
 #include "ui/ui_controller.h"
@@ -2954,6 +2955,41 @@ std::size_t countFramebufferPixels(
 }
 
 
+
+void testGroupedSettingsRenderFourPixelMarginUnlessHeadingIsSticky() {
+    resetFakes();
+    prepareDisplaySuccess();
+
+    ClockState state = makeDefaultState();
+    state.operatingMode = OperatingMode::Independent;
+    state.channels[0].common.mode = ChannelMode::Clock;
+
+    hal::OledDisplay display;
+    CHECK(display.begin());
+    ui::SettingsRenderer renderer(display);
+    ui::NavigationState navigation{};
+    navigation.screen = ui::Screen::Settings;
+    navigation.settingsPage = ui::SettingsPage::Channel;
+    navigation.selectedChannel = 0U;
+    navigation.cursor = 0U;
+    navigation.scrollOffset = 0U;
+
+    renderer.renderSettings(state, navigation);
+    const auto nonStickyFrame = display.framebufferForTest();
+    // MODE occupies y=11..17. TIMING begins at y=22, leaving y=18..21
+    // completely blank across the content area: a real 4 px top margin.
+    CHECK_EQ(countFramebufferPixels(nonStickyFrame, 0, 18, 124, 4), 0U);
+    CHECK(countFramebufferPixels(nonStickyFrame, 0, 22, 124, 7) > 0U);
+
+    navigation.cursor = 1U;
+    navigation.scrollOffset = 1U;
+    renderer.renderSettings(state, navigation);
+    const auto stickyFrame = display.framebufferForTest();
+    // Scrolling into TIMING makes its heading sticky at the viewport top.
+    // No four-pixel margin is inserted above it.
+    CHECK(countFramebufferPixels(stickyFrame, 0, 11, 124, 7) > 0U);
+}
+
 void testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition() {
     resetFakes();
     prepareDisplaySuccess();
@@ -4902,6 +4938,7 @@ int main() {
     RUN_TEST(testEngineAuditRegressions);
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
+    RUN_TEST(testGroupedSettingsRenderFourPixelMarginUnlessHeadingIsSticky);
     RUN_TEST(testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition);
     RUN_TEST(testPerformanceRendererShowsStaticPreCountPopoverAndMeterProgress);
     RUN_TEST(testPreCountPopoverRedrawsAtBeatBoundariesAndClearsOnCompletion);

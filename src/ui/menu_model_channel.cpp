@@ -229,23 +229,44 @@ std::uint8_t groupedSettingsVisibleItemCount(
     const ChannelMode mode,
     const std::uint8_t startRow,
     const std::uint8_t itemCount) {
-    constexpr std::uint8_t kVisualLineBudget = 6U;
-    std::uint8_t visualLines = 0U;
+    constexpr std::int16_t kContentTopY = 11;
+    constexpr std::int16_t kLastTextTopY = 57;
+    constexpr std::int16_t kTextHeight = 7;
+    constexpr std::int16_t kLineAdvance = 9;
+    constexpr std::int16_t kSectionMarginTop = 4;
+    constexpr std::int16_t kNormalLineGap = kLineAdvance - kTextHeight;
+    constexpr std::int16_t kSectionExtraGap = kSectionMarginTop - kNormalLineGap;
+    static_assert(kSectionExtraGap >= 0);
+
+    std::int16_t y = kContentTopY;
     std::uint8_t visibleItems = 0U;
     SettingsSection renderedSection = SettingsSection::None;
+    bool hasRenderedContent = false;
 
     for (std::uint8_t rowIndex = startRow; rowIndex < itemCount; ++rowIndex) {
         const SettingsSection section = settingsRowSection(page, mode, rowIndex);
         const bool needsHeading = section != SettingsSection::None && section != renderedSection;
-        const std::uint8_t requiredLines = static_cast<std::uint8_t>(1U + (needsHeading ? 1U : 0U));
-        if (static_cast<std::uint8_t>(visualLines + requiredLines) > kVisualLineBudget) {
+        if (needsHeading) {
+            // A heading at the top of the viewport is sticky and therefore has no
+            // top margin. Headings appearing below existing content keep a real
+            // four-pixel blank margin above their seven-pixel glyph box.
+            if (hasRenderedContent) {
+                y = static_cast<std::int16_t>(y + kSectionExtraGap);
+            }
+            if (y > kLastTextTopY) {
+                break;
+            }
+            y = static_cast<std::int16_t>(y + kLineAdvance);
+            renderedSection = section;
+            hasRenderedContent = true;
+        }
+
+        if (y > kLastTextTopY) {
             break;
         }
-        visualLines = static_cast<std::uint8_t>(visualLines + requiredLines);
         ++visibleItems;
-        if (section != SettingsSection::None) {
-            renderedSection = section;
-        }
+        y = static_cast<std::int16_t>(y + kLineAdvance);
+        hasRenderedContent = true;
     }
     return visibleItems;
 }

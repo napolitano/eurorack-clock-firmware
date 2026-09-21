@@ -185,6 +185,9 @@ void SettingsRenderer::renderSettings(
             const SettingsSection section = settingsRowSection(
                 navigation.settingsPage, channelMode, rowIndex);
             if (section != SettingsSection::None && section != renderedSection) {
+                if (visibleRow > 0U) {
+                    y = static_cast<std::int16_t>(y + 2);  // 4 px total above non-sticky heading.
+                }
                 display_.drawText(1, y, settingsSectionLabel(section));
                 const hal::TextBounds headingBounds = display_.measureText(
                     settingsSectionLabel(section), 0, y);
@@ -197,7 +200,6 @@ void SettingsRenderer::renderSettings(
                 renderedSection = section;
             }
         }
-
         const MenuRow row = buildMenuRow(
             navigation.settingsPage,
             rowIndex,
@@ -205,7 +207,6 @@ void SettingsRenderer::renderSettings(
             state,
             navigation.highScoreResetAvailable);
         const bool selected = rowIndex == navigation.cursor;
-
         if (selected) {
             display_.drawCharacter(0, y, '>');
         }
@@ -225,7 +226,6 @@ void SettingsRenderer::renderSettings(
         }
         y = static_cast<std::int16_t>(y + (groupedPage ? 9 : 10));
     }
-
     if (itemCount > visibleRows) {
         constexpr std::int16_t kScrollY = 11;
         constexpr std::int16_t kScrollHeight = 50;

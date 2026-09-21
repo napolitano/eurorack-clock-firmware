@@ -25,6 +25,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add navigation, menu-order and framebuffer regressions for the flattened hierarchy and active-groove Performance label.
 - Rework grouped settings rendering around a six-line visual budget: section headings and parameter rows now use the same 9-pixel baseline spacing, eliminating heading/row overlap while using the previously idle final text line.
 - Make grouped-menu scrolling line-budget aware so section transitions never push a heading or selected row below the 64-pixel viewport; add regression coverage for Clock, Euclid and One Clock viewport capacity.
+- Give non-sticky section headings a true 4-pixel top margin while keeping a scrolled sticky heading flush with the top of the settings viewport; keep the viewport calculation pixel-accurate and cover both states with framebuffer regressions.
 
 ### Pre-Count display
 
