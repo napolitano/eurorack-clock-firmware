@@ -10,6 +10,11 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Fixed
+
+- Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v10 2,783-byte repeated-state footprint and 32-byte in-place growth ceiling.
+- Updated development and coverage documentation to the current 443-case Native inventory.
+
 ### Groove Engine Stage 1
 
 - Add the first preset-based deterministic Groove Engine for 1.1 development. One Clock owns one shared groove; Independent mode owns groove settings per channel; Divider Bank remains groove-free.
