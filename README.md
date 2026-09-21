@@ -171,7 +171,7 @@ Open `SETTINGS → GENERAL SETTINGS → INPUTS` to assign a role. Current select
 - loss policy: stop, freewheel or return to internal timing;
 - reset mode: `TRIGGER` or `GATE`.
 
-Physical input transitions are captured by GPIO interrupts and timestamped before scheduler-side role interpretation. A role change discards already queued edges from the old assignment, so an electrical pulse captured as SYNC can never become START, STOP or TAP merely because the menu was changed before the scheduler consumed it. `RUN` is interpreted from the current conditioned level rather than from a reconstructed edge history.
+Physical input transitions are captured by GPIO interrupts and timestamped before scheduler-side role interpretation. A role change discards already queued edges from the old assignment, so an electrical pulse captured as SYNC can never become START, STOP or TAP merely because the menu was changed before the scheduler consumed it. `RUN` is level-authoritative after assignment, but assigning RUN is transport-neutral: the current comparator level is adopted as a baseline and only a later physical level change may command PLAY/STOP. This also preserves the boot STOP contract for a persisted RUN assignment.
 
 With `LOSS = FREE`, both the timing engine and the Performance BPM display retain the last measured external tempo after lock is lost. `LOSS = INTERNAL` returns both to the configured internal fallback BPM; `LOSS = STOP` stops transport.
 
@@ -258,7 +258,7 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **479 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **481 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |

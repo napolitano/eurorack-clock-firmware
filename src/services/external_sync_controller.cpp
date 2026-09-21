@@ -75,8 +75,9 @@ void ExternalSyncController::begin(const ClockState& state) {
     configurationDirty_ = true;
     inputRolesChanged_ = false;
     resetGateApplied_ = false;
-    runLevelInitialized_ = false;
-    runLevelApplied_ = false;
+    const int runInput = assignmentIndex(inputs_, InputFunction::Run);
+    runLevelInitialized_ = runInput >= 0;
+    runLevelApplied_ = runInput >= 0 ? inputLevelHigh(runInput) : false;
 
     haveAcceptedPulse_ = false;
     externalLocked_ = false;

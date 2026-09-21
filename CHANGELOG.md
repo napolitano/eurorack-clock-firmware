@@ -26,8 +26,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Validation
 
-- Native inventory: **479 named tests**; Input/SYNC suite **114 / 5,160**, Settings **88 / 261**, complete host firmware **35** cases across all tested display variants.
-- Repository coverage: **96.83% executable lines / 98.37% functions / 90.01% source decision branches**; the 95/95/90 gates remain unchanged.
+- Native inventory: **481 named tests**; Input/SYNC suite **116 / 5,177**, Settings **88 / 261**, complete host firmware **35** cases across all tested display variants.
+- Repository coverage: **7940/8200 executable lines (96.83%) / 664/675 functions (98.37%) / 4835/5372 source decision branches (90.00%)**; the 95/95/90 gates remain unchanged.
 - Full ASan/UBSan Native/firmware matrix passes, including legacy I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin variants.
 
 ### Changed
@@ -37,8 +37,9 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Fixed
 
+- Prevent selecting `RUN` in Settings from starting or stopping transport merely because the assigned comparator is already HIGH/LOW. RUN now captures a neutral baseline on boot and role reassignment; only a later physical level change may command transport, preserving the STOP-on-boot invariant.
 - Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v10 2,783-byte repeated-state footprint and 32-byte in-place growth ceiling.
-- Updated development and coverage documentation to the current 479-case Native inventory.
+- Updated development and coverage documentation to the current 481-case Native inventory.
 
 ### Groove Engine Stage 1
 

@@ -1441,6 +1441,68 @@ void testInput2OnlyRoleChangeInvalidatesQueuedMeaning() {
     CHECK(fixture.engine.snapshot().playing);
 }
 
+void testSelectingRunIsTransportNeutralUntilPhysicalLevelChanges() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Off, InputFunction::Reset};
+    fixture.begin();
+    fixture.engine.stop();
+
+    // Model the comparator already being HIGH while INPUT 1 is still OFF.
+    // Selecting RUN in Settings must not reinterpret that standing level as PLAY.
+    fixture.inputs.injectSyncEdgeForTest(1000U, true);
+    fixture.sync.processSchedulerTick(1000U);
+    TransportState transition = TransportState::Playing;
+    CHECK(!fixture.sync.consumeTransportTransition(transition));
+
+    fixture.state.inputs = {InputFunction::Run, InputFunction::Reset};
+    fixture.sync.updateConfiguration(fixture.state);
+    fixture.sync.processSchedulerTick(1100U);
+    CHECK(!fixture.engine.snapshot().playing);
+    CHECK(!fixture.sync.consumeTransportTransition(transition));
+
+    // RUN becomes authoritative only after a real post-assignment level change.
+    fixture.inputs.injectSyncEdgeForTest(2000U, false);
+    fixture.sync.processSchedulerTick(2000U);
+    CHECK(!fixture.engine.snapshot().playing);
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Stopped);
+
+    fixture.inputs.injectSyncEdgeForTest(3000U, true);
+    fixture.sync.processSchedulerTick(3000U);
+    CHECK(fixture.engine.snapshot().playing);
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Playing);
+}
+
+void testPersistedRunDoesNotBreakBootStopOnStandingHighLevel() {
+    Fixture fixture;
+    fixture.state.inputs = {InputFunction::Run, InputFunction::Off};
+
+    // The physical capture latch can already be HIGH before the controller is
+    // initialized. Boot must remain STOP until a later physical RUN transition.
+    fixture.inputs.injectSyncEdgeForTest(500U, true);
+    fixture.engine.begin(fixture.state);
+    fixture.engine.stop();
+    fixture.sync.begin(fixture.state);
+    fixture.sync.processSchedulerTick(600U);
+
+    CHECK(!fixture.engine.snapshot().playing);
+    TransportState transition = TransportState::Playing;
+    CHECK(!fixture.sync.consumeTransportTransition(transition));
+
+    fixture.inputs.injectSyncEdgeForTest(1000U, false);
+    fixture.sync.processSchedulerTick(1000U);
+    CHECK(!fixture.engine.snapshot().playing);
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Stopped);
+
+    fixture.inputs.injectSyncEdgeForTest(1500U, true);
+    fixture.sync.processSchedulerTick(1500U);
+    CHECK(fixture.engine.snapshot().playing);
+    CHECK(fixture.sync.consumeTransportTransition(transition));
+    CHECK_EQ(transition, TransportState::Playing);
+}
+
 void testExternalInputActivitySequenceTracksSyncAndReset() {
     hal::ExternalInputCapture inputs;
     CHECK_EQ(inputs.activitySequence(), 0U);
@@ -1571,6 +1633,8 @@ int main() {
     RUN_TEST(testFillRoleIsDrainedButDoesNothing);
     RUN_TEST(testFillRoleOnPhysicalInput2IsDrainedButDoesNothing);
     RUN_TEST(testInput2OnlyRoleChangeInvalidatesQueuedMeaning);
+    RUN_TEST(testSelectingRunIsTransportNeutralUntilPhysicalLevelChanges);
+    RUN_TEST(testPersistedRunDoesNotBreakBootStopOnStandingHighLevel);
     RUN_TEST(testExternalInputActivitySequenceTracksSyncAndReset);
     std::cout << "SYNC behavior assertions: " << checks << "\n";
     return UNITY_END();

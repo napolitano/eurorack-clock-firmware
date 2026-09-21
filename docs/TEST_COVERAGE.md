@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v1.0.1
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 479 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 481 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -28,10 +28,10 @@ The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on
 Current 1.1 development working baseline after configurable external-input roles, the HARDWARE submenu, inverted Settings selection and their regression coverage:
 
 ```text
-Executable lines:   7937/8197 (96.83%)
+Executable lines:   7940/8200 (96.83%)
 Functions:            664/675  (98.37%)
-Decision branches:   4828/5364 (90.01%)
-Compiler branches:   4829/6239 (77.40%, informational only)
+Decision branches:   4835/5372 (90.00%)
+Compiler branches:   4836/6247 (77.41%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.
@@ -81,7 +81,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - complete CURRENT-state persistence plus CRC/schema validation and 8 named user preset slots, including screensaver mode/start/dim/off plus device-local encoder-direction/OLED-orientation preferences
 - schema-v10 to schema-v11 migration for configurable input roles, schema-v9 to schema-v10 Groove migration, the earlier v8/v7/v6/v5/v4/v3 migration chain, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
 - external-sync regression cases for 20/120/999 BPM, 1/2/4/24 PPQN, jitter, adaptive lock timeout, queue overflow/reacquisition, timestamp wraparound, effective-tempo gate release, monotonic scheduler time, phase alignment, ISR-safe pulse entry, and PPQN interpretation
-- 114-case atomic input/SYNC behavior: external clocks at 1/20/30/60/120/240/300/600/900/999 BPM plus configurable SYNC/RESET/RUN/START/STOP/RESTART/TAP roles on either physical input, role-change queue invalidation, input exclusivity, level-authoritative RUN, timestamp-preserving TAP, jitter/glitches, runtime PPQN/edge changes, loss policies and continuity recovery
+- 116-case atomic input/SYNC behavior: external clocks at 1/20/30/60/120/240/300/600/900/999 BPM plus configurable SYNC/RESET/RUN/START/STOP/RESTART/TAP roles on either physical input, role-change queue invalidation, input exclusivity, transport-neutral RUN assignment/boot baselining, level-authoritative RUN after a physical change, timestamp-preserving TAP, jitter/glitches, runtime PPQN/edge changes, loss policies and continuity recovery
 - external-SYNC `SMOOTHING` OFF/LOW/MEDIUM/FULL weighting, factory LOW default, live smoothing changes after lock, and menu-label coverage for all four modes
 - continuous external-tempo movement including 60->180 and 180->60 ramps, slow drift, repeated tempo steps, ramp-plus-jitter and 24-PPQN acceleration; permanently asserted SYNC is checked for one-edge behavior and natural lock timeout rather than a synthetic pulse train
 - dedicated Swing edge-train tests, One Clock Humanize bounds/repeatability/mode isolation, Tap Tempo rolling-estimator boundaries, encoder NORMAL/REVERSED plus TIM4 detent-recovery/fast-turn backlog behavior, exact OLED 0°/180° transfer-frame rotation, and atomic button debounce/queue behavior

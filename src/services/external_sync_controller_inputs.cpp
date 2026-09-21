@@ -17,7 +17,15 @@ void ExternalSyncController::applyInputConfiguration() {
         drainInput(0);
         drainInput(1);
         inputRolesChanged_ = false;
-        runLevelInitialized_ = false;
+
+        // Reassigning an input is configuration, not a transport event. If RUN
+        // becomes active, remember the comparator's present level without
+        // emitting PLAY/STOP. Only a later physical level change may command
+        // transport. This also prevents an idle/high comparator from starting
+        // CLOCK merely because RUN was selected in Settings.
+        const int runInput = assignedInput(InputFunction::Run);
+        runLevelInitialized_ = runInput >= 0;
+        runLevelApplied_ = runInput >= 0 ? inputLevelHigh(runInput) : false;
     }
 
     if (!configurationDirty_) {
