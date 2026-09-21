@@ -90,9 +90,7 @@ void UiController::navigateAfterModeSelection(const ModeFunction modeFunction) {
             return;
         case ModeFunction::Euclid:
             navigation_.settingsExitScreen = Screen::Performance;
-            openSettingsPage(
-                SettingsPage::Channel,
-                channelMenuIndexForAction(ChannelMode::Euclid, ChannelMenuAction::EuclidSteps));
+            openSettingsPage(SettingsPage::Euclid);
             return;
         case ModeFunction::Sequencer:
             navigation_.screen = Screen::SequencerEditor;
@@ -135,15 +133,21 @@ void UiController::backFromSettings() {
     } else if (navigation_.settingsPage == SettingsPage::Licenses ||
                navigation_.settingsPage == SettingsPage::Updates) {
         navigation_.settingsPage = SettingsPage::Info;
-    } else if (navigation_.settingsPage == SettingsPage::Rate ||
+    } else if (navigation_.settingsPage == SettingsPage::ChannelTiming ||
+               navigation_.settingsPage == SettingsPage::ChannelOutput ||
                navigation_.settingsPage == SettingsPage::Clock ||
                navigation_.settingsPage == SettingsPage::Euclid ||
                navigation_.settingsPage == SettingsPage::Sequencer) {
         navigation_.settingsPage = SettingsPage::Channel;
+    } else if (navigation_.settingsPage == SettingsPage::SequencerPattern) {
+        navigation_.settingsPage = SettingsPage::Sequencer;
+    } else if (navigation_.settingsPage == SettingsPage::UnifiedTiming ||
+               navigation_.settingsPage == SettingsPage::UnifiedOutput) {
+        navigation_.settingsPage = SettingsPage::UnifiedClock;
     } else if (navigation_.settingsPage == SettingsPage::Groove) {
         navigation_.settingsPage = state_.operatingMode == OperatingMode::UnifiedClock
-            ? SettingsPage::UnifiedClock
-            : SettingsPage::Channel;
+            ? SettingsPage::UnifiedTiming
+            : SettingsPage::ChannelTiming;
     } else if (navigation_.settingsPage == SettingsPage::Channel ||
                navigation_.settingsPage == SettingsPage::UnifiedClock ||
                navigation_.settingsPage == SettingsPage::DividerBank) {
@@ -163,17 +167,29 @@ void UiController::backFromSettings() {
     if (navigation_.screen == Screen::ChannelQuickSelect) {
         navigation_.cursor = navigation_.selectedChannel;
     } else if (previousPage == SettingsPage::Groove &&
-               navigation_.settingsPage == SettingsPage::UnifiedClock) {
-        navigation_.cursor = 5U;
-    } else if (previousPage == SettingsPage::Groove &&
-               navigation_.settingsPage == SettingsPage::Channel) {
-        navigation_.cursor = channelMenuIndexForAction(
-            state_.channels[navigation_.selectedChannel].common.mode,
-            ChannelMenuAction::Groove);
-    } else if (previousPage == SettingsPage::Sequencer &&
-               navigation_.settingsPage == SettingsPage::Channel) {
-        navigation_.cursor = channelMenuIndexForAction(
-            ChannelMode::Sequencer, ChannelMenuAction::SequencerPattern);
+               (navigation_.settingsPage == SettingsPage::ChannelTiming ||
+                navigation_.settingsPage == SettingsPage::UnifiedTiming)) {
+        navigation_.cursor = 4U;
+    } else if (previousPage == SettingsPage::SequencerPattern &&
+               navigation_.settingsPage == SettingsPage::Sequencer) {
+        navigation_.cursor = 2U;
+    } else if (navigation_.settingsPage == SettingsPage::Channel) {
+        const ChannelMode mode = state_.channels[navigation_.selectedChannel].common.mode;
+        if (previousPage == SettingsPage::ChannelTiming) {
+            navigation_.cursor = channelMenuIndexForAction(mode, ChannelMenuAction::Timing);
+        } else if (previousPage == SettingsPage::ChannelOutput) {
+            navigation_.cursor = channelMenuIndexForAction(mode, ChannelMenuAction::Output);
+        } else if (previousPage == SettingsPage::Clock) {
+            navigation_.cursor = channelMenuIndexForAction(mode, ChannelMenuAction::Clock);
+        } else if (previousPage == SettingsPage::Euclid) {
+            navigation_.cursor = channelMenuIndexForAction(mode, ChannelMenuAction::Euclid);
+        } else if (previousPage == SettingsPage::Sequencer) {
+            navigation_.cursor = channelMenuIndexForAction(mode, ChannelMenuAction::Sequencer);
+        } else {
+            navigation_.cursor = 0U;
+        }
+    } else if (navigation_.settingsPage == SettingsPage::UnifiedClock) {
+        navigation_.cursor = previousPage == SettingsPage::UnifiedOutput ? 2U : 1U;
     } else {
         navigation_.cursor = 0U;
     }
@@ -265,40 +281,67 @@ void UiController::activateCurrentSetting() {
     }
 
     if (navigation_.settingsPage == SettingsPage::Channel) {
-        const ChannelMenuAction action = channelMenuAction(channel.common.mode, navigation_.cursor);
-        if (action == ChannelMenuAction::Mode) {
-            openModeSelect(Screen::Settings);
-        } else if (action == ChannelMenuAction::Groove) {
-            openSettingsPage(SettingsPage::Groove);
-        } else if (action == ChannelMenuAction::SequencerPattern) {
-            openSettingsPage(SettingsPage::Sequencer);
-        } else {
-            navigation_.editing = !navigation_.editing;
-            invalidate();
+        switch (channelMenuAction(channel.common.mode, navigation_.cursor)) {
+            case ChannelMenuAction::Mode:
+                openModeSelect(Screen::Settings);
+                break;
+            case ChannelMenuAction::Timing:
+                openSettingsPage(SettingsPage::ChannelTiming);
+                break;
+            case ChannelMenuAction::Clock:
+                openSettingsPage(SettingsPage::Clock);
+                break;
+            case ChannelMenuAction::Euclid:
+                openSettingsPage(SettingsPage::Euclid);
+                break;
+            case ChannelMenuAction::Sequencer:
+                openSettingsPage(SettingsPage::Sequencer);
+                break;
+            case ChannelMenuAction::Output:
+                openSettingsPage(SettingsPage::ChannelOutput);
+                break;
         }
         return;
     }
 
-    if (navigation_.settingsPage == SettingsPage::UnifiedClock && navigation_.cursor == 5U) {
+    if (navigation_.settingsPage == SettingsPage::UnifiedClock) {
+        if (navigation_.cursor == 0U) {
+            openModeSelect(Screen::Settings);
+        } else if (navigation_.cursor == 1U) {
+            openSettingsPage(SettingsPage::UnifiedTiming);
+        } else {
+            openSettingsPage(SettingsPage::UnifiedOutput);
+        }
+        return;
+    }
+
+    if (navigation_.settingsPage == SettingsPage::ChannelTiming && navigation_.cursor == 4U) {
         openSettingsPage(SettingsPage::Groove);
         return;
     }
 
-    if ((navigation_.settingsPage == SettingsPage::UnifiedClock ||
-         navigation_.settingsPage == SettingsPage::DividerBank) &&
-        navigation_.cursor == 0U) {
+    if (navigation_.settingsPage == SettingsPage::UnifiedTiming && navigation_.cursor == 4U) {
+        openSettingsPage(SettingsPage::Groove);
+        return;
+    }
+
+    if (navigation_.settingsPage == SettingsPage::Sequencer && navigation_.cursor == 2U) {
+        openSettingsPage(SettingsPage::SequencerPattern);
+        return;
+    }
+
+    if (navigation_.settingsPage == SettingsPage::DividerBank && navigation_.cursor == 0U) {
         openModeSelect(Screen::Settings);
         return;
     }
 
-    if (navigation_.settingsPage == SettingsPage::UnifiedClock ||
-        navigation_.settingsPage == SettingsPage::DividerBank) {
+    if (navigation_.settingsPage == SettingsPage::DividerBank) {
         navigation_.editing = !navigation_.editing;
         invalidate();
         return;
     }
 
-    if (navigation_.settingsPage == SettingsPage::Sequencer && navigation_.cursor == 0U) {
+    if (navigation_.settingsPage == SettingsPage::SequencerPattern && navigation_.cursor == 0U) {
         navigation_.screen = Screen::SequencerEditor;
         navigation_.sequencerPage = 0U;
         navigation_.sequencerCursor = 0U;
@@ -306,7 +349,7 @@ void UiController::activateCurrentSetting() {
         return;
     }
 
-    if (navigation_.settingsPage == SettingsPage::Sequencer && navigation_.cursor >= 1U) {
+    if (navigation_.settingsPage == SettingsPage::SequencerPattern && navigation_.cursor >= 1U) {
         if (settingsEditor_.executeSequencerCommand(
                 navigation_.selectedChannel, navigation_.cursor)) {
             invalidate();
@@ -345,39 +388,19 @@ void UiController::confirmHighScoreClear(const std::uint32_t nowMs) {
 
 
 void UiController::normalizeScrollOffset() {
-    const bool groupedPage = navigation_.settingsPage == SettingsPage::Channel ||
-        navigation_.settingsPage == SettingsPage::UnifiedClock;
+    constexpr std::uint8_t kVisibleRows = 5U;
     const ChannelMode mode = state_.channels[navigation_.selectedChannel].common.mode;
     const std::uint8_t itemCount = settingsPageItemCount(
         navigation_.settingsPage, mode, navigation_.highScoreResetAvailable);
 
-    if (!groupedPage) {
-        constexpr std::uint8_t kVisibleRows = 5U;
-        if (navigation_.cursor < navigation_.scrollOffset) {
-            navigation_.scrollOffset = navigation_.cursor;
-        }
-        if (navigation_.cursor >= navigation_.scrollOffset + kVisibleRows) {
-            navigation_.scrollOffset = static_cast<std::uint8_t>(navigation_.cursor - (kVisibleRows - 1U));
-        }
-        if (itemCount <= kVisibleRows) {
-            navigation_.scrollOffset = 0U;
-        }
-        return;
-    }
-
     if (navigation_.cursor < navigation_.scrollOffset) {
         navigation_.scrollOffset = navigation_.cursor;
     }
-    while (navigation_.scrollOffset < itemCount) {
-        const std::uint8_t visibleRows = groupedSettingsVisibleItemCount(
-            navigation_.settingsPage, mode, navigation_.scrollOffset, itemCount);
-        if (visibleRows == 0U || navigation_.cursor < navigation_.scrollOffset + visibleRows) {
-            break;
-        }
-        ++navigation_.scrollOffset;
+    if (navigation_.cursor >= navigation_.scrollOffset + kVisibleRows) {
+        navigation_.scrollOffset = static_cast<std::uint8_t>(
+            navigation_.cursor - (kVisibleRows - 1U));
     }
-    if (groupedSettingsVisibleItemCount(
-            navigation_.settingsPage, mode, 0U, itemCount) == itemCount) {
+    if (itemCount <= kVisibleRows) {
         navigation_.scrollOffset = 0U;
     }
 }

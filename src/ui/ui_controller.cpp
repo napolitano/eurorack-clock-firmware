@@ -274,7 +274,7 @@ void UiController::handleResetButton(
     } else if (navigation_.screen == Screen::Settings) {
         backFromSettings();
     } else if (navigation_.screen == Screen::SequencerEditor) {
-        openSettingsPage(SettingsPage::Sequencer);
+        openSettingsPage(SettingsPage::SequencerPattern);
     } else if (navigation_.screen == Screen::Templates) {
         openSettingsPage(SettingsPage::Preferences);
     } else if (navigation_.screen == Screen::PresetSlots) {

@@ -79,9 +79,6 @@ private:
     /** @brief Adjusts STOP-mode screensaver and OLED timeout preferences. */
     void adjustScreensaver(std::uint8_t rowIndex, std::int8_t delta);
 
-    /** @brief Adjusts one row in the flattened priority-ordered Channel menu. */
-    void adjustFlatChannel(std::uint8_t channelIndex, std::uint8_t rowIndex, std::int8_t delta);
-
     /** @brief Adjusts one common channel-settings row. */
     void adjustCommonChannel(std::uint8_t channelIndex, std::uint8_t rowIndex, std::int8_t delta);
 
@@ -97,8 +94,11 @@ private:
     /** @brief Adjusts one SEQ-specific settings row. */
     void adjustSequencer(std::uint8_t channelIndex, std::uint8_t rowIndex, std::int8_t delta);
 
-    /** @brief Adjusts one shared eight-output clock setting. */
-    void adjustUnifiedClock(std::uint8_t rowIndex, std::int8_t delta);
+    /** @brief Adjusts one shared eight-output Timing setting. */
+    void adjustUnifiedTiming(std::uint8_t rowIndex, std::int8_t delta);
+
+    /** @brief Adjusts one shared eight-output Output setting. */
+    void adjustUnifiedOutput(std::uint8_t rowIndex, std::int8_t delta);
 
     /** @brief Adjusts the active global/per-channel Stage-1 Groove assignment. */
     void adjustGroove(std::uint8_t channelIndex, std::uint8_t rowIndex, std::int8_t delta);

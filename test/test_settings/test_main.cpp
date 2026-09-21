@@ -116,22 +116,22 @@ void testScreensaverDelayCannotExceedDimDelay(){ Harness h; h.state.display={Scr
 void testDimDelayCannotPrecedeScreensaver(){ Harness h; h.state.display={ScreensaverMode::Clock,4U,5U,10U}; h.editor.adjust(ui::SettingsPage::Screensaver,2U,0U,-127); TEST_ASSERT_EQUAL_UINT8(4U,h.state.display.dimAfterMinutes); }
 void testDimDelayCannotExceedOffDelay(){ Harness h; h.state.display={ScreensaverMode::Clock,2U,5U,6U}; h.editor.adjust(ui::SettingsPage::Screensaver,2U,0U,127); TEST_ASSERT_EQUAL_UINT8(6U,h.state.display.dimAfterMinutes); }
 void testOffDelayCannotPrecedeDimDelay(){ Harness h; h.state.display={ScreensaverMode::Clock,2U,7U,10U}; h.editor.adjust(ui::SettingsPage::Screensaver,3U,0U,-127); TEST_ASSERT_EQUAL_UINT8(7U,h.state.display.offAfterMinutes); }
-void testInvalidChannelIndexIsIgnored(){ Harness h; const auto before=h.state.channels[0]; h.editor.adjust(ui::SettingsPage::Channel,4U,99U,20); TEST_ASSERT_EQUAL_UINT8(before.common.swingPercent,h.state.channels[0].common.swingPercent); }
-void testChannelSwingClampsZeroToFifty(){ Harness h; h.editor.adjust(ui::SettingsPage::Channel,4U,0U,127); TEST_ASSERT_EQUAL_UINT8(50U,h.state.channels[0].common.swingPercent); h.editor.adjust(ui::SettingsPage::Channel,4U,0U,-127); TEST_ASSERT_EQUAL_UINT8(0U,h.state.channels[0].common.swingPercent); }
-void testChannelProbabilityClampsZeroToHundred(){ Harness h; h.editor.adjust(ui::SettingsPage::Channel,8U,0U,-127); TEST_ASSERT_EQUAL_UINT8(0U,h.state.channels[0].common.probabilityPercent); h.editor.adjust(ui::SettingsPage::Channel,8U,0U,127); TEST_ASSERT_EQUAL_UINT8(100U,h.state.channels[0].common.probabilityPercent); }
-void testChannelGateLengthUsesCuratedOptions(){ Harness h; h.state.channels[0].common.gateLengthMs=10U; h.editor.adjust(ui::SettingsPage::Channel,9U,0U,1); TEST_ASSERT_EQUAL_UINT32(20U,h.state.channels[0].common.gateLengthMs); }
-void testChannelPhaseClampsZeroToNinetyNine(){ Harness h; h.editor.adjust(ui::SettingsPage::Channel,10U,0U,127); TEST_ASSERT_EQUAL_UINT8(99U,h.state.channels[0].common.phasePercent); }
-void testChannelResetModeFollowsDeltaSign(){ Harness h; h.editor.adjust(ui::SettingsPage::Channel,11U,0U,1); TEST_ASSERT_EQUAL(ResetMode::Free,h.state.channels[0].common.resetMode); h.editor.adjust(ui::SettingsPage::Channel,11U,0U,-1); TEST_ASSERT_EQUAL(ResetMode::Global,h.state.channels[0].common.resetMode); }
-void testChannelMuteTogglesOncePerAdjustment(){ Harness h; TEST_ASSERT_FALSE(h.state.channels[0].common.muted); h.editor.adjust(ui::SettingsPage::Channel,12U,0U,1); TEST_ASSERT_TRUE(h.state.channels[0].common.muted); h.editor.adjust(ui::SettingsPage::Channel,12U,0U,1); TEST_ASSERT_FALSE(h.state.channels[0].common.muted); }
-void testRateFactorTraversesCuratedList(){ Harness h; h.state.channels[0].common.rate={ClockRatioMode::Multiply,1U,1U,1U}; h.editor.adjust(ui::SettingsPage::Channel,1U,0U,1); TEST_ASSERT_EQUAL_UINT8(2U,h.state.channels[0].common.rate.factor); }
-void testRateNumeratorClampsOneToSixteen(){ Harness h; h.editor.adjust(ui::SettingsPage::Channel,2U,0U,127); TEST_ASSERT_EQUAL_UINT8(16U,h.state.channels[0].common.rate.numerator); }
-void testRateDenominatorClampsOneToSixteen(){ Harness h; h.editor.adjust(ui::SettingsPage::Channel,3U,0U,-127); TEST_ASSERT_EQUAL_UINT8(1U,h.state.channels[0].common.rate.denominator); }
-void testClockMeterBeatsClampOneToSixteen(){ Harness h; h.state.channels[0].clock.meter.beats=4U; h.editor.adjust(ui::SettingsPage::Channel,6U,0U,127); TEST_ASSERT_EQUAL_UINT8(16U,h.state.channels[0].clock.meter.beats); }
-void testEuclidShrinkingStepsClampsHitsAndRotation(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Euclid; h.state.channels[0].euclid={16U,12U,15U}; h.editor.adjust(ui::SettingsPage::Channel,1U,0U,-12); TEST_ASSERT_EQUAL_UINT8(4U,h.state.channels[0].euclid.steps); TEST_ASSERT_EQUAL_UINT8(4U,h.state.channels[0].euclid.hits); TEST_ASSERT_EQUAL_UINT8(0U,h.state.channels[0].euclid.rotation); }
-void testEuclidHitsCannotExceedSteps(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Euclid; h.state.channels[0].euclid={7U,6U,0U}; h.editor.adjust(ui::SettingsPage::Channel,2U,0U,127); TEST_ASSERT_EQUAL_UINT8(7U,h.state.channels[0].euclid.hits); }
-void testEuclidRotationCannotExceedLastStep(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Euclid; h.state.channels[0].euclid={7U,3U,0U}; h.editor.adjust(ui::SettingsPage::Channel,3U,0U,127); TEST_ASSERT_EQUAL_UINT8(6U,h.state.channels[0].euclid.rotation); }
-void testSequencerLengthClampResetsInvalidRotation(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Sequencer; h.state.channels[0].sequencer={16U,15U,0xFFFFU}; h.editor.adjust(ui::SettingsPage::Channel,1U,0U,-12); TEST_ASSERT_EQUAL_UINT8(4U,h.state.channels[0].sequencer.length); TEST_ASSERT_EQUAL_UINT8(0U,h.state.channels[0].sequencer.rotation); }
-void testSequencerRotationClampsToLengthMinusOne(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Sequencer; h.state.channels[0].sequencer={8U,0U,1U}; h.editor.adjust(ui::SettingsPage::Channel,2U,0U,127); TEST_ASSERT_EQUAL_UINT8(7U,h.state.channels[0].sequencer.rotation); }
+void testInvalidChannelIndexIsIgnored(){ Harness h; const auto before=h.state.channels[0]; h.editor.adjust(ui::SettingsPage::ChannelTiming,3U,99U,20); TEST_ASSERT_EQUAL_UINT8(before.common.swingPercent,h.state.channels[0].common.swingPercent); }
+void testChannelSwingClampsZeroToFifty(){ Harness h; h.editor.adjust(ui::SettingsPage::ChannelTiming,3U,0U,127); TEST_ASSERT_EQUAL_UINT8(50U,h.state.channels[0].common.swingPercent); h.editor.adjust(ui::SettingsPage::ChannelTiming,3U,0U,-127); TEST_ASSERT_EQUAL_UINT8(0U,h.state.channels[0].common.swingPercent); }
+void testChannelProbabilityClampsZeroToHundred(){ Harness h; h.editor.adjust(ui::SettingsPage::ChannelOutput,0U,0U,-127); TEST_ASSERT_EQUAL_UINT8(0U,h.state.channels[0].common.probabilityPercent); h.editor.adjust(ui::SettingsPage::ChannelOutput,0U,0U,127); TEST_ASSERT_EQUAL_UINT8(100U,h.state.channels[0].common.probabilityPercent); }
+void testChannelGateLengthUsesCuratedOptions(){ Harness h; h.state.channels[0].common.gateLengthMs=10U; h.editor.adjust(ui::SettingsPage::ChannelOutput,1U,0U,1); TEST_ASSERT_EQUAL_UINT32(20U,h.state.channels[0].common.gateLengthMs); }
+void testChannelPhaseClampsZeroToNinetyNine(){ Harness h; h.editor.adjust(ui::SettingsPage::ChannelOutput,2U,0U,127); TEST_ASSERT_EQUAL_UINT8(99U,h.state.channels[0].common.phasePercent); }
+void testChannelResetModeFollowsDeltaSign(){ Harness h; h.editor.adjust(ui::SettingsPage::ChannelOutput,3U,0U,1); TEST_ASSERT_EQUAL(ResetMode::Free,h.state.channels[0].common.resetMode); h.editor.adjust(ui::SettingsPage::ChannelOutput,3U,0U,-1); TEST_ASSERT_EQUAL(ResetMode::Global,h.state.channels[0].common.resetMode); }
+void testChannelMuteTogglesOncePerAdjustment(){ Harness h; TEST_ASSERT_FALSE(h.state.channels[0].common.muted); h.editor.adjust(ui::SettingsPage::ChannelOutput,4U,0U,1); TEST_ASSERT_TRUE(h.state.channels[0].common.muted); h.editor.adjust(ui::SettingsPage::ChannelOutput,4U,0U,1); TEST_ASSERT_FALSE(h.state.channels[0].common.muted); }
+void testRateFactorTraversesCuratedList(){ Harness h; h.state.channels[0].common.rate={ClockRatioMode::Multiply,1U,1U,1U}; h.editor.adjust(ui::SettingsPage::ChannelTiming,0U,0U,1); TEST_ASSERT_EQUAL_UINT8(2U,h.state.channels[0].common.rate.factor); }
+void testRateNumeratorClampsOneToSixteen(){ Harness h; h.editor.adjust(ui::SettingsPage::ChannelTiming,1U,0U,127); TEST_ASSERT_EQUAL_UINT8(16U,h.state.channels[0].common.rate.numerator); }
+void testRateDenominatorClampsOneToSixteen(){ Harness h; h.editor.adjust(ui::SettingsPage::ChannelTiming,2U,0U,-127); TEST_ASSERT_EQUAL_UINT8(1U,h.state.channels[0].common.rate.denominator); }
+void testClockMeterBeatsClampOneToSixteen(){ Harness h; h.state.channels[0].clock.meter.beats=4U; h.editor.adjust(ui::SettingsPage::Clock,0U,0U,127); TEST_ASSERT_EQUAL_UINT8(16U,h.state.channels[0].clock.meter.beats); }
+void testEuclidShrinkingStepsClampsHitsAndRotation(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Euclid; h.state.channels[0].euclid={16U,12U,15U}; h.editor.adjust(ui::SettingsPage::Euclid,0U,0U,-12); TEST_ASSERT_EQUAL_UINT8(4U,h.state.channels[0].euclid.steps); TEST_ASSERT_EQUAL_UINT8(4U,h.state.channels[0].euclid.hits); TEST_ASSERT_EQUAL_UINT8(0U,h.state.channels[0].euclid.rotation); }
+void testEuclidHitsCannotExceedSteps(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Euclid; h.state.channels[0].euclid={7U,6U,0U}; h.editor.adjust(ui::SettingsPage::Euclid,1U,0U,127); TEST_ASSERT_EQUAL_UINT8(7U,h.state.channels[0].euclid.hits); }
+void testEuclidRotationCannotExceedLastStep(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Euclid; h.state.channels[0].euclid={7U,3U,0U}; h.editor.adjust(ui::SettingsPage::Euclid,2U,0U,127); TEST_ASSERT_EQUAL_UINT8(6U,h.state.channels[0].euclid.rotation); }
+void testSequencerLengthClampResetsInvalidRotation(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Sequencer; h.state.channels[0].sequencer={16U,15U,0xFFFFU}; h.editor.adjust(ui::SettingsPage::Sequencer,0U,0U,-12); TEST_ASSERT_EQUAL_UINT8(4U,h.state.channels[0].sequencer.length); TEST_ASSERT_EQUAL_UINT8(0U,h.state.channels[0].sequencer.rotation); }
+void testSequencerRotationClampsToLengthMinusOne(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Sequencer; h.state.channels[0].sequencer={8U,0U,1U}; h.editor.adjust(ui::SettingsPage::Sequencer,1U,0U,127); TEST_ASSERT_EQUAL_UINT8(7U,h.state.channels[0].sequencer.rotation); }
 void testSequencerToggleRejectsStepOutsideLength(){ Harness h; h.state.channels[0].sequencer={8U,0U,0x01U}; h.editor.toggleSequencerStep(0U,8U); TEST_ASSERT_EQUAL_UINT64(0x01U,h.state.channels[0].sequencer.pattern); }
 void testSequencerToggleFlipsValidStep(){ Harness h; h.state.channels[0].sequencer={8U,0U,0U}; h.editor.toggleSequencerStep(0U,3U); TEST_ASSERT_EQUAL_UINT64(0x08U,h.state.channels[0].sequencer.pattern); }
 void testSequencerPasteBeforeCopyIsRejected(){ Harness h; TEST_ASSERT_FALSE(h.editor.executeSequencerCommand(0U,5U)); }
@@ -142,21 +142,171 @@ void testIndependentGrooveEditorOwnsSelectedChannel(){ Harness h; h.state.operat
 void testGrooveAmountClampsZeroToHundred(){ Harness h; h.state.operatingMode=OperatingMode::UnifiedClock; h.editor.adjust(ui::SettingsPage::Groove,1U,0U,-127); TEST_ASSERT_EQUAL_UINT8(0U,h.state.unifiedClock.groove.amountPercent); h.editor.adjust(ui::SettingsPage::Groove,1U,0U,127); TEST_ASSERT_EQUAL_UINT8(100U,h.state.unifiedClock.groove.amountPercent); }
 void testGrooveRotationClampsToPatternLength(){ Harness h; h.state.operatingMode=OperatingMode::UnifiedClock; h.state.unifiedClock.groove.preset=GroovePreset::Swing54; h.editor.adjust(ui::SettingsPage::Groove,2U,0U,127); TEST_ASSERT_EQUAL_UINT8(1U,h.state.unifiedClock.groove.rotation); h.state.unifiedClock.groove.preset=GroovePreset::PocketC; h.editor.adjust(ui::SettingsPage::Groove,2U,0U,127); TEST_ASSERT_EQUAL_UINT8(15U,h.state.unifiedClock.groove.rotation); }
 void testGroovePresetChangeNormalizesRotation(){ Harness h; h.state.operatingMode=OperatingMode::UnifiedClock; h.state.unifiedClock.groove={GroovePreset::PocketC,100U,15U}; h.editor.adjust(ui::SettingsPage::Groove,0U,0U,-1); TEST_ASSERT_TRUE(h.state.unifiedClock.groove.rotation < 8U); }
-void testGrooveMenuShapeIsStable(){ Harness h; TEST_ASSERT_EQUAL_UINT8(13U,ui::settingsPageItemCount(ui::SettingsPage::Channel,ChannelMode::Clock,false)); TEST_ASSERT_EQUAL_UINT8(14U,ui::settingsPageItemCount(ui::SettingsPage::Channel,ChannelMode::Euclid,false)); TEST_ASSERT_EQUAL_UINT8(14U,ui::settingsPageItemCount(ui::SettingsPage::Channel,ChannelMode::Sequencer,false)); TEST_ASSERT_EQUAL_UINT8(1U,ui::settingsPageItemCount(ui::SettingsPage::Channel,ChannelMode::Off,false)); TEST_ASSERT_EQUAL_UINT8(9U,ui::settingsPageItemCount(ui::SettingsPage::UnifiedClock,ChannelMode::Clock,false)); TEST_ASSERT_EQUAL_UINT8(3U,ui::settingsPageItemCount(ui::SettingsPage::Groove,ChannelMode::Clock,false)); const auto row=ui::buildMenuRow(ui::SettingsPage::Groove,0U,0U,h.state); TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::GroovePreset),row.label)==0); TEST_ASSERT_TRUE(std::strcmp("OFF",row.value)==0); }
-void testFlatClockMenuPrioritizesTimingThenClockThenOutput(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Clock; TEST_ASSERT_TRUE(std::strcmp("DIV/MULT",ui::buildMenuRow(ui::SettingsPage::Channel,1U,0U,h.state).label)==0); TEST_ASSERT_TRUE(std::strcmp("GROOVE",ui::buildMenuRow(ui::SettingsPage::Channel,5U,0U,h.state).label)==0); TEST_ASSERT_TRUE(std::strcmp("METER BEATS",ui::buildMenuRow(ui::SettingsPage::Channel,6U,0U,h.state).label)==0); TEST_ASSERT_TRUE(std::strcmp("PROB",ui::buildMenuRow(ui::SettingsPage::Channel,8U,0U,h.state).label)==0); }
-void testFlatEuclidAndSequencerMenusPutModeParametersFirst(){ Harness h; h.state.channels[0].common.mode=ChannelMode::Euclid; TEST_ASSERT_TRUE(std::strcmp("STEPS",ui::buildMenuRow(ui::SettingsPage::Channel,1U,0U,h.state).label)==0); TEST_ASSERT_TRUE(std::strcmp("GROOVE",ui::buildMenuRow(ui::SettingsPage::Channel,8U,0U,h.state).label)==0); h.state.channels[0].common.mode=ChannelMode::Sequencer; TEST_ASSERT_TRUE(std::strcmp("LENGTH",ui::buildMenuRow(ui::SettingsPage::Channel,1U,0U,h.state).label)==0); TEST_ASSERT_TRUE(std::strcmp("PATTERN",ui::buildMenuRow(ui::SettingsPage::Channel,3U,0U,h.state).label)==0); TEST_ASSERT_TRUE(std::strcmp("GROOVE",ui::buildMenuRow(ui::SettingsPage::Channel,8U,0U,h.state).label)==0); }
-void testGroupedSettingsViewportReservesFourPixelSectionMargin(){
-    // MODE followed by a non-sticky TIMING heading consumes the real 4 px
-    // section margin, while a heading that starts the viewport is sticky.
-    TEST_ASSERT_EQUAL_UINT8(4U,ui::groupedSettingsVisibleItemCount(ui::SettingsPage::Channel,ChannelMode::Clock,0U,13U));
-    TEST_ASSERT_EQUAL_UINT8(5U,ui::groupedSettingsVisibleItemCount(ui::SettingsPage::Channel,ChannelMode::Clock,1U,13U));
-    TEST_ASSERT_EQUAL_UINT8(3U,ui::groupedSettingsVisibleItemCount(ui::SettingsPage::Channel,ChannelMode::Clock,5U,13U));
-    TEST_ASSERT_EQUAL_UINT8(3U,ui::groupedSettingsVisibleItemCount(ui::SettingsPage::Channel,ChannelMode::Clock,6U,13U));
-    TEST_ASSERT_EQUAL_UINT8(3U,ui::groupedSettingsVisibleItemCount(ui::SettingsPage::Channel,ChannelMode::Euclid,1U,14U));
-    TEST_ASSERT_EQUAL_UINT8(5U,ui::groupedSettingsVisibleItemCount(ui::SettingsPage::UnifiedClock,ChannelMode::Clock,1U,9U));
+void testGrooveMenuShapeIsStable(){
+    Harness h;
+    TEST_ASSERT_EQUAL_UINT8(4U,ui::settingsPageItemCount(ui::SettingsPage::Channel,ChannelMode::Clock,false));
+    TEST_ASSERT_EQUAL_UINT8(4U,ui::settingsPageItemCount(ui::SettingsPage::Channel,ChannelMode::Euclid,false));
+    TEST_ASSERT_EQUAL_UINT8(4U,ui::settingsPageItemCount(ui::SettingsPage::Channel,ChannelMode::Sequencer,false));
+    TEST_ASSERT_EQUAL_UINT8(1U,ui::settingsPageItemCount(ui::SettingsPage::Channel,ChannelMode::Off,false));
+    TEST_ASSERT_EQUAL_UINT8(5U,ui::settingsPageItemCount(ui::SettingsPage::ChannelTiming,ChannelMode::Clock,false));
+    TEST_ASSERT_EQUAL_UINT8(3U,ui::settingsPageItemCount(ui::SettingsPage::UnifiedClock,ChannelMode::Clock,false));
+    TEST_ASSERT_EQUAL_UINT8(6U,ui::settingsPageItemCount(ui::SettingsPage::UnifiedTiming,ChannelMode::Clock,false));
+    TEST_ASSERT_EQUAL_UINT8(3U,ui::settingsPageItemCount(ui::SettingsPage::Groove,ChannelMode::Clock,false));
+    const auto row=ui::buildMenuRow(ui::SettingsPage::Groove,0U,0U,h.state);
+    TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::GroovePreset),row.label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("OFF",row.value)==0);
 }
-void testUnifiedClockSwingClampsAtFifty(){ Harness h; h.editor.adjust(ui::SettingsPage::UnifiedClock,4U,0U,127); TEST_ASSERT_EQUAL_UINT8(50U,h.state.unifiedClock.swingPercent); }
-void testUnifiedClockHumanizeUsesCuratedOptions(){ Harness h; h.state.unifiedClock.humanizeUs=0U; h.editor.adjust(ui::SettingsPage::UnifiedClock,6U,0U,4); TEST_ASSERT_EQUAL_UINT32(2000U,h.state.unifiedClock.humanizeUs); }
+
+void testChannelRootUsesModeAwareGroupPriority(){
+    Harness h;
+    h.state.channels[0].common.mode=ChannelMode::Clock;
+    TEST_ASSERT_TRUE(std::strcmp("MODE",ui::buildMenuRow(ui::SettingsPage::Channel,0U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("TIMING",ui::buildMenuRow(ui::SettingsPage::Channel,1U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("CLOCK",ui::buildMenuRow(ui::SettingsPage::Channel,2U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("OUTPUT",ui::buildMenuRow(ui::SettingsPage::Channel,3U,0U,h.state).label)==0);
+    h.state.channels[0].common.mode=ChannelMode::Euclid;
+    TEST_ASSERT_TRUE(std::strcmp("EUCLID",ui::buildMenuRow(ui::SettingsPage::Channel,1U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("TIMING",ui::buildMenuRow(ui::SettingsPage::Channel,2U,0U,h.state).label)==0);
+    h.state.channels[0].common.mode=ChannelMode::Sequencer;
+    TEST_ASSERT_TRUE(std::strcmp("SEQUENCER",ui::buildMenuRow(ui::SettingsPage::Channel,1U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("TIMING",ui::buildMenuRow(ui::SettingsPage::Channel,2U,0U,h.state).label)==0);
+}
+
+void testNestedGroupPagesExposeFormerGroupedParameters(){
+    Harness h;
+    TEST_ASSERT_TRUE(std::strcmp("DIV/MULT",ui::buildMenuRow(ui::SettingsPage::ChannelTiming,0U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("GROOVE",ui::buildMenuRow(ui::SettingsPage::ChannelTiming,4U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("PROB",ui::buildMenuRow(ui::SettingsPage::ChannelOutput,0U,0U,h.state).label)==0);
+    h.state.channels[0].common.mode=ChannelMode::Sequencer;
+    TEST_ASSERT_TRUE(std::strcmp("LENGTH",ui::buildMenuRow(ui::SettingsPage::Sequencer,0U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("PATTERN",ui::buildMenuRow(ui::SettingsPage::Sequencer,2U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("EDITOR",ui::buildMenuRow(ui::SettingsPage::SequencerPattern,0U,0U,h.state).label)==0);
+    h.state.operatingMode=OperatingMode::UnifiedClock;
+    TEST_ASSERT_TRUE(std::strcmp("TIMING",ui::buildMenuRow(ui::SettingsPage::UnifiedClock,1U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("OUTPUT",ui::buildMenuRow(ui::SettingsPage::UnifiedClock,2U,0U,h.state).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("HUMANIZE",ui::buildMenuRow(ui::SettingsPage::UnifiedTiming,5U,0U,h.state).label)==0);
+}
+
+void testAllSettingsPageTitlesAndCountsAreReachable(){
+    constexpr ui::SettingsPage pages[] = {
+        ui::SettingsPage::Root, ui::SettingsPage::General, ui::SettingsPage::Diagnostics,
+        ui::SettingsPage::DiagnosticsInputs, ui::SettingsPage::DiagnosticsOutputs, ui::SettingsPage::Master,
+        ui::SettingsPage::Sync, ui::SettingsPage::Preferences, ui::SettingsPage::Screensaver,
+        ui::SettingsPage::Info, ui::SettingsPage::Licenses, ui::SettingsPage::Updates,
+        ui::SettingsPage::Channel, ui::SettingsPage::ChannelTiming, ui::SettingsPage::ChannelOutput,
+        ui::SettingsPage::Clock, ui::SettingsPage::Euclid, ui::SettingsPage::Sequencer,
+        ui::SettingsPage::SequencerPattern, ui::SettingsPage::UnifiedClock,
+        ui::SettingsPage::UnifiedTiming, ui::SettingsPage::UnifiedOutput,
+        ui::SettingsPage::Groove, ui::SettingsPage::DividerBank};
+    for (const auto page : pages) {
+        TEST_ASSERT_TRUE(ui::settingsPageTitle(page) != nullptr);
+        (void)ui::settingsPageItemCount(page, ChannelMode::Clock, false);
+    }
+    TEST_ASSERT_EQUAL_UINT8(6U, ui::settingsPageItemCount(ui::SettingsPage::Root, ChannelMode::Clock, true));
+    TEST_ASSERT_EQUAL_UINT8(0U, ui::settingsPageItemCount(static_cast<ui::SettingsPage>(255), ChannelMode::Clock, false));
+    TEST_ASSERT_TRUE(std::strlen(ui::settingsPageTitle(static_cast<ui::SettingsPage>(255))) > 0U);
+}
+
+void testAllChannelRootRowsAreReachable(){
+    Harness h;
+    constexpr ChannelMode modes[] = {ChannelMode::Clock, ChannelMode::Euclid, ChannelMode::Sequencer, ChannelMode::Off};
+    for (const auto mode : modes) {
+        h.state.channels[0].common.mode = mode;
+        const std::uint8_t count = ui::settingsPageItemCount(ui::SettingsPage::Channel, mode, false);
+        for (std::uint8_t row = 0U; row < count; ++row) {
+            const auto menuRow = ui::buildMenuRow(ui::SettingsPage::Channel, row, 0U, h.state);
+            TEST_ASSERT_TRUE(std::strlen(menuRow.label) > 0U);
+            (void)ui::channelMenuAction(mode, row);
+        }
+    }
+    TEST_ASSERT_EQUAL_UINT8(
+        0U, ui::channelMenuIndexForAction(ChannelMode::Off, ui::ChannelMenuAction::Timing));
+}
+
+void testGrooveMenuRowsAndNoOpBranchesAreReachable(){
+    Harness h;
+    h.state.operatingMode = OperatingMode::UnifiedClock;
+    h.state.unifiedClock.groove = {GroovePreset::PocketC, 73U, 5U};
+    for (std::uint8_t row = 0U; row < 3U; ++row) {
+        const auto menuRow = ui::buildMenuRow(ui::SettingsPage::Groove, row, 0U, h.state);
+        TEST_ASSERT_TRUE(std::strlen(menuRow.label) > 0U);
+        TEST_ASSERT_TRUE(std::strlen(menuRow.value) > 0U);
+    }
+    const auto before = h.state.unifiedClock.groove;
+    h.editor.adjust(ui::SettingsPage::Groove, 99U, 0U, 1);
+    TEST_ASSERT_EQUAL(before.preset, h.state.unifiedClock.groove.preset);
+    TEST_ASSERT_EQUAL_UINT8(before.amountPercent, h.state.unifiedClock.groove.amountPercent);
+    TEST_ASSERT_EQUAL_UINT8(before.rotation, h.state.unifiedClock.groove.rotation);
+    h.state.operatingMode = OperatingMode::Independent;
+    h.state.channels[2].common.groove = {GroovePreset::PocketA, 44U, 2U};
+    for (std::uint8_t row = 0U; row < 3U; ++row) {
+        const auto menuRow = ui::buildMenuRow(ui::SettingsPage::Groove, row, 2U, h.state);
+        TEST_ASSERT_TRUE(std::strlen(menuRow.label) > 0U);
+    }
+}
+
+
+void testChannelHierarchyFallbacksAndActionLookupAreReachable(){
+    constexpr ChannelMode modes[] = {ChannelMode::Clock, ChannelMode::Euclid, ChannelMode::Sequencer};
+    constexpr ui::ChannelMenuAction actions[] = {
+        ui::ChannelMenuAction::Mode, ui::ChannelMenuAction::Timing, ui::ChannelMenuAction::Clock,
+        ui::ChannelMenuAction::Euclid, ui::ChannelMenuAction::Sequencer, ui::ChannelMenuAction::Output};
+    for (const auto mode : modes) {
+        TEST_ASSERT_EQUAL(ui::ChannelMenuAction::Mode, ui::channelMenuAction(mode, 99U));
+        for (const auto action : actions) {
+            const auto index = ui::channelMenuIndexForAction(mode, action);
+            TEST_ASSERT_TRUE(index < ui::channelMenuItemCount(mode));
+        }
+    }
+}
+
+void testMenuModelConditionalRowsCoverBothStates(){
+    Harness h;
+    auto row = ui::buildMenuRow(ui::SettingsPage::Root, 4U, 0U, h.state, true);
+    TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::HighScores), row.label) == 0);
+    row = ui::buildMenuRow(ui::SettingsPage::Root, 4U, 0U, h.state, false);
+    TEST_ASSERT_TRUE(std::strlen(row.label) > 0U);
+
+    h.state.device.encoderDirectionReversed = true;
+    row = ui::buildMenuRow(ui::SettingsPage::General, 4U, 0U, h.state);
+    TEST_ASSERT_TRUE(std::strlen(row.value) > 0U);
+    h.state.device.encoderDirectionReversed = false;
+    (void)ui::buildMenuRow(ui::SettingsPage::General, 4U, 0U, h.state);
+    h.state.device.displayRotated180 = true;
+    (void)ui::buildMenuRow(ui::SettingsPage::General, 5U, 0U, h.state);
+    h.state.device.displayRotated180 = false;
+    (void)ui::buildMenuRow(ui::SettingsPage::General, 5U, 0U, h.state);
+}
+
+void testGrooveOffRotationFormattingCoversZeroLength(){
+    Harness h;
+    h.state.channels[0].common.groove = {GroovePreset::Off, 100U, 0U};
+    const auto row = ui::buildMenuRow(ui::SettingsPage::Groove, 2U, 0U, h.state);
+    TEST_ASSERT_TRUE(std::strcmp("0/0", row.value) == 0);
+}
+
+void testEditorDefensiveAndSearchBranchesAreReachable(){
+    Harness h;
+    const bool encoderBefore = h.state.device.encoderDirectionReversed;
+    h.editor.adjust(ui::SettingsPage::General, 4U, 0U, 0);
+    TEST_ASSERT_EQUAL(encoderBefore, h.state.device.encoderDirectionReversed);
+
+    h.state.display.screensaverMode = ScreensaverMode::Matrix;
+    h.editor.adjust(ui::SettingsPage::Screensaver, 0U, 0U, 1);
+    TEST_ASSERT_EQUAL(ScreensaverMode::CubeCover, h.state.display.screensaverMode);
+
+    h.state.unifiedClock.humanizeUs = 2000U;
+    h.editor.adjust(ui::SettingsPage::UnifiedTiming, 5U, 0U, -1);
+    TEST_ASSERT_EQUAL_UINT32(1000U, h.state.unifiedClock.humanizeUs);
+
+    const auto grooveBefore = h.state.channels[0].common.groove;
+    h.editor.adjust(ui::SettingsPage::ChannelTiming, 4U, 0U, 1);
+    TEST_ASSERT_EQUAL(grooveBefore.preset, h.state.channels[0].common.groove.preset);
+    h.editor.adjust(ui::SettingsPage::UnifiedTiming, 4U, 0U, 1);
+}
+
+void testUnifiedClockSwingClampsAtFifty(){ Harness h; h.editor.adjust(ui::SettingsPage::UnifiedTiming,3U,0U,127); TEST_ASSERT_EQUAL_UINT8(50U,h.state.unifiedClock.swingPercent); }
+void testUnifiedClockHumanizeUsesCuratedOptions(){ Harness h; h.state.unifiedClock.humanizeUs=0U; h.editor.adjust(ui::SettingsPage::UnifiedTiming,5U,0U,4); TEST_ASSERT_EQUAL_UINT32(2000U,h.state.unifiedClock.humanizeUs); }
 void testDividerBankClampsAtPrimes(){ Harness h; h.state.dividerBank.bank=DividerBank::PowersOfTwo; h.editor.adjust(ui::SettingsPage::DividerBank,1U,0U,127); TEST_ASSERT_EQUAL(DividerBank::Primes,h.state.dividerBank.bank); }
 void testDividerBankGateLengthUsesCuratedOptions(){ Harness h; h.state.dividerBank.gateLengthMs=10U; h.editor.adjust(ui::SettingsPage::DividerBank,2U,0U,1); TEST_ASSERT_EQUAL_UINT32(20U,h.state.dividerBank.gateLengthMs); }
 void testNonEditablePageDoesNotChangeTempo(){ Harness h; const auto before=h.state.bpm; h.editor.adjust(ui::SettingsPage::Info,0U,0U,127); TEST_ASSERT_EQUAL_UINT32(before,h.state.bpm); }
@@ -178,7 +328,8 @@ int main(){
     RUN_TEST(testRateFactorTraversesCuratedList); RUN_TEST(testRateNumeratorClampsOneToSixteen); RUN_TEST(testRateDenominatorClampsOneToSixteen); RUN_TEST(testClockMeterBeatsClampOneToSixteen);
     RUN_TEST(testEuclidShrinkingStepsClampsHitsAndRotation); RUN_TEST(testEuclidHitsCannotExceedSteps); RUN_TEST(testEuclidRotationCannotExceedLastStep);
     RUN_TEST(testSequencerLengthClampResetsInvalidRotation); RUN_TEST(testSequencerRotationClampsToLengthMinusOne); RUN_TEST(testSequencerToggleRejectsStepOutsideLength); RUN_TEST(testSequencerToggleFlipsValidStep); RUN_TEST(testSequencerPasteBeforeCopyIsRejected); RUN_TEST(testSequencerCopyPasteClampsPatternToTargetLength);
-    RUN_TEST(testGrooveDefaultsOffAtFullAmount); RUN_TEST(testUnifiedGrooveEditorOwnsGlobalSettings); RUN_TEST(testIndependentGrooveEditorOwnsSelectedChannel); RUN_TEST(testGrooveAmountClampsZeroToHundred); RUN_TEST(testGrooveRotationClampsToPatternLength); RUN_TEST(testGroovePresetChangeNormalizesRotation); RUN_TEST(testGrooveMenuShapeIsStable); RUN_TEST(testFlatClockMenuPrioritizesTimingThenClockThenOutput); RUN_TEST(testFlatEuclidAndSequencerMenusPutModeParametersFirst); RUN_TEST(testGroupedSettingsViewportReservesFourPixelSectionMargin);
+    RUN_TEST(testGrooveDefaultsOffAtFullAmount); RUN_TEST(testUnifiedGrooveEditorOwnsGlobalSettings); RUN_TEST(testIndependentGrooveEditorOwnsSelectedChannel); RUN_TEST(testGrooveAmountClampsZeroToHundred); RUN_TEST(testGrooveRotationClampsToPatternLength); RUN_TEST(testGroovePresetChangeNormalizesRotation); RUN_TEST(testGrooveMenuShapeIsStable); RUN_TEST(testChannelRootUsesModeAwareGroupPriority); RUN_TEST(testNestedGroupPagesExposeFormerGroupedParameters);
+    RUN_TEST(testAllSettingsPageTitlesAndCountsAreReachable); RUN_TEST(testAllChannelRootRowsAreReachable); RUN_TEST(testGrooveMenuRowsAndNoOpBranchesAreReachable); RUN_TEST(testChannelHierarchyFallbacksAndActionLookupAreReachable); RUN_TEST(testMenuModelConditionalRowsCoverBothStates); RUN_TEST(testGrooveOffRotationFormattingCoversZeroLength); RUN_TEST(testEditorDefensiveAndSearchBranchesAreReachable);
     RUN_TEST(testUnifiedClockSwingClampsAtFifty); RUN_TEST(testUnifiedClockHumanizeUsesCuratedOptions); RUN_TEST(testDividerBankClampsAtPrimes); RUN_TEST(testDividerBankGateLengthUsesCuratedOptions); RUN_TEST(testNonEditablePageDoesNotChangeTempo);
     return UNITY_END();
 }

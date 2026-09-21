@@ -12,12 +12,13 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Changed
 
-- Refined flat grouped settings typography: section headings and option labels now share the same left text anchor, the cursor owns a separate gutter, and section headings use a full-width one-pixel underline instead of an inline rule. The existing 4 px section margin remains unchanged except for sticky headings at the top of the viewport.
+- Reworked Channel/One Clock settings from the interim flat section list into one deliberate hierarchy level per musical group. Clock/One Clock prioritize `TIMING >`, Euclid and Sequencer prioritize their mode page, and `OUTPUT >` remains last; the Channel root therefore stays short while preserving the same importance ordering.
+- Keep focused second-level tools where they carry real complexity: `GROOVE >` lives inside `TIMING >`, and Sequencer `PATTERN >` lives inside `SEQUENCER >`. BACK restores the originating group/cursor instead of returning to an unrelated default row.
 
 ### Fixed
 
 - Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v10 2,783-byte repeated-state footprint and 32-byte in-place growth ceiling.
-- Updated development and coverage documentation to the current 443-case Native inventory.
+- Updated development and coverage documentation to the current 450-case Native inventory.
 
 ### Groove Engine Stage 1
 
@@ -28,13 +29,10 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Advance persistence to schema v10 while preserving the complete v9 payload as a migration prefix; migrated v9 and older states inject Groove `OFF`, amount 100%, rotation 0.
 - Add Groove timing, ownership, menu, clamp, persistence and migration regressions.
 - Show the active groove as `G:<preset>` on the Performance screen: lower-left for Clock/One Clock and directly above the Euclid/Sequencer pattern strip; hide the label for `OFF` or 0% Amount.
-- Flatten per-channel settings into priority-ordered, sectioned menus: Clock/One Clock start with Timing, Euclid and Sequencer start with their mode-specific controls, and Output controls remain last.
-- Remove the extra `RATE >` and `CLOCK >` navigation layers by editing rate, polyrhythm and meter values directly in the channel menu. Keep `GROOVE >` as a focused timing submenu and `PATTERN >` as the Sequencer editor/operation submenu.
-- Render `TIMING`, mode-specific and `OUTPUT` section headings as non-selectable orientation labels so grouping costs no encoder click.
-- Add navigation, menu-order and framebuffer regressions for the flattened hierarchy and active-groove Performance label.
-- Rework grouped settings rendering around a six-line visual budget: section headings and parameter rows now use the same 9-pixel baseline spacing, eliminating heading/row overlap while using the previously idle final text line.
-- Make grouped-menu scrolling line-budget aware so section transitions never push a heading or selected row below the 64-pixel viewport; add regression coverage for Clock, Euclid and One Clock viewport capacity.
-- Give non-sticky section headings a true 4-pixel top margin while keeping a scrolled sticky heading flush with the top of the settings viewport; keep the viewport calculation pixel-accurate and cover both states with framebuffer regressions.
+- Group Channel settings into explicit `TIMING >`, mode-specific (`CLOCK >` / `EUCLID >` / `SEQUENCER >`) and `OUTPUT >` pages, ordered by musical relevance instead of exposing one long flat parameter list.
+- Keep rate, polyrhythm, Swing and Groove together under `TIMING >`; keep meter under `CLOCK >`, Euclid pattern controls under `EUCLID >`, and Sequencer length/rotation plus `PATTERN >` under `SEQUENCER >`.
+- Add navigation and return-cursor regressions for every group entry/exit path, including `GROOVE >` returning to Timing and `PATTERN >` returning to Sequencer.
+- Expand the Settings/complete-firmware regressions around the hierarchical menu paths and restore the hard repository-wide decision-branch coverage gate without reducing its 90% threshold.
 
 ### Pre-Count display
 

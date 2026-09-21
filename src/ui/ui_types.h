@@ -44,11 +44,15 @@ enum class SettingsPage : std::uint8_t {
     Licenses,
     Updates,
     Channel,
-    Rate,
+    ChannelTiming,
+    ChannelOutput,
     Clock,
     Euclid,
     Sequencer,
+    SequencerPattern,
     UnifiedClock,
+    UnifiedTiming,
+    UnifiedOutput,
     Groove,
     DividerBank
 };

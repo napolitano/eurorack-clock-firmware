@@ -167,37 +167,13 @@ void SettingsRenderer::renderSettings(
     const ChannelMode channelMode = state.channels[navigation.selectedChannel].common.mode;
     const std::uint8_t itemCount = settingsPageItemCount(
         navigation.settingsPage, channelMode, navigation.highScoreResetAvailable);
-    const bool groupedPage = navigation.settingsPage == SettingsPage::Channel ||
-        navigation.settingsPage == SettingsPage::UnifiedClock;
-    const std::uint8_t visibleRows = groupedPage
-        ? groupedSettingsVisibleItemCount(navigation.settingsPage, channelMode, navigation.scrollOffset, itemCount)
-        : kVisibleSettingsRows;
+    const std::uint8_t visibleRows = kVisibleSettingsRows;
     std::int16_t y = 11;
-    SettingsSection renderedSection = SettingsSection::None;
 
     for (std::uint8_t visibleRow = 0U; visibleRow < visibleRows; ++visibleRow) {
         const std::uint8_t rowIndex = navigation.scrollOffset + visibleRow;
         if (rowIndex >= itemCount) {
             break;
-        }
-
-        if (groupedPage) {
-            const SettingsSection section = settingsRowSection(
-                navigation.settingsPage, channelMode, rowIndex);
-            if (section != SettingsSection::None && section != renderedSection) {
-                if (visibleRow > 0U) {
-                    y = static_cast<std::int16_t>(y + 2);  // 4 px total above non-sticky heading.
-                }
-                constexpr std::int16_t kSettingsTextX = 6;
-                constexpr std::int16_t kSettingsRightX = 123;
-                display_.drawText(kSettingsTextX, y, settingsSectionLabel(section));
-                display_.drawHorizontalLine(
-                    kSettingsTextX,
-                    static_cast<std::int16_t>(y + 7),
-                    static_cast<std::int16_t>(kSettingsRightX - kSettingsTextX + 1));
-                y = static_cast<std::int16_t>(y + 9);
-                renderedSection = section;
-            }
         }
         const MenuRow row = buildMenuRow(
             navigation.settingsPage,
@@ -223,7 +199,7 @@ void SettingsRenderer::renderSettings(
                 display_.drawText(valueX, y, row.value);
             }
         }
-        y = static_cast<std::int16_t>(y + (groupedPage ? 9 : 10));
+        y = static_cast<std::int16_t>(y + 10);
     }
     if (itemCount > visibleRows) {
         constexpr std::int16_t kScrollY = 11;

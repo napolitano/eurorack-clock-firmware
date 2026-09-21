@@ -39,12 +39,16 @@ settings-screensaver	Screensaver settings
 settings-info	Firmware information
 settings-licenses	Licensing information
 settings-updates	Scannable update QR code
-settings-channel	Selected-channel settings
-settings-rate	Selected-channel rate settings
+settings-channel	Selected-channel group menu
+settings-timing	Selected-channel Timing settings
+settings-output	Selected-channel Output settings
 settings-clock	Clock generator settings
 settings-euclid	Euclid generator settings
 settings-sequencer	Sequencer settings
-settings-one-clock	One Clock settings
+settings-sequencer-pattern	Sequencer pattern operations
+settings-one-clock	One Clock group menu
+settings-one-clock-timing	One Clock Timing settings
+settings-one-clock-output	One Clock Output settings
 settings-divider-bank	Divider Bank settings
 settings-editing	Settings value while actively editing
 preset-load	User preset load list

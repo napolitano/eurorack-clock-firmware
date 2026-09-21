@@ -305,7 +305,7 @@ private:
     }
 
     void renderSettingsStates() {
-        constexpr std::array<ui::SettingsPage, 16U> kPages{{
+        constexpr std::array<ui::SettingsPage, 20U> kPages{{
             ui::SettingsPage::Root,
             ui::SettingsPage::General,
             ui::SettingsPage::Master,
@@ -316,13 +316,17 @@ private:
             ui::SettingsPage::Licenses,
             ui::SettingsPage::Updates,
             ui::SettingsPage::Channel,
-            ui::SettingsPage::Rate,
+            ui::SettingsPage::ChannelTiming,
+            ui::SettingsPage::ChannelOutput,
             ui::SettingsPage::Clock,
             ui::SettingsPage::Euclid,
             ui::SettingsPage::Sequencer,
+            ui::SettingsPage::SequencerPattern,
             ui::SettingsPage::UnifiedClock,
+            ui::SettingsPage::UnifiedTiming,
+            ui::SettingsPage::UnifiedOutput,
             ui::SettingsPage::DividerBank}};
-        constexpr std::array<const char*, 16U> kNames{{
+        constexpr std::array<const char*, 20U> kNames{{
             "settings-root",
             "settings-general",
             "settings-master",
@@ -333,13 +337,17 @@ private:
             "settings-licenses",
             "settings-updates",
             "settings-channel",
-            "settings-rate",
+            "settings-timing",
+            "settings-output",
             "settings-clock",
             "settings-euclid",
             "settings-sequencer",
+            "settings-sequencer-pattern",
             "settings-one-clock",
+            "settings-one-clock-timing",
+            "settings-one-clock-output",
             "settings-divider-bank"}};
-        constexpr std::array<const char*, 16U> kDescriptions{{
+        constexpr std::array<const char*, 20U> kDescriptions{{
             "Settings root",
             "General settings",
             "Master clock settings",
@@ -349,14 +357,17 @@ private:
             "Firmware information",
             "Licensing information",
             "Scannable update QR code",
-            "Selected-channel settings",
-            "Selected-channel rate settings",
+            "Selected-channel group menu",
+            "Selected-channel Timing settings",
+            "Selected-channel Output settings",
             "Clock generator settings",
             "Euclid generator settings",
             "Sequencer settings",
-            "One Clock settings",
+            "Sequencer pattern operations",
+            "One Clock group menu",
+            "One Clock Timing settings",
+            "One Clock Output settings",
             "Divider Bank settings"}};
-
         for (std::size_t index = 0U; index < kPages.size(); ++index) {
             reset();
             navigation_.screen = ui::Screen::Settings;
@@ -374,17 +385,21 @@ private:
                 navigation_.scrollOffset = 3U;
             }
             if (kPages[index] == ui::SettingsPage::Channel ||
-                kPages[index] == ui::SettingsPage::Rate ||
+                kPages[index] == ui::SettingsPage::ChannelTiming ||
+                kPages[index] == ui::SettingsPage::ChannelOutput ||
                 kPages[index] == ui::SettingsPage::Clock ||
                 kPages[index] == ui::SettingsPage::Euclid ||
-                kPages[index] == ui::SettingsPage::Sequencer) {
+                kPages[index] == ui::SettingsPage::Sequencer ||
+                kPages[index] == ui::SettingsPage::SequencerPattern) {
                 state_.operatingMode = OperatingMode::Independent;
             }
             if (kPages[index] == ui::SettingsPage::Euclid) {
                 state_.channels[0].common.mode = ChannelMode::Euclid;
             } else if (kPages[index] == ui::SettingsPage::Sequencer) {
                 state_.channels[0].common.mode = ChannelMode::Sequencer;
-            } else if (kPages[index] == ui::SettingsPage::UnifiedClock) {
+            } else if (kPages[index] == ui::SettingsPage::UnifiedClock ||
+                       kPages[index] == ui::SettingsPage::UnifiedTiming ||
+                       kPages[index] == ui::SettingsPage::UnifiedOutput) {
                 state_.operatingMode = OperatingMode::UnifiedClock;
                 state_.unifiedClock.humanizeUs = 1000U;
             } else if (kPages[index] == ui::SettingsPage::DividerBank) {

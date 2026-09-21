@@ -1,6 +1,6 @@
 /**
  * @file menu_model_channel.cpp
- * @brief Flat priority-ordered channel settings model and visual section metadata.
+ * @brief Compact mode-aware channel settings hierarchy.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -25,13 +25,7 @@ void copyText(char* const destination, const std::size_t size, const text::TextI
 }  // namespace
 
 std::uint8_t channelMenuItemCount(const ChannelMode mode) {
-    switch (mode) {
-        case ChannelMode::Off: return 1U;
-        case ChannelMode::Clock: return 13U;
-        case ChannelMode::Euclid:
-        case ChannelMode::Sequencer: return 14U;
-        default: return 1U;
-    }
+    return mode == ChannelMode::Off ? 1U : 4U;
 }
 
 ChannelMenuAction channelMenuAction(const ChannelMode mode, const std::uint8_t rowIndex) {
@@ -42,56 +36,27 @@ ChannelMenuAction channelMenuAction(const ChannelMode mode, const std::uint8_t r
     if (mode == ChannelMode::Clock) {
         constexpr ChannelMenuAction kActions[] = {
             ChannelMenuAction::Mode,
-            ChannelMenuAction::Rate,
-            ChannelMenuAction::PolyNumerator,
-            ChannelMenuAction::PolyDenominator,
-            ChannelMenuAction::Swing,
-            ChannelMenuAction::Groove,
-            ChannelMenuAction::MeterBeats,
-            ChannelMenuAction::MeterUnit,
-            ChannelMenuAction::Probability,
-            ChannelMenuAction::Gate,
-            ChannelMenuAction::Phase,
-            ChannelMenuAction::Reset,
-            ChannelMenuAction::Mute};
-        return kActions[rowIndex < 13U ? rowIndex : 0U];
+            ChannelMenuAction::Timing,
+            ChannelMenuAction::Clock,
+            ChannelMenuAction::Output};
+        return kActions[rowIndex < 4U ? rowIndex : 0U];
     }
 
     if (mode == ChannelMode::Euclid) {
         constexpr ChannelMenuAction kActions[] = {
             ChannelMenuAction::Mode,
-            ChannelMenuAction::EuclidSteps,
-            ChannelMenuAction::EuclidHits,
-            ChannelMenuAction::EuclidRotate,
-            ChannelMenuAction::Rate,
-            ChannelMenuAction::PolyNumerator,
-            ChannelMenuAction::PolyDenominator,
-            ChannelMenuAction::Swing,
-            ChannelMenuAction::Groove,
-            ChannelMenuAction::Probability,
-            ChannelMenuAction::Gate,
-            ChannelMenuAction::Phase,
-            ChannelMenuAction::Reset,
-            ChannelMenuAction::Mute};
-        return kActions[rowIndex < 14U ? rowIndex : 0U];
+            ChannelMenuAction::Euclid,
+            ChannelMenuAction::Timing,
+            ChannelMenuAction::Output};
+        return kActions[rowIndex < 4U ? rowIndex : 0U];
     }
 
     constexpr ChannelMenuAction kActions[] = {
         ChannelMenuAction::Mode,
-        ChannelMenuAction::SequencerLength,
-        ChannelMenuAction::SequencerRotate,
-        ChannelMenuAction::SequencerPattern,
-        ChannelMenuAction::Rate,
-        ChannelMenuAction::PolyNumerator,
-        ChannelMenuAction::PolyDenominator,
-        ChannelMenuAction::Swing,
-        ChannelMenuAction::Groove,
-        ChannelMenuAction::Probability,
-        ChannelMenuAction::Gate,
-        ChannelMenuAction::Phase,
-        ChannelMenuAction::Reset,
-        ChannelMenuAction::Mute};
-    return kActions[rowIndex < 14U ? rowIndex : 0U];
+        ChannelMenuAction::Sequencer,
+        ChannelMenuAction::Timing,
+        ChannelMenuAction::Output};
+    return kActions[rowIndex < 4U ? rowIndex : 0U];
 }
 
 std::uint8_t channelMenuIndexForAction(
@@ -106,7 +71,7 @@ std::uint8_t channelMenuIndexForAction(
     return 0U;
 }
 
-MenuRow buildFlatChannelMenuRow(
+MenuRow buildChannelMenuRow(
     const std::uint8_t rowIndex,
     const ChannelConfig& channel) {
     MenuRow row{};
@@ -115,172 +80,187 @@ MenuRow buildFlatChannelMenuRow(
     switch (action) {
         case ChannelMenuAction::Mode:
             copyText(row.label, sizeof(row.label), text::TextId::Mode);
-            std::snprintf(row.value, sizeof(row.value), "%s", channelModeLongLabel(channel.common.mode));
+            std::snprintf(
+                row.value,
+                sizeof(row.value),
+                "%s",
+                channelModeLongLabel(channel.common.mode));
             break;
-        case ChannelMenuAction::Rate:
-            copyText(row.label, sizeof(row.label), text::TextId::DivideMultiply);
-            formatRate(channel.common, row.value, sizeof(row.value));
-            break;
-        case ChannelMenuAction::PolyNumerator:
-            copyText(row.label, sizeof(row.label), text::TextId::PolyNumerator);
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.common.rate.numerator);
-            break;
-        case ChannelMenuAction::PolyDenominator:
-            copyText(row.label, sizeof(row.label), text::TextId::PolyDenominator);
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.common.rate.denominator);
-            break;
-        case ChannelMenuAction::Swing:
-            copyText(row.label, sizeof(row.label), text::TextId::Swing);
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::PercentFormat), channel.common.swingPercent);
-            break;
-        case ChannelMenuAction::Groove:
-            copyText(row.label, sizeof(row.label), text::TextId::Groove);
+        case ChannelMenuAction::Timing:
+            copyText(row.label, sizeof(row.label), text::TextId::Timing);
             copyText(row.value, sizeof(row.value), text::TextId::Arrow);
             break;
-        case ChannelMenuAction::MeterBeats:
-            copyText(row.label, sizeof(row.label), text::TextId::MeterBeats);
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.clock.meter.beats);
-            break;
-        case ChannelMenuAction::MeterUnit:
-            copyText(row.label, sizeof(row.label), text::TextId::MeterUnit);
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.clock.meter.unit);
-            break;
-        case ChannelMenuAction::EuclidSteps:
-            copyText(row.label, sizeof(row.label), text::TextId::Steps);
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.euclid.steps);
-            break;
-        case ChannelMenuAction::EuclidHits:
-            copyText(row.label, sizeof(row.label), text::TextId::Hits);
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.euclid.hits);
-            break;
-        case ChannelMenuAction::EuclidRotate:
-            copyText(row.label, sizeof(row.label), text::TextId::Rotate);
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.euclid.rotation);
-            break;
-        case ChannelMenuAction::SequencerLength:
-            copyText(row.label, sizeof(row.label), text::TextId::Length);
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.sequencer.length);
-            break;
-        case ChannelMenuAction::SequencerRotate:
-            copyText(row.label, sizeof(row.label), text::TextId::Rotate);
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.sequencer.rotation);
-            break;
-        case ChannelMenuAction::SequencerPattern:
-            copyText(row.label, sizeof(row.label), text::TextId::Pattern);
+        case ChannelMenuAction::Clock:
+            copyText(row.label, sizeof(row.label), text::TextId::ModeClockLong);
             copyText(row.value, sizeof(row.value), text::TextId::Arrow);
             break;
-        case ChannelMenuAction::Probability:
-            copyText(row.label, sizeof(row.label), text::TextId::Probability);
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::PercentFormat), channel.common.probabilityPercent);
+        case ChannelMenuAction::Euclid:
+            copyText(row.label, sizeof(row.label), text::TextId::ModeEuclidLong);
+            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
             break;
-        case ChannelMenuAction::Gate:
-            copyText(row.label, sizeof(row.label), text::TextId::Gate);
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::MillisecondsFormat), channel.common.gateLengthMs);
+        case ChannelMenuAction::Sequencer:
+            copyText(row.label, sizeof(row.label), text::TextId::ModeSequencerLong);
+            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
             break;
-        case ChannelMenuAction::Phase:
-            copyText(row.label, sizeof(row.label), text::TextId::Phase);
-            std::snprintf(row.value, sizeof(row.value), text::get(text::TextId::PercentFormat), channel.common.phasePercent);
-            break;
-        case ChannelMenuAction::Reset:
-            copyText(row.label, sizeof(row.label), text::TextId::Reset);
-            copyText(row.value, sizeof(row.value), channel.common.resetMode == ResetMode::Global ? text::TextId::Global : text::TextId::SyncFree);
-            break;
-        case ChannelMenuAction::Mute:
-            copyText(row.label, sizeof(row.label), text::TextId::Mute);
-            copyText(row.value, sizeof(row.value), channel.common.muted ? text::TextId::On : text::TextId::Off);
+        case ChannelMenuAction::Output:
+            copyText(row.label, sizeof(row.label), text::TextId::Output);
+            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
             break;
     }
     return row;
 }
 
-SettingsSection settingsRowSection(
-    const SettingsPage page,
-    const ChannelMode mode,
-    const std::uint8_t rowIndex) {
-    if (page == SettingsPage::UnifiedClock) {
-        if (rowIndex >= 1U && rowIndex <= 6U) return SettingsSection::Timing;
-        if (rowIndex >= 7U) return SettingsSection::Output;
-        return SettingsSection::None;
-    }
-    if (page != SettingsPage::Channel || rowIndex == 0U || mode == ChannelMode::Off) {
-        return SettingsSection::None;
-    }
 
-    if (mode == ChannelMode::Clock) {
-        if (rowIndex <= 5U) return SettingsSection::Timing;
-        if (rowIndex <= 7U) return SettingsSection::Clock;
-        return SettingsSection::Output;
+MenuRow buildChannelTimingMenuRow(
+    const std::uint8_t rowIndex,
+    const ChannelConfig& channel) {
+    MenuRow row{};
+    constexpr text::TextId kLabels[] = {
+        text::TextId::DivideMultiply,
+        text::TextId::PolyNumerator,
+        text::TextId::PolyDenominator,
+        text::TextId::Swing,
+        text::TextId::Groove};
+    copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
+    if (rowIndex == 0U) {
+        formatRate(channel.common, row.value, sizeof(row.value));
+    } else if (rowIndex == 1U) {
+        std::snprintf(row.value, sizeof(row.value), "%u", channel.common.rate.numerator);
+    } else if (rowIndex == 2U) {
+        std::snprintf(row.value, sizeof(row.value), "%u", channel.common.rate.denominator);
+    } else if (rowIndex == 3U) {
+        std::snprintf(
+            row.value,
+            sizeof(row.value),
+            text::get(text::TextId::PercentFormat),
+            channel.common.swingPercent);
+    } else {
+        copyText(row.value, sizeof(row.value), text::TextId::Arrow);
     }
-    if (mode == ChannelMode::Euclid) {
-        if (rowIndex <= 3U) return SettingsSection::Euclid;
-        if (rowIndex <= 8U) return SettingsSection::Timing;
-        return SettingsSection::Output;
-    }
-    if (mode == ChannelMode::Sequencer) {
-        if (rowIndex <= 3U) return SettingsSection::Sequencer;
-        if (rowIndex <= 8U) return SettingsSection::Timing;
-        return SettingsSection::Output;
-    }
-    return SettingsSection::None;
+    return row;
 }
 
-std::uint8_t groupedSettingsVisibleItemCount(
-    const SettingsPage page,
-    const ChannelMode mode,
-    const std::uint8_t startRow,
-    const std::uint8_t itemCount) {
-    constexpr std::int16_t kContentTopY = 11;
-    constexpr std::int16_t kLastTextTopY = 57;
-    constexpr std::int16_t kTextHeight = 7;
-    constexpr std::int16_t kLineAdvance = 9;
-    constexpr std::int16_t kSectionMarginTop = 4;
-    constexpr std::int16_t kNormalLineGap = kLineAdvance - kTextHeight;
-    constexpr std::int16_t kSectionExtraGap = kSectionMarginTop - kNormalLineGap;
-    static_assert(kSectionExtraGap >= 0);
-
-    std::int16_t y = kContentTopY;
-    std::uint8_t visibleItems = 0U;
-    SettingsSection renderedSection = SettingsSection::None;
-    bool hasRenderedContent = false;
-
-    for (std::uint8_t rowIndex = startRow; rowIndex < itemCount; ++rowIndex) {
-        const SettingsSection section = settingsRowSection(page, mode, rowIndex);
-        const bool needsHeading = section != SettingsSection::None && section != renderedSection;
-        if (needsHeading) {
-            // A heading at the top of the viewport is sticky and therefore has no
-            // top margin. Headings appearing below existing content keep a real
-            // four-pixel blank margin above their seven-pixel glyph box.
-            if (hasRenderedContent) {
-                y = static_cast<std::int16_t>(y + kSectionExtraGap);
-            }
-            if (y > kLastTextTopY) {
-                break;
-            }
-            y = static_cast<std::int16_t>(y + kLineAdvance);
-            renderedSection = section;
-            hasRenderedContent = true;
-        }
-
-        if (y > kLastTextTopY) {
-            break;
-        }
-        ++visibleItems;
-        y = static_cast<std::int16_t>(y + kLineAdvance);
-        hasRenderedContent = true;
+MenuRow buildChannelOutputMenuRow(
+    const std::uint8_t rowIndex,
+    const ChannelConfig& channel) {
+    MenuRow row{};
+    constexpr text::TextId kLabels[] = {
+        text::TextId::Probability,
+        text::TextId::Gate,
+        text::TextId::Phase,
+        text::TextId::Reset,
+        text::TextId::Mute};
+    copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
+    if (rowIndex == 0U) {
+        std::snprintf(
+            row.value,
+            sizeof(row.value),
+            text::get(text::TextId::PercentFormat),
+            channel.common.probabilityPercent);
+    } else if (rowIndex == 1U) {
+        std::snprintf(
+            row.value,
+            sizeof(row.value),
+            text::get(text::TextId::MillisecondsFormat),
+            channel.common.gateLengthMs);
+    } else if (rowIndex == 2U) {
+        std::snprintf(
+            row.value,
+            sizeof(row.value),
+            text::get(text::TextId::PercentFormat),
+            channel.common.phasePercent);
+    } else if (rowIndex == 3U) {
+        copyText(
+            row.value,
+            sizeof(row.value),
+            channel.common.resetMode == ResetMode::Global
+                ? text::TextId::Global
+                : text::TextId::SyncFree);
+    } else {
+        copyText(
+            row.value,
+            sizeof(row.value),
+            channel.common.muted ? text::TextId::On : text::TextId::Off);
     }
-    return visibleItems;
+    return row;
 }
 
-const char* settingsSectionLabel(const SettingsSection section) {
-    switch (section) {
-        case SettingsSection::Timing: return text::get(text::TextId::Timing);
-        case SettingsSection::Clock: return text::get(text::TextId::ModeClockLong);
-        case SettingsSection::Euclid: return text::get(text::TextId::ModeEuclidLong);
-        case SettingsSection::Sequencer: return text::get(text::TextId::ModeSequencerLong);
-        case SettingsSection::Output: return text::get(text::TextId::Output);
-        case SettingsSection::None:
-        default: return "";
+MenuRow buildUnifiedClockMenuRow(const std::uint8_t rowIndex) {
+    MenuRow row{};
+    constexpr text::TextId kLabels[] = {
+        text::TextId::Mode,
+        text::TextId::Timing,
+        text::TextId::Output};
+    copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
+    copyText(
+        row.value,
+        sizeof(row.value),
+        rowIndex == 0U ? text::TextId::ModeUnifiedLong : text::TextId::Arrow);
+    return row;
+}
+
+MenuRow buildUnifiedTimingMenuRow(
+    const std::uint8_t rowIndex,
+    const UnifiedClockSettings& settings) {
+    MenuRow row{};
+    constexpr text::TextId kLabels[] = {
+        text::TextId::DivideMultiply,
+        text::TextId::PolyNumerator,
+        text::TextId::PolyDenominator,
+        text::TextId::Swing,
+        text::TextId::Groove,
+        text::TextId::Humanize};
+    copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
+    if (rowIndex == 0U) {
+        CommonChannelSettings temporary{};
+        temporary.rate = settings.rate;
+        formatRate(temporary, row.value, sizeof(row.value));
+    } else if (rowIndex == 1U) {
+        std::snprintf(row.value, sizeof(row.value), "%u", settings.rate.numerator);
+    } else if (rowIndex == 2U) {
+        std::snprintf(row.value, sizeof(row.value), "%u", settings.rate.denominator);
+    } else if (rowIndex == 3U) {
+        std::snprintf(
+            row.value,
+            sizeof(row.value),
+            text::get(text::TextId::PercentFormat),
+            settings.swingPercent);
+    } else if (rowIndex == 4U) {
+        copyText(row.value, sizeof(row.value), text::TextId::Arrow);
+    } else if (settings.humanizeUs == 0U) {
+        copyText(row.value, sizeof(row.value), text::TextId::Off);
+    } else {
+        std::snprintf(
+            row.value,
+            sizeof(row.value),
+            text::get(text::TextId::MicrosecondsFormat),
+            settings.humanizeUs);
     }
+    return row;
+}
+
+MenuRow buildUnifiedOutputMenuRow(
+    const std::uint8_t rowIndex,
+    const UnifiedClockSettings& settings) {
+    MenuRow row{};
+    copyText(
+        row.label,
+        sizeof(row.label),
+        rowIndex == 0U ? text::TextId::Gate : text::TextId::Phase);
+    if (rowIndex == 0U) {
+        std::snprintf(
+            row.value,
+            sizeof(row.value),
+            text::get(text::TextId::MillisecondsFormat),
+            settings.gateLengthMs);
+    } else {
+        std::snprintf(
+            row.value,
+            sizeof(row.value),
+            text::get(text::TextId::PercentFormat),
+            settings.phasePercent);
+    }
+    return row;
 }
 
 }  // namespace clockfw::ui

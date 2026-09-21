@@ -1384,7 +1384,7 @@ void testMenuModelAndFormatters() {
     ui::formatChannelDetail(state.channels[0], buffer, sizeof(buffer)); CHECK_EQ(std::strlen(buffer), 0U);
     ui::formatChannelSummary(state.channels[0], buffer, sizeof(buffer)); CHECK(std::strcmp(buffer, "OFF") == 0);
 
-    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::Diagnostics,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::Rate,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::UnifiedClock,ui::SettingsPage::DividerBank};
+    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::Diagnostics,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::DividerBank};
     state.source=ClockSource::External; state.externalSync.edge=SyncEdge::Falling; state.externalSync.lossMode=SyncLossMode::Stop;
     state.channels[0].common.resetMode=ResetMode::Free; state.channels[0].common.muted=true;
     for (auto page: pages) {
@@ -1444,10 +1444,12 @@ void testMenuModelAndFormatters() {
     CHECK(std::strlen(ui::settingsPageTitle(static_cast<ui::SettingsPage>(99)))>0U);
     CHECK(!ui::isChannelSettingsPage(ui::SettingsPage::Root));
     CHECK(ui::isChannelSettingsPage(ui::SettingsPage::Channel));
-    CHECK(ui::isChannelSettingsPage(ui::SettingsPage::Rate));
+    CHECK(ui::isChannelSettingsPage(ui::SettingsPage::ChannelTiming));
+    CHECK(ui::isChannelSettingsPage(ui::SettingsPage::ChannelOutput));
     CHECK(ui::isChannelSettingsPage(ui::SettingsPage::Clock));
     CHECK(ui::isChannelSettingsPage(ui::SettingsPage::Euclid));
     CHECK(ui::isChannelSettingsPage(ui::SettingsPage::Sequencer));
+    CHECK(ui::isChannelSettingsPage(ui::SettingsPage::SequencerPattern));
 
     state.externalSync.lossMode=SyncLossMode::Freewheel;
     (void)ui::buildMenuRow(ui::SettingsPage::Sync,3U,0U,state);
@@ -1827,16 +1829,20 @@ void testEngineAndSettingsEditor() {
     CHECK_EQ(fakefw::interruptCalls, 0U);
     editor.changeMasterTempo(-128); CHECK_EQ(state.bpm,172U);
     // Exercise every editable row and both directions.
-    const ui::SettingsPage pages[]={ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Channel,ui::SettingsPage::Rate,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer};
+    const ui::SettingsPage pages[]={ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput};
     for(auto page:pages){ const auto count=ui::settingsPageItemCount(page); for(std::uint8_t row=0;row<count;++row){ editor.adjust(page,row,0U,1); editor.adjust(page,row,0U,-1); } }
     editor.adjust(ui::SettingsPage::Info,0U,0U,1); editor.adjust(ui::SettingsPage::Root,0U,0U,1); editor.adjust(ui::SettingsPage::Master,0U,99U,1);
     editor.adjust(ui::SettingsPage::Master,99U,0U,1);
     state.externalSync.pulsesPerQuarterNote=3U; editor.adjust(ui::SettingsPage::Sync,1U,0U,1);
     editor.adjust(ui::SettingsPage::Sync,99U,0U,1);
-    editor.adjust(ui::SettingsPage::Rate,99U,0U,1);
+    editor.adjust(ui::SettingsPage::ChannelTiming,99U,0U,1);
+    editor.adjust(ui::SettingsPage::ChannelOutput,99U,0U,1);
     editor.adjust(ui::SettingsPage::Clock,99U,0U,1);
     editor.adjust(ui::SettingsPage::Euclid,99U,0U,1);
     editor.adjust(ui::SettingsPage::Sequencer,99U,0U,1);
+    editor.adjust(ui::SettingsPage::SequencerPattern,99U,0U,1);
+    editor.adjust(ui::SettingsPage::UnifiedTiming,99U,0U,1);
+    editor.adjust(ui::SettingsPage::UnifiedOutput,99U,0U,1);
     editor.adjust(ui::SettingsPage::Channel,2U,99U,1);
     state.channels[0].euclid = {16U, 16U, 15U}; editor.adjust(ui::SettingsPage::Euclid,0U,0U,-15);
     state.channels[0].sequencer = {16U, 15U, 0xFFFFULL}; editor.adjust(ui::SettingsPage::Sequencer,1U,0U,-15);
@@ -1983,14 +1989,19 @@ void testOperatingModesPersistenceAndGlobalEditors() {
     engine::ClockEngine clockEngine(gates);
     clockEngine.begin(state);
     ui::SettingsEditor editor(state, clockEngine);
-    for (std::uint8_t row = 0U; row < ui::settingsPageItemCount(ui::SettingsPage::UnifiedClock); ++row) {
-        editor.adjust(ui::SettingsPage::UnifiedClock, row, 0U, 1);
-        editor.adjust(ui::SettingsPage::UnifiedClock, row, 0U, -1);
+    for (std::uint8_t row = 0U; row < ui::settingsPageItemCount(ui::SettingsPage::UnifiedTiming); ++row) {
+        editor.adjust(ui::SettingsPage::UnifiedTiming, row, 0U, 1);
+        editor.adjust(ui::SettingsPage::UnifiedTiming, row, 0U, -1);
+    }
+    for (std::uint8_t row = 0U; row < ui::settingsPageItemCount(ui::SettingsPage::UnifiedOutput); ++row) {
+        editor.adjust(ui::SettingsPage::UnifiedOutput, row, 0U, 1);
+        editor.adjust(ui::SettingsPage::UnifiedOutput, row, 0U, -1);
     }
     // Also exercise a non-listed ratio so the rate-option fallback branch is covered.
     state.unifiedClock.rate = {ClockRatioMode::Multiply, 99U, 1U, 1U};
-    editor.adjust(ui::SettingsPage::UnifiedClock, 1U, 0U, 1);
-    editor.adjust(ui::SettingsPage::UnifiedClock, 99U, 0U, 1);
+    editor.adjust(ui::SettingsPage::UnifiedTiming, 0U, 0U, 1);
+    editor.adjust(ui::SettingsPage::UnifiedTiming, 99U, 0U, 1);
+    editor.adjust(ui::SettingsPage::UnifiedOutput, 99U, 0U, 1);
     for (std::uint8_t row = 0U; row < ui::settingsPageItemCount(ui::SettingsPage::DividerBank); ++row) {
         editor.adjust(ui::SettingsPage::DividerBank, row, 0U, 1);
         editor.adjust(ui::SettingsPage::DividerBank, row, 0U, -1);
@@ -2525,13 +2536,13 @@ void testOneClockHumanizeAndTempoLimits() {
     }
     CHECK(maximumTick > minimumTick);
 
-    const auto humanizeRow = ui::buildMenuRow(ui::SettingsPage::UnifiedClock, 6U, 0U, state);
+    const auto humanizeRow = ui::buildMenuRow(ui::SettingsPage::UnifiedTiming, 5U, 0U, state);
     CHECK(std::strcmp(humanizeRow.label, "HUMANIZE") == 0);
     CHECK(std::strstr(humanizeRow.value, "2000") != nullptr);
-    editor.adjust(ui::SettingsPage::UnifiedClock, 6U, 0U, -1);
+    editor.adjust(ui::SettingsPage::UnifiedTiming, 5U, 0U, -1);
     CHECK_EQ(state.unifiedClock.humanizeUs, 1000U);
     state.unifiedClock.humanizeUs = 0U;
-    const auto humanizeOffRow = ui::buildMenuRow(ui::SettingsPage::UnifiedClock, 6U, 0U, state);
+    const auto humanizeOffRow = ui::buildMenuRow(ui::SettingsPage::UnifiedTiming, 5U, 0U, state);
     CHECK(std::strcmp(humanizeOffRow.value, "OFF") == 0);
 
     // A stored Humanize value has no timing effect outside One Clock.
@@ -2883,7 +2894,7 @@ void testRenderEveryScreenAndState() {
     renderer.render(state,nav,engine.snapshot());
     nav.screen=ui::Screen::SequencerEditor; state.channels[0].sequencer={20U,0U,0xAAAAULL}; for(std::uint8_t page=0;page<4U;++page){nav.sequencerPage=page;nav.sequencerCursor=7U;renderer.render(state,nav,engine.snapshot());}
     nav.screen=ui::Screen::Settings;
-    const ui::SettingsPage pages[]={ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Rate,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::UnifiedClock,ui::SettingsPage::DividerBank};
+    const ui::SettingsPage pages[]={ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::DividerBank};
     for(auto page:pages){nav.settingsPage=page;const auto count=ui::settingsPageItemCount(page);for(std::uint8_t row=0;row<count;++row){nav.cursor=row;nav.scrollOffset=row>4U?static_cast<std::uint8_t>(row-4U):0U;nav.editing=(row&1U)!=0U;renderer.render(state,nav,engine.snapshot());}}
     ui::DiagnosticSnapshot diagnostics{};
     diagnostics.syncHigh = true;
@@ -2956,7 +2967,7 @@ std::size_t countFramebufferPixels(
 
 
 
-void testGroupedSettingsRenderFourPixelMarginUnlessHeadingIsSticky() {
+void testHierarchicalSettingsRenderDistinctRootAndGroupPages() {
     resetFakes();
     prepareDisplaySuccess();
 
@@ -2969,36 +2980,29 @@ void testGroupedSettingsRenderFourPixelMarginUnlessHeadingIsSticky() {
     ui::SettingsRenderer renderer(display);
     ui::NavigationState navigation{};
     navigation.screen = ui::Screen::Settings;
-    navigation.settingsPage = ui::SettingsPage::Channel;
     navigation.selectedChannel = 0U;
-    navigation.cursor = 0U;
-    navigation.scrollOffset = 0U;
 
-    renderer.renderSettings(state, navigation);
-    const auto nonStickyFrame = display.framebufferForTest();
-    // MODE occupies y=11..17. TIMING begins at y=22, leaving y=18..21
-    // completely blank across the content area: a real 4 px top margin.
-    CHECK_EQ(countFramebufferPixels(nonStickyFrame, 0, 18, 124, 4), 0U);
-    CHECK_EQ(countFramebufferPixels(nonStickyFrame, 0, 22, 6, 7), 0U);
-    CHECK(countFramebufferPixels(nonStickyFrame, 6, 22, 118, 7) > 0U);
-    // Section labels share the same x=6 text anchor as option labels and use
-    // a dedicated underline below the seven-pixel glyph box.
-    CHECK_EQ(countFramebufferPixels(nonStickyFrame, 6, 29, 118, 1), 118U);
-    // The following RATE label is flush with the section label, while the
-    // x=0..4 gutter remains reserved for the selection cursor only.
-    CHECK_EQ(countFramebufferPixels(nonStickyFrame, 1, 31, 5, 7), 0U);
-    CHECK(countFramebufferPixels(nonStickyFrame, 6, 31, 50, 7) > 0U);
-
+    navigation.settingsPage = ui::SettingsPage::Channel;
     navigation.cursor = 1U;
-    navigation.scrollOffset = 1U;
     renderer.renderSettings(state, navigation);
-    const auto stickyFrame = display.framebufferForTest();
-    // Scrolling into TIMING makes its heading sticky at the viewport top.
-    // No four-pixel margin is inserted above it, but the same flush text
-    // anchor and underline treatment still apply.
-    CHECK_EQ(countFramebufferPixels(stickyFrame, 0, 11, 6, 7), 0U);
-    CHECK(countFramebufferPixels(stickyFrame, 6, 11, 118, 7) > 0U);
-    CHECK_EQ(countFramebufferPixels(stickyFrame, 6, 18, 118, 1), 118U);
+    const auto rootFrame = display.framebufferForTest();
+
+    navigation.settingsPage = ui::SettingsPage::ChannelTiming;
+    navigation.cursor = 0U;
+    renderer.renderSettings(state, navigation);
+    const auto timingFrame = display.framebufferForTest();
+    CHECK(rootFrame != timingFrame);
+
+    navigation.settingsPage = ui::SettingsPage::ChannelOutput;
+    navigation.cursor = 0U;
+    renderer.renderSettings(state, navigation);
+    const auto outputFrame = display.framebufferForTest();
+    CHECK(timingFrame != outputFrame);
+
+    navigation.settingsPage = ui::SettingsPage::Clock;
+    renderer.renderSettings(state, navigation);
+    const auto clockFrame = display.framebufferForTest();
+    CHECK(outputFrame != clockFrame);
 }
 
 void testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition() {
@@ -3655,6 +3659,85 @@ void testScreensaverRenderingAndPolicy() {
     controller.serviceRendering(500'000U);
 }
 
+
+void testNestedGroupNavigationCoverage() {
+    resetFakes();
+    prepareDisplaySuccess();
+    hal::OledDisplay display;
+    CHECK(display.begin());
+
+    ClockState state = makeDefaultState();
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    engine::ClockEngine engine(gates);
+    engine.begin(state);
+    hal::PersistentStorage storage;
+    hal::PersistentStorage::resetForTest();
+    services::PersistentStateService persistentState(storage);
+    persistentState.begin();
+    ui::UiRenderer renderer(display, persistentState);
+    ui::UiController controller(state, engine, renderer, persistentState);
+    std::uint32_t now = 20U;
+
+    // ONE CLOCK: exercise both group links, nested Groove return, and root restoration.
+    state.operatingMode = OperatingMode::UnifiedClock;
+    engine.updateConfiguration(state, true);
+    controllerOpenSettingsChord(controller, now);
+    controllerTurn(controller, 1, now); // CHANNEL SETTINGS
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::UnifiedClock);
+    controllerTurn(controller, 1, now); // TIMING
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::UnifiedTiming);
+    controllerTurn(controller, 4, now); // GROOVE
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::UnifiedTiming);
+    CHECK_EQ(controller.navigation().cursor, 4U);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::UnifiedClock);
+    CHECK_EQ(controller.navigation().cursor, 1U);
+    controllerTurn(controller, 1, now); // OUTPUT
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::UnifiedOutput);
+    controllerShortPress(controller, now); // edit GATE
+    CHECK(controller.navigation().editing);
+    controllerShortPress(controller, now);
+    CHECK(!controller.navigation().editing);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::UnifiedClock);
+    CHECK_EQ(controller.navigation().cursor, 2U);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Root);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
+
+    // Independent CLOCK: OUTPUT is a peer group and BACK restores its root row.
+    state.operatingMode = OperatingMode::Independent;
+    state.channels[0].common.mode = ChannelMode::Clock;
+    engine.updateConfiguration(state, true);
+    controllerOpenSettingsChord(controller, now);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
+    controllerTurn(controller, 3, now); // OUTPUT
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::ChannelOutput);
+    controllerShortPress(controller, now); // edit PROB
+    CHECK(controller.navigation().editing);
+    controllerTurn(controller, -1, now);
+    controllerShortPress(controller, now);
+    CHECK(!controller.navigation().editing);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
+    CHECK_EQ(controller.navigation().cursor, 3U);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Root);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
+}
+
 void testUiControllerFlows() {
     resetFakes();
     prepareDisplaySuccess();
@@ -3745,8 +3828,8 @@ void testUiControllerFlows() {
         state.channels[controller.navigation().selectedChannel].common.mode,
         ChannelMode::Euclid);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
-    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
-    CHECK_EQ(controller.navigation().cursor, 1U);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Euclid);
+    CHECK_EQ(controller.navigation().cursor, 0U);
 
     // Selecting the already active mode needs no destructive-change confirmation.
     controllerReset(controller, now);
@@ -3952,8 +4035,8 @@ void testUiControllerFlows() {
     state.operatingMode = OperatingMode::Independent;
     engine.updateConfiguration(state, true);
 
-    // The selected channel page is flat and mode-aware. OFF has only MODE;
-    // active modes expose their priority-ordered parameters without RATE/CLOCK subpages.
+    // The selected-channel page is a compact mode-aware hierarchy. OFF has
+    // only MODE; active modes expose the three logical groups in priority order.
     std::uint8_t selectedChannel = controller.navigation().selectedChannel;
     state.channels[selectedChannel].common.mode = ChannelMode::Off;
     engine.updateChannel(selectedChannel, state.channels[selectedChannel], true);
@@ -3971,59 +4054,87 @@ void testUiControllerFlows() {
     controllerConfirmModeYes(controller, now);
     CHECK_EQ(state.channels[selectedChannel].common.mode, ChannelMode::Clock);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
-    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Channel, ChannelMode::Clock), 13U);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Channel, ChannelMode::Clock), 4U);
 
-    // RATE and CLOCK meter values are now edited directly on CHANNEL. No extra
-    // push is needed to enter either a RATE or CLOCK settings page.
+    // CLOCK exposes TIMING, CLOCK and OUTPUT as one-level group pages.
     controllerOpenSettingsChord(controller, now);
     controllerTurn(controller, 1, now); // Channel
     controllerShortPress(controller, now);
-    controllerTurn(controller, 1, now); // DIV/MULT
+    controllerTurn(controller, 1, now); // TIMING
+    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Channel,1U,selectedChannel,state).label,"TIMING") == 0);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::ChannelTiming);
+    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::ChannelTiming,0U,selectedChannel,state).label,"DIV/MULT") == 0);
+    controllerShortPress(controller, now);
+    CHECK(controller.navigation().editing);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    CHECK(!controller.navigation().editing);
+    controllerReset(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
+    CHECK_EQ(controller.navigation().cursor, 1U);
+    controllerTurn(controller, 1, now); // CLOCK
     controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Clock);
+    controllerShortPress(controller, now); // METER BEATS
     CHECK(controller.navigation().editing);
     controllerTurn(controller, 1, now);
     controllerShortPress(controller, now);
-    CHECK(!controller.navigation().editing);
-    controllerTurn(controller, 5, now); // METER BEATS at row 6
-    controllerShortPress(controller, now);
-    CHECK(controller.navigation().editing);
-    controllerTurn(controller, 1, now);
-    controllerShortPress(controller, now);
-    CHECK(!controller.navigation().editing);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
+    CHECK_EQ(controller.navigation().cursor, 2U);
     controllerReset(controller, now); // Channel -> Root
     controllerReset(controller, now); // Root -> Performance
 
-    // EUCLID and SEQ put their mode-specific controls first, followed by TIMING
-    // and OUTPUT. Groove remains a real submenu and BACK restores its row.
+    // EUCLID puts its mode group first, then TIMING, then OUTPUT. Groove remains
+    // inside TIMING and BACK restores both subgroup and root cursors.
     state.channels[selectedChannel].common.mode = ChannelMode::Euclid;
     engine.updateChannel(selectedChannel, state.channels[selectedChannel], true);
     controllerOpenSettingsChord(controller, now);
     controllerTurn(controller, 1, now); // Channel
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
-    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Channel,1U,selectedChannel,state).label,"STEPS") == 0);
-    controllerTurn(controller, 8, now); // GROOVE
-    CHECK_EQ(controller.navigation().scrollOffset, 4U);
+    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Channel,1U,selectedChannel,state).label,"EUCLID") == 0);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Euclid);
+    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Euclid,0U,selectedChannel,state).label,"STEPS") == 0);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
+    CHECK_EQ(controller.navigation().cursor, 1U);
+    controllerTurn(controller, 1, now); // TIMING
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::ChannelTiming);
+    controllerTurn(controller, 4, now); // GROOVE
+    CHECK_EQ(controller.navigation().scrollOffset, 0U);
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
     controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::ChannelTiming);
+    CHECK_EQ(controller.navigation().cursor, 4U);
+    controllerReset(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
-    CHECK_EQ(controller.navigation().cursor, 8U);
+    CHECK_EQ(controller.navigation().cursor, 2U);
     controllerReset(controller, now);
     controllerReset(controller, now);
 
+    // SEQUENCER owns LENGTH/ROTATE/PATTERN. Pattern operations remain one more
+    // focused level below the Sequencer group.
     state.channels[selectedChannel].common.mode = ChannelMode::Sequencer;
     state.channels[selectedChannel].sequencer.length = 64U;
     engine.updateChannel(selectedChannel, state.channels[selectedChannel], true);
     controllerOpenSettingsChord(controller, now);
     controllerTurn(controller, 1, now);
     controllerShortPress(controller, now); // Channel
-    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Channel,1U,selectedChannel,state).label,"LENGTH") == 0);
-    controllerTurn(controller, 3, now); // PATTERN
+    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Channel,1U,selectedChannel,state).label,"SEQUENCER") == 0);
+    controllerTurn(controller, 1, now);
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Sequencer);
-    CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::Sequencer), "PATTERN") == 0);
+    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Sequencer,0U,selectedChannel,state).label,"LENGTH") == 0);
+    controllerTurn(controller, 2, now); // PATTERN
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::SequencerPattern);
+    CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::SequencerPattern), "PATTERN") == 0);
     controllerShortPress(controller, now); // EDITOR
     CHECK_EQ(controller.navigation().screen, ui::Screen::SequencerEditor);
     controllerTurn(controller, 5, now);
@@ -4044,12 +4155,15 @@ void testUiControllerFlows() {
     }
     CHECK_EQ(controller.navigation().sequencerPage, 0U);
     controllerReset(controller, now);
-    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Sequencer);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::SequencerPattern);
     controllerTurn(controller, 1, now); // INVERT
     controllerShortPress(controller, now);
-    controllerReset(controller, now); // Pattern -> Channel
+    controllerReset(controller, now); // Pattern -> Sequencer
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Sequencer);
+    CHECK_EQ(controller.navigation().cursor, 2U);
+    controllerReset(controller, now); // Sequencer -> Channel
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
-    CHECK_EQ(controller.navigation().cursor, 3U);
+    CHECK_EQ(controller.navigation().cursor, 1U);
     controllerReset(controller, now); // Channel -> Root
     controllerReset(controller, now); // Root -> Performance
 
@@ -4949,7 +5063,7 @@ int main() {
     RUN_TEST(testEngineAuditRegressions);
     RUN_TEST(testEngineBoundaryBranches);
     RUN_TEST(testRenderEveryScreenAndState);
-    RUN_TEST(testGroupedSettingsRenderFourPixelMarginUnlessHeadingIsSticky);
+    RUN_TEST(testHierarchicalSettingsRenderDistinctRootAndGroupPages);
     RUN_TEST(testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition);
     RUN_TEST(testPerformanceRendererShowsStaticPreCountPopoverAndMeterProgress);
     RUN_TEST(testPreCountPopoverRedrawsAtBeatBoundariesAndClearsOnCompletion);
@@ -4960,6 +5074,7 @@ int main() {
     RUN_TEST(testTapIndicatorSequenceResetsAfterConfiguredMinimumBpmInterval);
     RUN_TEST(testTapIndicatorIsExclusiveToPerformanceTapTempo);
     RUN_TEST(testScreensaverRenderingAndPolicy);
+    RUN_TEST(testNestedGroupNavigationCoverage);
     RUN_TEST(testUiControllerFlows);
     RUN_TEST(testHighScoreResetAppearsAfterStartAndClearsSafely);
     RUN_TEST(testEasterEggGameAndHighScore);
