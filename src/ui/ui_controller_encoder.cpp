@@ -32,7 +32,8 @@ void UiController::handleEncoderButton(
     if (button.pressed && encoderPressTracking_ && !encoderLongPressHandled_ &&
         nowMs - encoderPressedAtMs_ >= config::kEncoderLongPressMs &&
         (navigation_.screen == Screen::Performance ||
-         navigation_.screen == Screen::ChannelQuickSelect)) {
+         navigation_.screen == Screen::ChannelQuickSelect ||
+         navigation_.screen == Screen::GrooveEditor)) {
         encoderLongPressHandled_ = true;
         handleLongEncoderPress(nowMs);
         return;
@@ -108,6 +109,47 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
         } else {
             saveNamedPreset(nowMs);
         }
+    } else if (navigation_.screen == Screen::GrooveSlots) {
+        navigation_.selectedGrooveSlot = navigation_.cursor;
+        if (navigation_.grooveSlotAction == GrooveSlotAction::Load) {
+            loadSelectedGroove();
+        } else if (customGrooveStore_ != nullptr &&
+                   customGrooveStore_->exists(navigation_.selectedGrooveSlot)) {
+            navigation_.screen = Screen::GrooveOverwriteConfirm;
+            navigation_.cursor = 0U;
+            invalidate();
+        } else {
+            prepareGrooveName();
+            navigation_.screen = Screen::GrooveNameEntry;
+            invalidate();
+        }
+    } else if (navigation_.screen == Screen::GrooveOverwriteConfirm) {
+        if (navigation_.cursor == 0U) {
+            navigation_.screen = Screen::GrooveSlots;
+            navigation_.cursor = navigation_.selectedGrooveSlot;
+            invalidate();
+        } else {
+            saveCustomGroove(nowMs, true);
+        }
+    } else if (navigation_.screen == Screen::GrooveDiscardConfirm) {
+        if (navigation_.cursor == 0U) {
+            navigation_.screen = Screen::GrooveEditor;
+            grooveLoadPendingAfterDiscard_ = false;
+            invalidate();
+        } else if (grooveLoadPendingAfterDiscard_) {
+            grooveEditorDirty_ = false;
+            grooveLoadPendingAfterDiscard_ = false;
+            openGrooveSlots(GrooveSlotAction::Load);
+        } else {
+            leaveGrooveEditor(true);
+        }
+    } else if (navigation_.screen == Screen::GrooveNameEntry) {
+        if (navigation_.nameCharacterIndex < services::CustomGrooveStore::kNameLength - 1U) {
+            ++navigation_.nameCharacterIndex;
+            invalidate();
+        } else {
+            saveCustomGroove(nowMs, false);
+        }
     } else if (navigation_.screen == Screen::Settings) {
         activateCurrentSetting();
         persistCurrentState(nowMs);
@@ -124,6 +166,11 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
 void UiController::handleLongEncoderPress(const std::uint32_t nowMs) {
     (void)nowMs;
     const Screen origin = navigation_.screen;
+    if (origin == Screen::GrooveEditor) {
+        navigation_.settingsExitScreen = Screen::GrooveEditor;
+        openSettingsPage(SettingsPage::GrooveEditorMenu);
+        return;
+    }
     if (origin == Screen::ChannelQuickSelect &&
         state_.operatingMode == OperatingMode::Independent) {
         navigation_.selectedChannel = navigation_.cursor;

@@ -11,6 +11,8 @@
 #include <array>
 #include <cstdint>
 
+#include "domain/custom_groove.h"
+
 namespace clockfw::ui {
 
 /** @brief Top-level OLED working screens. */
@@ -26,7 +28,12 @@ enum class Screen : std::uint8_t {
     OverwriteConfirm,
     HighScoreClearConfirm,
     FactoryResetConfirm,
-    NameEntry
+    NameEntry,
+    GrooveEditor,
+    GrooveSlots,
+    GrooveOverwriteConfirm,
+    GrooveDiscardConfirm,
+    GrooveNameEntry
 };
 
 /** @brief Hierarchical text settings pages. */
@@ -56,6 +63,7 @@ enum class SettingsPage : std::uint8_t {
     UnifiedTiming,
     UnifiedOutput,
     Groove,
+    GrooveEditorMenu,
     DividerBank
 };
 
@@ -67,11 +75,15 @@ enum class ModeFunction : std::uint8_t {
     Sequencer,
     UnifiedClock,
     Groove,
+    GrooveEditorMenu,
     DividerBank
 };
 
 /** @brief Operation being performed on the explicit user preset slots. */
 enum class PresetSlotAction : std::uint8_t { Load, Save };
+
+/** @brief Operation being performed on Custom Groove slots. */
+enum class GrooveSlotAction : std::uint8_t { Load, Save };
 
 /** @brief Live digital levels shown by the hardware diagnostics pages. */
 struct DiagnosticSnapshot {
@@ -108,6 +120,13 @@ struct NavigationState {
     std::uint8_t selectedPresetSlot = 0U;
     std::uint8_t nameCharacterIndex = 0U;
     std::array<char, 17U> presetNameBuffer{};
+    GrooveSlotAction grooveSlotAction = GrooveSlotAction::Load;
+    std::uint8_t selectedGrooveSlot = 0U;
+    std::uint8_t grooveCursor = 0U;
+    /** 0 = FIT; otherwise visible window size in four-step increments. */
+    std::uint8_t grooveZoomSteps = 0U;
+    CustomGroovePattern grooveDraft{};
+    std::array<char, 17U> grooveNameBuffer{};
 };
 
 }  // namespace clockfw::ui

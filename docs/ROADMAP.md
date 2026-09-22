@@ -91,14 +91,14 @@ Planned scope and implementation sequence:
 - grid-aware classic drum-machine-style swing with a musically familiar straight-to-deep range;
 - Groove Amount to scale a stored pattern from straight through exaggerated timing;
 - pattern rotation/phase so related channels can share one groove with different starting positions;
-- **Stage 2 — Preset / Custom split:** keep factory presets read-only and add user-defined Custom grooves. Custom editing uses a graphical grid with movable timing markers rather than a text/number list;
-- Custom groove storage targets **99 user slots** if the packed persistence record and real target memory budget permit it. Custom slots must support save, load, rename, overwrite and delete. Overwrite and delete require an explicit `YES / NO` confirmation before the durable record is changed;
+- **Stage 2 — Preset / Custom split (implemented in current 1.1 development):** keep factory presets read-only and add user-defined signed Custom grooves. Editing uses a 128x64 graphical beat/step grid with movable diamond timing markers, bounded zoom and live runtime preview;
+- The current 8-KiB persistence revision provides **10 named Custom Groove slots** using fixed records in bytes 3136-4095 without moving legacy score or Top-100 data. The accepted **99-slot** target remains conditional on a later compact/expanded persistence design and real target memory proof. Current Stage 2 implements save/load/overwrite/name-on-create; rename/delete remain follow-up work;
 - Humanize remains a separate stochastic layer and is never conflated with deterministic groove timing.
 
 Dependencies and constraints:
 
 - event timestamps must remain monotonic and bounded by the scheduler contract;
-- custom groove persistence must use extension records or another migration-safe layout rather than silently enlarging the repeated schema-v11 ClockState payload;
+- custom groove persistence must use extension records or another migration-safe layout rather than silently enlarging the repeated schema-v12 ClockState payload;
 - the 99-slot target is conditional on a compact bounded record format and a real STM32F401 ELF/RAM check. The existing 8-KiB logical image may grow only through an explicit layout revision and no further than the documented 12-KiB policy ceiling;
 - the UI must remain usable on the 128×64 display. The Stage-2 custom editor may use a graphical grid/marker view, but must remain bounded and purpose-built rather than becoming a general DAW-style editor;
 - destructive custom-groove operations must remain transactional: `NO` leaves persistent data untouched, while `YES` performs exactly one requested overwrite/delete operation.

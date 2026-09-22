@@ -107,7 +107,8 @@ enum class GroovePreset : std::uint8_t {
     Swing66,
     PocketA,
     PocketB,
-    PocketC
+    PocketC,
+    Custom
 };
 
 /** @brief Deterministic factory-groove assignment. */
@@ -115,6 +116,8 @@ struct GrooveSettings {
     GroovePreset preset = GroovePreset::Off;
     std::uint8_t amountPercent = 100U;
     std::uint8_t rotation = 0U;
+    /** Zero-based Custom Groove library slot used only when preset == Custom. */
+    std::uint8_t customSlot = 0U;
 };
 
 /** @brief Musical meter expressed as numerator and note-value denominator. */

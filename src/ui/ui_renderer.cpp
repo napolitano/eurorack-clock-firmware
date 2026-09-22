@@ -53,6 +53,20 @@ UiRenderer::UiRenderer(
       performanceRenderer_(display),
       channelNavigationRenderer_(display),
       settingsRenderer_(display),
+      grooveEditorRenderer_(display),
+      screensaverRenderer_(display) {}
+
+UiRenderer::UiRenderer(
+    hal::OledDisplay& display,
+    const services::PersistentStateService& persistentState,
+    const services::CustomGrooveStore& customGrooveStore)
+    : display_(display),
+      persistentState_(persistentState),
+      customGrooveStore_(&customGrooveStore),
+      performanceRenderer_(display),
+      channelNavigationRenderer_(display),
+      settingsRenderer_(display),
+      grooveEditorRenderer_(display),
       screensaverRenderer_(display) {}
 
 void UiRenderer::render(
@@ -96,6 +110,25 @@ void UiRenderer::render(
             break;
         case Screen::NameEntry:
             settingsRenderer_.renderNameEntry(navigation);
+            break;
+        case Screen::GrooveEditor:
+            grooveEditorRenderer_.renderEditor(navigation);
+            break;
+        case Screen::GrooveSlots:
+            if (customGrooveStore_ != nullptr) {
+                grooveEditorRenderer_.renderSlots(navigation, *customGrooveStore_);
+            } else {
+                grooveEditorRenderer_.renderConfirm(text::get(text::TextId::GrooveStoreUnavailable), navigation);
+            }
+            break;
+        case Screen::GrooveOverwriteConfirm:
+            grooveEditorRenderer_.renderConfirm(text::get(text::TextId::OverwriteGroove), navigation);
+            break;
+        case Screen::GrooveDiscardConfirm:
+            grooveEditorRenderer_.renderConfirm(text::get(text::TextId::DiscardChanges), navigation);
+            break;
+        case Screen::GrooveNameEntry:
+            grooveEditorRenderer_.renderNameEntry(navigation);
             break;
     }
 }

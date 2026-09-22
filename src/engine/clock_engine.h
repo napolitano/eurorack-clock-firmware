@@ -12,6 +12,7 @@
 #include <cstdint>
 
 #include "domain/clock_types.h"
+#include "domain/custom_groove.h"
 #include "hal/gate_output_driver.h"
 
 namespace clockfw::engine {
@@ -80,6 +81,30 @@ public:
         std::size_t channelIndex,
         const ChannelConfig& channelConfiguration,
         bool rescheduleChannel);
+
+    /**
+     * @brief Replaces one in-memory Custom Groove library slot used by real-time scheduling.
+     * @param slotIndex Zero-based Custom Groove slot.
+     * @param pattern Valid bounded pattern loaded from the durable Custom Groove store.
+     * @param rescheduleAffected True to rebuild channels currently referencing this slot.
+     */
+    void updateCustomGrooveSlot(
+        std::uint8_t slotIndex,
+        const CustomGroovePattern& pattern,
+        bool rescheduleAffected = true);
+
+    /** @brief Applies one non-persistent Custom Groove preview to a runtime channel. */
+    void setCustomGroovePreview(
+        std::size_t channelIndex,
+        const CustomGroovePattern& pattern,
+        std::uint8_t amountPercent = 100U,
+        std::uint8_t rotation = 0U,
+        bool rescheduleChannel = true);
+
+    /** @brief Clears a runtime-only Custom Groove preview from one channel. */
+    void clearCustomGroovePreview(
+        std::size_t channelIndex,
+        bool rescheduleChannel = true);
 
     /** @brief Starts or resumes scheduler progression. */
     void play();
@@ -164,6 +189,13 @@ private:
         std::uint16_t unifiedHumanizeUs = 0U;
         ChannelConfig channels[kChannelCount]{};
     };
+
+    /** @brief In-memory Custom Groove library; Flash is never read from scheduler context. */
+    CustomGroovePattern customGrooves_[kCustomGrooveSlotCount]{};
+    CustomGroovePattern customGroovePreviews_[kChannelCount]{};
+    std::uint8_t customGroovePreviewAmount_[kChannelCount]{};
+    std::uint8_t customGroovePreviewRotation_[kChannelCount]{};
+    bool customGroovePreviewActive_[kChannelCount]{};
 
     /** @brief Mutable scheduling state for one output channel. */
     struct ChannelRuntime {

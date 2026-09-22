@@ -23,6 +23,7 @@
 #include "hal/periodic_timer.h"
 #include "hal/persistent_storage.h"
 #include "services/persistent_state_service.h"
+#include "services/custom_groove_store.h"
 #include "services/external_sync_controller.h"
 #include "ui/ui_controller.h"
 #include "ui/ui_renderer.h"
@@ -106,6 +107,9 @@ private:
     bool serviceSelectedEasterEggForSimulator(std::uint32_t nowMs);
 #endif
 
+    /** @brief Loads the fixed-record Custom Groove library into the real-time engine cache. */
+    void loadCustomGrooveLibrary();
+
     /** @brief Applies persistent device-local control/display preferences to the HAL only when they change. */
     void synchronizeDevicePreferences(bool force = false);
 
@@ -141,6 +145,7 @@ private:
     game::EggJourneyGame eggJourneyGame_;
     game::Beatknecht beatknecht_;
     services::PersistentStateService persistentState_;
+    services::CustomGrooveStore customGrooveStore_;
     engine::ClockEngine engine_;
     services::ExternalSyncController externalSyncController_;
     ui::UiRenderer renderer_;

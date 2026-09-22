@@ -46,6 +46,25 @@ UiController::UiController(
       gateOutputs_(gateOutputs),
       settingsEditor_(state, engine) {}
 
+UiController::UiController(
+    ClockState& state,
+    engine::ClockEngine& engine,
+    UiRenderer& renderer,
+    services::PersistentStateService& persistentState,
+    services::CustomGrooveStore& customGrooveStore,
+    game::ArcadeLeaderboardStore* const leaderboard,
+    const hal::ExternalInputCapture* const externalInputs,
+    const hal::GateOutputDriver* const gateOutputs)
+    : state_(state),
+      engine_(engine),
+      renderer_(renderer),
+      persistentState_(persistentState),
+      customGrooveStore_(&customGrooveStore),
+      leaderboard_(leaderboard),
+      externalInputs_(externalInputs),
+      gateOutputs_(gateOutputs),
+      settingsEditor_(state, engine) {}
+
 void UiController::invalidate() {
     renderDirty_ = true;
 }
@@ -75,7 +94,7 @@ void UiController::processControls(
     }
 
     if (controls.encoderDelta != 0 && !settingsChordActive_) {
-        handleEncoderDelta(controls.encoderDelta, controls.tapButton.pressed);
+        handleEncoderDelta(controls.encoderDelta, controls.tapButton.pressed, controls.transportButton.pressed);
         persistCurrentState(nowMs);
     }
 
@@ -95,134 +114,18 @@ const NavigationState& UiController::navigation() const {
     return navigation_;
 }
 
-void UiController::handleEncoderDelta(
-    const std::int8_t delta,
-    const bool tapPressed) {
-    if (navigation_.screen == Screen::ChannelQuickSelect && tapPressed) {
-        if (!modeTapTurnActive_) {
-            if (state_.operatingMode == OperatingMode::Independent) {
-                navigation_.selectedChannel = navigation_.cursor;
-            }
-            openModeSelect(Screen::ChannelQuickSelect);
-            modeTapTurnActive_ = true;
-        }
-        const int optionCount = static_cast<int>(kModeFunctions.size());
-        navigation_.cursor = static_cast<std::uint8_t>(
-            (static_cast<int>(navigation_.cursor) + optionCount + delta) % optionCount);
-        invalidate();
-        return;
-    }
-
-    if (navigation_.screen == Screen::ChannelQuickSelect) {
-        if (state_.operatingMode == OperatingMode::Independent) {
-            navigation_.cursor = static_cast<std::uint8_t>(
-                (static_cast<int>(navigation_.cursor) + static_cast<int>(kChannelCount) + delta) %
-                static_cast<int>(kChannelCount));
-            invalidate();
-        }
-        return;
-    }
-
-    if (navigation_.screen == Screen::Performance) {
-        settingsEditor_.changeMasterTempo(delta);
-        invalidate();
-        return;
-    }
-
-    if (navigation_.screen == Screen::ModeSelect) {
-        const int optionCount = static_cast<int>(kModeFunctions.size());
-        navigation_.cursor = static_cast<std::uint8_t>(
-            (static_cast<int>(navigation_.cursor) + optionCount + delta) % optionCount);
-        invalidate();
-        return;
-    }
-
-    if (navigation_.screen == Screen::Templates) {
-        navigation_.cursor = static_cast<std::uint8_t>(clampInt(
-            static_cast<int>(navigation_.cursor) + delta,
-            0,
-            static_cast<int>(services::TemplateService::kTemplateCount - 1U)));
-        if (navigation_.cursor < navigation_.scrollOffset) {
-            navigation_.scrollOffset = navigation_.cursor;
-        }
-        if (navigation_.cursor >= navigation_.scrollOffset + 5U) {
-            navigation_.scrollOffset = static_cast<std::uint8_t>(navigation_.cursor - 4U);
-        }
-        invalidate();
-        return;
-    }
-
-    if (navigation_.screen == Screen::PresetSlots) {
-        navigation_.cursor = static_cast<std::uint8_t>(clampInt(
-            static_cast<int>(navigation_.cursor) + delta,
-            0,
-            static_cast<int>(services::PersistentStateService::kUserPresetSlotCount - 1U)));
-        if (navigation_.cursor < navigation_.scrollOffset) {
-            navigation_.scrollOffset = navigation_.cursor;
-        }
-        if (navigation_.cursor >= navigation_.scrollOffset + 5U) {
-            navigation_.scrollOffset = static_cast<std::uint8_t>(navigation_.cursor - 4U);
-        }
-        invalidate();
-        return;
-    }
-
-    if (navigation_.screen == Screen::NameEntry) {
-        adjustPresetNameCharacter(delta);
-        invalidate();
-        return;
-    }
-
-    if (navigation_.screen == Screen::OverwriteConfirm) {
-        navigation_.cursor = static_cast<std::uint8_t>(clampInt(
-            static_cast<int>(navigation_.cursor) + delta, 0, 1));
-        invalidate();
-        return;
-    }
-
-    if (navigation_.screen == Screen::ModeChangeConfirm || navigation_.screen == Screen::HighScoreClearConfirm ||
-        navigation_.screen == Screen::FactoryResetConfirm) {
-        navigation_.cursor = static_cast<std::uint8_t>(clampInt(
-            static_cast<int>(navigation_.cursor) + delta, 0, 1));
-        invalidate();
-        return;
-    }
-
-    if (navigation_.screen == Screen::Settings) {
-        if (navigation_.editing) {
-            settingsEditor_.adjust(
-                navigation_.settingsPage,
-                navigation_.cursor,
-                navigation_.selectedChannel,
-                delta);
-            invalidate();
-        } else {
-            navigation_.cursor = static_cast<std::uint8_t>(clampInt(
-                static_cast<int>(navigation_.cursor) + delta,
-                0,
-                static_cast<int>(settingsPageItemCount(
-                    navigation_.settingsPage,
-                    state_.channels[navigation_.selectedChannel].common.mode,
-                    navigation_.highScoreResetAvailable)) - 1));
-            normalizeScrollOffset();
-            invalidate();
-        }
-        return;
-    }
-
-    if (navigation_.screen == Screen::SequencerEditor) {
-        const SequencerSettings& sequencer = state_.channels[navigation_.selectedChannel].sequencer;
-        int absoluteStep = navigation_.sequencerPage * 16 + navigation_.sequencerCursor + delta;
-        absoluteStep = clampInt(absoluteStep, 0, static_cast<int>(sequencer.length) - 1);
-        navigation_.sequencerPage = static_cast<std::uint8_t>(absoluteStep / 16);
-        navigation_.sequencerCursor = static_cast<std::uint8_t>(absoluteStep % 16);
-        invalidate();
-    }
-}
-
 void UiController::handleTransportButton(
     const hal::ButtonSample& button,
     const std::uint32_t nowMs) {
+    if (navigation_.screen == Screen::GrooveEditor) {
+        if (button.edge == hal::ButtonEdge::Released) {
+            if (!transportPressConsumedByGrooveZoom_) {
+                toggleTransport(nowMs);
+            }
+            transportPressConsumedByGrooveZoom_ = false;
+        }
+        return;
+    }
     if (button.edge != hal::ButtonEdge::Pressed) {
         return;
     }
@@ -253,7 +156,11 @@ void UiController::handleTapButton(
         return;
     }
 
-    if (navigation_.screen == Screen::Performance) {
+    if (navigation_.screen == Screen::GrooveEditor) {
+        navigation_.grooveCursor = static_cast<std::uint8_t>(
+            (navigation_.grooveCursor + 1U) % navigation_.grooveDraft.length);
+        invalidate();
+    } else if (navigation_.screen == Screen::Performance) {
         registerTapTempo(nowMs);
     } else if (navigation_.screen == Screen::SequencerEditor && navigation_.sequencerPage > 0U) {
         --navigation_.sequencerPage;
@@ -279,6 +186,26 @@ void UiController::handleResetButton(
         openSettingsPage(SettingsPage::Preferences);
     } else if (navigation_.screen == Screen::PresetSlots) {
         openSettingsPage(SettingsPage::Preferences);
+    } else if (navigation_.screen == Screen::GrooveEditor) {
+        if (grooveEditorDirty_) {
+            grooveLoadPendingAfterDiscard_ = false;
+            navigation_.screen = Screen::GrooveDiscardConfirm;
+            navigation_.cursor = 0U;
+            invalidate();
+        } else {
+            leaveGrooveEditor(true);
+        }
+    } else if (navigation_.screen == Screen::GrooveSlots) {
+        navigation_.screen = Screen::GrooveEditor;
+        invalidate();
+    } else if (navigation_.screen == Screen::GrooveNameEntry ||
+               navigation_.screen == Screen::GrooveOverwriteConfirm) {
+        navigation_.screen = Screen::GrooveSlots;
+        navigation_.cursor = navigation_.selectedGrooveSlot;
+        invalidate();
+    } else if (navigation_.screen == Screen::GrooveDiscardConfirm) {
+        navigation_.screen = Screen::GrooveEditor;
+        invalidate();
     } else if (navigation_.screen == Screen::NameEntry ||
                navigation_.screen == Screen::OverwriteConfirm) {
         navigation_.screen = Screen::PresetSlots;

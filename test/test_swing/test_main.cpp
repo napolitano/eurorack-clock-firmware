@@ -106,6 +106,47 @@ std::vector<std::uint32_t> collectGrooveRiseTicks(
     return ticks;
 }
 
+
+std::vector<std::uint32_t> collectCustomGrooveRiseTicks(
+    const CustomGroovePattern& pattern,
+    const std::uint8_t swingPercent,
+    const std::size_t count) {
+    ClockState state{};
+    initializeFactoryDefaults(state);
+    state.operatingMode = OperatingMode::Independent;
+    state.source = ClockSource::Internal;
+    state.bpm = 120U;
+    for (auto& configuredChannel : state.channels) configuredChannel.common.mode = ChannelMode::Off;
+    auto& channel = state.channels[0];
+    channel.common.mode = ChannelMode::Clock;
+    channel.common.swingPercent = swingPercent;
+    channel.common.groove = {GroovePreset::Custom, 100U, 0U, 0U};
+    channel.common.probabilityPercent = 100U;
+    channel.common.phasePercent = 0U;
+    channel.common.gateLengthMs = 1U;
+    channel.common.rate = {ClockRatioMode::Multiply, 1U, 1U, 1U};
+
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    gates.enableOutputStage();
+    engine::ClockEngine engine(gates);
+    engine.updateCustomGrooveSlot(0U, pattern, false);
+    engine.begin(state);
+    engine.play();
+
+    std::vector<std::uint32_t> ticks;
+    for (std::uint32_t tick = 0U; tick < 120000U && ticks.size() < count; ++tick) {
+        fakefw::writes.clear();
+        engine.processSchedulerTick();
+        const bool rose = std::any_of(
+            fakefw::writes.begin(), fakefw::writes.end(), [](const fakefw::PinWrite& write) {
+                return write.pin == pinmap::kGateChannelPins[0] && write.value == HIGH;
+            });
+        if (rose) ticks.push_back(tick);
+    }
+    return ticks;
+}
+
 void assertObservedPair(std::uint8_t swing, std::uint32_t expectedLong, std::uint32_t expectedShort) {
     const auto ticks = collectRiseTicks(swing, 4U);
     TEST_ASSERT_EQUAL_UINT32(4U, static_cast<std::uint32_t>(ticks.size()));
@@ -198,6 +239,113 @@ void testCombinedSwingAndGrooveRemainMonotonic() {
     for (std::size_t i = 1U; i < ticks.size(); ++i) TEST_ASSERT_TRUE(ticks[i] > ticks[i - 1U]);
 }
 
+void testCustomGrooveLookupSupportsSignedOffsetsAmountAndRotation() {
+    CustomGroovePattern pattern{};
+    pattern.length = 4U;
+    pattern.offsets256[0] = -64;
+    pattern.offsets256[1] = 32;
+    pattern.offsets256[2] = 96;
+    pattern.offsets256[3] = -120;
+    TEST_ASSERT_EQUAL(-64, customGrooveOffset256(pattern, 0U, 100U, 0U));
+    TEST_ASSERT_EQUAL(48, customGrooveOffset256(pattern, 2U, 50U, 0U));
+    TEST_ASSERT_EQUAL(32, customGrooveOffset256(pattern, 0U, 100U, 1U));
+}
+
+void testCustomGrooveRejectsInvalidLengthAndOffset() {
+    CustomGroovePattern pattern{};
+    pattern.length = 0U;
+    TEST_ASSERT_FALSE(isCustomGroovePatternValid(pattern));
+    pattern.length = 4U;
+    pattern.offsets256[1] = 121;
+    TEST_ASSERT_FALSE(isCustomGroovePatternValid(pattern));
+}
+
+void testCustomGrooveSignedExtremesRemainMonotonicWithSwing() {
+    CustomGroovePattern pattern{};
+    pattern.length = 4U;
+    pattern.offsets256[0] = 0;
+    pattern.offsets256[1] = 120;
+    pattern.offsets256[2] = -120;
+    pattern.offsets256[3] = 0;
+    const auto ticks = collectCustomGrooveRiseTicks(pattern, 50U, 8U);
+    TEST_ASSERT_EQUAL_UINT32(8U, static_cast<std::uint32_t>(ticks.size()));
+    for (std::size_t index = 1U; index < ticks.size(); ++index) {
+        TEST_ASSERT_TRUE(ticks[index] > ticks[index - 1U]);
+    }
+}
+
+void testCustomGroovePreviewCanBeAppliedAndClearedWithoutStateMutation() {
+    ClockState state{};
+    initializeFactoryDefaults(state);
+    state.operatingMode = OperatingMode::Independent;
+    state.channels[0].common.mode = ChannelMode::Clock;
+    state.channels[0].common.groove = {GroovePreset::Off, 100U, 0U, 0U};
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    gates.enableOutputStage();
+    engine::ClockEngine engine(gates);
+    engine.begin(state);
+    CustomGroovePattern pattern{};
+    pattern.length = 4U;
+    pattern.offsets256[1] = 64;
+    engine.setCustomGroovePreview(0U, pattern, 100U, 0U, false);
+    TEST_ASSERT_EQUAL(GroovePreset::Off, state.channels[0].common.groove.preset);
+    engine.clearCustomGroovePreview(0U, false);
+    TEST_ASSERT_EQUAL(GroovePreset::Off, state.channels[0].common.groove.preset);
+}
+
+
+void testCustomGrooveDefensiveAndRescheduleBranches() {
+    ClockState state{};
+    initializeFactoryDefaults(state);
+    state.operatingMode = OperatingMode::Independent;
+    for (auto& configuredChannel : state.channels) configuredChannel.common.mode = ChannelMode::Off;
+    state.channels[0].common.mode = ChannelMode::Clock;
+    state.channels[0].common.groove = {GroovePreset::Custom, 100U, 0U, 0U};
+    state.channels[1].common.mode = ChannelMode::Clock;
+    state.channels[1].common.groove = {GroovePreset::Custom, 100U, 0U, 1U};
+
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    gates.enableOutputStage();
+    engine::ClockEngine engine(gates);
+    engine.begin(state);
+
+    CustomGroovePattern pattern{};
+    pattern.length = 4U;
+    pattern.offsets256[0] = -120;
+    pattern.offsets256[1] = 120;
+
+    CustomGroovePattern invalid = pattern;
+    invalid.length = 0U;
+    engine.updateCustomGrooveSlot(kCustomGrooveSlotCount, pattern, true);
+    engine.updateCustomGrooveSlot(0U, invalid, true);
+    engine.updateCustomGrooveSlot(0U, pattern, false);
+    engine.updateCustomGrooveSlot(0U, pattern, true);
+
+    engine.setCustomGroovePreview(kChannelCount, pattern, 100U, 0U, true);
+    engine.setCustomGroovePreview(0U, invalid, 100U, 0U, true);
+    engine.setCustomGroovePreview(0U, pattern, 101U, 0U, true);
+    engine.setCustomGroovePreview(0U, pattern, 100U, pattern.length, true);
+    engine.setCustomGroovePreview(0U, pattern, 100U, 0U, false);
+    engine.setCustomGroovePreview(0U, pattern, 100U, 0U, true);
+
+    engine.clearCustomGroovePreview(kChannelCount, true);
+    engine.clearCustomGroovePreview(0U, false);
+    engine.clearCustomGroovePreview(0U, true);
+
+    TEST_ASSERT_EQUAL(0, customGrooveOffset256(invalid, 0U, 100U, 0U));
+    TEST_ASSERT_EQUAL(0, customGrooveOffset256(pattern, 0U, 0U, 0U));
+    TEST_ASSERT_EQUAL(-120, customGrooveOffset256(pattern, 4U, 255U, 4U));
+
+    invalid = pattern;
+    invalid.length = static_cast<std::uint8_t>(kCustomGrooveMaximumSteps + 1U);
+    TEST_ASSERT_FALSE(isCustomGroovePatternValid(invalid));
+    invalid = pattern;
+    invalid.offsets256[1] = -121;
+    TEST_ASSERT_FALSE(isCustomGroovePatternValid(invalid));
+}
+
 }  // namespace
 
 int main() {
@@ -230,5 +378,10 @@ int main() {
     RUN_TEST(testGrooveRotationMovesPatternOrigin);
     RUN_TEST(testPocketGrooveIsRepeatable);
     RUN_TEST(testCombinedSwingAndGrooveRemainMonotonic);
+    RUN_TEST(testCustomGrooveLookupSupportsSignedOffsetsAmountAndRotation);
+    RUN_TEST(testCustomGrooveRejectsInvalidLengthAndOffset);
+    RUN_TEST(testCustomGrooveSignedExtremesRemainMonotonicWithSwing);
+    RUN_TEST(testCustomGroovePreviewCanBeAppliedAndClearedWithoutStateMutation);
+    RUN_TEST(testCustomGrooveDefensiveAndRescheduleBranches);
     return UNITY_END();
 }

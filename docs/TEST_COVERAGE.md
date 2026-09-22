@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v1.0.1
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 481 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 488 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -25,13 +25,13 @@ Compiler branches:  4288/5562 (77.09%, informational only)
 
 The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on the exact tagged source before publishing. Local pre-release verification covers the changed host renderer regression, the 96-case external-SYNC suite, release/manual tooling, documentation policies, and both headless simulator tests; the authoritative 1.0.1 repository-wide percentages are therefore produced by the release CI rather than copied forward from 1.0.0.
 
-Current 1.1 development working baseline after configurable external-input roles, the HARDWARE submenu, inverted Settings selection and their regression coverage:
+Current 1.1 development working baseline after Groove Engine Stage 2, schema-v12 migration coverage and Custom Groove editor/store regression coverage:
 
 ```text
-Executable lines:   7940/8200 (96.83%)
-Functions:            664/675  (98.37%)
-Decision branches:   4835/5372 (90.00%)
-Compiler branches:   4836/6247 (77.41%, informational only)
+Executable lines:   8650/8934 (96.82%)
+Functions:            713/724  (98.48%)
+Decision branches:   5397/5897 (91.52%)
+Compiler branches:   5398/6860 (78.69%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.

@@ -38,7 +38,7 @@ bool isAllowedV9PresetCharacter(const char character) {
 bool PersistentStateService::deserializeV9State(
     const std::array<std::uint8_t, kV9StatePayloadSize>& payload,
     ClockState& state) {
-    static_assert(kStatePayloadSize == kV9StatePayloadSize + 29U);
+    static_assert(kStatePayloadSize == kV9StatePayloadSize + 38U);
     std::array<std::uint8_t, kStatePayloadSize> upgraded{};
     std::copy(payload.begin(), payload.end(), upgraded.begin());
     std::size_t position = kV9StatePayloadSize;

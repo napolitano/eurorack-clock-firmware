@@ -8,6 +8,8 @@
 
 #include "domain/groove_catalog.h"
 
+#include "domain/custom_groove.h"
+
 #include <algorithm>
 
 namespace clockfw::groove {
@@ -32,6 +34,7 @@ constexpr GrooveDefinition kDefinitions[kPresetCount] = {
     {"POCKET B", 8U, {0U, 120U, 40U, 60U, 10U, 150U, 30U, 90U}},
     {"POCKET C", 16U, {0U, 90U, 20U, 140U, 10U, 60U, 30U, 120U,
                          0U, 130U, 40U, 80U, 20U, 160U, 30U, 100U}},
+    {"CUSTOM", 1U, {0U}},
 };
 
 std::size_t presetIndex(const GroovePreset preset) {

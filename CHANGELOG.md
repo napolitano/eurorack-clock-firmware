@@ -10,6 +10,17 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Groove Engine Stage 2 - Custom editor
+
+- Add a graphical 128x64 Custom Groove editor with solid beat guides, dotted step guides, diamond timing markers, selected-marker fill, beat labels and bounded 4-step zoom.
+- Keep editing non-destructive: live audition is a runtime preview only; BACK can discard the draft and restores the pre-editor Groove assignment without writing Flash.
+- Support fine encoder timing moves, TAP+encoder coarse moves, TAP marker advance, START+encoder quick zoom, and the standard long-press menu for SAVE, LOAD, ZOOM and LENGTH.
+- Add signed per-step microtiming for 1-64-step Custom Grooves while preserving monotonic bounded event scheduling when combined with Swing.
+- Add CRC-protected fixed Custom Groove records outside repeated ClockState persistence. The current 8-KiB layout stores 10 named 64-step slots at bytes 3136-4095, preserving the legacy score records at 3072-3135 and the Top-100 region from 4096 onward.
+- Advance development persistence to schema v12 by appending one Custom Groove slot reference for One Clock and each Independent channel; schema v11 and all previously supported formats remain explicit migration inputs.
+- Keep the accepted 99-slot UX target as future persistence work; it is not claimed by this implementation because the existing 8-KiB image cannot hold 99 full 64-step records safely.
+
+
 ### Configurable inputs and hardware settings
 
 - Treat the two Rev-1 LM393 comparator paths as globally configurable `INPUT 1` / `INPUT 2` roles while preserving the physical SYNC/PA8 and RST/PA9 net identities and factory `SYNC / RESET` assignment.
@@ -26,8 +37,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Validation
 
-- Native inventory: **481 named tests**; Input/SYNC suite **116 / 5,177**, Settings **88 / 261**, complete host firmware **35** cases across all tested display variants.
-- Repository coverage: **7940/8200 executable lines (96.83%) / 664/675 functions (98.37%) / 4835/5372 source decision branches (90.00%)**; the 95/95/90 gates remain unchanged.
+- Native inventory: **488 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **33 / 186**, Settings **88 / 261**, complete host firmware **37** cases across all tested display variants.
+- Repository coverage: **8650/8934 executable lines (96.82%) / 713/724 functions (98.48%) / 5397/5897 source decision branches (91.52%)**; the 95/95/90 gates remain unchanged.
 - Full ASan/UBSan Native/firmware matrix passes, including legacy I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin variants.
 
 ### Changed
@@ -38,8 +49,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 ### Fixed
 
 - Prevent selecting `RUN` in Settings from starting or stopping transport merely because the assigned comparator is already HIGH/LOW. RUN now captures a neutral baseline on boot and role reassignment; only a later physical level change may command transport, preserving the STOP-on-boot invariant.
-- Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v10 2,783-byte repeated-state footprint and 32-byte in-place growth ceiling.
-- Updated development and coverage documentation to the current 481-case Native inventory.
+- Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v12 2,882-byte repeated-state footprint and 21-byte in-place growth ceiling.
+- Updated development and coverage documentation to the current 488-case Native inventory.
 
 ### Groove Engine Stage 1
 

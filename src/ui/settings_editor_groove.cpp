@@ -20,13 +20,17 @@ void SettingsEditor::adjustGroove(
             static_cast<int>(settings.preset) + delta,
             0,
             static_cast<int>(groove::kPresetCount - 1U)));
-        const std::uint8_t length = groove::patternLength(settings.preset);
+        const std::uint8_t length = settings.preset == GroovePreset::Custom
+            ? kCustomGrooveMaximumSteps
+            : groove::patternLength(settings.preset);
         if (settings.rotation >= length) settings.rotation = 0U;
     } else if (rowIndex == 1U) {
         settings.amountPercent = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(settings.amountPercent) + delta, 0, 100));
     } else if (rowIndex == 2U) {
-        const std::uint8_t length = groove::patternLength(settings.preset);
+        const std::uint8_t length = settings.preset == GroovePreset::Custom
+            ? kCustomGrooveMaximumSteps
+            : groove::patternLength(settings.preset);
         settings.rotation = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(settings.rotation) + delta, 0, static_cast<int>(length - 1U)));
     } else {

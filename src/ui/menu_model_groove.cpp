@@ -26,8 +26,20 @@ MenuRow buildGrooveMenuRow(
         std::snprintf(row.value, sizeof(row.value), "%u%%", settings.amountPercent);
     } else if (rowIndex == 2U) {
         std::snprintf(row.label, sizeof(row.label), "%s", text::get(text::TextId::Rotate));
-        const std::uint8_t length = groove::patternLength(settings.preset);
-        std::snprintf(row.value, sizeof(row.value), "%u/%u", settings.rotation, length > 0U ? length - 1U : 0U);
+        if (settings.preset == GroovePreset::Custom) {
+            std::snprintf(row.value, sizeof(row.value), "%u", settings.rotation);
+        } else {
+            const std::uint8_t length = groove::patternLength(settings.preset);
+            std::snprintf(
+                row.value,
+                sizeof(row.value),
+                "%u/%u",
+                settings.rotation,
+                length > 0U ? length - 1U : 0U);
+        }
+    } else if (rowIndex == 3U) {
+        std::snprintf(row.label, sizeof(row.label), "%s", text::get(text::TextId::Editor));
+        std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Arrow));
     }
     return row;
 }

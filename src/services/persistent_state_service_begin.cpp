@@ -26,6 +26,18 @@ void PersistentStateService::begin() {
         currentRecord.size()) && deserializeCurrentRecord(currentRecord, loadedCurrent);
 
     if (!hasStoredCurrentState_) {
+        std::array<std::uint8_t, kV11CurrentRecordSize> v11Record{};
+        if (storage_.readBytes(
+                kCurrentRecordOffset,
+                v11Record.data(),
+                v11Record.size()) &&
+            deserializeV11CurrentRecord(v11Record, loadedCurrent)) {
+            hasStoredCurrentState_ = true;
+            migrationNeeded = true;
+        }
+    }
+
+    if (!hasStoredCurrentState_) {
         std::array<std::uint8_t, kV10CurrentRecordSize> v10Record{};
         if (storage_.readBytes(
                 kCurrentRecordOffset,
@@ -136,7 +148,7 @@ void PersistentStateService::begin() {
     }
     writePending_ = false;
 
-    // Build a canonical v11 records area in PersistentStorage's bounded staging
+    // Build a canonical v12 records area in PersistentStorage's bounded staging
     // buffer while records are being inspected. If no old schema is found the
     // transaction is simply discarded. This avoids keeping migrated copies of all
     // eight ClockState objects or an 8-KiB storage image on the call stack.
@@ -159,6 +171,16 @@ void PersistentStateService::begin() {
             presetOffset(slotIndex),
             record.data(),
             record.size()) && deserializePresetRecord(record, name, loadedPreset);
+
+        if (!presetValid_[slotIndex]) {
+            std::array<std::uint8_t, kV11PresetRecordSize> v11Record{};
+            presetValid_[slotIndex] = storage_.readBytes(
+                kV11CurrentRecordSize + static_cast<std::size_t>(slotIndex) * kV11PresetRecordSize,
+                v11Record.data(),
+                v11Record.size()) &&
+                deserializeV11PresetRecord(v11Record, name, loadedPreset);
+            loadedPriorSchema = presetValid_[slotIndex];
+        }
 
         if (!presetValid_[slotIndex]) {
             std::array<std::uint8_t, kV10PresetRecordSize> v10Record{};

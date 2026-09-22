@@ -16,7 +16,7 @@
 namespace clockfw::groove {
 
 /** @brief Number of selectable values including OFF. */
-inline constexpr std::size_t kPresetCount = 8U;
+inline constexpr std::size_t kPresetCount = 9U;
 
 /** @brief Returns a compact stable UI label for one factory groove. */
 const char* presetLabel(GroovePreset preset);

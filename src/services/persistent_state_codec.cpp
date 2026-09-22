@@ -5,31 +5,21 @@
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
  */
-
 #include "services/persistent_state_service.h"
 #include "services/persistent_state_validation.h"
-
-
 #include <algorithm>
 #include <cstring>
-
 #include "config.h"
-
 namespace clockfw::services {
 namespace {
-
-/** Four-byte CURRENT magic value "CU11" stored little-endian. */
-constexpr std::uint32_t kCurrentMagic = 0x31315543UL;
-
-/** Four-byte preset magic value "PR11" stored little-endian. */
-constexpr std::uint32_t kPresetMagic = 0x31315250UL;
-
+/** Four-byte CURRENT magic value "CU12" stored little-endian. */
+constexpr std::uint32_t kCurrentMagic = 0x32315543UL;
+/** Four-byte preset magic value "PR12" stored little-endian. */
+constexpr std::uint32_t kPresetMagic = 0x32315250UL;
 /** Reflected CRC-32 polynomial used by Ethernet/ZIP and many embedded formats. */
 constexpr std::uint32_t kCrcPolynomial = 0xEDB88320UL;
-
 /** CRC-32 initialization/final-XOR value. */
 constexpr std::uint32_t kCrcInitialValue = 0xFFFFFFFFUL;
-
 /** Fixed byte offset at which CURRENT payload begins. */
 constexpr std::size_t kCurrentPayloadOffset = 8U;
 
@@ -224,6 +214,13 @@ PersistentStateService::serializeState(const ClockState& state) {
     writer.write8(static_cast<std::uint8_t>(state.inputs.input1));
     writer.write8(static_cast<std::uint8_t>(state.inputs.input2));
 
+    // Custom Groove slot references are appended in schema v12. The actual 64-step
+    // patterns remain in the separate fixed-record CustomGrooveStore region.
+    writer.write8(state.unifiedClock.groove.customSlot);
+    for (const ChannelConfig& channel : state.channels) {
+        writer.write8(channel.common.groove.customSlot);
+    }
+
     // A schema-size mismatch is a programmer error and should fail at compile/test time.
     (void)writer.position();
     return payload;
@@ -301,6 +298,10 @@ bool PersistentStateService::deserializeState(
     }
     candidate.inputs.input1 = static_cast<InputFunction>(reader.read8());
     candidate.inputs.input2 = static_cast<InputFunction>(reader.read8());
+    candidate.unifiedClock.groove.customSlot = reader.read8();
+    for (ChannelConfig& channel : candidate.channels) {
+        channel.common.groove.customSlot = reader.read8();
+    }
 
     if (reader.position() != kStatePayloadSize || !isStateValid(candidate)) {
         return false;
@@ -393,7 +394,6 @@ bool PersistentStateService::deserializePresetRecord(
     return deserializeState(payload, state);
 }
 
-
 std::uint32_t PersistentStateService::calculateCrc32(
     const std::uint8_t* const data,
     const std::size_t size) {
@@ -410,7 +410,6 @@ std::uint32_t PersistentStateService::calculateCrc32(
     }
     return crc ^ kCrcInitialValue;
 }
-
 
 bool PersistentStateService::isStateValid(const ClockState& state) {
     return isPersistentStateValid(state);
@@ -442,6 +441,5 @@ bool PersistentStateService::statesEqual(
     const ClockState& second) {
     return serializeState(first) == serializeState(second);
 }
-
 
 }  // namespace clockfw::services

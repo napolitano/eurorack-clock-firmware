@@ -14,6 +14,8 @@
 #include "engine/clock_engine.h"
 #include "hal/oled_display.h"
 #include "services/persistent_state_service.h"
+#include "services/custom_groove_store.h"
+#include "ui/groove_editor_renderer.h"
 #include "ui/channel_navigation_renderer.h"
 #include "ui/performance_renderer.h"
 #include "ui/settings_renderer.h"
@@ -35,6 +37,12 @@ public:
      * @param display Display abstraction receiving the actual drawing commands.
      */
     UiRenderer(hal::OledDisplay& display, const services::PersistentStateService& persistentState);
+
+    /** @brief Constructs the renderer with access to the persistent Custom Groove library. */
+    UiRenderer(
+        hal::OledDisplay& display,
+        const services::PersistentStateService& persistentState,
+        const services::CustomGrooveStore& customGrooveStore);
 
     /**
      * @brief Renders the screen selected by the current navigation state.
@@ -66,9 +74,11 @@ public:
 private:
     hal::OledDisplay& display_;
     const services::PersistentStateService& persistentState_;
+    const services::CustomGrooveStore* customGrooveStore_ = nullptr;
     PerformanceRenderer performanceRenderer_;
     ChannelNavigationRenderer channelNavigationRenderer_;
     SettingsRenderer settingsRenderer_;
+    GrooveEditorRenderer grooveEditorRenderer_;
     ScreensaverRenderer screensaverRenderer_;
 };
 

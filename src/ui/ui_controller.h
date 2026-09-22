@@ -17,6 +17,7 @@
 #include "hal/external_input_capture.h"
 #include "hal/gate_output_driver.h"
 #include "services/persistent_state_service.h"
+#include "services/custom_groove_store.h"
 #include "services/tap_tempo.h"
 #include "ui/settings_editor.h"
 #include "ui/ui_renderer.h"
@@ -50,6 +51,27 @@ public:
         const hal::ExternalInputCapture* externalInputs = nullptr,
         const hal::GateOutputDriver* gateOutputs = nullptr);
 
+    /**
+     * @brief Constructs the controller with Custom Groove persistence enabled.
+     * @param state Mutable musical/application state.
+     * @param engine Real-time timing engine receiving committed configuration changes.
+     * @param renderer Stateless screen renderer.
+     * @param persistentState Wear-aware persistence service for user transport changes.
+     * @param customGrooveStore Fixed-slot Custom Groove persistence service.
+     * @param leaderboard Optional ranked Easter-egg leaderboard exposed for user reset.
+     * @param externalInputs Optional external-input diagnostics provider.
+     * @param gateOutputs Optional gate-output diagnostics provider.
+     */
+    UiController(
+        ClockState& state,
+        engine::ClockEngine& engine,
+        UiRenderer& renderer,
+        services::PersistentStateService& persistentState,
+        services::CustomGrooveStore& customGrooveStore,
+        game::ArcadeLeaderboardStore* leaderboard = nullptr,
+        const hal::ExternalInputCapture* externalInputs = nullptr,
+        const hal::GateOutputDriver* gateOutputs = nullptr);
+
     /** @brief Marks the current frame as requiring a redraw. */
     void invalidate();
 
@@ -74,7 +96,7 @@ public:
 
 private:
     /** @brief Routes one encoder detent according to the active screen and edit state. */
-    void handleEncoderDelta(std::int8_t delta, bool tapPressed);
+    void handleEncoderDelta(std::int8_t delta, bool tapPressed, bool transportPressed);
 
     /** @brief Handles encoder push/release events. */
     void handleEncoderButton(const hal::ButtonSample& button, std::uint32_t nowMs);
@@ -157,6 +179,43 @@ private:
     /** @brief Loads the selected preset without causing an implicit transport transition. */
     void loadSelectedPreset(std::uint32_t nowMs);
 
+
+    /** @brief Opens the graphical Custom Groove editor with a runtime-only live preview. */
+    void openGrooveEditor();
+
+    /** @brief Applies the draft to the runtime-only preview channels without persisting it. */
+    void updateGroovePreview();
+
+    /** @brief Clears all runtime preview overrides used by the Custom Groove editor. */
+    void clearGroovePreview();
+
+    /** @brief Moves the selected Custom Groove marker by one fine/coarse offset increment. */
+    void adjustGrooveOffset(std::int8_t delta, bool coarse);
+
+    /** @brief Changes the editor zoom in four-step windows; direction >0 zooms in. */
+    void adjustGrooveZoom(std::int8_t direction);
+
+    /** @brief Opens the fixed-record Custom Groove slot list. */
+    void openGrooveSlots(GrooveSlotAction action);
+
+    /** @brief Loads the selected Custom Groove slot into the draft and live preview. */
+    void loadSelectedGroove();
+
+    /** @brief Prepares the 16-character Custom Groove name editor. */
+    void prepareGrooveName();
+
+    /** @brief Rotates the active Custom Groove name character. */
+    void adjustGrooveNameCharacter(std::int8_t delta);
+
+    /** @brief Saves the current draft into the selected fixed-record Custom Groove slot. */
+    void saveCustomGroove(std::uint32_t nowMs, bool keepExistingName);
+
+    /** @brief Commits the selected slot as the active Groove and returns to the Groove page. */
+    void activateSavedCustomGroove(std::uint32_t nowMs);
+
+    /** @brief Returns from the editor, restoring the pre-editor state on discard. */
+    void leaveGrooveEditor(bool discardChanges);
+
     /** @brief Queues the complete current configuration for wear-coalesced persistence. */
     void persistCurrentState(std::uint32_t nowMs);
 
@@ -173,6 +232,7 @@ private:
     engine::ClockEngine& engine_;
     UiRenderer& renderer_;
     services::PersistentStateService& persistentState_;
+    services::CustomGrooveStore* customGrooveStore_ = nullptr;
     game::ArcadeLeaderboardStore* leaderboard_ = nullptr;
     const hal::ExternalInputCapture* externalInputs_ = nullptr;
     const hal::GateOutputDriver* gateOutputs_ = nullptr;
@@ -207,6 +267,11 @@ private:
     std::uint32_t lastScreensaverFrameAtMs_ = 0U;
     std::uint32_t screensaverFrameIndex_ = 0U;
     std::uint32_t lastExternalInputActivitySequence_ = 0U;
+
+    GrooveSettings grooveEditorOriginalSettings_{};
+    bool grooveEditorDirty_ = false;
+    bool grooveLoadPendingAfterDiscard_ = false;
+    bool transportPressConsumedByGrooveZoom_ = false;
 };
 
 }  // namespace clockfw::ui

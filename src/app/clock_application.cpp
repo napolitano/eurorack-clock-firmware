@@ -56,10 +56,21 @@ ClockApplication::ClockApplication()
       eggJourneyGame_(display_, controlPanel_, gateOutputs_, eggJourneyLeaderboard_),
       beatknecht_(display_, controlPanel_, gateOutputs_),
       persistentState_(persistentStorage_),
+      customGrooveStore_(persistentStorage_),
       engine_(gateOutputs_),
       externalSyncController_(externalInputs_, engine_),
-      renderer_(display_, persistentState_),
-      uiController_(state_, engine_, renderer_, persistentState_, selectedLeaderboard_, &externalInputs_, &gateOutputs_) {}
+      renderer_(display_, persistentState_, customGrooveStore_),
+      uiController_(state_, engine_, renderer_, persistentState_, customGrooveStore_, selectedLeaderboard_, &externalInputs_, &gateOutputs_) {}
+
+
+void ClockApplication::loadCustomGrooveLibrary() {
+    for (std::uint8_t slotIndex = 0U; slotIndex < kCustomGrooveSlotCount; ++slotIndex) {
+        CustomGroovePattern pattern{};
+        if (customGrooveStore_.load(slotIndex, pattern)) {
+            engine_.updateCustomGrooveSlot(slotIndex, pattern, false);
+        }
+    }
+}
 
 void ClockApplication::begin() {
     ClockState initialState{};
@@ -76,6 +87,7 @@ void ClockApplication::begin(const ClockState& initialState) {
     // requires an explicit user action before the clock can produce gates.
     persistentState_.begin();
     (void)persistentState_.restoreCurrentState(state_);
+    loadCustomGrooveLibrary();
     state_.transport = TransportState::Stopped;
     activeInstance_ = this;
 

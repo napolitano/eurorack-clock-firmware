@@ -258,21 +258,21 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **481 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **488 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
 | `test_clock_core` | 44 | deterministic rate, Q32, probability, Euclid and sequencer mathematics |
 | `test_realtime` | 28 | scheduler, physical gate driver and realtime input/timing integration |
-| `test_sync_behavior` | 114 | external clock acquisition plus configurable INPUT 1/2 role semantics, transport commands, reset/run levels, jitter/glitches/loss and nominal LM393-front-end modeling |
-| `test_swing` | 28 | atomic swing/groove mathematics plus observed engine edge spacing and pair-duration conservation |
+| `test_sync_behavior` | 116 | external clock acquisition plus configurable INPUT 1/2 role semantics, transport commands, reset/run levels, jitter/glitches/loss and nominal LM393-front-end modeling |
+| `test_swing` | 33 | atomic swing/groove mathematics plus observed engine edge spacing and pair-duration conservation |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
 | `test_controls` | 51 | TIM4 quadrature counting, detent recovery, fast-turn behavior, NORMAL/REVERSED direction and button debounce |
 | `test_settings` | 88 | settings boundaries, input-role exclusivity, INPUTS/HARDWARE navigation, device preferences, grouped channel settings and invalid-input behavior |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
-| `test_host_firmware` | 35 | complete firmware/UI/HAL/persistence scenarios, schema migration and framebuffer/navigation contracts against deterministic framework fakes |
+| `test_host_firmware` | 37 | complete firmware/UI/HAL/persistence scenarios, schema migration and framebuffer/navigation contracts against deterministic framework fakes |
 
 The default Native run executes more than **223,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
 
@@ -285,9 +285,9 @@ python scripts/run_host_tests.py
 Current validated aggregate baseline:
 
 ```text
-Executable lines     6424 / 6682   96.14 %
-Functions              544 / 553    98.37 %
-Decision branches     3857 / 4265   90.43 %
+Executable lines     8650 / 8934   96.82 %
+Functions              713 / 724    98.48 %
+Decision branches     5397 / 5897   91.52 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).

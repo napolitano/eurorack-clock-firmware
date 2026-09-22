@@ -210,7 +210,7 @@ void testGrooveMenuShapeIsStable(){
     TEST_ASSERT_EQUAL_UINT8(5U,ui::settingsPageItemCount(ui::SettingsPage::ChannelTiming,ChannelMode::Clock,false));
     TEST_ASSERT_EQUAL_UINT8(3U,ui::settingsPageItemCount(ui::SettingsPage::UnifiedClock,ChannelMode::Clock,false));
     TEST_ASSERT_EQUAL_UINT8(6U,ui::settingsPageItemCount(ui::SettingsPage::UnifiedTiming,ChannelMode::Clock,false));
-    TEST_ASSERT_EQUAL_UINT8(3U,ui::settingsPageItemCount(ui::SettingsPage::Groove,ChannelMode::Clock,false));
+    TEST_ASSERT_EQUAL_UINT8(4U,ui::settingsPageItemCount(ui::SettingsPage::Groove,ChannelMode::Clock,false));
     const auto row=ui::buildMenuRow(ui::SettingsPage::Groove,0U,0U,h.state);
     TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::GroovePreset),row.label)==0);
     TEST_ASSERT_TRUE(std::strcmp("OFF",row.value)==0);

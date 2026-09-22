@@ -9,7 +9,7 @@ This audit does **not** implement post-1.0 features. It records the constraints 
 
 ## Result
 
-The current V1 runtime is suitable for release qualification, with one important persistence constraint: **post-1.0 per-step metadata must not be added by simply expanding the repeated ClockState record.** The 1.1 development line now uses schema v11 for Pre-Count, Stage-1 Groove assignments, and the two configurable external-input roles, but this does not change the constraint. There is a clean migration path, but the V1 logical layout does not contain enough repeated-record headroom for that approach.
+The current V1 runtime is suitable for release qualification, with one important persistence constraint: **post-1.0 per-step metadata must not be added by simply expanding the repeated ClockState record.** The 1.1 development line now uses schema v12 for Pre-Count, Stage-1 Groove assignments, the two configurable external-input roles, and Custom Groove slot references, but this does not change the constraint. There is a clean migration path, but the V1 logical layout does not contain enough repeated-record headroom for that approach.
 
 No V1 feature must be added to solve this now. The correct action before 1.0 is to freeze and test the current layout, document the migration boundary, and require a new schema/layout design when the first storage-heavy 1.x feature is implemented.
 
@@ -29,26 +29,26 @@ The boundaries are now centralized in `src/hal/persistent_layout.h` and guarded 
 
 ## Exact V1 state budget
 
-Current development schema v11 uses:
+Current development schema v12 uses:
 
-- serialized `ClockState` payload: **285 bytes**;
-- CURRENT record: **297 bytes**;
-- one named preset record: **313 bytes**;
-- CURRENT + eight presets: **2,801 bytes**.
+- serialized `ClockState` payload: **294 bytes**;
+- CURRENT record: **306 bytes**;
+- one named preset record: **322 bytes**;
+- CURRENT + eight presets: **2,882 bytes**.
 
-The next fixed region begins at byte 3,072, so only **271 bytes** remain between the current preset area and the legacy-score compatibility region.
+The next fixed region begins at byte 3,072, so only **190 bytes** remain between the current preset area and the legacy-score compatibility region.
 
 Every byte added naively to the serialized ClockState payload is repeated once in CURRENT and once in each of eight presets. It therefore consumes **9 logical-image bytes**. The maximum safe in-place payload growth before colliding with the next region is only:
 
 ```text
-floor(271 / 9) = 30 bytes
+floor(190 / 9) = 21 bytes
 ```
 
-This is now a tested V1 contract (`kMaximumInPlaceStatePayloadGrowthBytes == 30`). It corrects the misleading assumption that all unused bytes in the 8-KiB image are available to grow the state record.
+This is now a tested V1 contract (`kMaximumInPlaceStatePayloadGrowthBytes == 21`). It corrects the misleading assumption that all unused bytes in the 8-KiB image are available to grow the state record.
 
 ## Consequence for post-1.0 Sequencer/Groove work
 
-Eight channels × 64 Sequencer steps = **512 steps**. Even one extra byte of metadata per step would require 512 bytes for one state and 4,608 bytes when repeated across CURRENT + eight presets. Step Probability, gate length/tie, trigger conditions, and custom Groove data therefore require extension records or another explicit layout redesign - not incremental growth of the repeated schema-v11 ClockState payload.
+Eight channels × 64 Sequencer steps = **512 steps**. Even one extra byte of metadata per step would require 512 bytes for one state and 4,608 bytes when repeated across CURRENT + eight presets. Step Probability, gate length/tie, trigger conditions, and custom Groove data therefore require extension records or another explicit layout redesign - not incremental growth of the repeated schema-v12 ClockState payload.
 
 Accepted future approaches include:
 
@@ -57,22 +57,24 @@ Accepted future approaches include:
 3. sparse/override storage where default step metadata consumes no record space;
 4. a controlled logical-image increase up to the 12-KiB policy ceiling if target RAM/Flash measurements prove it safe.
 
-The design must preserve migration from the supported pre-V1 formats, the v7 release-prep format, stable 1.0.x schema v8, and the current schema-v9 development format. Raw C++ structs and compiler bitfields remain prohibited for durable storage.
+The design must preserve migration from the supported pre-V1 formats, the v7 release-prep format, stable 1.0.x schema v8, and the current schema-v12 development format. Raw C++ structs and compiler bitfields remain prohibited for durable storage.
 
 ## 1.1 custom-groove slot target
 
 The accepted 1.1 UX target is **up to 99 named Custom groove slots**, with rename, overwrite and delete support and explicit `YES / NO` confirmation before destructive overwrite/delete operations. This is a target for the Stage-2 custom editor, not permission to enlarge `ClockState`.
 
+The current Stage-2 implementation deliberately does **not** enlarge the 8-KiB logical image. It uses the otherwise free range **3136-4095** for **10 fixed 96-byte Custom Groove records**. Each record holds a 16-character name, one 1-64-step signed microtiming pattern, metadata and its own CRC. This preserves the four historical 16-byte score records at 3072-3135 and leaves the existing Top-100 region starting at 4096 untouched. The ten-slot count is therefore an implementation limit of this storage revision, not a revision of the longer-term 99-slot UX target.
+
 The current persistence policy leaves at most **4,096 additional logical bytes** between the V1 8-KiB image and the 12-KiB architectural ceiling. If all 99 Custom slots were stored entirely in that extension, the absolute mathematical ceiling would be about **41 bytes per slot before any shared directory/header overhead** (`4096 / 99`). A realistic fixed-slot design therefore needs a record at or below roughly 40 bytes, or a compact variable/sparse representation. The final feasibility depends on the still-open Custom-groove grid length, marker resolution, name encoding and record-integrity metadata.
 
-Accordingly, 99 slots are **architecturally plausible but not yet release-proven**. Before Stage 2 is approved, the implementation must:
+Accordingly, 99 slots are **architecturally plausible but not yet release-proven**. Before the 99-slot target can be approved, the storage design must:
 
-- define the bounded Custom-groove representation and exact serialized byte count;
+- define a substantially more compact Custom-groove representation or deliberately enlarge the logical image;
 - keep groove payloads outside the repeated CURRENT/eight-preset `ClockState` records;
 - preserve migration from schema v11 through schema v10, schema v9 and supported 1.0.x records;
 - prove the enlarged logical-image/BSS cost with a real STM32F401 ELF and the existing memory gate;
 - keep overwrite/delete power-loss-safe under the A/B commit contract;
-- add explicit persistence tests for create/load/rename/overwrite/delete, `NO` cancellation and interrupted commits.
+- add explicit persistence tests for the remaining rename/delete flows, `NO` cancellation and interrupted commits.
 
 If the final groove representation cannot satisfy that budget safely, the slot count must be reduced or the storage architecture changed deliberately; it must not be achieved by weakening the persistence or memory gates.
 
@@ -93,7 +95,7 @@ Post-1.0 storage-heavy rhythm data must therefore remain outside the small hot-p
 ## Public-contract decisions frozen for V1
 
 - Hardware Rev 1 remains gate/trigger focused; no analog CV subsystem is required for 1.0.
-- Persistent schema v11 is the current 1.1 development write format. Schema v10, schema v9, stable 1.0.x schema v8, schema v7, and the earlier supported formats remain explicit migration sources for upgrades. Schema v10 migrates with the factory input roles `SYNC / RESET` injected.
+- Persistent schema v12 is the current 1.1 development write format. Schema v11, schema v10, schema v9, stable 1.0.x schema v8, schema v7, and the earlier supported formats remain explicit migration sources for upgrades. Schema v10 migrates with the factory input roles `SYNC / RESET` injected.
 - Boot always enters STOP regardless of stored transport history.
 - CURRENT and eight named presets remain the user-facing persistence model.
 - No future 1.x feature may silently invalidate V1 presets; migration or explicit compatibility handling is required.
@@ -104,7 +106,7 @@ Post-1.0 storage-heavy rhythm data must therefore remain outside the small hot-p
 - one centralized persistent logical-layout header;
 - compile-time region-order and non-overlap checks;
 - explicit tested constants for V1 state/preset footprint and in-place growth ceiling;
-- documentation that distinguishes physical Flash headroom from actually usable schema-v11 repeated-record headroom;
+- documentation that distinguishes physical Flash headroom from actually usable schema-v12 repeated-record headroom;
 - a release roadmap that forbids new musical features during V1 qualification.
 
 ## Open qualification work - not architecture blockers

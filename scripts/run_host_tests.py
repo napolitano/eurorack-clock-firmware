@@ -144,8 +144,10 @@ def realtime_sources() -> list[Path]:
     relative = [
         "lib/clock_core/src/clock_core.cpp",
         "src/domain/default_configuration.cpp",
+        "src/domain/custom_groove.cpp",
         "src/domain/groove_catalog.cpp",
         "src/engine/clock_engine.cpp",
+        "src/engine/clock_engine_custom_groove.cpp",
         "src/engine/clock_engine_sync.cpp",
         "src/engine/clock_engine_timing.cpp",
         "src/engine/output_mode_resolver.cpp",

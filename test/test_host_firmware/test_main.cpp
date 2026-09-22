@@ -49,6 +49,7 @@
 #include "hal/system_clock.h"
 #include "pin_map.h"
 #include "services/persistent_state_service.h"
+#include "services/custom_groove_store.h"
 #include "services/persistent_state_validation.h"
 #include "services/tap_tempo.h"
 #include "services/template_service.h"
@@ -261,6 +262,33 @@ void writeTestUint32Le(std::uint8_t* const destination, const std::uint32_t valu
 }
 
 
+
+
+template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
+std::array<std::uint8_t, LegacySize> makeLegacyV11Record(
+    const std::array<std::uint8_t, CurrentSize>& current) {
+    constexpr std::size_t kV12PayloadSize = 294U;
+    constexpr std::size_t kV11PayloadSize = 285U;
+    static_assert(kV12PayloadSize == kV11PayloadSize + 9U);
+    std::array<std::uint8_t, LegacySize> legacy{};
+    if constexpr (PayloadOffset == 8U) {
+        writeTestUint32Le(legacy.data(), 0x31315543UL);  // "CU11"
+    } else {
+        std::copy_n(current.begin() + 8, 16U, legacy.begin() + 8);
+        writeTestUint32Le(legacy.data(), 0x31315250UL);  // "PR11"
+    }
+    legacy[4] = 11U;
+    legacy[5] = current[5];
+    writeTestUint16Le(legacy.data() + 6U, static_cast<std::uint16_t>(kV11PayloadSize));
+    std::copy_n(
+        current.begin() + static_cast<std::ptrdiff_t>(PayloadOffset),
+        kV11PayloadSize,
+        legacy.begin() + static_cast<std::ptrdiff_t>(PayloadOffset));
+    writeTestUint32Le(
+        legacy.data() + LegacySize - 4U,
+        testCrc32(legacy.data(), LegacySize - 4U));
+    return legacy;
+}
 
 template <std::size_t CurrentSize, std::size_t LegacySize, std::size_t PayloadOffset>
 std::array<std::uint8_t, LegacySize> makeLegacyV10Record(
@@ -610,12 +638,94 @@ void testPersistentLayoutV1ForwardCompatibilityContract() {
     CHECK_EQ(hal::persistent_layout::kMaximumImageBytes, 12288U);
     CHECK_EQ(hal::persistent_layout::kLegacyScoreRegionOffset, 3072U);
     CHECK_EQ(hal::persistent_layout::kLeaderboardRegionOffset, 4096U);
-    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 285U);
-    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 297U);
-    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 313U);
-    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2801U);
-    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 271U);
-    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 30U);
+    CHECK_EQ(services::PersistentStateService::kCurrentStatePayloadBytes, 294U);
+    CHECK_EQ(services::PersistentStateService::kCurrentRecordBytes, 306U);
+    CHECK_EQ(services::PersistentStateService::kPresetRecordBytes, 322U);
+    CHECK_EQ(services::PersistentStateService::kSettingsPresetFootprintBytes, 2882U);
+    CHECK_EQ(services::PersistentStateService::kBytesBeforeLegacyScoreRegion, 190U);
+    CHECK_EQ(services::PersistentStateService::kMaximumInPlaceStatePayloadGrowthBytes, 21U);
+    CHECK_EQ(services::CustomGrooveStore::kStorageOffset, 3136U);
+    CHECK_EQ(services::CustomGrooveStore::kStorageOffset +
+        static_cast<std::size_t>(kCustomGrooveSlotCount) * services::CustomGrooveStore::kRecordBytes,
+        hal::persistent_layout::kLeaderboardRegionOffset);
+}
+
+
+void testCustomGrooveStorePreservesRegionsAndRejectsCorruption() {
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    services::CustomGrooveStore store(storage);
+    const std::uint8_t legacySentinel = 0x4CU;
+    const std::uint8_t leaderboardSentinel = 0xA7U;
+    CHECK(storage.writeBytes(services::CustomGrooveStore::kStorageOffset - 1U, &legacySentinel, 1U));
+    CHECK(storage.writeBytes(hal::persistent_layout::kLeaderboardRegionOffset, &leaderboardSentinel, 1U));
+
+    CustomGroovePattern source{};
+    source.length = 64U;
+    for (std::size_t index = 0U; index < source.length; ++index) {
+        source.offsets256[index] = static_cast<std::int8_t>(
+            static_cast<int>(index % 9U) * 20 - 80);
+    }
+    CHECK(store.save(0U, "DEEP POCKET", source));
+    CHECK(store.save(kCustomGrooveSlotCount - 1U, "LAST SLOT", source));
+    CHECK(store.exists(0U));
+    CHECK(!store.exists(kCustomGrooveSlotCount));
+
+    CustomGroovePattern restored{};
+    char name[services::CustomGrooveStore::kNameLength + 1U]{};
+    CHECK(store.load(0U, restored, name, sizeof(name)));
+    CHECK_EQ(restored.length, 64U);
+    CHECK(std::strcmp(name, "DEEP POCKET") == 0);
+    for (std::size_t index = 0U; index < source.length; ++index) {
+        CHECK_EQ(restored.offsets256[index], source.offsets256[index]);
+    }
+
+    std::uint8_t sentinel = 0U;
+    CHECK(storage.readBytes(services::CustomGrooveStore::kStorageOffset - 1U, &sentinel, 1U));
+    CHECK_EQ(sentinel, legacySentinel);
+    CHECK(storage.readBytes(hal::persistent_layout::kLeaderboardRegionOffset, &sentinel, 1U));
+    CHECK_EQ(sentinel, leaderboardSentinel);
+
+    std::array<std::uint8_t, services::CustomGrooveStore::kRecordBytes> raw{};
+    CHECK(storage.readBytes(services::CustomGrooveStore::kStorageOffset, raw.data(), raw.size()));
+    raw[32] ^= 0x01U;
+    CHECK(storage.writeBytes(services::CustomGrooveStore::kStorageOffset, raw.data(), raw.size()));
+    CHECK(!store.load(0U, restored));
+
+    CHECK(!store.load(kCustomGrooveSlotCount, restored));
+    CHECK(!store.save(kCustomGrooveSlotCount, "NOPE", source));
+    CHECK(!store.clear(kCustomGrooveSlotCount));
+    CustomGroovePattern invalid{};
+    invalid.length = 0U;
+    CHECK(!store.save(1U, "BAD", invalid));
+
+    CustomGroovePattern shortPattern{};
+    shortPattern.length = 4U;
+    shortPattern.offsets256[1] = 32;
+    CHECK(store.save(1U, nullptr, shortPattern));
+    char tinyName[3]{'X','X','\0'};
+    CHECK(store.load(1U, restored, tinyName, sizeof(tinyName)));
+    CHECK_EQ(tinyName[2], '\0');
+    store.name(1U, nullptr, 0U);
+    char emptyName[4]{'X','X','X','\0'};
+    store.name(kCustomGrooveSlotCount, emptyName, sizeof(emptyName));
+    CHECK_EQ(emptyName[0], '\0');
+
+    CHECK(store.save(2U, "A\x01" "B", shortPattern));
+    char normalized[services::CustomGrooveStore::kNameLength + 1U]{};
+    CHECK(store.load(2U, restored, normalized, sizeof(normalized)));
+    CHECK(normalized[1] == ' ');
+
+    CHECK(storage.readBytes(services::CustomGrooveStore::kStorageOffset + 2U * services::CustomGrooveStore::kRecordBytes,
+                            raw.data(), raw.size()));
+    raw[5] = 0U;
+    writeTestUint32Le(raw.data() + raw.size() - 4U, testCrc32(raw.data(), raw.size() - 4U));
+    CHECK(storage.writeBytes(services::CustomGrooveStore::kStorageOffset + 2U * services::CustomGrooveStore::kRecordBytes,
+                             raw.data(), raw.size()));
+    CHECK(!store.load(2U, restored));
+
+    CHECK(store.clear(1U));
+    CHECK(!store.exists(1U));
 }
 
 void testPersistentStorageTransactionalUpdate() {
@@ -1010,6 +1120,8 @@ void testPersistentStorageAndStateService() {
 
 
 void testPersistentV3Migration() {
+    constexpr std::size_t kV12CurrentSize = services::PersistentStateService::kCurrentRecordBytes;
+    constexpr std::size_t kV12PresetSize = services::PersistentStateService::kPresetRecordBytes;
     constexpr std::size_t kV11CurrentSize = 297U;
     constexpr std::size_t kV11PresetSize = 313U;
     constexpr std::size_t kV10CurrentSize = 295U;
@@ -1028,7 +1140,6 @@ void testPersistentV3Migration() {
     constexpr std::size_t kV4PresetSize = 273U;
     constexpr std::size_t kV3CurrentSize = 253U;
     constexpr std::size_t kV3PresetSize = 269U;
-    constexpr std::size_t kV11PresetOffset = kV11CurrentSize;
     constexpr std::size_t kV10PresetOffset = kV10CurrentSize;
     constexpr std::size_t kV9PresetOffset = kV9CurrentSize;
     constexpr std::size_t kV8PresetOffset = kV8CurrentSize;
@@ -1058,10 +1169,12 @@ void testPersistentV3Migration() {
     CHECK(seed.savePreset(0U, "MIGRATE", legacyState));
     seed.service(5000U);
 
-    std::array<std::uint8_t, kV11CurrentSize> v11Current{};
-    std::array<std::uint8_t, kV11PresetSize> v11Preset{};
-    CHECK(seedStorage.readBytes(0U, v11Current.data(), v11Current.size()));
-    CHECK(seedStorage.readBytes(kV11PresetOffset, v11Preset.data(), v11Preset.size()));
+    std::array<std::uint8_t, kV12CurrentSize> v12Current{};
+    std::array<std::uint8_t, kV12PresetSize> v12Preset{};
+    CHECK(seedStorage.readBytes(0U, v12Current.data(), v12Current.size()));
+    CHECK(seedStorage.readBytes(kV12CurrentSize, v12Preset.data(), v12Preset.size()));
+    const auto v11Current = makeLegacyV11Record<kV12CurrentSize, kV11CurrentSize, 8U>(v12Current);
+    const auto v11Preset = makeLegacyV11Record<kV12PresetSize, kV11PresetSize, 24U>(v12Preset);
     const auto v10Current = makeLegacyV10Record<kV11CurrentSize, kV10CurrentSize, 8U>(v11Current);
     const auto v10Preset = makeLegacyV10Record<kV11PresetSize, kV10PresetSize, 24U>(v11Preset);
     const auto v9Current = makeLegacyV9Record<kV10CurrentSize, kV9CurrentSize, 8U>(v10Current);
@@ -1083,6 +1196,111 @@ void testPersistentV3Migration() {
         0x52U, 0x41U, 0x49U, 0x44U, 1U, 2U, 3U, 4U,
         5U, 6U, 7U, 8U, 9U, 10U, 11U, 12U};
 
+    // v11 -> v12: configurable inputs survive and the new Custom Groove slot
+    // references default to slot 0 without changing the selected factory groove.
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage legacyV11Storage;
+    CHECK(legacyV11Storage.writeBytes(0U, v11Current.data(), v11Current.size()));
+    CHECK(legacyV11Storage.writeBytes(kV11CurrentSize, v11Preset.data(), v11Preset.size()));
+    services::PersistentStateService migratedV11(legacyV11Storage);
+    migratedV11.begin();
+    ClockState restoredV11 = makeDefaultState();
+    CHECK(migratedV11.restoreCurrentState(restoredV11));
+    CHECK_EQ(restoredV11.bpm, 143U);
+    CHECK_EQ(restoredV11.inputs.input1, InputFunction::Sync);
+    CHECK_EQ(restoredV11.inputs.input2, InputFunction::Reset);
+    CHECK_EQ(restoredV11.unifiedClock.groove.customSlot, 0U);
+    CHECK_EQ(restoredV11.channels[2].common.groove.customSlot, 0U);
+    CHECK(migratedV11.presetExists(0U));
+    std::array<std::uint8_t, kV12CurrentSize> migratedV11Current{};
+    std::array<std::uint8_t, kV12PresetSize> migratedV11Preset{};
+    CHECK(legacyV11Storage.readBytes(0U, migratedV11Current.data(), migratedV11Current.size()));
+    CHECK(legacyV11Storage.readBytes(kV12CurrentSize, migratedV11Preset.data(), migratedV11Preset.size()));
+    CHECK_EQ(migratedV11Current[4], 12U);
+    CHECK_EQ(migratedV11Preset[4], 12U);
+
+    // Every legacy record parser has a fail-closed header/CRC contract. Exercise
+    // every short-circuit guard independently so migration regressions cannot be
+    // hidden by the normal happy-path rewrite. Preset names also cover each
+    // allowed character class before the explicit invalid-character case.
+    const auto rejectLegacyCurrent = [&](const auto& baseRecord, const auto& mutate) {
+        auto record = baseRecord;
+        mutate(record);
+        hal::PersistentStorage::resetForTest();
+        hal::PersistentStorage storage;
+        CHECK(storage.writeBytes(0U, record.data(), record.size()));
+        services::PersistentStateService service(storage);
+        service.begin();
+        CHECK(!service.hasStoredCurrentState());
+    };
+    const auto rejectLegacyPreset = [&](
+                                        const auto& baseRecord,
+                                        const std::size_t presetOffset,
+                                        const auto& mutate) {
+        auto record = baseRecord;
+        mutate(record);
+        hal::PersistentStorage::resetForTest();
+        hal::PersistentStorage storage;
+        CHECK(storage.writeBytes(presetOffset, record.data(), record.size()));
+        services::PersistentStateService service(storage);
+        service.begin();
+        CHECK(!service.presetExists(0U));
+    };
+    const auto acceptLegacyPresetCharacterClasses = [&](
+                                                         const auto& baseRecord,
+                                                         const std::size_t presetOffset) {
+        auto record = baseRecord;
+        const char testName[] = "A-1_TEST";
+        for (std::size_t index = 0U; index < services::PersistentStateService::kPresetNameLength; ++index) {
+            record[8U + index] = static_cast<std::uint8_t>(' ');
+        }
+        for (std::size_t index = 0U; index < sizeof(testName) - 1U; ++index) {
+            record[8U + index] = static_cast<std::uint8_t>(testName[index]);
+        }
+        writeTestUint32Le(
+            record.data() + record.size() - 4U,
+            testCrc32(record.data(), record.size() - 4U));
+        hal::PersistentStorage::resetForTest();
+        hal::PersistentStorage storage;
+        CHECK(storage.writeBytes(presetOffset, record.data(), record.size()));
+        services::PersistentStateService service(storage);
+        service.begin();
+        CHECK(service.presetExists(0U));
+    };
+    const auto exerciseLegacyRecordGuards = [&](
+                                                 const auto& currentRecord,
+                                                 const auto& presetRecord,
+                                                 const std::size_t presetOffset) {
+        rejectLegacyCurrent(currentRecord, [](auto& record) { record[0U] ^= 0x01U; });
+        rejectLegacyCurrent(currentRecord, [](auto& record) { record[4U] ^= 0x7FU; });
+        rejectLegacyCurrent(currentRecord, [](auto& record) { record[5U] = 1U; });
+        rejectLegacyCurrent(currentRecord, [](auto& record) { record[6U] ^= 0x01U; });
+        rejectLegacyCurrent(currentRecord, [](auto& record) { record.back() ^= 0x80U; });
+
+        rejectLegacyPreset(presetRecord, presetOffset, [](auto& record) { record[0U] ^= 0x01U; });
+        rejectLegacyPreset(presetRecord, presetOffset, [](auto& record) { record[4U] ^= 0x7FU; });
+        rejectLegacyPreset(presetRecord, presetOffset, [](auto& record) { record[5U] = 0U; });
+        rejectLegacyPreset(presetRecord, presetOffset, [](auto& record) { record[6U] ^= 0x01U; });
+        rejectLegacyPreset(presetRecord, presetOffset, [](auto& record) { record.back() ^= 0x80U; });
+        rejectLegacyPreset(presetRecord, presetOffset, [](auto& record) {
+            record[8U] = static_cast<std::uint8_t>('?');
+            writeTestUint32Le(
+                record.data() + record.size() - 4U,
+                testCrc32(record.data(), record.size() - 4U));
+        });
+        acceptLegacyPresetCharacterClasses(presetRecord, presetOffset);
+    };
+
+    exerciseLegacyRecordGuards(v11Current, v11Preset, kV11CurrentSize);
+    exerciseLegacyRecordGuards(v10Current, v10Preset, kV10PresetOffset);
+    exerciseLegacyRecordGuards(v9Current, v9Preset, kV9PresetOffset);
+    exerciseLegacyRecordGuards(v8Current, v8Preset, kV8PresetOffset);
+    exerciseLegacyRecordGuards(v7Current, v7Preset, kV7PresetOffset);
+    exerciseLegacyRecordGuards(v6Current, v6Preset, kV6PresetOffset);
+    exerciseLegacyRecordGuards(v5Current, v5Preset, kV5PresetOffset);
+    exerciseLegacyRecordGuards(v4Current, v4Preset, kV4PresetOffset);
+    exerciseLegacyRecordGuards(v3Current, v3Preset, kV3PresetOffset);
+
     // v10 -> v11: Stage-1 Groove survives and configurable inputs receive factory roles.
     hal::PersistentStorage::resetForTest();
     hal::PersistentStorage legacyV10Storage;
@@ -1095,12 +1313,12 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV10.inputs.input1, InputFunction::Sync);
     CHECK_EQ(restoredV10.inputs.input2, InputFunction::Reset);
     CHECK(migratedV10.presetExists(0U));
-    std::array<std::uint8_t, kV11CurrentSize> rewrittenV11Current{};
-    std::array<std::uint8_t, kV11PresetSize> rewrittenV11Preset{};
-    CHECK(legacyV10Storage.readBytes(0U, rewrittenV11Current.data(), rewrittenV11Current.size()));
-    CHECK(legacyV10Storage.readBytes(kV11PresetOffset, rewrittenV11Preset.data(), rewrittenV11Preset.size()));
-    CHECK_EQ(rewrittenV11Current[4], 11U);
-    CHECK_EQ(rewrittenV11Preset[4], 11U);
+    std::array<std::uint8_t, kV12CurrentSize> rewrittenV12Current{};
+    std::array<std::uint8_t, kV12PresetSize> rewrittenV12Preset{};
+    CHECK(legacyV10Storage.readBytes(0U, rewrittenV12Current.data(), rewrittenV12Current.size()));
+    CHECK(legacyV10Storage.readBytes(kV12CurrentSize, rewrittenV12Preset.data(), rewrittenV12Preset.size()));
+    CHECK_EQ(rewrittenV12Current[4], 12U);
+    CHECK_EQ(rewrittenV12Preset[4], 12U);
 
     // v9 -> v11: early 1.1 Pre-Count state survives and Groove defaults to OFF.
     hal::PersistentStorage::resetForTest();
@@ -1138,9 +1356,9 @@ void testPersistentV3Migration() {
     std::array<std::uint8_t, kV11CurrentSize> migratedV8ToV9Current{};
     std::array<std::uint8_t, kV11PresetSize> migratedV8ToV9Preset{};
     CHECK(legacyV8Storage.readBytes(0U, migratedV8ToV9Current.data(), migratedV8ToV9Current.size()));
-    CHECK(legacyV8Storage.readBytes(kV11PresetOffset, migratedV8ToV9Preset.data(), migratedV8ToV9Preset.size()));
-    CHECK_EQ(migratedV8ToV9Current[4], 11U);
-    CHECK_EQ(migratedV8ToV9Preset[4], 11U);
+    CHECK(legacyV8Storage.readBytes(kV12CurrentSize, migratedV8ToV9Preset.data(), migratedV8ToV9Preset.size()));
+    CHECK_EQ(migratedV8ToV9Current[4], 12U);
+    CHECK_EQ(migratedV8ToV9Preset[4], 12U);
 
     // v7 -> v10: all prior musical/device state survives, SYNC smoothing receives
     // the release-safe LOW default, and Pre-Count receives OFF before rewrite.
@@ -1157,12 +1375,12 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV7.externalSync.smoothing, SyncSmoothing::Low);
     CHECK(migratedV7.presetExists(0U));
     CHECK_EQ(restoredV7.preCountSteps, 0U);
-    std::array<std::uint8_t, kV11CurrentSize> migratedV7ToV9Current{};
-    std::array<std::uint8_t, kV11PresetSize> migratedV7ToV9Preset{};
+    std::array<std::uint8_t, kV12CurrentSize> migratedV7ToV9Current{};
+    std::array<std::uint8_t, kV12PresetSize> migratedV7ToV9Preset{};
     CHECK(legacyV7Storage.readBytes(0U, migratedV7ToV9Current.data(), migratedV7ToV9Current.size()));
-    CHECK(legacyV7Storage.readBytes(kV11PresetOffset, migratedV7ToV9Preset.data(), migratedV7ToV9Preset.size()));
-    CHECK_EQ(migratedV7ToV9Current[4], 11U);
-    CHECK_EQ(migratedV7ToV9Preset[4], 11U);
+    CHECK(legacyV7Storage.readBytes(kV12CurrentSize, migratedV7ToV9Preset.data(), migratedV7ToV9Preset.size()));
+    CHECK_EQ(migratedV7ToV9Current[4], 12U);
+    CHECK_EQ(migratedV7ToV9Preset[4], 12U);
 
     // A CRC-valid current record with a semantically invalid payload must be rejected.
     // This exercises the post-decode semantic-validation path independently of CRC checks.
@@ -1195,12 +1413,12 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV6.externalSync.smoothing, SyncSmoothing::Low);
     CHECK_EQ(restoredV6.preCountSteps, 0U);
     CHECK(migratedV6.presetExists(0U));
-    std::array<std::uint8_t, kV11CurrentSize> migratedV6ToV9Current{};
-    std::array<std::uint8_t, kV11PresetSize> migratedV6ToV9Preset{};
+    std::array<std::uint8_t, kV12CurrentSize> migratedV6ToV9Current{};
+    std::array<std::uint8_t, kV12PresetSize> migratedV6ToV9Preset{};
     CHECK(legacyV6Storage.readBytes(0U, migratedV6ToV9Current.data(), migratedV6ToV9Current.size()));
-    CHECK(legacyV6Storage.readBytes(kV11PresetOffset, migratedV6ToV9Preset.data(), migratedV6ToV9Preset.size()));
-    CHECK_EQ(migratedV6ToV9Current[4], 11U);
-    CHECK_EQ(migratedV6ToV9Preset[4], 11U);
+    CHECK(legacyV6Storage.readBytes(kV12CurrentSize, migratedV6ToV9Preset.data(), migratedV6ToV9Preset.size()));
+    CHECK_EQ(migratedV6ToV9Current[4], 12U);
+    CHECK_EQ(migratedV6ToV9Preset[4], 12U);
 
     // v5 -> v10: user state remains intact; newer fields receive safe defaults.
     hal::PersistentStorage::resetForTest();
@@ -1219,12 +1437,12 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV5.externalSync.smoothing, SyncSmoothing::Low);
     CHECK_EQ(restoredV5.preCountSteps, 0U);
     CHECK(migratedV5.presetExists(0U));
-    std::array<std::uint8_t, kV11CurrentSize> migratedV9Current{};
-    std::array<std::uint8_t, kV11PresetSize> migratedV9Preset{};
+    std::array<std::uint8_t, kV12CurrentSize> migratedV9Current{};
+    std::array<std::uint8_t, kV12PresetSize> migratedV9Preset{};
     CHECK(legacyV5Storage.readBytes(0U, migratedV9Current.data(), migratedV9Current.size()));
-    CHECK(legacyV5Storage.readBytes(kV11PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
-    CHECK_EQ(migratedV9Current[4], 11U);
-    CHECK_EQ(migratedV9Preset[4], 11U);
+    CHECK(legacyV5Storage.readBytes(kV12CurrentSize, migratedV9Preset.data(), migratedV9Preset.size()));
+    CHECK_EQ(migratedV9Current[4], 12U);
+    CHECK_EQ(migratedV9Preset[4], 12U);
 
     // v4 -> v10: user BPM remains intact and newer preferences receive factory defaults.
     hal::PersistentStorage::resetForTest();
@@ -1245,9 +1463,9 @@ void testPersistentV3Migration() {
     CHECK_EQ(restoredV4.preCountSteps, 0U);
     CHECK(migratedV4.presetExists(0U));
     CHECK(legacyV4Storage.readBytes(0U, migratedV9Current.data(), migratedV9Current.size()));
-    CHECK(legacyV4Storage.readBytes(kV11PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
-    CHECK_EQ(migratedV9Current[4], 11U);
-    CHECK_EQ(migratedV9Preset[4], 11U);
+    CHECK(legacyV4Storage.readBytes(kV12CurrentSize, migratedV9Preset.data(), migratedV9Preset.size()));
+    CHECK_EQ(migratedV9Current[4], 12U);
+    CHECK_EQ(migratedV9Preset[4], 12U);
 
     // v3 -> v10 through all intermediate layouts, preserving the independent high-score area.
     hal::PersistentStorage::resetForTest();
@@ -1294,9 +1512,9 @@ void testPersistentV3Migration() {
     CHECK(legacyStorage.readBytes(kScoreOffset, scoreAfter.data(), scoreAfter.size()));
     CHECK(scoreAfter == scoreMarker);
     CHECK(legacyStorage.readBytes(0U, migratedV9Current.data(), migratedV9Current.size()));
-    CHECK(legacyStorage.readBytes(kV11PresetOffset, migratedV9Preset.data(), migratedV9Preset.size()));
-    CHECK_EQ(migratedV9Current[4], 11U);
-    CHECK_EQ(migratedV9Preset[4], 11U);
+    CHECK(legacyStorage.readBytes(kV12CurrentSize, migratedV9Preset.data(), migratedV9Preset.size()));
+    CHECK_EQ(migratedV9Current[4], 12U);
+    CHECK_EQ(migratedV9Preset[4], 12U);
 
     // A damaged v3 CURRENT must not prevent a valid v3 preset from being recovered.
     auto corruptCurrent = v3Current;
@@ -1374,6 +1592,17 @@ void testPersistentStateValidationBoundaries() {
     invalid([](ClockState& s) { s.externalSync.edge = static_cast<SyncEdge>(99U); });
     invalid([](ClockState& s) { s.externalSync.lossMode = static_cast<SyncLossMode>(99U); });
     invalid([](ClockState& s) { s.externalSync.resetMode = static_cast<ExternalResetMode>(99U); });
+    invalid([](ClockState& s) { s.externalSync.smoothing = static_cast<SyncSmoothing>(99U); });
+    invalid([](ClockState& s) { s.preCountSteps = 65U; });
+    invalid([](ClockState& s) { s.inputs.input1 = static_cast<InputFunction>(99U); });
+    invalid([](ClockState& s) { s.inputs.input2 = static_cast<InputFunction>(99U); });
+    invalid([](ClockState& s) { s.inputs.input1 = InputFunction::Tap; s.inputs.input2 = InputFunction::Tap; });
+    {
+        ClockState candidate = makeDefaultState();
+        candidate.inputs.input1 = InputFunction::Off;
+        candidate.inputs.input2 = InputFunction::Off;
+        CHECK(services::isPersistentStateValid(candidate));
+    }
 
     invalid([](ClockState& s) { s.unifiedClock.rate.mode = static_cast<ClockRatioMode>(99U); });
     invalid([](ClockState& s) { s.unifiedClock.rate.factor = 0U; });
@@ -1383,6 +1612,11 @@ void testPersistentStateValidationBoundaries() {
     invalid([](ClockState& s) { s.unifiedClock.rate.denominator = 0U; });
     invalid([](ClockState& s) { s.unifiedClock.rate.denominator = 17U; });
     invalid([](ClockState& s) { s.unifiedClock.swingPercent = 51U; });
+    invalid([](ClockState& s) { s.unifiedClock.groove.preset = static_cast<GroovePreset>(99U); });
+    invalid([](ClockState& s) { s.unifiedClock.groove.amountPercent = 101U; });
+    invalid([](ClockState& s) { s.unifiedClock.groove.customSlot = kCustomGrooveSlotCount; });
+    invalid([](ClockState& s) { s.unifiedClock.groove = {GroovePreset::Custom, 100U, static_cast<std::uint8_t>(kCustomGrooveMaximumSteps), 0U}; });
+    invalid([](ClockState& s) { s.unifiedClock.groove = {GroovePreset::Swing54, 100U, 2U, 0U}; });
     invalid([](ClockState& s) { s.unifiedClock.phasePercent = 100U; });
     invalid([](ClockState& s) { s.unifiedClock.humanizeUs = static_cast<std::uint16_t>(config::kMaximumHumanizeUs + 1U); });
     invalid([](ClockState& s) { s.dividerBank.bank = static_cast<DividerBank>(99U); });
@@ -1402,6 +1636,11 @@ void testPersistentStateValidationBoundaries() {
     invalid([](ClockState& s) { s.channels[0].common.rate.denominator = 0U; });
     invalid([](ClockState& s) { s.channels[0].common.rate.denominator = 17U; });
     invalid([](ClockState& s) { s.channels[0].common.swingPercent = 51U; });
+    invalid([](ClockState& s) { s.channels[0].common.groove.preset = static_cast<GroovePreset>(99U); });
+    invalid([](ClockState& s) { s.channels[0].common.groove.amountPercent = 101U; });
+    invalid([](ClockState& s) { s.channels[0].common.groove.customSlot = kCustomGrooveSlotCount; });
+    invalid([](ClockState& s) { s.channels[0].common.groove = {GroovePreset::Custom, 100U, static_cast<std::uint8_t>(kCustomGrooveMaximumSteps), 0U}; });
+    invalid([](ClockState& s) { s.channels[0].common.groove = {GroovePreset::PocketA, 100U, 8U, 0U}; });
     invalid([](ClockState& s) { s.channels[0].common.probabilityPercent = 101U; });
     invalid([](ClockState& s) { s.channels[0].common.phasePercent = 100U; });
     invalid([](ClockState& s) { s.channels[0].common.resetMode = static_cast<ResetMode>(99U); });
@@ -1445,7 +1684,7 @@ void testMenuModelAndFormatters() {
     ui::formatChannelDetail(state.channels[0], buffer, sizeof(buffer)); CHECK_EQ(std::strlen(buffer), 0U);
     ui::formatChannelSummary(state.channels[0], buffer, sizeof(buffer)); CHECK(std::strcmp(buffer, "OFF") == 0);
 
-    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::InputAssignments,ui::SettingsPage::Hardware,ui::SettingsPage::Diagnostics,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::DividerBank};
+    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::InputAssignments,ui::SettingsPage::Hardware,ui::SettingsPage::Diagnostics,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::Groove,ui::SettingsPage::GrooveEditorMenu,ui::SettingsPage::DividerBank};
     state.source=ClockSource::External; state.externalSync.edge=SyncEdge::Falling; state.externalSync.lossMode=SyncLossMode::Stop;
     state.channels[0].common.resetMode=ResetMode::Free; state.channels[0].common.muted=true;
     for (auto page: pages) {
@@ -2875,7 +3114,8 @@ void testRenderEveryScreenAndState() {
     ClockState state=makeDefaultState();
     hal::GateOutputDriver gates; gates.beginDisabled(); engine::ClockEngine engine(gates); engine.begin(state); engine.play();
     hal::PersistentStorage storage; hal::PersistentStorage::resetForTest(); services::PersistentStateService persistentState(storage); persistentState.begin();
-    ui::UiRenderer renderer(display, persistentState); ui::NavigationState nav{};
+    services::CustomGrooveStore customGrooveStore(storage);
+    ui::UiRenderer renderer(display, persistentState, customGrooveStore); ui::NavigationState nav{};
 
     for(auto transport:{TransportState::Playing,TransportState::Paused,TransportState::Stopped}){
         state.transport=transport;
@@ -2978,6 +3218,54 @@ void testRenderEveryScreenAndState() {
     nav.screen=ui::Screen::HighScoreClearConfirm; for(std::uint8_t choice=0U;choice<2U;++choice){nav.cursor=choice;renderer.render(state,nav,engine.snapshot());}
     nav.screen=ui::Screen::FactoryResetConfirm; for(std::uint8_t choice=0U;choice<2U;++choice){nav.cursor=choice;renderer.render(state,nav,engine.snapshot());}
     nav.screen=ui::Screen::NameEntry; nav.presetNameBuffer.fill(' '); nav.presetNameBuffer.back()='\0'; nav.presetNameBuffer[0]='A'; for(std::uint8_t i=0;i<16U;++i){nav.nameCharacterIndex=i;renderer.render(state,nav,engine.snapshot());}
+
+    // Custom Groove graphical/editor surfaces use the production 128x64 renderer.
+    nav.grooveDraft = CustomGroovePattern{};
+    nav.grooveDraft.length = 16U;
+    nav.grooveDraft.offsets256[1] = -64;
+    nav.grooveDraft.offsets256[2] = 64;
+    nav.grooveCursor = 2U;
+    nav.grooveZoomSteps = 0U;
+    nav.screen = ui::Screen::GrooveEditor;
+    renderer.render(state, nav, engine.snapshot());
+    const auto grooveFitFrame = display.framebufferForTest();
+    nav.grooveZoomSteps = 4U;
+    renderer.render(state, nav, engine.snapshot());
+    CHECK(display.framebufferForTest() != grooveFitFrame);
+    nav.grooveDraft.length = 1U;
+    nav.grooveCursor = 0U;
+    nav.grooveZoomSteps = 4U;
+    renderer.render(state, nav, engine.snapshot());
+
+    CustomGroovePattern storedGroove{};
+    storedGroove.length = 8U;
+    storedGroove.offsets256[3] = 24;
+    CHECK(customGrooveStore.save(0U, "CUSTOM A", storedGroove));
+    nav.screen = ui::Screen::GrooveSlots;
+    nav.scrollOffset = 0U;
+    nav.cursor = 0U;
+    for (const auto action : {ui::GrooveSlotAction::Load, ui::GrooveSlotAction::Save}) {
+        nav.grooveSlotAction = action;
+        renderer.render(state, nav, engine.snapshot());
+    }
+    nav.scrollOffset = 8U;
+    nav.cursor = 9U;
+    renderer.render(state, nav, engine.snapshot());
+    for (const auto screen : {ui::Screen::GrooveOverwriteConfirm, ui::Screen::GrooveDiscardConfirm}) {
+        nav.screen = screen;
+        for (std::uint8_t choice = 0U; choice < 2U; ++choice) {
+            nav.cursor = choice;
+            renderer.render(state, nav, engine.snapshot());
+        }
+    }
+    nav.screen = ui::Screen::GrooveNameEntry;
+    nav.grooveNameBuffer.fill(' ');
+    nav.grooveNameBuffer.back() = '\0';
+    nav.grooveNameBuffer[0] = 'A';
+    for (std::uint8_t character = 0U; character < 16U; ++character) {
+        nav.nameCharacterIndex = character;
+        renderer.render(state, nav, engine.snapshot());
+    }
     nav.cursor=5U; nav.scrollOffset=5U; renderer.render(state,nav,engine.snapshot());
     renderer.renderBootScreen(0U); renderer.renderBootScreen(config::kBootDurationMs/2U); renderer.renderBootScreen(config::kBootDurationMs+100U);
     nav.screen=static_cast<ui::Screen>(99U); renderer.render(state,nav,engine.snapshot());
@@ -5092,6 +5380,192 @@ void testEasterEggGameAndHighScore() {
     CHECK(eggLeaderboard.insertAndSave(8000U, ids) >= 0);
 }
 
+
+void testCustomGrooveEditorControllerWorkflow() {
+    resetFakes();
+    prepareDisplaySuccess();
+    hal::OledDisplay display;
+    CHECK(display.begin());
+
+    ClockState state = makeDefaultState();
+    state.operatingMode = OperatingMode::UnifiedClock;
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    engine::ClockEngine engine(gates);
+    engine.begin(state);
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    services::PersistentStateService persistentState(storage);
+    persistentState.begin();
+    services::CustomGrooveStore grooveStore(storage);
+    ui::UiRenderer renderer(display, persistentState, grooveStore);
+    ui::UiController controller(state, engine, renderer, persistentState, grooveStore);
+    std::uint32_t now = 100U;
+
+    auto openUnifiedEditor = [&]() {
+        controllerOpenSettingsChord(controller, now);
+        controllerTurn(controller, 1, now); // CHANNEL SETTINGS
+        controllerShortPress(controller, now);
+        CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::UnifiedClock);
+        controllerTurn(controller, 1, now); // TIMING
+        controllerShortPress(controller, now);
+        controllerTurn(controller, 4, now); // GROOVE
+        controllerShortPress(controller, now);
+        CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+        controllerTurn(controller, 3, now); // EDITOR
+        controllerShortPress(controller, now);
+        CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
+    };
+
+    openUnifiedEditor();
+    CHECK_EQ(controller.navigation().grooveDraft.length, 16U);
+    CHECK_EQ(controller.navigation().grooveCursor, 0U);
+
+    // Fine and coarse marker movement cover both signed clamp ends.
+    controllerTurn(controller, 127, now);
+    CHECK_EQ(controller.navigation().grooveDraft.offsets256[0], kCustomGrooveMaximumOffset256);
+    hal::ControlSample sample{};
+    sample.tapButton = heldButton();
+    sample.encoderDelta = -127;
+    controller.processControls(sample, now++);
+    CHECK_EQ(controller.navigation().grooveDraft.offsets256[0], kCustomGrooveMinimumOffset256);
+
+    // TAP advances the marker. START+TURN is consumed as zoom and must not toggle transport.
+    controllerTapAt(controller, now + 2U);
+    now += 3U;
+    CHECK_EQ(controller.navigation().grooveCursor, 1U);
+    sample = {};
+    sample.transportButton = heldButton();
+    sample.encoderDelta = 1;
+    controller.processControls(sample, now++);
+    CHECK(controller.navigation().grooveZoomSteps != 0U);
+    sample = {};
+    sample.transportButton = releasedEdge();
+    controller.processControls(sample, now++);
+    CHECK_EQ(state.transport, TransportState::Stopped);
+
+    // Long press opens the normal Groove menu. Exercise ZOOM and LENGTH edits.
+    controllerLongPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::GrooveEditorMenu);
+    controllerTurn(controller, 2, now); // ZOOM
+    controllerShortPress(controller, now);
+    CHECK(controller.navigation().editing);
+    controllerTurn(controller, 1, now);
+    controllerTurn(controller, -1, now);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 1, now); // LENGTH
+    controllerShortPress(controller, now);
+    controllerTurn(controller, -127, now);
+    CHECK_EQ(controller.navigation().grooveDraft.length, 1U);
+    CHECK_EQ(controller.navigation().grooveCursor, 0U);
+    controllerTurn(controller, 127, now);
+    CHECK_EQ(controller.navigation().grooveDraft.length, kCustomGrooveMaximumSteps);
+    controllerShortPress(controller, now);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
+
+    // SAVE into a new slot, edit the name, and commit the Custom Groove.
+    controllerLongPress(controller, now);
+    controllerShortPress(controller, now); // SAVE
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    controllerShortPress(controller, now); // empty slot 0 -> name entry
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveNameEntry);
+    controllerTurn(controller, 1, now);
+    for (std::uint8_t index = 0U; index < services::CustomGrooveStore::kNameLength; ++index) {
+        controllerShortPress(controller, now);
+    }
+    CHECK(grooveStore.exists(0U));
+    CHECK_EQ(state.unifiedClock.groove.preset, GroovePreset::Custom);
+    CHECK_EQ(state.unifiedClock.groove.customSlot, 0U);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+
+    // Reopening an active Custom Groove must load the stored slot into the draft.
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
+    CHECK_EQ(controller.navigation().grooveDraft.length, kCustomGrooveMaximumSteps);
+
+    // Dirty LOAD first cancels, then confirms discard and reaches the slot list.
+    controllerTurn(controller, 1, now);
+    controllerLongPress(controller, now);
+    controllerTurn(controller, 1, now); // LOAD
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveDiscardConfirm);
+    controllerShortPress(controller, now); // NO
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
+    controllerLongPress(controller, now);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 1, now); // YES
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+
+    // Failed load remains in the list; successful load returns to the editor and clears dirty state.
+    controllerTurn(controller, 9, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    controllerTurn(controller, -9, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
+    controllerReset(controller, now); // clean editor returns immediately
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+
+    // Dirty BACK confirmation covers both NO and YES paths.
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 1, now);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveDiscardConfirm);
+    controllerReset(controller, now); // cancel with BACK
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
+    controllerReset(controller, now);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now); // YES -> restore original settings
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+    CHECK_EQ(state.unifiedClock.groove.preset, GroovePreset::Custom);
+
+    // Overwrite flow: NO keeps slot selection; YES reuses the durable name and commits.
+    controllerShortPress(controller, now);
+    controllerLongPress(controller, now);
+    controllerShortPress(controller, now); // SAVE
+    controllerShortPress(controller, now); // existing slot -> overwrite confirm
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveOverwriteConfirm);
+    controllerShortPress(controller, now); // NO
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    controllerReset(controller, now); // slots -> editor
+    controllerLongPress(controller, now);
+    controllerShortPress(controller, now);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now); // YES
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+
+    // Independent mode exercises the per-channel preview/update/restore branches.
+    state.operatingMode = OperatingMode::Independent;
+    state.channels[0].common.mode = ChannelMode::Clock;
+    state.channels[0].common.groove = {GroovePreset::Custom, 75U, 0U, 0U};
+    engine.updateConfiguration(state, true);
+    controllerReset(controller, now); // Groove -> ChannelTiming
+    controllerReset(controller, now); // -> Channel
+    controllerReset(controller, now); // -> Root
+    controllerReset(controller, now); // -> Performance
+    controllerOpenSettingsChord(controller, now);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now); // Channel
+    controllerTurn(controller, 1, now); // Timing
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 4, now); // Groove
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 3, now); // Editor
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
+    controllerTurn(controller, -1, now);
+    controllerReset(controller, now);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+    CHECK_EQ(state.channels[0].common.groove.preset, GroovePreset::Custom);
+}
+
+
 void testApplicationAndEntryPoints() {
 #if !CLOCK_DISPLAY_USE_SPI
     resetFakes(); // failure path, abort infinite safe halt via fake delay exception
@@ -5158,6 +5632,7 @@ int main() {
     RUN_TEST(testLocalizationAndFont);
     RUN_TEST(testDefaultsTemplatesAndServices);
     RUN_TEST(testPersistentLayoutV1ForwardCompatibilityContract);
+    RUN_TEST(testCustomGrooveStorePreservesRegionsAndRejectsCorruption);
     RUN_TEST(testPersistentStorageTransactionalUpdate);
     RUN_TEST(testPersistentStorageAndStateService);
     RUN_TEST(testPersistentV3Migration);
@@ -5186,6 +5661,7 @@ int main() {
     RUN_TEST(testTapIndicatorIsExclusiveToPerformanceTapTempo);
     RUN_TEST(testScreensaverRenderingAndPolicy);
     RUN_TEST(testNestedGroupNavigationCoverage);
+    RUN_TEST(testCustomGrooveEditorControllerWorkflow);
     RUN_TEST(testUiControllerFlows);
     RUN_TEST(testHighScoreResetAppearsAfterStartAndClearsSafely);
     RUN_TEST(testEasterEggGameAndHighScore);

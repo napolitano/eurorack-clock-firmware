@@ -13,6 +13,7 @@
 #include "clock_core.h"
 #include "config.h"
 #include "domain/groove_catalog.h"
+#include "domain/custom_groove.h"
 
 namespace clockfw::engine {
 
@@ -145,20 +146,7 @@ std::uint64_t ClockEngine::calculateEventPositionQ32(
         : 0U;
     const GrooveSettings& grooveSettings =
         configuration_.channels[channelIndex].common.groove;
-    const std::uint16_t groovePermille = groove::delayPermille(
-        grooveSettings.preset,
-        eventSerial,
-        grooveSettings.amountPercent,
-        grooveSettings.rotation);
-    const std::uint64_t requestedGrooveQ32 =
-        (baseIntervalQ32 * groovePermille) / 1000ULL;
     const std::uint64_t minimumIntervalQ32 = minimumOutputIntervalQ32();
-    const std::uint64_t maximumCombinedDelayQ32 = baseIntervalQ32 > minimumIntervalQ32
-        ? baseIntervalQ32 - minimumIntervalQ32
-        : 0U;
-    const std::uint64_t grooveOffsetQ32 = swingOffsetQ32 >= maximumCombinedDelayQ32
-        ? 0U
-        : std::min(requestedGrooveQ32, maximumCombinedDelayQ32 - swingOffsetQ32);
 
     if (runtime.scheduleEpochQ32 > UINT64_MAX - phaseOffsetQ32) {
         return UINT64_MAX;
@@ -168,12 +156,70 @@ std::uint64_t ClockEngine::calculateEventPositionQ32(
         return UINT64_MAX;
     }
     const std::uint64_t nominalPositionQ32 = phasePositionQ32 + baseOffsetQ32;
-    if (swingOffsetQ32 > UINT64_MAX - nominalPositionQ32 ||
-        grooveOffsetQ32 > UINT64_MAX - nominalPositionQ32 - swingOffsetQ32) {
-        return UINT64_MAX;
+
+    std::uint64_t shapedPositionQ32 = nominalPositionQ32;
+    const bool previewActive = customGroovePreviewActive_[channelIndex];
+    if (previewActive ||
+        (grooveSettings.preset == GroovePreset::Custom &&
+         grooveSettings.customSlot < kCustomGrooveSlotCount)) {
+        const CustomGroovePattern& customPattern = previewActive
+            ? customGroovePreviews_[channelIndex]
+            : customGrooves_[grooveSettings.customSlot];
+        const std::uint8_t customAmount = previewActive
+            ? customGroovePreviewAmount_[channelIndex]
+            : grooveSettings.amountPercent;
+        const std::uint8_t customRotation = previewActive
+            ? customGroovePreviewRotation_[channelIndex]
+            : grooveSettings.rotation;
+        const std::int16_t offset256 = customGrooveOffset256(
+            customPattern,
+            eventSerial,
+            customAmount,
+            customRotation);
+        const std::int64_t requestedCustomQ32 =
+            static_cast<std::int64_t>((baseIntervalQ32 * static_cast<std::uint64_t>(
+                offset256 < 0 ? -offset256 : offset256)) / 256ULL) *
+            (offset256 < 0 ? -1LL : 1LL);
+        const std::uint64_t symmetricLimitQ32 = baseIntervalQ32 > minimumIntervalQ32
+            ? (baseIntervalQ32 - minimumIntervalQ32) / 2ULL
+            : 0U;
+        const std::int64_t combinedQ32 = static_cast<std::int64_t>(swingOffsetQ32) +
+            requestedCustomQ32;
+        const std::int64_t boundedCombinedQ32 = std::clamp<std::int64_t>(
+            combinedQ32,
+            -static_cast<std::int64_t>(symmetricLimitQ32),
+            static_cast<std::int64_t>(symmetricLimitQ32));
+        if (boundedCombinedQ32 >= 0) {
+            const std::uint64_t delayQ32 = static_cast<std::uint64_t>(boundedCombinedQ32);
+            shapedPositionQ32 = delayQ32 > UINT64_MAX - nominalPositionQ32
+                ? UINT64_MAX
+                : nominalPositionQ32 + delayQ32;
+        } else {
+            const std::uint64_t advanceQ32 = static_cast<std::uint64_t>(-boundedCombinedQ32);
+            shapedPositionQ32 = advanceQ32 >= nominalPositionQ32 - phasePositionQ32
+                ? phasePositionQ32
+                : nominalPositionQ32 - advanceQ32;
+        }
+    } else {
+        const std::uint16_t groovePermille = groove::delayPermille(
+            grooveSettings.preset,
+            eventSerial,
+            grooveSettings.amountPercent,
+            grooveSettings.rotation);
+        const std::uint64_t requestedGrooveQ32 =
+            (baseIntervalQ32 * groovePermille) / 1000ULL;
+        const std::uint64_t maximumCombinedDelayQ32 = baseIntervalQ32 > minimumIntervalQ32
+            ? baseIntervalQ32 - minimumIntervalQ32
+            : 0U;
+        const std::uint64_t grooveOffsetQ32 = swingOffsetQ32 >= maximumCombinedDelayQ32
+            ? 0U
+            : std::min(requestedGrooveQ32, maximumCombinedDelayQ32 - swingOffsetQ32);
+        if (swingOffsetQ32 > UINT64_MAX - nominalPositionQ32 ||
+            grooveOffsetQ32 > UINT64_MAX - nominalPositionQ32 - swingOffsetQ32) {
+            return UINT64_MAX;
+        }
+        shapedPositionQ32 = nominalPositionQ32 + swingOffsetQ32 + grooveOffsetQ32;
     }
-    const std::uint64_t shapedPositionQ32 =
-        nominalPositionQ32 + swingOffsetQ32 + grooveOffsetQ32;
     const std::int64_t humanizeOffsetQ32 = calculateHumanizeOffsetQ32(channelIndex, eventSerial);
     if (humanizeOffsetQ32 >= 0) {
         const std::uint64_t delayQ32 = static_cast<std::uint64_t>(humanizeOffsetQ32);

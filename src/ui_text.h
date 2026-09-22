@@ -270,6 +270,20 @@ enum class TextId : std::uint16_t {
     Restart,
     Tap,
     Fill,
+    GrooveMenu,
+    Save,
+    Load,
+    Zoom,
+    GrooveName,
+    LoadGroove,
+    SaveGroove,
+    EmptyBracketed,
+    Fit,
+    OverwriteGroove,
+    DiscardChanges,
+    GrooveStoreUnavailable,
+    CustomGrooveStatusFormat,
+    ZoomFormat,
     Count
 };
 
@@ -313,7 +327,9 @@ inline constexpr TextCatalog kEnglishUs{{
     "RST MODE", "TRIGGER", "GATE",
     "ENCODER DIR", "NORMAL", "REVERSED", "ORIENTATION", "0 DEG", "180 DEG",
     "HI-SCORES", "CLEAR HI-SCORES?", "GROOVE", "PRESET", "AMOUNT", "PATTERN", "TIMING", "OUTPUT", "G:",
-    "HARDWARE", "INPUT 1", "INPUT 2", "CONFIG", "RUN", "START", "STOP", "RESTART", "TAP", "FILL"
+    "HARDWARE", "INPUT 1", "INPUT 2", "CONFIG", "RUN", "START", "STOP", "RESTART", "TAP", "FILL",
+    "GROOVE MENU", "SAVE", "LOAD", "ZOOM", "GROOVE NAME", "LOAD GROOVE", "SAVE GROOVE", "<EMPTY>", "FIT",
+    "OVERWRITE GROOVE?", "DISCARD CHANGES?", "GROOVE STORE N/A", "S%02u %+d  L%u", "Z%u"
 }};
 
 /**

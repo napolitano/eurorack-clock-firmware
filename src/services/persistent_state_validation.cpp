@@ -9,6 +9,8 @@
 #include "services/persistent_state_validation.h"
 
 #include "config.h"
+#include "domain/custom_groove.h"
+#include "domain/groove_catalog.h"
 
 namespace clockfw::services {
 
@@ -45,9 +47,12 @@ bool isPersistentStateValid(const ClockState& state) {
         state.unifiedClock.rate.denominator == 0U || state.unifiedClock.rate.denominator > 16U ||
         state.unifiedClock.swingPercent > 50U ||
         static_cast<std::uint8_t>(state.unifiedClock.groove.preset) >
-            static_cast<std::uint8_t>(GroovePreset::PocketC) ||
+            static_cast<std::uint8_t>(GroovePreset::Custom) ||
         state.unifiedClock.groove.amountPercent > 100U ||
-        state.unifiedClock.groove.rotation >= 16U ||
+        state.unifiedClock.groove.customSlot >= kCustomGrooveSlotCount ||
+        (state.unifiedClock.groove.preset == GroovePreset::Custom
+            ? state.unifiedClock.groove.rotation >= kCustomGrooveMaximumSteps
+            : state.unifiedClock.groove.rotation >= groove::patternLength(state.unifiedClock.groove.preset)) ||
         state.unifiedClock.phasePercent > 99U ||
         state.unifiedClock.humanizeUs > config::kMaximumHumanizeUs ||
         static_cast<std::uint8_t>(state.dividerBank.bank) >
@@ -71,9 +76,12 @@ bool isPersistentStateValid(const ClockState& state) {
             channel.common.rate.denominator == 0U || channel.common.rate.denominator > 16U ||
             channel.common.swingPercent > 50U ||
             static_cast<std::uint8_t>(channel.common.groove.preset) >
-                static_cast<std::uint8_t>(GroovePreset::PocketC) ||
+                static_cast<std::uint8_t>(GroovePreset::Custom) ||
             channel.common.groove.amountPercent > 100U ||
-            channel.common.groove.rotation >= 16U ||
+            channel.common.groove.customSlot >= kCustomGrooveSlotCount ||
+            (channel.common.groove.preset == GroovePreset::Custom
+                ? channel.common.groove.rotation >= kCustomGrooveMaximumSteps
+                : channel.common.groove.rotation >= groove::patternLength(channel.common.groove.preset)) ||
             channel.common.probabilityPercent > 100U ||
             channel.common.phasePercent > 99U ||
             static_cast<std::uint8_t>(channel.common.resetMode) > static_cast<std::uint8_t>(ResetMode::Free) ||

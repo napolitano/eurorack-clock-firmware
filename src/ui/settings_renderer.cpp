@@ -175,12 +175,23 @@ void SettingsRenderer::renderSettings(
         if (rowIndex >= itemCount) {
             break;
         }
-        const MenuRow row = buildMenuRow(
+        MenuRow row = buildMenuRow(
             navigation.settingsPage,
             rowIndex,
             navigation.selectedChannel,
             state,
             navigation.highScoreResetAvailable);
+        if (navigation.settingsPage == SettingsPage::GrooveEditorMenu) {
+            if (rowIndex == 2U) {
+                if (navigation.grooveZoomSteps == 0U) {
+                    std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Fit));
+                } else {
+                    std::snprintf(row.value, sizeof(row.value), "%u", navigation.grooveZoomSteps);
+                }
+            } else if (rowIndex == 3U) {
+                std::snprintf(row.value, sizeof(row.value), "%u", navigation.grooveDraft.length);
+            }
+        }
         const bool selected = rowIndex == navigation.cursor;
         if (selected) {
             display_.fillRectangle(0, y - 1, 124, 9, hal::PixelColor::White);
