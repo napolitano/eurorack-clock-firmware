@@ -152,6 +152,42 @@ private:
     /** @brief Activates the currently selected settings row or toggles edit mode. */
     void activateCurrentSetting();
 
+    /** @brief Toggles value editing for a leaf settings row and schedules a redraw. */
+    void toggleCurrentSettingEditing();
+
+    /** @brief Activates one row on the settings root page. */
+    void activateRootSetting();
+
+    /** @brief Activates one row on the General settings page. */
+    void activateGeneralSetting();
+
+    /** @brief Activates one row on the Info settings page. */
+    void activateInfoSetting();
+
+    /** @brief Activates one row on the Preferences settings page. */
+    void activatePreferencesSetting();
+
+    /** @brief Activates one row on an Independent-channel root page. */
+    void activateChannelSetting();
+
+    /** @brief Activates one row on the One Clock root page. */
+    void activateUnifiedClockSetting();
+
+    /** @brief Activates one row on a Timing page, including the Groove child page. */
+    void activateTimingSetting();
+
+    /** @brief Activates one row on the Groove settings page. */
+    void activateGrooveSetting();
+
+    /** @brief Activates one command or value on the Groove Editor menu. */
+    void activateGrooveEditorMenuSetting();
+
+    /** @brief Activates one row on the Divider Bank page. */
+    void activateDividerBankSetting();
+
+    /** @brief Activates the Sequencer editor entry or one pattern command. */
+    void activateSequencerPatternSetting();
+
     /** @brief Keeps the selected settings row visible inside the five-row viewport. */
     void normalizeScrollOffset();
 

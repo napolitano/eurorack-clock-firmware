@@ -257,10 +257,22 @@ private:
         return kPresetAreaOffset + static_cast<std::size_t>(slotIndex) * kPresetRecordSize;
     }
 
+    /** @brief Returns the byte offset used by one v11 preset slot. */
+    static constexpr std::size_t v11PresetOffset(const std::uint8_t slotIndex) {
+        return kV11CurrentRecordSize +
+            static_cast<std::size_t>(slotIndex) * kV11PresetRecordSize;
+    }
+
     /** @brief Returns the byte offset used by one v10 preset slot. */
     static constexpr std::size_t v10PresetOffset(const std::uint8_t slotIndex) {
         return kV10CurrentRecordSize +
             static_cast<std::size_t>(slotIndex) * kV10PresetRecordSize;
+    }
+
+    /** @brief Returns the byte offset used by one v9 preset slot. */
+    static constexpr std::size_t v9PresetOffset(const std::uint8_t slotIndex) {
+        return kV9CurrentRecordSize +
+            static_cast<std::size_t>(slotIndex) * kV9PresetRecordSize;
     }
 
     /** @brief Returns the byte offset used by one v8 preset slot. */

@@ -20,6 +20,7 @@ Read:
 - ISR/scheduler paths stay bounded, non-blocking, allocation-free, and free of display/logging/persistence work.
 - User-visible static firmware strings belong in `src/ui_text.h`.
 - Public C++ declarations require concise Doxygen API documentation.
+- Keep source code reviewable by humans: use descriptive names, explicit state-machine dispatch, named units/sentinels, and comments that explain invariants or intent rather than narrating syntax.
 - New behavior requires regression tests at the lowest meaningful level and integration coverage when subsystem boundaries are involved.
 - Real electrical claims require HIL evidence; host mocks are not timing instruments.
 - Do not weaken coverage, warning, sanitizer, architecture, persistence, or boot-safety gates to make a change pass.

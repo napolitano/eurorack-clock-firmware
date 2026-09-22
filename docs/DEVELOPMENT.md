@@ -55,6 +55,20 @@ Good comments explain:
 
 Inline comments should explain **why**, not narrate obvious code. For example, documenting why output enable stays disabled through boot is useful; commenting `++channelIndex` as “increment channel” is not.
 
+### Readability and structure
+
+Source code is maintained for human review first, not merely for compiler acceptance. Prefer code that makes the control flow, ownership, units, and invariants obvious without requiring the reader to reconstruct intent from tests.
+
+- Keep one function at one conceptual level. Extract helpers when they name a real domain step, state-machine action, validation rule, or serialization operation; do not split code only to reduce line count.
+- Prefer `switch` dispatch for explicit state machines and enums when it makes supported states visible. Avoid long chains of unrelated `if`/`else if` conditions.
+- Use names that include units or representation when ambiguity is possible, for example `periodUs`, `filteredBpmMilli`, or `phaseQ32`.
+- Replace sentinel literals and repeated protocol/layout constants with named constants.
+- Keep persistence migrations auditable: probe schemas newest-to-oldest, state what a migration injects, and preserve byte-layout reasoning close to the code that depends on it.
+- Keep safety defaults visible at the decision point, especially confirmation defaults, boot transport behavior, role reassignment, and Flash-write restrictions.
+- Comments document intent, invariants, compatibility constraints, and surprising implementation choices. They must not paraphrase self-explanatory assignments or loops.
+- Real-time code is not refactored solely for aesthetics. Readability changes in scheduler/ISR paths must preserve bounded execution, allocation-free behavior, and the existing timing model.
+
+A readability refactor is still a behavioral change risk: run the same regression, coverage, sanitizer, architecture, and simulator gates as for functional work.
 
 ### Project configuration layout
 
@@ -168,7 +182,7 @@ CI requires:
 - function coverage >= **95%**
 - non-throw decision-branch coverage >= **90%**
 
-Current 1.1 working baseline: **7940/8200 lines (96.83%)**, **664/675 functions (98.37%)**, and **4835/5372 decision branches (90.00%)**. Raw compiler branches are **4836/6247 (77.41%)** and remain informational.
+Current 1.1 working baseline after the readability/maintainability refactor: **8615/8907 lines (96.72%)**, **766/778 functions (98.46%)**, and **5256/5729 decision branches (91.74%)**. Raw compiler branches are **5257/6679 (78.71%)** and remain informational.
 - AddressSanitizer = **clean**
 - UndefinedBehaviorSanitizer = **clean**
 

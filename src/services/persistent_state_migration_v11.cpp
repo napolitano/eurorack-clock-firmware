@@ -12,17 +12,23 @@
 
 namespace clockfw::services {
 namespace {
-std::uint16_t read16(const std::uint8_t* const source) {
+
+/** @brief Reads one little-endian 16-bit value from a legacy v11 record. */
+std::uint16_t readUint16LeV11(const std::uint8_t* const source) {
     return static_cast<std::uint16_t>(source[0]) |
         static_cast<std::uint16_t>(static_cast<std::uint16_t>(source[1]) << 8U);
 }
-std::uint32_t read32(const std::uint8_t* const source) {
+
+/** @brief Reads one little-endian 32-bit value from a legacy v11 record. */
+std::uint32_t readUint32LeV11(const std::uint8_t* const source) {
     return static_cast<std::uint32_t>(source[0]) |
         (static_cast<std::uint32_t>(source[1]) << 8U) |
         (static_cast<std::uint32_t>(source[2]) << 16U) |
         (static_cast<std::uint32_t>(source[3]) << 24U);
 }
-bool validName(const char character) {
+
+/** @brief Returns whether a v11 preset-name byte belongs to the supported alphabet. */
+bool isAllowedV11PresetCharacter(const char character) {
     return character == ' ' || character == '-' || character == '_' ||
         (character >= '0' && character <= '9') ||
         (character >= 'A' && character <= 'Z');
@@ -35,8 +41,10 @@ bool PersistentStateService::deserializeV11State(
     static_assert(kStatePayloadSize == kV11StatePayloadSize + 9U);
     std::array<std::uint8_t, kStatePayloadSize> upgraded{};
     std::copy(payload.begin(), payload.end(), upgraded.begin());
-    // Nine appended zero bytes select Custom Groove slot 0 for the global assignment
-    // and eight channel assignments. They are inert unless preset == Custom.
+
+    // Schema v12 appends nine Custom Groove slot references: one for One Clock
+    // followed by one for each physical channel. Zero-initialization selects slot 0,
+    // which remains inert unless the corresponding Groove preset is Custom.
     return deserializeState(upgraded, state);
 }
 
@@ -44,9 +52,9 @@ bool PersistentStateService::deserializeV11CurrentRecord(
     const std::array<std::uint8_t, kV11CurrentRecordSize>& record,
     ClockState& state) {
     constexpr std::uint32_t kMagic = 0x31315543UL;  // "CU11"
-    if (read32(record.data()) != kMagic || record[4] != kV11SchemaVersion || record[5] != 0U ||
-        read16(record.data() + 6U) != kV11StatePayloadSize ||
-        read32(record.data() + kV11CurrentRecordSize - 4U) !=
+    if (readUint32LeV11(record.data()) != kMagic || record[4] != kV11SchemaVersion || record[5] != 0U ||
+        readUint16LeV11(record.data() + 6U) != kV11StatePayloadSize ||
+        readUint32LeV11(record.data() + kV11CurrentRecordSize - 4U) !=
             calculateCrc32(record.data(), kV11CurrentRecordSize - 4U)) {
         return false;
     }
@@ -62,15 +70,15 @@ bool PersistentStateService::deserializeV11PresetRecord(
     constexpr std::uint32_t kMagic = 0x31315250UL;  // "PR11"
     constexpr std::size_t kNameOffset = 8U;
     constexpr std::size_t kPayloadOffset = kNameOffset + kPresetNameLength;
-    if (read32(record.data()) != kMagic || record[4] != kV11SchemaVersion || record[5] != 1U ||
-        read16(record.data() + 6U) != kV11StatePayloadSize ||
-        read32(record.data() + kV11PresetRecordSize - 4U) !=
+    if (readUint32LeV11(record.data()) != kMagic || record[4] != kV11SchemaVersion || record[5] != 1U ||
+        readUint16LeV11(record.data() + 6U) != kV11StatePayloadSize ||
+        readUint32LeV11(record.data() + kV11PresetRecordSize - 4U) !=
             calculateCrc32(record.data(), kV11PresetRecordSize - 4U)) {
         return false;
     }
     for (std::size_t index = 0U; index < kPresetNameLength; ++index) {
         const char character = static_cast<char>(record[kNameOffset + index]);
-        if (!validName(character)) {
+        if (!isAllowedV11PresetCharacter(character)) {
             return false;
         }
         name[index] = character;

@@ -13,92 +13,129 @@
 #include "domain/groove_catalog.h"
 
 namespace clockfw::services {
+namespace {
 
-bool isPersistentStateValid(const ClockState& state) {
-    if (state.tempoRange.minimumBpm < config::kSupportedMinimumBpm ||
-        state.tempoRange.maximumBpm > config::kSupportedMaximumBpm ||
-        state.tempoRange.minimumBpm > state.tempoRange.maximumBpm ||
-        state.bpm < state.tempoRange.minimumBpm || state.bpm > state.tempoRange.maximumBpm ||
-        state.masterMeter.beats < 1U || state.masterMeter.beats > 16U ||
-        state.preCountSteps > 64U ||
-        (state.masterMeter.unit != 1U && state.masterMeter.unit != 2U &&
-         state.masterMeter.unit != 4U && state.masterMeter.unit != 8U &&
-         state.masterMeter.unit != 16U) ||
-        static_cast<std::uint8_t>(state.transport) > static_cast<std::uint8_t>(TransportState::Playing) ||
-        static_cast<std::uint8_t>(state.source) > static_cast<std::uint8_t>(ClockSource::Auto) ||
-        static_cast<std::uint8_t>(state.operatingMode) > static_cast<std::uint8_t>(OperatingMode::DividerBank) ||
-        state.externalSync.pulsesPerQuarterNote == 0U ||
-        static_cast<std::uint8_t>(state.externalSync.edge) > static_cast<std::uint8_t>(SyncEdge::Falling) ||
-        static_cast<std::uint8_t>(state.externalSync.lossMode) > static_cast<std::uint8_t>(SyncLossMode::Internal) ||
-        static_cast<std::uint8_t>(state.externalSync.resetMode) > static_cast<std::uint8_t>(ExternalResetMode::Gate) ||
-        static_cast<std::uint8_t>(state.externalSync.smoothing) > static_cast<std::uint8_t>(SyncSmoothing::Full) ||
-        static_cast<std::uint8_t>(state.inputs.input1) > static_cast<std::uint8_t>(InputFunction::Tap) ||
-        static_cast<std::uint8_t>(state.inputs.input2) > static_cast<std::uint8_t>(InputFunction::Tap) ||
-        (state.inputs.input1 != InputFunction::Off &&
-         state.inputs.input1 == state.inputs.input2)) {
+/** @brief Returns whether an enum value is inside its contiguous persisted range. */
+template <typename Enum>
+bool enumAtMost(const Enum value, const Enum maximum) {
+    return static_cast<std::uint8_t>(value) <= static_cast<std::uint8_t>(maximum);
+}
+
+/** @brief Validates a musical meter against the supported numerator and note units. */
+bool isMeterValid(const MeterSettings& meter) {
+    const bool supportedUnit = meter.unit == 1U || meter.unit == 2U || meter.unit == 4U ||
+        meter.unit == 8U || meter.unit == 16U;
+    return meter.beats >= 1U && meter.beats <= 16U && supportedUnit;
+}
+
+/** @brief Validates integer/rational clock-rate settings without normalizing them. */
+bool isRateValid(const RateSettings& rate) {
+    return enumAtMost(rate.mode, ClockRatioMode::Divide) &&
+        rate.factor >= 1U && rate.factor <= 32U &&
+        rate.numerator >= 1U && rate.numerator <= 16U &&
+        rate.denominator >= 1U && rate.denominator <= 16U;
+}
+
+/** @brief Validates one factory/custom groove reference and its rotation domain. */
+bool isGrooveValid(const GrooveSettings& grooveSettings) {
+    if (!enumAtMost(grooveSettings.preset, GroovePreset::Custom) ||
+        grooveSettings.amountPercent > 100U ||
+        grooveSettings.customSlot >= kCustomGrooveSlotCount) {
         return false;
     }
 
+    const std::uint8_t patternLength = grooveSettings.preset == GroovePreset::Custom
+        ? kCustomGrooveMaximumSteps
+        : groove::patternLength(grooveSettings.preset);
+    return grooveSettings.rotation < patternLength;
+}
 
-    if (static_cast<std::uint8_t>(state.unifiedClock.rate.mode) >
-            static_cast<std::uint8_t>(ClockRatioMode::Divide) ||
-        state.unifiedClock.rate.factor == 0U || state.unifiedClock.rate.factor > 32U ||
-        state.unifiedClock.rate.numerator == 0U || state.unifiedClock.rate.numerator > 16U ||
-        state.unifiedClock.rate.denominator == 0U || state.unifiedClock.rate.denominator > 16U ||
+/** @brief Validates the two-input role model, including the reserved Fill role boundary. */
+bool areInputAssignmentsValid(const ExternalInputAssignments& assignments) {
+    // Fill exists in the enum for a later feature but is intentionally not a
+    // persistent/selectable 1.1 input role yet. Tap is therefore the current maximum.
+    if (!enumAtMost(assignments.input1, InputFunction::Tap) ||
+        !enumAtMost(assignments.input2, InputFunction::Tap)) {
+        return false;
+    }
+    return assignments.input1 == InputFunction::Off || assignments.input1 != assignments.input2;
+}
+
+/** @brief Validates external clock capture, loss, reset, and smoothing configuration. */
+bool isExternalSyncValid(const ExternalSyncSettings& settings) {
+    return settings.pulsesPerQuarterNote != 0U &&
+        enumAtMost(settings.edge, SyncEdge::Falling) &&
+        enumAtMost(settings.lossMode, SyncLossMode::Internal) &&
+        enumAtMost(settings.resetMode, ExternalResetMode::Gate) &&
+        enumAtMost(settings.smoothing, SyncSmoothing::Full);
+}
+
+/** @brief Validates ordered STOP-mode screen-protection timeouts and screensaver selection. */
+bool isDisplayPreferencesValid(const DisplayPreferences& display) {
+    const std::uint8_t mode = static_cast<std::uint8_t>(display.screensaverMode);
+    return mode >= static_cast<std::uint8_t>(ScreensaverMode::Fractal) &&
+        mode <= static_cast<std::uint8_t>(ScreensaverMode::Fireworks) &&
+        display.screensaverAfterMinutes >= 1U &&
+        display.screensaverAfterMinutes <= display.dimAfterMinutes &&
+        display.dimAfterMinutes <= display.offAfterMinutes &&
+        display.offAfterMinutes <= config::kMaximumScreensaverMinutes;
+}
+
+/** @brief Validates all settings owned by one physical output channel. */
+bool isChannelValid(const ChannelConfig& channel) {
+    const CommonChannelSettings& common = channel.common;
+    return enumAtMost(common.mode, ChannelMode::Off) &&
+        isRateValid(common.rate) &&
+        common.swingPercent <= 50U &&
+        isGrooveValid(common.groove) &&
+        common.probabilityPercent <= 100U &&
+        common.phasePercent <= 99U &&
+        enumAtMost(common.resetMode, ResetMode::Free) &&
+        isMeterValid(channel.clock.meter) &&
+        channel.euclid.steps >= 1U && channel.euclid.steps <= 64U &&
+        channel.euclid.hits <= channel.euclid.steps &&
+        channel.euclid.rotation < channel.euclid.steps &&
+        channel.sequencer.length >= 1U && channel.sequencer.length <= 64U &&
+        channel.sequencer.rotation < channel.sequencer.length;
+}
+
+}  // namespace
+
+bool isPersistentStateValid(const ClockState& state) {
+    const bool tempoRangeValid =
+        state.tempoRange.minimumBpm >= config::kSupportedMinimumBpm &&
+        state.tempoRange.maximumBpm <= config::kSupportedMaximumBpm &&
+        state.tempoRange.minimumBpm <= state.tempoRange.maximumBpm &&
+        state.bpm >= state.tempoRange.minimumBpm &&
+        state.bpm <= state.tempoRange.maximumBpm;
+
+    if (!tempoRangeValid ||
+        !isMeterValid(state.masterMeter) ||
+        state.preCountSteps > 64U ||
+        !enumAtMost(state.transport, TransportState::Playing) ||
+        !enumAtMost(state.source, ClockSource::Auto) ||
+        !enumAtMost(state.operatingMode, OperatingMode::DividerBank) ||
+        !isExternalSyncValid(state.externalSync) ||
+        !areInputAssignmentsValid(state.inputs)) {
+        return false;
+    }
+
+    if (!isRateValid(state.unifiedClock.rate) ||
         state.unifiedClock.swingPercent > 50U ||
-        static_cast<std::uint8_t>(state.unifiedClock.groove.preset) >
-            static_cast<std::uint8_t>(GroovePreset::Custom) ||
-        state.unifiedClock.groove.amountPercent > 100U ||
-        state.unifiedClock.groove.customSlot >= kCustomGrooveSlotCount ||
-        (state.unifiedClock.groove.preset == GroovePreset::Custom
-            ? state.unifiedClock.groove.rotation >= kCustomGrooveMaximumSteps
-            : state.unifiedClock.groove.rotation >= groove::patternLength(state.unifiedClock.groove.preset)) ||
+        !isGrooveValid(state.unifiedClock.groove) ||
         state.unifiedClock.phasePercent > 99U ||
         state.unifiedClock.humanizeUs > config::kMaximumHumanizeUs ||
-        static_cast<std::uint8_t>(state.dividerBank.bank) >
-            static_cast<std::uint8_t>(DividerBank::Primes) ||
-        static_cast<std::uint8_t>(state.display.screensaverMode) <
-            static_cast<std::uint8_t>(ScreensaverMode::Fractal) ||
-        static_cast<std::uint8_t>(state.display.screensaverMode) >
-            static_cast<std::uint8_t>(ScreensaverMode::Fireworks) ||
-        state.display.screensaverAfterMinutes < 1U ||
-        state.display.screensaverAfterMinutes > state.display.dimAfterMinutes ||
-        state.display.dimAfterMinutes > state.display.offAfterMinutes ||
-        state.display.offAfterMinutes > config::kMaximumScreensaverMinutes) {
+        !enumAtMost(state.dividerBank.bank, DividerBank::Primes) ||
+        !isDisplayPreferencesValid(state.display)) {
         return false;
     }
 
     for (const ChannelConfig& channel : state.channels) {
-        if (static_cast<std::uint8_t>(channel.common.mode) > static_cast<std::uint8_t>(ChannelMode::Off) ||
-            static_cast<std::uint8_t>(channel.common.rate.mode) > static_cast<std::uint8_t>(ClockRatioMode::Divide) ||
-            channel.common.rate.factor == 0U || channel.common.rate.factor > 32U ||
-            channel.common.rate.numerator == 0U || channel.common.rate.numerator > 16U ||
-            channel.common.rate.denominator == 0U || channel.common.rate.denominator > 16U ||
-            channel.common.swingPercent > 50U ||
-            static_cast<std::uint8_t>(channel.common.groove.preset) >
-                static_cast<std::uint8_t>(GroovePreset::Custom) ||
-            channel.common.groove.amountPercent > 100U ||
-            channel.common.groove.customSlot >= kCustomGrooveSlotCount ||
-            (channel.common.groove.preset == GroovePreset::Custom
-                ? channel.common.groove.rotation >= kCustomGrooveMaximumSteps
-                : channel.common.groove.rotation >= groove::patternLength(channel.common.groove.preset)) ||
-            channel.common.probabilityPercent > 100U ||
-            channel.common.phasePercent > 99U ||
-            static_cast<std::uint8_t>(channel.common.resetMode) > static_cast<std::uint8_t>(ResetMode::Free) ||
-            channel.clock.meter.beats < 1U || channel.clock.meter.beats > 16U ||
-            (channel.clock.meter.unit != 1U && channel.clock.meter.unit != 2U &&
-             channel.clock.meter.unit != 4U && channel.clock.meter.unit != 8U &&
-             channel.clock.meter.unit != 16U) ||
-            channel.euclid.steps < 1U || channel.euclid.steps > 64U ||
-            channel.euclid.hits > channel.euclid.steps ||
-            channel.euclid.rotation >= channel.euclid.steps ||
-            channel.sequencer.length < 1U || channel.sequencer.length > 64U ||
-            channel.sequencer.rotation >= channel.sequencer.length) {
+        if (!isChannelValid(channel)) {
             return false;
         }
     }
     return true;
 }
-
 
 }  // namespace clockfw::services

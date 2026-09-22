@@ -25,13 +25,13 @@ Compiler branches:  4288/5562 (77.09%, informational only)
 
 The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on the exact tagged source before publishing. Local pre-release verification covers the changed host renderer regression, the 96-case external-SYNC suite, release/manual tooling, documentation policies, and both headless simulator tests; the authoritative 1.0.1 repository-wide percentages are therefore produced by the release CI rather than copied forward from 1.0.0.
 
-Current 1.1 development working baseline after Groove Engine Stage 2, schema-v12 migration coverage and Custom Groove editor/store regression coverage:
+Current 1.1 development working baseline after Groove Engine Stage 2 and the source-readability/maintainability refactor:
 
 ```text
-Executable lines:   8653/8937 (96.82%)
-Functions:            713/724  (98.48%)
-Decision branches:   5400/5900 (91.53%)
-Compiler branches:   5401/6866 (78.66%, informational only)
+Executable lines:   8615/8907 (96.72%)
+Functions:            766/778  (98.46%)
+Decision branches:   5256/5729 (91.74%)
+Compiler branches:   5257/6679 (78.71%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.

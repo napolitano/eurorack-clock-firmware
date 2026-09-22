@@ -12,192 +12,246 @@
 namespace clockfw::ui {
 
 void UiController::activateCurrentSetting() {
-    ChannelConfig& channel = state_.channels[navigation_.selectedChannel];
-
-    if (navigation_.settingsPage == SettingsPage::Root) {
-        if (navigation_.cursor == 0U) {
-            openSettingsPage(SettingsPage::General);
-        } else if (navigation_.cursor == 1U) {
-            navigation_.settingsExitScreen = Screen::Settings;
-            if (state_.operatingMode == OperatingMode::UnifiedClock) {
-                openSettingsPage(SettingsPage::UnifiedClock);
-            } else if (state_.operatingMode == OperatingMode::DividerBank) {
-                openSettingsPage(SettingsPage::DividerBank);
+    // SettingsPage is the state-machine discriminator. Page-specific helpers keep
+    // navigation commands separate from ordinary leaf-value editing.
+    switch (navigation_.settingsPage) {
+        case SettingsPage::Root:
+            activateRootSetting();
+            return;
+        case SettingsPage::General:
+            activateGeneralSetting();
+            return;
+        case SettingsPage::InputAssignments:
+            if (navigation_.cursor == 2U) {
+                openSettingsPage(SettingsPage::Sync);
             } else {
-                openSettingsPage(SettingsPage::Channel);
+                toggleCurrentSettingEditing();
             }
-        } else if (navigation_.cursor == 2U) {
-            openSettingsPage(SettingsPage::Preferences);
-        } else if (navigation_.cursor == 3U) {
-            openSettingsPage(SettingsPage::Info);
-        } else if (navigation_.highScoreResetAvailable && navigation_.cursor == 4U) {
-            navigation_.screen = Screen::HighScoreClearConfirm;
-            navigation_.cursor = 0U;  // Safe default: NO.
-            navigation_.editing = false;
-            invalidate();
-        } else {
-            engine_.resetGlobalPhase();
-            invalidate();
-        }
-        return;
+            return;
+        case SettingsPage::Hardware:
+            toggleCurrentSettingEditing();
+            return;
+        case SettingsPage::Diagnostics:
+            openSettingsPage(
+                navigation_.cursor == 0U
+                    ? SettingsPage::DiagnosticsInputs
+                    : SettingsPage::DiagnosticsOutputs);
+            return;
+        case SettingsPage::Info:
+            activateInfoSetting();
+            return;
+        case SettingsPage::Preferences:
+            activatePreferencesSetting();
+            return;
+        case SettingsPage::Channel:
+            activateChannelSetting();
+            return;
+        case SettingsPage::UnifiedClock:
+            activateUnifiedClockSetting();
+            return;
+        case SettingsPage::ChannelTiming:
+        case SettingsPage::UnifiedTiming:
+            activateTimingSetting();
+            return;
+        case SettingsPage::Sequencer:
+            if (navigation_.cursor == 2U) {
+                openSettingsPage(SettingsPage::SequencerPattern);
+            } else {
+                toggleCurrentSettingEditing();
+            }
+            return;
+        case SettingsPage::Groove:
+            activateGrooveSetting();
+            return;
+        case SettingsPage::GrooveEditorMenu:
+            activateGrooveEditorMenuSetting();
+            return;
+        case SettingsPage::DividerBank:
+            activateDividerBankSetting();
+            return;
+        case SettingsPage::SequencerPattern:
+            activateSequencerPatternSetting();
+            return;
+        case SettingsPage::Master:
+        case SettingsPage::Sync:
+        case SettingsPage::Screensaver:
+        case SettingsPage::ChannelOutput:
+        case SettingsPage::Clock:
+        case SettingsPage::Euclid:
+        case SettingsPage::UnifiedOutput:
+            toggleCurrentSettingEditing();
+            return;
+        case SettingsPage::DiagnosticsInputs:
+        case SettingsPage::DiagnosticsOutputs:
+        case SettingsPage::Licenses:
+        case SettingsPage::Updates:
+            // Read-only pages deliberately ignore encoder activation.
+            return;
     }
+}
 
-    if (navigation_.settingsPage == SettingsPage::General) {
-        if (navigation_.cursor == 0U) {
+void UiController::toggleCurrentSettingEditing() {
+    navigation_.editing = !navigation_.editing;
+    invalidate();
+}
+
+void UiController::activateRootSetting() {
+    if (navigation_.cursor == 0U) {
+        openSettingsPage(SettingsPage::General);
+    } else if (navigation_.cursor == 1U) {
+        // Screen::Settings is a parent marker here; backFromSettings() restores
+        // the real Performance exit target once navigation returns to Root.
+        navigation_.settingsExitScreen = Screen::Settings;
+        if (state_.operatingMode == OperatingMode::UnifiedClock) {
+            openSettingsPage(SettingsPage::UnifiedClock);
+        } else if (state_.operatingMode == OperatingMode::DividerBank) {
+            openSettingsPage(SettingsPage::DividerBank);
+        } else {
+            openSettingsPage(SettingsPage::Channel);
+        }
+    } else if (navigation_.cursor == 2U) {
+        openSettingsPage(SettingsPage::Preferences);
+    } else if (navigation_.cursor == 3U) {
+        openSettingsPage(SettingsPage::Info);
+    } else if (navigation_.highScoreResetAvailable && navigation_.cursor == 4U) {
+        navigation_.screen = Screen::HighScoreClearConfirm;
+        navigation_.cursor = 0U;  // Confirmation dialogs always default to NO.
+        navigation_.editing = false;
+        invalidate();
+    } else {
+        engine_.resetGlobalPhase();
+        invalidate();
+    }
+}
+
+void UiController::activateGeneralSetting() {
+    switch (navigation_.cursor) {
+        case 0U:
             openSettingsPage(SettingsPage::Master);
-        } else if (navigation_.cursor == 1U) {
+            break;
+        case 1U:
             openSettingsPage(SettingsPage::InputAssignments);
-        } else if (navigation_.cursor == 2U) {
+            break;
+        case 2U:
             openSettingsPage(SettingsPage::Screensaver);
-        } else if (navigation_.cursor == 3U) {
+            break;
+        case 3U:
             openSettingsPage(SettingsPage::Diagnostics);
-        } else {
+            break;
+        default:
             openSettingsPage(SettingsPage::Hardware);
-        }
-        return;
+            break;
     }
+}
 
-    if (navigation_.settingsPage == SettingsPage::InputAssignments) {
-        if (navigation_.cursor == 2U) {
-            openSettingsPage(SettingsPage::Sync);
-        } else {
-            navigation_.editing = !navigation_.editing;
-            invalidate();
-        }
-        return;
-    }
-
-    if (navigation_.settingsPage == SettingsPage::Hardware) {
-        navigation_.editing = !navigation_.editing;
+void UiController::activateInfoSetting() {
+    if (navigation_.cursor == 3U) {
+        openSettingsPage(SettingsPage::Licenses);
+    } else if (navigation_.cursor == 4U) {
+        openSettingsPage(SettingsPage::Updates);
+    } else if (navigation_.cursor == 5U) {
+        navigation_.screen = Screen::FactoryResetConfirm;
+        navigation_.cursor = 0U;  // Confirmation dialogs always default to NO.
+        navigation_.editing = false;
         invalidate();
-        return;
     }
+}
 
-    if (navigation_.settingsPage == SettingsPage::Diagnostics) {
-        openSettingsPage(
-            navigation_.cursor == 0U
-                ? SettingsPage::DiagnosticsInputs
-                : SettingsPage::DiagnosticsOutputs);
-        return;
+void UiController::activatePreferencesSetting() {
+    if (navigation_.cursor == 1U) {
+        openPresetSlots(PresetSlotAction::Load);
+    } else if (navigation_.cursor == 2U) {
+        openPresetSlots(PresetSlotAction::Save);
+    } else if (navigation_.cursor == 3U) {
+        navigation_.screen = Screen::Templates;
+        navigation_.cursor = 0U;
+        navigation_.scrollOffset = 0U;
+        invalidate();
     }
+}
 
-    if (navigation_.settingsPage == SettingsPage::Info) {
-        if (navigation_.cursor == 3U) {
-            openSettingsPage(SettingsPage::Licenses);
-        } else if (navigation_.cursor == 4U) {
-            openSettingsPage(SettingsPage::Updates);
-        } else if (navigation_.cursor == 5U) {
-            navigation_.screen = Screen::FactoryResetConfirm;
-            navigation_.cursor = 0U;  // Safe default: NO.
-            navigation_.editing = false;
-            invalidate();
-        }
-        return;
-    }
-
-    if (navigation_.settingsPage == SettingsPage::Preferences) {
-        if (navigation_.cursor == 1U) openPresetSlots(PresetSlotAction::Load);
-        else if (navigation_.cursor == 2U) openPresetSlots(PresetSlotAction::Save);
-        else if (navigation_.cursor == 3U) {
-            navigation_.screen = Screen::Templates;
-            navigation_.cursor = 0U;
-            navigation_.scrollOffset = 0U;
-            invalidate();
-        }
-        return;
-    }
-
-    if (navigation_.settingsPage == SettingsPage::Channel) {
-        switch (channelMenuAction(channel.common.mode, navigation_.cursor)) {
-            case ChannelMenuAction::Mode:
-                openModeSelect(Screen::Settings);
-                break;
-            case ChannelMenuAction::Timing:
-                openSettingsPage(SettingsPage::ChannelTiming);
-                break;
-            case ChannelMenuAction::Clock:
-                openSettingsPage(SettingsPage::Clock);
-                break;
-            case ChannelMenuAction::Euclid:
-                openSettingsPage(SettingsPage::Euclid);
-                break;
-            case ChannelMenuAction::Sequencer:
-                openSettingsPage(SettingsPage::Sequencer);
-                break;
-            case ChannelMenuAction::Output:
-                openSettingsPage(SettingsPage::ChannelOutput);
-                break;
-        }
-        return;
-    }
-
-    if (navigation_.settingsPage == SettingsPage::UnifiedClock) {
-        if (navigation_.cursor == 0U) {
+void UiController::activateChannelSetting() {
+    const ChannelMode mode = state_.channels[navigation_.selectedChannel].common.mode;
+    switch (channelMenuAction(mode, navigation_.cursor)) {
+        case ChannelMenuAction::Mode:
             openModeSelect(Screen::Settings);
-        } else if (navigation_.cursor == 1U) {
-            openSettingsPage(SettingsPage::UnifiedTiming);
-        } else {
-            openSettingsPage(SettingsPage::UnifiedOutput);
-        }
-        return;
+            break;
+        case ChannelMenuAction::Timing:
+            openSettingsPage(SettingsPage::ChannelTiming);
+            break;
+        case ChannelMenuAction::Clock:
+            openSettingsPage(SettingsPage::Clock);
+            break;
+        case ChannelMenuAction::Euclid:
+            openSettingsPage(SettingsPage::Euclid);
+            break;
+        case ChannelMenuAction::Sequencer:
+            openSettingsPage(SettingsPage::Sequencer);
+            break;
+        case ChannelMenuAction::Output:
+            openSettingsPage(SettingsPage::ChannelOutput);
+            break;
     }
+}
 
-    if (navigation_.settingsPage == SettingsPage::ChannelTiming && navigation_.cursor == 4U) {
-        openSettingsPage(SettingsPage::Groove);
-        return;
-    }
-
-    if (navigation_.settingsPage == SettingsPage::UnifiedTiming && navigation_.cursor == 4U) {
-        openSettingsPage(SettingsPage::Groove);
-        return;
-    }
-
-    if (navigation_.settingsPage == SettingsPage::Sequencer && navigation_.cursor == 2U) {
-        openSettingsPage(SettingsPage::SequencerPattern);
-        return;
-    }
-
-    if (navigation_.settingsPage == SettingsPage::Groove) {
-        if (navigation_.cursor == 3U) {
-            openGrooveEditor();
-        } else {
-            navigation_.editing = !navigation_.editing;
-            invalidate();
-        }
-        return;
-    }
-
-    if (navigation_.settingsPage == SettingsPage::GrooveEditorMenu) {
-        if (navigation_.cursor == 0U) {
-            openGrooveSlots(GrooveSlotAction::Save);
-        } else if (navigation_.cursor == 1U) {
-            if (grooveEditorDirty_) {
-                grooveLoadPendingAfterDiscard_ = true;
-                navigation_.screen = Screen::GrooveDiscardConfirm;
-                navigation_.cursor = 0U;
-                invalidate();
-            } else {
-                openGrooveSlots(GrooveSlotAction::Load);
-            }
-        } else {
-            navigation_.editing = !navigation_.editing;
-            invalidate();
-        }
-        return;
-    }
-
-    if (navigation_.settingsPage == SettingsPage::DividerBank && navigation_.cursor == 0U) {
+void UiController::activateUnifiedClockSetting() {
+    if (navigation_.cursor == 0U) {
         openModeSelect(Screen::Settings);
+    } else if (navigation_.cursor == 1U) {
+        openSettingsPage(SettingsPage::UnifiedTiming);
+    } else {
+        openSettingsPage(SettingsPage::UnifiedOutput);
+    }
+}
+
+void UiController::activateTimingSetting() {
+    if (navigation_.cursor == 4U) {
+        openSettingsPage(SettingsPage::Groove);
+    } else {
+        toggleCurrentSettingEditing();
+    }
+}
+
+void UiController::activateGrooveSetting() {
+    if (navigation_.cursor == 3U) {
+        openGrooveEditor();
+    } else {
+        toggleCurrentSettingEditing();
+    }
+}
+
+void UiController::activateGrooveEditorMenuSetting() {
+    if (navigation_.cursor == 0U) {
+        openGrooveSlots(GrooveSlotAction::Save);
+        return;
+    }
+    if (navigation_.cursor != 1U) {
+        toggleCurrentSettingEditing();
         return;
     }
 
-    if (navigation_.settingsPage == SettingsPage::DividerBank) {
-        navigation_.editing = !navigation_.editing;
+    // Loading replaces the live draft. Require an explicit discard decision first
+    // so an accidental LOAD cannot destroy unsaved marker edits.
+    if (grooveEditorDirty_) {
+        grooveLoadPendingAfterDiscard_ = true;
+        navigation_.screen = Screen::GrooveDiscardConfirm;
+        navigation_.cursor = 0U;
         invalidate();
-        return;
+    } else {
+        openGrooveSlots(GrooveSlotAction::Load);
     }
+}
 
-    if (navigation_.settingsPage == SettingsPage::SequencerPattern && navigation_.cursor == 0U) {
+void UiController::activateDividerBankSetting() {
+    if (navigation_.cursor == 0U) {
+        openModeSelect(Screen::Settings);
+    } else {
+        toggleCurrentSettingEditing();
+    }
+}
+
+void UiController::activateSequencerPatternSetting() {
+    if (navigation_.cursor == 0U) {
         navigation_.screen = Screen::SequencerEditor;
         navigation_.sequencerPage = 0U;
         navigation_.sequencerCursor = 0U;
@@ -205,25 +259,10 @@ void UiController::activateCurrentSetting() {
         return;
     }
 
-    if (navigation_.settingsPage == SettingsPage::SequencerPattern && navigation_.cursor >= 1U) {
-        if (settingsEditor_.executeSequencerCommand(
-                navigation_.selectedChannel, navigation_.cursor)) {
-            invalidate();
-        }
-        return;
-    }
-
-    if (navigation_.settingsPage != SettingsPage::Info &&
-        navigation_.settingsPage != SettingsPage::Licenses &&
-        navigation_.settingsPage != SettingsPage::Updates &&
-        navigation_.settingsPage != SettingsPage::General &&
-        navigation_.settingsPage != SettingsPage::Diagnostics &&
-        navigation_.settingsPage != SettingsPage::DiagnosticsInputs &&
-        navigation_.settingsPage != SettingsPage::DiagnosticsOutputs) {
-        navigation_.editing = !navigation_.editing;
+    if (settingsEditor_.executeSequencerCommand(
+            navigation_.selectedChannel, navigation_.cursor)) {
         invalidate();
     }
 }
-
 
 }  // namespace clockfw::ui

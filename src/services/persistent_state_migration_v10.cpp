@@ -15,11 +15,13 @@
 namespace clockfw::services {
 namespace {
 
+/** @brief Reads one little-endian 16-bit value from a legacy v10 record. */
 std::uint16_t readUint16LeV10(const std::uint8_t* const source) {
     return static_cast<std::uint16_t>(source[0]) |
         static_cast<std::uint16_t>(static_cast<std::uint16_t>(source[1]) << 8U);
 }
 
+/** @brief Reads one little-endian 32-bit value from a legacy v10 record. */
 std::uint32_t readUint32LeV10(const std::uint8_t* const source) {
     return static_cast<std::uint32_t>(source[0]) |
         (static_cast<std::uint32_t>(source[1]) << 8U) |
@@ -27,6 +29,7 @@ std::uint32_t readUint32LeV10(const std::uint8_t* const source) {
         (static_cast<std::uint32_t>(source[3]) << 24U);
 }
 
+/** @brief Returns whether a v10 preset-name byte belongs to the supported alphabet. */
 bool isAllowedV10PresetCharacter(const char character) {
     return character == ' ' || character == '-' || character == '_' ||
         (character >= '0' && character <= '9') ||
@@ -41,6 +44,9 @@ bool PersistentStateService::deserializeV10State(
     static_assert(kStatePayloadSize == kV10StatePayloadSize + 11U);
     std::array<std::uint8_t, kStatePayloadSize> upgraded{};
     std::copy(payload.begin(), payload.end(), upgraded.begin());
+
+    // Schema v11 appends the two comparator-input role assignments. Older states
+    // inherit the accepted factory mapping instead of guessing from electrical level.
     upgraded[kV10StatePayloadSize] = static_cast<std::uint8_t>(defaults::kInput1Function);
     upgraded[kV10StatePayloadSize + 1U] = static_cast<std::uint8_t>(defaults::kInput2Function);
     return deserializeState(upgraded, state);

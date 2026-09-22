@@ -10,6 +10,16 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Code quality and readability
+
+- Refactor persistence startup so current/preset schema probing is expressed once and migration order reads explicitly newest-to-oldest instead of repeating low-level byte-read boilerplate.
+- Split persistent-state semantic validation into named meter, rate, groove, input, display, external-sync, and channel rules so invalid-state reasoning is reviewable without decoding one compound condition.
+- Restructure Settings activation as an explicit `SettingsPage` state-machine dispatcher with page-focused helpers and documented safe confirmation/discard behavior.
+- Restructure short encoder activation as an explicit `Screen` dispatcher so supported UI actions and intentional no-op screens are visible in one place.
+- Clarify external-sync estimator state with a named reference-pulse concept, named transport sentinel and period/filter comments that document glitch rejection and integer-Q8 smoothing behavior.
+- Improve legacy persistence migration helper names and comments so byte order, schema ownership and injected defaults are explicit.
+- Expand the development/contribution standard with concrete readability rules while retaining the existing real-time and coverage constraints.
+
 ### Groove Engine Stage 2 - Custom editor
 
 - Add the standard `GROOVE EDITOR` screen header and separator used by the other dedicated editors; move beat labels and the editable grid below the header while preserving the bottom status row.
@@ -40,7 +50,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 ### Validation
 
 - Native inventory: **488 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **33 / 186**, Settings **88 / 261**, complete host firmware **37** cases across all tested display variants.
-- Repository coverage: **8653/8937 executable lines (96.82%) / 713/724 functions (98.48%) / 5400/5900 source decision branches (91.53%)**; the 95/95/90 gates remain unchanged.
+- Repository coverage: **8615/8907 executable lines (96.72%) / 766/778 functions (98.46%) / 5256/5729 source decision branches (91.74%)**; the 95/95/90 gates remain unchanged.
 - Full ASan/UBSan Native/firmware matrix passes, including legacy I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin variants.
 
 ### Changed

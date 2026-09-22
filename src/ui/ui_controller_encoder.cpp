@@ -50,115 +50,156 @@ void UiController::handleEncoderButton(
 }
 
 void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
-    if (navigation_.screen == Screen::Performance) {
-        navigation_.screen = Screen::ChannelQuickSelect;
-        navigation_.cursor = navigation_.selectedChannel;
-        navigation_.editing = false;
-        invalidate();
-    } else if (navigation_.screen == Screen::ChannelQuickSelect) {
-        if (state_.operatingMode == OperatingMode::Independent) {
-            navigation_.selectedChannel = navigation_.cursor;
+    // Screen is the state-machine discriminator. A switch keeps each press action
+    // self-contained and makes intentionally unsupported screens explicit.
+    switch (navigation_.screen) {
+        case Screen::Performance:
+            navigation_.screen = Screen::ChannelQuickSelect;
+            navigation_.cursor = navigation_.selectedChannel;
+            navigation_.editing = false;
+            invalidate();
+            return;
+
+        case Screen::ChannelQuickSelect:
+            if (state_.operatingMode == OperatingMode::Independent) {
+                navigation_.selectedChannel = navigation_.cursor;
+            }
+            navigation_.screen = Screen::Performance;
+            navigation_.cursor = navigation_.selectedChannel;
+            navigation_.editing = false;
+            invalidate();
+            return;
+
+        case Screen::ModeSelect:
+            commitSelectedMode(nowMs);
+            return;
+
+        case Screen::ModeChangeConfirm:
+            if (navigation_.cursor == 0U) {
+                navigation_.screen = Screen::ModeSelect;
+                navigation_.cursor = modeFunctionIndexForState(state_, navigation_.selectedChannel);
+                invalidate();
+            } else {
+                applyConfirmedMode(nowMs);
+            }
+            return;
+
+        case Screen::Templates:
+            applySelectedTemplate(nowMs);
+            return;
+
+        case Screen::PresetSlots:
+            navigation_.selectedPresetSlot = navigation_.cursor;
+            if (navigation_.presetSlotAction == PresetSlotAction::Load) {
+                loadSelectedPreset(nowMs);
+            } else if (persistentState_.presetExists(navigation_.selectedPresetSlot)) {
+                navigation_.screen = Screen::OverwriteConfirm;
+                navigation_.cursor = 0U;
+                invalidate();
+            } else {
+                preparePresetName();
+                navigation_.screen = Screen::NameEntry;
+                invalidate();
+            }
+            return;
+
+        case Screen::OverwriteConfirm:
+            if (navigation_.cursor == 0U) {
+                navigation_.screen = Screen::PresetSlots;
+                navigation_.cursor = navigation_.selectedPresetSlot;
+                invalidate();
+            } else {
+                preparePresetName();
+                navigation_.screen = Screen::NameEntry;
+                invalidate();
+            }
+            return;
+
+        case Screen::HighScoreClearConfirm:
+            confirmHighScoreClear(nowMs);
+            return;
+
+        case Screen::FactoryResetConfirm:
+            confirmFactoryReset(nowMs);
+            return;
+
+        case Screen::NameEntry:
+            if (navigation_.nameCharacterIndex <
+                services::PersistentStateService::kPresetNameLength - 1U) {
+                ++navigation_.nameCharacterIndex;
+                invalidate();
+            } else {
+                saveNamedPreset(nowMs);
+            }
+            return;
+
+        case Screen::GrooveSlots:
+            navigation_.selectedGrooveSlot = navigation_.cursor;
+            if (navigation_.grooveSlotAction == GrooveSlotAction::Load) {
+                loadSelectedGroove();
+            } else if (customGrooveStore_ != nullptr &&
+                       customGrooveStore_->exists(navigation_.selectedGrooveSlot)) {
+                navigation_.screen = Screen::GrooveOverwriteConfirm;
+                navigation_.cursor = 0U;
+                invalidate();
+            } else {
+                prepareGrooveName();
+                navigation_.screen = Screen::GrooveNameEntry;
+                invalidate();
+            }
+            return;
+
+        case Screen::GrooveOverwriteConfirm:
+            if (navigation_.cursor == 0U) {
+                navigation_.screen = Screen::GrooveSlots;
+                navigation_.cursor = navigation_.selectedGrooveSlot;
+                invalidate();
+            } else {
+                saveCustomGroove(nowMs, true);
+            }
+            return;
+
+        case Screen::GrooveDiscardConfirm:
+            if (navigation_.cursor == 0U) {
+                navigation_.screen = Screen::GrooveEditor;
+                grooveLoadPendingAfterDiscard_ = false;
+                invalidate();
+            } else if (grooveLoadPendingAfterDiscard_) {
+                grooveEditorDirty_ = false;
+                grooveLoadPendingAfterDiscard_ = false;
+                openGrooveSlots(GrooveSlotAction::Load);
+            } else {
+                leaveGrooveEditor(true);
+            }
+            return;
+
+        case Screen::GrooveNameEntry:
+            if (navigation_.nameCharacterIndex < services::CustomGrooveStore::kNameLength - 1U) {
+                ++navigation_.nameCharacterIndex;
+                invalidate();
+            } else {
+                saveCustomGroove(nowMs, false);
+            }
+            return;
+
+        case Screen::Settings:
+            activateCurrentSetting();
+            persistCurrentState(nowMs);
+            return;
+
+        case Screen::SequencerEditor: {
+            const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
+                navigation_.sequencerPage * 16U + navigation_.sequencerCursor);
+            settingsEditor_.toggleSequencerStep(navigation_.selectedChannel, absoluteStep);
+            persistCurrentState(nowMs);
+            invalidate();
+            return;
         }
-        navigation_.screen = Screen::Performance;
-        navigation_.cursor = navigation_.selectedChannel;
-        navigation_.editing = false;
-        invalidate();
-    } else if (navigation_.screen == Screen::ModeSelect) {
-        commitSelectedMode(nowMs);
-    } else if (navigation_.screen == Screen::ModeChangeConfirm) {
-        if (navigation_.cursor == 0U) {
-            navigation_.screen = Screen::ModeSelect;
-            navigation_.cursor = modeFunctionIndexForState(state_, navigation_.selectedChannel);
-            invalidate();
-        } else {
-            applyConfirmedMode(nowMs);
-        }
-    } else if (navigation_.screen == Screen::Templates) {
-        applySelectedTemplate(nowMs);
-    } else if (navigation_.screen == Screen::PresetSlots) {
-        navigation_.selectedPresetSlot = navigation_.cursor;
-        if (navigation_.presetSlotAction == PresetSlotAction::Load) {
-            loadSelectedPreset(nowMs);
-        } else if (persistentState_.presetExists(navigation_.selectedPresetSlot)) {
-            navigation_.screen = Screen::OverwriteConfirm;
-            navigation_.cursor = 0U;
-            invalidate();
-        } else {
-            preparePresetName();
-            navigation_.screen = Screen::NameEntry;
-            invalidate();
-        }
-    } else if (navigation_.screen == Screen::OverwriteConfirm) {
-        if (navigation_.cursor == 0U) {
-            navigation_.screen = Screen::PresetSlots;
-            navigation_.cursor = navigation_.selectedPresetSlot;
-            invalidate();
-        } else {
-            preparePresetName();
-            navigation_.screen = Screen::NameEntry;
-            invalidate();
-        }
-    } else if (navigation_.screen == Screen::HighScoreClearConfirm) {
-        confirmHighScoreClear(nowMs);
-    } else if (navigation_.screen == Screen::FactoryResetConfirm) {
-        confirmFactoryReset(nowMs);
-    } else if (navigation_.screen == Screen::NameEntry) {
-        if (navigation_.nameCharacterIndex < services::PersistentStateService::kPresetNameLength - 1U) {
-            ++navigation_.nameCharacterIndex;
-            invalidate();
-        } else {
-            saveNamedPreset(nowMs);
-        }
-    } else if (navigation_.screen == Screen::GrooveSlots) {
-        navigation_.selectedGrooveSlot = navigation_.cursor;
-        if (navigation_.grooveSlotAction == GrooveSlotAction::Load) {
-            loadSelectedGroove();
-        } else if (customGrooveStore_ != nullptr &&
-                   customGrooveStore_->exists(navigation_.selectedGrooveSlot)) {
-            navigation_.screen = Screen::GrooveOverwriteConfirm;
-            navigation_.cursor = 0U;
-            invalidate();
-        } else {
-            prepareGrooveName();
-            navigation_.screen = Screen::GrooveNameEntry;
-            invalidate();
-        }
-    } else if (navigation_.screen == Screen::GrooveOverwriteConfirm) {
-        if (navigation_.cursor == 0U) {
-            navigation_.screen = Screen::GrooveSlots;
-            navigation_.cursor = navigation_.selectedGrooveSlot;
-            invalidate();
-        } else {
-            saveCustomGroove(nowMs, true);
-        }
-    } else if (navigation_.screen == Screen::GrooveDiscardConfirm) {
-        if (navigation_.cursor == 0U) {
-            navigation_.screen = Screen::GrooveEditor;
-            grooveLoadPendingAfterDiscard_ = false;
-            invalidate();
-        } else if (grooveLoadPendingAfterDiscard_) {
-            grooveEditorDirty_ = false;
-            grooveLoadPendingAfterDiscard_ = false;
-            openGrooveSlots(GrooveSlotAction::Load);
-        } else {
-            leaveGrooveEditor(true);
-        }
-    } else if (navigation_.screen == Screen::GrooveNameEntry) {
-        if (navigation_.nameCharacterIndex < services::CustomGrooveStore::kNameLength - 1U) {
-            ++navigation_.nameCharacterIndex;
-            invalidate();
-        } else {
-            saveCustomGroove(nowMs, false);
-        }
-    } else if (navigation_.screen == Screen::Settings) {
-        activateCurrentSetting();
-        persistCurrentState(nowMs);
-    } else if (navigation_.screen == Screen::SequencerEditor) {
-        const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
-            navigation_.sequencerPage * 16U + navigation_.sequencerCursor);
-        settingsEditor_.toggleSequencerStep(navigation_.selectedChannel, absoluteStep);
-        persistCurrentState(nowMs);
-        invalidate();
+
+        case Screen::GrooveEditor:
+            // Short press has no direct editor action; TAP selects markers and
+            // long press opens the Groove Editor menu.
+            return;
     }
 }
 

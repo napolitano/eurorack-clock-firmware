@@ -52,6 +52,9 @@ public:
     bool consumeTapRequest(std::uint32_t& timestampUs);
 
 private:
+    /** Sentinel used when no input-driven transport transition is pending. */
+    static constexpr std::uint8_t kNoPendingTransportTransition = 0xFFU;
+
     /** @brief Processes the input assigned to RESET. */
     void processResetEdges();
     /** @brief Processes the input assigned to SYNC. */
@@ -112,14 +115,15 @@ private:
     bool runLevelInitialized_ = false;
     bool runLevelApplied_ = false;
 
-    bool haveAcceptedPulse_ = false;
+    /** True after the first selected SYNC edge has established a period reference. */
+    bool haveReferencePulse_ = false;
     bool externalLocked_ = false;
     std::uint32_t lastAcceptedPulseUs_ = 0U;
     std::uint64_t filteredPeriodQ8_ = 0U;
     std::uint32_t filteredBpmMilli_ = 0U;
 
     bool autoTransportArmed_ = true;
-    volatile std::uint8_t pendingTransportTransition_ = 0xFFU;
+    volatile std::uint8_t pendingTransportTransition_ = kNoPendingTransportTransition;
     volatile bool pendingTap_ = false;
     volatile std::uint32_t pendingTapTimestampUs_ = 0U;
 };

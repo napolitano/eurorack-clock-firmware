@@ -16,7 +16,11 @@
 namespace clockfw::services {
 namespace {
 
-constexpr std::uint64_t kMicrosPerMinuteMilliBpm = 60000000000ULL;
+/** Microseconds in one minute, used for period/BPM conversion. */
+constexpr std::uint64_t kMicrosPerMinute = 60000000ULL;
+
+/** Microseconds-per-minute scaled by 1000 for milli-BPM calculations. */
+constexpr std::uint64_t kMicrosPerMinuteMilliBpm = kMicrosPerMinute * 1000ULL;
 
 bool settingsEqual(
     const ExternalSyncSettings& first,
@@ -79,13 +83,13 @@ void ExternalSyncController::begin(const ClockState& state) {
     runLevelInitialized_ = runInput >= 0;
     runLevelApplied_ = runInput >= 0 ? inputLevelHigh(runInput) : false;
 
-    haveAcceptedPulse_ = false;
+    haveReferencePulse_ = false;
     externalLocked_ = false;
     lastAcceptedPulseUs_ = 0U;
     filteredPeriodQ8_ = 0U;
     filteredBpmMilli_ = 0U;
     autoTransportArmed_ = true;
-    pendingTransportTransition_ = 0xFFU;
+    pendingTransportTransition_ = kNoPendingTransportTransition;
     pendingTap_ = false;
     pendingTapTimestampUs_ = 0U;
 }
@@ -132,7 +136,7 @@ void ExternalSyncController::updateConfiguration(const ClockState& state) {
     // musical command. The scheduler discards those stale edges before interpreting
     // the new assignment. Timing-role changes also invalidate clock acquisition.
     if (timingInterpretationChanged) {
-        haveAcceptedPulse_ = false;
+        haveReferencePulse_ = false;
         externalLocked_ = false;
         lastAcceptedPulseUs_ = 0U;
         filteredPeriodQ8_ = 0U;
@@ -159,7 +163,7 @@ void ExternalSyncController::processSchedulerTick(const std::uint32_t nowUs) {
     processRunLevel();
     drainInactiveInputs();
 
-    if (!externalLocked_ || !haveAcceptedPulse_) {
+    if (!externalLocked_ || !haveReferencePulse_) {
         return;
     }
     const std::uint32_t timeoutUs = effectiveTimeoutUs();
@@ -190,11 +194,11 @@ void ExternalSyncController::notifyManualTransportState(const TransportState tra
 
 bool ExternalSyncController::consumeTransportTransition(TransportState& transport) {
     hal::InterruptLock interruptLock;
-    if (pendingTransportTransition_ == 0xFFU) {
+    if (pendingTransportTransition_ == kNoPendingTransportTransition) {
         return false;
     }
     transport = static_cast<TransportState>(pendingTransportTransition_);
-    pendingTransportTransition_ = 0xFFU;
+    pendingTransportTransition_ = kNoPendingTransportTransition;
     return true;
 }
 
@@ -220,7 +224,7 @@ void ExternalSyncController::processSyncEdges() {
             if (externalLocked_) {
                 loseExternalLockFromIsr();
             } else {
-                haveAcceptedPulse_ = false;
+                haveReferencePulse_ = false;
                 filteredPeriodQ8_ = 0U;
             }
             continue;
@@ -230,8 +234,8 @@ void ExternalSyncController::processSyncEdges() {
             continue;
         }
 
-        if (!haveAcceptedPulse_) {
-            haveAcceptedPulse_ = true;
+        if (!haveReferencePulse_) {
+            haveReferencePulse_ = true;
             lastAcceptedPulseUs_ = edge.timestampUs;
             continue;
         }
@@ -241,23 +245,26 @@ void ExternalSyncController::processSyncEdges() {
             ? settings_.pulsesPerQuarterNote
             : 1U;
         const std::uint32_t minimumSupportedPeriodUs = static_cast<std::uint32_t>(
-            60000000ULL /
+            kMicrosPerMinute /
             (static_cast<std::uint64_t>(config::kSupportedMaximumBpm) * ppqn));
         const std::uint32_t effectiveGlitchFloorUs =
             settings_.glitchFilterUs > minimumSupportedPeriodUs
                 ? settings_.glitchFilterUs
                 : minimumSupportedPeriodUs;
+
+        // Rejected short edges do not move lastAcceptedPulseUs_. A comparator
+        // glitch therefore cannot become the reference for the next valid period.
         if (periodUs == 0U || periodUs < effectiveGlitchFloorUs) {
             continue;
         }
 
-        const std::uint64_t maximumSupportedPeriodUs = 60000000ULL /
+        const std::uint64_t maximumSupportedPeriodUs = kMicrosPerMinute /
             (static_cast<std::uint64_t>(config::kSupportedMinimumBpm) * ppqn);
         if (static_cast<std::uint64_t>(periodUs) > maximumSupportedPeriodUs) {
             if (externalLocked_) {
                 loseExternalLockFromIsr();
             }
-            haveAcceptedPulse_ = true;
+            haveReferencePulse_ = true;
             filteredPeriodQ8_ = 0U;
             lastAcceptedPulseUs_ = edge.timestampUs;
             continue;
@@ -268,6 +275,8 @@ void ExternalSyncController::processSyncEdges() {
         if (filteredPeriodQ8_ == 0U) {
             filteredPeriodQ8_ = periodQ8;
         } else {
+            // Integer Q8 filters keep the scheduler free of floating-point state.
+            // Low weights the new period 75%, Medium 50%, Full 25%.
             switch (settings_.smoothing) {
                 case SyncSmoothing::Off:
                     filteredPeriodQ8_ = periodQ8;
@@ -349,7 +358,7 @@ void ExternalSyncController::requestRestartFromInput() {
 void ExternalSyncController::loseExternalLockFromIsr() {
     const bool wasLocked = externalLocked_;
     externalLocked_ = false;
-    haveAcceptedPulse_ = false;
+    haveReferencePulse_ = false;
     filteredPeriodQ8_ = 0U;
     engine_.setExternalLockFromIsr(false, filteredBpmMilli_);
 
@@ -394,7 +403,6 @@ std::uint32_t ExternalSyncController::calculateBpmMilli(const std::uint32_t peri
 }
 
 std::uint32_t ExternalSyncController::effectiveTimeoutUs() const {
-    constexpr std::uint64_t kMicrosPerMinute = 60000000ULL;
     constexpr std::uint64_t kMissedPulseTolerance = 2ULL;
     const std::uint64_t configuredUs =
         static_cast<std::uint64_t>(settings_.timeoutMs) * 1000ULL;

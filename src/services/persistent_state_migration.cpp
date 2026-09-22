@@ -15,16 +15,19 @@
 namespace clockfw::services {
 namespace {
 
+/** @brief Reads one little-endian 16-bit value from a pre-v8 migration record. */
 std::uint16_t readUint16LeMigration(const std::uint8_t* const source) {
     return static_cast<std::uint16_t>(source[0]) |
         static_cast<std::uint16_t>(static_cast<std::uint16_t>(source[1]) << 8U);
 }
 
+/** @brief Writes one little-endian 16-bit value while constructing an upgraded payload. */
 void writeUint16LeMigration(std::uint8_t* const destination, const std::uint16_t value) {
     destination[0] = static_cast<std::uint8_t>(value & 0xFFU);
     destination[1] = static_cast<std::uint8_t>(value >> 8U);
 }
 
+/** @brief Reads one little-endian 32-bit value from a pre-v8 migration record. */
 std::uint32_t readUint32LeMigration(const std::uint8_t* const source) {
     return static_cast<std::uint32_t>(source[0]) |
         (static_cast<std::uint32_t>(source[1]) << 8U) |
@@ -32,6 +35,7 @@ std::uint32_t readUint32LeMigration(const std::uint8_t* const source) {
         (static_cast<std::uint32_t>(source[3]) << 24U);
 }
 
+/** @brief Returns whether a legacy preset-name byte belongs to the supported alphabet. */
 bool isAllowedLegacyPresetCharacter(const char character) {
     return character == ' ' || character == '-' || character == '_' ||
         (character >= '0' && character <= '9') ||
@@ -39,10 +43,6 @@ bool isAllowedLegacyPresetCharacter(const char character) {
 }
 
 }  // namespace
-
-
-
-
 
 bool PersistentStateService::deserializeV7State(
     const std::array<std::uint8_t, kV7StatePayloadSize>& payload,
