@@ -71,6 +71,9 @@ public:
     /** @brief Switches the OLED panel on or off without clearing display RAM. */
     void setDisplayPower(bool enabled);
 
+    /** @brief Reports whether one read-only settings value is abbreviated on screen. */
+    bool informationValueOverflows(const char* label, const char* value);
+
 private:
     hal::OledDisplay& display_;
     const services::PersistentStateService& persistentState_;

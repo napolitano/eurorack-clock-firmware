@@ -32,8 +32,10 @@ enum class Screen : std::uint8_t {
     GrooveEditor,
     GrooveSlots,
     GrooveOverwriteConfirm,
+    GrooveDeleteConfirm,
     GrooveDiscardConfirm,
-    GrooveNameEntry
+    GrooveNameEntry,
+    InformationPopover
 };
 
 /** @brief Hierarchical text settings pages. */
@@ -81,7 +83,7 @@ enum class ModeFunction : std::uint8_t {
 enum class PresetSlotAction : std::uint8_t { Load, Save };
 
 /** @brief Operation being performed on Custom Groove slots. */
-enum class GrooveSlotAction : std::uint8_t { LoadEditor, Activate, Save };
+enum class GrooveSlotAction : std::uint8_t { LoadEditor, Activate, Save, Rename, Delete };
 
 /** @brief Live digital levels shown by the hardware diagnostics pages. */
 struct DiagnosticSnapshot {
@@ -125,6 +127,9 @@ struct NavigationState {
     std::uint8_t grooveZoomSteps = 0U;
     CustomGroovePattern grooveDraft{};
     std::array<char, 17U> grooveNameBuffer{};
+    /** Title/value copied from one read-only settings row while its detail popover is open. */
+    std::array<char, 18U> informationPopoverTitle{};
+    std::array<char, 64U> informationPopoverValue{};
 };
 
 }  // namespace clockfw::ui

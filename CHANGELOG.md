@@ -26,6 +26,15 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Improve legacy persistence migration helper names and comments so byte order, schema ownership and injected defaults are explicit.
 - Expand the development/contribution standard with concrete readability rules while retaining the existing real-time and coverage constraints.
 
+### Release-candidate gap closure
+
+- Freeze the 1.1.0 Custom Groove persistence scope at 10 named slots in the existing 8-KiB layout; keep the longer-term 99-slot target conditional on a later compact/expanded storage design and real STM32F401 ELF/RAM proof.
+- Add direct Custom Groove `RENAME` and `DELETE` actions with explicit destructive confirmation and retry-safe persistence semantics.
+- Add an exhaustive Groove qualification sweep across all 1-64 step lengths and 0-100% Amount values plus engine vectors spanning 20/120/999 BPM, divide/multiply/rational rates, 1/4/16/64-step grids and 0/50/100% Amount.
+- Define `HIL-GRV-001..003` bench vectors for subtle, triplet-like and extreme signed Groove timing without misrepresenting those planned captures as host-test evidence.
+- Correct the Info product value from the compact internal identity to `Clock`.
+- Add generic read-only information overflow handling: long informational values are ellipsized with `...` in list rows and open a full-value popover on activation; editable setting values are explicitly excluded from this behavior.
+
 ### Groove Engine Stage 2 - Custom editor
 
 - Make Custom Groove save completion explicit: every new slot starts with an editable generated two-word musical name, and encoder long-press commits the name/pattern immediately (`HOLD TO SAVE`). The per-boot pseudo-random seed is mixed with generation order and human interaction timing; it is convenience naming, not cryptographic randomness.
@@ -60,10 +69,10 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Validation
 
-- Native inventory: **488 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **33 / 186**, Settings **88 / 267**, complete host firmware **37** cases across all tested display variants.
-- Complete firmware host variants: legacy I2C **37 / 4,158**, SPI SSD1306 **37 / 3,121**, SPI SSD1315 **37 / 3,121**, and fixed-I2C/reset **37 / 4,141**, all with zero failures.
-- Repository coverage: **8638/9006 executable lines (95.91%) / 769/784 functions (98.09%) / 5277/5802 source decision branches (90.95%)**; the 95/95/90 gates remain unchanged.
-- Full ASan/UBSan Native/firmware matrix passes on the final r24 tree, including all focused suites plus legacy I2C, SPI SSD1306, SPI SSD1315 and fixed-I2C/reset-pin firmware variants.
+- Native inventory: **491 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **35 / 211,178**, Settings **88 / 273**, complete host firmware **38** cases across all tested display variants.
+- Complete firmware host variants: legacy I2C **38 / 4,210**, SPI default/SSD1306/SSD1315 **38 / 3,173** each, and fixed-I2C/reset **38 / 4,193**, all with zero failures.
+- Repository coverage: **8868/9232 executable lines (96.06%) / 782/795 functions (98.36%) / 5412/5967 source decision branches (90.70%)**; the 95/95/90 gates remain unchanged.
+- Full ASan/UBSan Native/firmware matrix passes on the final r25 tree, including all focused suites plus legacy I2C, SPI SSD1306, SPI SSD1315 and fixed-I2C/reset-pin firmware variants.
 - Headless simulator integration remains **2/2 PASS**, including the engine-phase-locked scope reference regression.
 
 ### Changed
@@ -76,7 +85,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Phase-lock the simulator developer-scope musical ruler to the real current engine position instead of reconstructing historical references from transport start plus the current BPM/rate. Tempo, external-SYNC, and rate changes can no longer make the ruler drift relative to already captured gate transitions.
 - Prevent selecting `RUN` in Settings from starting or stopping transport merely because the assigned comparator is already HIGH/LOW. RUN now captures a neutral baseline on boot and role reassignment; only a later physical level change may command transport, preserving the STOP-on-boot invariant.
 - Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v12 2,882-byte repeated-state footprint and 21-byte in-place growth ceiling.
-- Updated development and coverage documentation to the current 488-case Native inventory.
+- Updated development and coverage documentation to the current 491-case Native inventory.
 
 ### Groove Engine Stage 1
 

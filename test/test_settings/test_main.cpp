@@ -210,7 +210,7 @@ void testGrooveMenuShapeIsStable(){
     TEST_ASSERT_EQUAL_UINT8(5U,ui::settingsPageItemCount(ui::SettingsPage::ChannelTiming,ChannelMode::Clock,false));
     TEST_ASSERT_EQUAL_UINT8(3U,ui::settingsPageItemCount(ui::SettingsPage::UnifiedClock,ChannelMode::Clock,false));
     TEST_ASSERT_EQUAL_UINT8(6U,ui::settingsPageItemCount(ui::SettingsPage::UnifiedTiming,ChannelMode::Clock,false));
-    TEST_ASSERT_EQUAL_UINT8(5U,ui::settingsPageItemCount(ui::SettingsPage::Groove,ChannelMode::Clock,false));
+    TEST_ASSERT_EQUAL_UINT8(7U,ui::settingsPageItemCount(ui::SettingsPage::Groove,ChannelMode::Clock,false));
     const auto row=ui::buildMenuRow(ui::SettingsPage::Groove,0U,0U,h.state);
     TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::GroovePreset),row.label)==0);
     TEST_ASSERT_TRUE(std::strcmp("OFF",row.value)==0);
@@ -286,7 +286,7 @@ void testGrooveMenuRowsAndNoOpBranchesAreReachable(){
     Harness h;
     h.state.operatingMode = OperatingMode::UnifiedClock;
     h.state.unifiedClock.groove = {GroovePreset::PocketC, 73U, 5U};
-    for (std::uint8_t row = 0U; row < 5U; ++row) {
+    for (std::uint8_t row = 0U; row < 7U; ++row) {
         const auto menuRow = ui::buildMenuRow(ui::SettingsPage::Groove, row, 0U, h.state);
         TEST_ASSERT_TRUE(std::strlen(menuRow.label) > 0U);
         TEST_ASSERT_TRUE(std::strlen(menuRow.value) > 0U);
@@ -298,7 +298,7 @@ void testGrooveMenuRowsAndNoOpBranchesAreReachable(){
     TEST_ASSERT_EQUAL_UINT8(before.rotation, h.state.unifiedClock.groove.rotation);
     h.state.operatingMode = OperatingMode::Independent;
     h.state.channels[2].common.groove = {GroovePreset::PocketA, 44U, 2U};
-    for (std::uint8_t row = 0U; row < 5U; ++row) {
+    for (std::uint8_t row = 0U; row < 7U; ++row) {
         const auto menuRow = ui::buildMenuRow(ui::SettingsPage::Groove, row, 2U, h.state);
         TEST_ASSERT_TRUE(std::strlen(menuRow.label) > 0U);
     }

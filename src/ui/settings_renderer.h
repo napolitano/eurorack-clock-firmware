@@ -59,6 +59,17 @@ public:
     /** @brief Draws the 16-character encoder-driven preset-name editor and character band. */
     void renderNameEntry(const NavigationState& navigation);
 
+    /** @brief Draws the full value of one read-only settings row in a compact detail popover. */
+    void renderInformationPopover(const NavigationState& navigation);
+
+    /**
+     * @brief Returns true when a read-only row value cannot fit beside its label.
+     *
+     * The same pixel budget is used by renderSettings(), so controller activation
+     * can expose a popover only for values that are actually abbreviated on screen.
+     */
+    bool informationValueOverflows(const char* label, const char* value);
+
 private:
     hal::OledDisplay& display_;
 };

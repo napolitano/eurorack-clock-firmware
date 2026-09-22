@@ -141,6 +141,18 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
                 loadSelectedGroove();
             } else if (navigation_.grooveSlotAction == GrooveSlotAction::Activate) {
                 activateSelectedGroove(nowMs);
+            } else if (navigation_.grooveSlotAction == GrooveSlotAction::Rename) {
+                if (prepareExistingGrooveName()) {
+                    navigation_.screen = Screen::GrooveNameEntry;
+                    invalidate();
+                }
+            } else if (navigation_.grooveSlotAction == GrooveSlotAction::Delete) {
+                if (customGrooveStore_ != nullptr &&
+                    customGrooveStore_->exists(navigation_.selectedGrooveSlot)) {
+                    navigation_.screen = Screen::GrooveDeleteConfirm;
+                    navigation_.cursor = 0U;
+                    invalidate();
+                }
             } else if (customGrooveStore_ != nullptr &&
                        customGrooveStore_->exists(navigation_.selectedGrooveSlot)) {
                 navigation_.screen = Screen::GrooveOverwriteConfirm;
@@ -163,6 +175,16 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
             }
             return;
 
+        case Screen::GrooveDeleteConfirm:
+            if (navigation_.cursor == 0U) {
+                navigation_.screen = Screen::GrooveSlots;
+                navigation_.cursor = navigation_.selectedGrooveSlot;
+                invalidate();
+            } else {
+                removeSelectedGroove(nowMs);
+            }
+            return;
+
         case Screen::GrooveDiscardConfirm:
             if (navigation_.cursor == 0U) {
                 navigation_.screen = Screen::GrooveEditor;
@@ -181,9 +203,16 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
             if (navigation_.nameCharacterIndex < services::CustomGrooveStore::kNameLength - 1U) {
                 ++navigation_.nameCharacterIndex;
                 invalidate();
+            } else if (navigation_.grooveSlotAction == GrooveSlotAction::Rename) {
+                renameSelectedGroove();
             } else {
                 saveCustomGroove(nowMs, false);
             }
+            return;
+
+        case Screen::InformationPopover:
+            navigation_.screen = Screen::Settings;
+            invalidate();
             return;
 
         case Screen::Settings:
@@ -211,7 +240,11 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
 void UiController::handleLongEncoderPress(const std::uint32_t nowMs) {
     const Screen origin = navigation_.screen;
     if (origin == Screen::GrooveNameEntry) {
-        saveCustomGroove(nowMs, false);
+        if (navigation_.grooveSlotAction == GrooveSlotAction::Rename) {
+            renameSelectedGroove();
+        } else {
+            saveCustomGroove(nowMs, false);
+        }
         return;
     }
     if (origin == Screen::NameEntry) {

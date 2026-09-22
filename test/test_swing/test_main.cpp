@@ -107,24 +107,28 @@ std::vector<std::uint32_t> collectGrooveRiseTicks(
 }
 
 
-std::vector<std::uint32_t> collectCustomGrooveRiseTicks(
+std::vector<std::uint32_t> collectConfiguredCustomGrooveRiseTicks(
     const CustomGroovePattern& pattern,
+    const std::uint16_t bpm,
+    const RateSettings& rate,
+    const std::uint8_t amountPercent,
+    const std::uint8_t rotation,
     const std::uint8_t swingPercent,
     const std::size_t count) {
     ClockState state{};
     initializeFactoryDefaults(state);
     state.operatingMode = OperatingMode::Independent;
     state.source = ClockSource::Internal;
-    state.bpm = 120U;
+    state.bpm = bpm;
     for (auto& configuredChannel : state.channels) configuredChannel.common.mode = ChannelMode::Off;
     auto& channel = state.channels[0];
     channel.common.mode = ChannelMode::Clock;
     channel.common.swingPercent = swingPercent;
-    channel.common.groove = {GroovePreset::Custom, 100U, 0U, 0U};
+    channel.common.groove = {GroovePreset::Custom, amountPercent, rotation, 0U};
     channel.common.probabilityPercent = 100U;
     channel.common.phasePercent = 0U;
     channel.common.gateLengthMs = 1U;
-    channel.common.rate = {ClockRatioMode::Multiply, 1U, 1U, 1U};
+    channel.common.rate = rate;
 
     hal::GateOutputDriver gates;
     gates.beginDisabled();
@@ -134,8 +138,11 @@ std::vector<std::uint32_t> collectCustomGrooveRiseTicks(
     engine.begin(state);
     engine.play();
 
+    // 20 BPM at /4 is the slowest vector below: about 240,000 scheduler
+    // ticks per quarter-note event. One million ticks therefore leaves enough
+    // headroom to observe three edges even at the slow boundary.
     std::vector<std::uint32_t> ticks;
-    for (std::uint32_t tick = 0U; tick < 120000U && ticks.size() < count; ++tick) {
+    for (std::uint32_t tick = 0U; tick < 1000000U && ticks.size() < count; ++tick) {
         fakefw::writes.clear();
         engine.processSchedulerTick();
         const bool rose = std::any_of(
@@ -145,6 +152,20 @@ std::vector<std::uint32_t> collectCustomGrooveRiseTicks(
         if (rose) ticks.push_back(tick);
     }
     return ticks;
+}
+
+std::vector<std::uint32_t> collectCustomGrooveRiseTicks(
+    const CustomGroovePattern& pattern,
+    const std::uint8_t swingPercent,
+    const std::size_t count) {
+    return collectConfiguredCustomGrooveRiseTicks(
+        pattern,
+        120U,
+        RateSettings{ClockRatioMode::Multiply, 1U, 1U, 1U},
+        100U,
+        0U,
+        swingPercent,
+        count);
 }
 
 void assertObservedPair(std::uint8_t swing, std::uint32_t expectedLong, std::uint32_t expectedShort) {
@@ -295,6 +316,90 @@ void testCustomGroovePreviewCanBeAppliedAndClearedWithoutStateMutation() {
 }
 
 
+
+void testCustomGrooveLookupSweepsAllLengthsStepsAndAmounts() {
+    // Exhaust every supported Custom Groove length and amount. The pattern
+    // deliberately spans negative, zero, and positive offsets so this sweep
+    // locks the signed scaling contract without depending on scheduler state.
+    for (std::uint8_t length = 1U; length <= kCustomGrooveMaximumSteps; ++length) {
+        CustomGroovePattern pattern{};
+        pattern.length = length;
+        for (std::uint8_t step = 0U; step < length; ++step) {
+            const std::int16_t centered = static_cast<std::int16_t>((step % 9U) * 30U) - 120;
+            pattern.offsets256[step] = static_cast<std::int8_t>(centered);
+        }
+        TEST_ASSERT_TRUE(isCustomGroovePatternValid(pattern));
+
+        for (std::uint8_t amount = 0U; amount <= 100U; ++amount) {
+            for (std::uint8_t step = 0U; step < length; ++step) {
+                const auto expected = static_cast<std::int16_t>(
+                    (static_cast<std::int32_t>(pattern.offsets256[step]) * amount) / 100);
+                TEST_ASSERT_EQUAL(
+                    expected,
+                    customGrooveOffset256(pattern, step, amount, 0U));
+            }
+        }
+
+        // Rotation is orthogonal to amount scaling. Exercise the two boundary
+        // origins for every legal length, including the one-step degenerate grid.
+        TEST_ASSERT_EQUAL(
+            pattern.offsets256[0],
+            customGrooveOffset256(pattern, 0U, 100U, 0U));
+        const std::uint8_t last = static_cast<std::uint8_t>(length - 1U);
+        TEST_ASSERT_EQUAL(
+            pattern.offsets256[last],
+            customGrooveOffset256(pattern, 0U, 100U, last));
+    }
+}
+
+void testCustomGrooveEngineMatrixAcrossBpmRatesGridsAndAmounts() {
+    constexpr std::array<std::uint16_t, 3U> kBpms{{20U, 120U, 999U}};
+    constexpr std::array<RateSettings, 5U> kRates{{
+        {ClockRatioMode::Divide, 4U, 1U, 1U},
+        {ClockRatioMode::Multiply, 1U, 1U, 1U},
+        {ClockRatioMode::Multiply, 4U, 1U, 1U},
+        {ClockRatioMode::Multiply, 1U, 3U, 2U},
+        {ClockRatioMode::Multiply, 1U, 5U, 4U},
+    }};
+    constexpr std::array<std::uint8_t, 4U> kGridLengths{{1U, 4U, 16U, 64U}};
+    constexpr std::array<std::uint8_t, 3U> kAmounts{{0U, 50U, 100U}};
+
+    for (const std::uint16_t bpm : kBpms) {
+        for (const RateSettings& rate : kRates) {
+            for (const std::uint8_t length : kGridLengths) {
+                CustomGroovePattern pattern{};
+                pattern.length = length;
+                for (std::uint8_t step = 0U; step < length; ++step) {
+                    // A repeating signed shape stresses both early and late events.
+                    constexpr std::array<std::int8_t, 4U> kShape{{-96, 48, 120, -32}};
+                    pattern.offsets256[step] = kShape[step % kShape.size()];
+                }
+                for (const std::uint8_t amount : kAmounts) {
+                    const auto ticks = collectConfiguredCustomGrooveRiseTicks(
+                        pattern, bpm, rate, amount, 0U, 0U, 3U);
+                    TEST_ASSERT_EQUAL_UINT32(3U, static_cast<std::uint32_t>(ticks.size()));
+                    TEST_ASSERT_TRUE(ticks[1] > ticks[0]);
+                    TEST_ASSERT_TRUE(ticks[2] > ticks[1]);
+
+                    // Amount zero must reduce Custom Groove to the straight timing path
+                    // for the same BPM and rate. A neutral one-step pattern provides the
+                    // independent reference without changing any other configuration.
+                    if (amount == 0U) {
+                        CustomGroovePattern neutral{};
+                        neutral.length = 1U;
+                        neutral.offsets256[0] = 0;
+                        const auto straight = collectConfiguredCustomGrooveRiseTicks(
+                            neutral, bpm, rate, 100U, 0U, 0U, 3U);
+                        TEST_ASSERT_EQUAL_UINT32(ticks[0], straight[0]);
+                        TEST_ASSERT_EQUAL_UINT32(ticks[1], straight[1]);
+                        TEST_ASSERT_EQUAL_UINT32(ticks[2], straight[2]);
+                    }
+                }
+            }
+        }
+    }
+}
+
 void testCustomGrooveDefensiveAndRescheduleBranches() {
     ClockState state{};
     initializeFactoryDefaults(state);
@@ -382,6 +487,8 @@ int main() {
     RUN_TEST(testCustomGrooveRejectsInvalidLengthAndOffset);
     RUN_TEST(testCustomGrooveSignedExtremesRemainMonotonicWithSwing);
     RUN_TEST(testCustomGroovePreviewCanBeAppliedAndClearedWithoutStateMutation);
+    RUN_TEST(testCustomGrooveLookupSweepsAllLengthsStepsAndAmounts);
+    RUN_TEST(testCustomGrooveEngineMatrixAcrossBpmRatesGridsAndAmounts);
     RUN_TEST(testCustomGrooveDefensiveAndRescheduleBranches);
     return UNITY_END();
 }

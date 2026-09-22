@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — v1.0.1
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 488 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 491 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -25,13 +25,13 @@ Compiler branches:  4288/5562 (77.09%, informational only)
 
 The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on the exact tagged source before publishing. Local pre-release verification covers the changed host renderer regression, the 96-case external-SYNC suite, release/manual tooling, documentation policies, and both headless simulator tests; the authoritative 1.0.1 repository-wide percentages are therefore produced by the release CI rather than copied forward from 1.0.0.
 
-Current 1.1 development working baseline after Groove Engine Stage 2, the readability sprint, the horizontal Channel Mode carousel, generated Custom Groove naming/direct LOAD, and the simulator scope phase-lock correction:
+Current 1.1 development working baseline after Groove Engine Stage 2, the readability sprint, the horizontal Channel Mode carousel, generated Custom Groove naming/direct LOAD, Rename/Delete management, read-only information overflow popovers, the exhaustive Groove sweep, and the simulator scope phase-lock correction:
 
 ```text
-Executable lines:   8638/9006 (95.91%)
-Functions:            769/784  (98.09%)
-Decision branches:   5277/5802 (90.95%)
-Compiler branches:   5278/6786 (77.78%, informational only)
+Executable lines:   8868/9232 (96.06%)
+Functions:            782/795  (98.36%)
+Decision branches:   5412/5967 (90.70%)
+Compiler branches:   5413/6983 (77.52%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.

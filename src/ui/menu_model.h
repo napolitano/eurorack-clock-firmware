@@ -16,10 +16,12 @@
 
 namespace clockfw::ui {
 
-/** @brief One rendered settings row with compact fixed-size label/value buffers. */
+/** @brief One rendered settings row with bounded text and optional read-only detail semantics. */
 struct MenuRow {
     char label[18]{};
-    char value[16]{};
+    char value[48]{};
+    /** True when the value is informational and may open a full-text detail popover. */
+    bool expandableInformation = false;
 };
 
 /** @brief Returns the compact title for a settings page. */

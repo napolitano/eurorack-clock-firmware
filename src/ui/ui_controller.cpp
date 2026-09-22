@@ -198,12 +198,20 @@ void UiController::handleResetButton(
     } else if (navigation_.screen == Screen::GrooveSlots) {
         if (navigation_.grooveSlotAction == GrooveSlotAction::Activate) {
             openSettingsPage(SettingsPage::Groove, 3U);
+        } else if (navigation_.grooveSlotAction == GrooveSlotAction::Rename) {
+            openSettingsPage(SettingsPage::Groove, 5U);
+        } else if (navigation_.grooveSlotAction == GrooveSlotAction::Delete) {
+            openSettingsPage(SettingsPage::Groove, 6U);
         } else {
             navigation_.screen = Screen::GrooveEditor;
             invalidate();
         }
     } else if (navigation_.screen == Screen::GrooveNameEntry ||
                navigation_.screen == Screen::GrooveOverwriteConfirm) {
+        navigation_.screen = Screen::GrooveSlots;
+        navigation_.cursor = navigation_.selectedGrooveSlot;
+        invalidate();
+    } else if (navigation_.screen == Screen::GrooveDeleteConfirm) {
         navigation_.screen = Screen::GrooveSlots;
         navigation_.cursor = navigation_.selectedGrooveSlot;
         invalidate();
@@ -228,6 +236,9 @@ void UiController::handleResetButton(
         invalidate();
     } else if (navigation_.screen == Screen::ChannelQuickSelect) {
         navigation_.screen = Screen::Performance;
+        invalidate();
+    } else if (navigation_.screen == Screen::InformationPopover) {
+        navigation_.screen = Screen::Settings;
         invalidate();
     } else {
         navigation_.screen = Screen::Performance;

@@ -70,6 +70,10 @@ Source code is maintained for human review first, not merely for compiler accept
 
 A readability refactor is still a behavioral change risk: run the same regression, coverage, sanitizer, architecture, and simulator gates as for functional work.
 
+### Settings text overflow
+
+The 128x64 Settings renderer distinguishes **editable values** from **read-only informational values**. Editable values must remain directly legible and editable in their normal row; do not hide an editable value behind a secondary view merely because it is long. Read-only information may opt into `MenuRow::expandableInformation`. Only those rows may be shortened with a trailing `...` when the label/value pair exceeds the available pixel width. Activating an actually truncated informational row opens the complete value in the standard information popover; values that already fit do nothing. This keeps overflow handling explicit and prevents a generic truncation rule from changing the editing grammar.
+
 ### Project configuration layout
 
 Global project configuration is intentionally kept at the top of `src/`:
@@ -128,7 +132,7 @@ The STM32 target remains pinned to `ststm32@19.7.1` and the project explicitly b
 pio test -e native
 ```
 
-The Native entry point contains **488 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 28 `test_realtime`, 116 `test_sync_behavior`, 33 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 51 `test_controls`, 88 `test_settings`, 19 `test_screensavers`, 36 `test_easter_eggs`, and 37 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, configurable external-input roles, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite locks down immediate first-detent response, direction changes, counter wraparound, missed/coalesced-transition recovery, menu-entry phase re-anchoring and Fast Turn behavior. Production STM32F401 builds use TIM4 encoder mode on PB6/PB7. The Settings/host suites additionally cover the global `INPUTS >` and `HARDWARE >` pages, role exclusivity, full-row inverted Settings selection, deterministic OLED 0°/180° rotation, schema-v11 to schema-v12 migration for Custom Groove slot references, schema-v10 to schema-v11 migration for configurable input assignments, schema-v9 to schema-v10 Groove migration, schema-v8 to schema-v9 Pre-Count migration, schema-v7 smoothing migration, and the earlier migration chain.
+The Native entry point contains **491 named test cases** in eleven separately reported PlatformIO suites: 44 `test_clock_core`, 28 `test_realtime`, 116 `test_sync_behavior`, 35 `test_swing`, 12 `test_humanize`, 24 `test_tap_tempo`, 51 `test_controls`, 88 `test_settings`, 19 `test_screensavers`, 36 `test_easter_eggs`, and 38 `test_host_firmware`. Exhaustive mathematical loops remain in the core, while musical timing, configurable external-input roles, humanization, tap estimation, physical controls, settings and non-performance UI state machines are independently visible by name. The control suite locks down immediate first-detent response, direction changes, counter wraparound, missed/coalesced-transition recovery, menu-entry phase re-anchoring and Fast Turn behavior. Production STM32F401 builds use TIM4 encoder mode on PB6/PB7. The Settings/host suites additionally cover the global `INPUTS >` and `HARDWARE >` pages, role exclusivity, full-row inverted Settings selection, deterministic OLED 0°/180° rotation, schema-v11 to schema-v12 migration for Custom Groove slot references, schema-v10 to schema-v11 migration for configurable input assignments, schema-v9 to schema-v10 Groove migration, schema-v8 to schema-v9 Pre-Count migration, schema-v7 smoothing migration, and the earlier migration chain.
 
 Covered areas include:
 
@@ -182,7 +186,7 @@ CI requires:
 - function coverage >= **95%**
 - non-throw decision-branch coverage >= **90%**
 
-Current 1.1 working baseline after the readability sprint, Groove marker quiet-zone fix, horizontal Channel Mode carousel, Custom Groove save/load naming UX, and simulator scope phase-lock correction: **8638/9006 lines (95.91%)**, **769/784 functions (98.09%)**, and **5277/5802 decision branches (90.95%)**. Raw compiler branches are **5278/6786 (77.78%)** and remain informational.
+Current 1.1 working baseline after the readability sprint, Groove marker quiet-zone fix, horizontal Channel Mode carousel, named Custom Groove save/load/rename/delete UX, read-only information overflow handling, exhaustive Groove sweeps, and simulator scope phase-lock correction: **8868/9232 lines (96.06%)**, **782/795 functions (98.36%)**, and **5412/5967 decision branches (90.70%)**. Raw compiler branches are **5413/6983 (77.52%)** and remain informational.
 - AddressSanitizer = **clean**
 - UndefinedBehaviorSanitizer = **clean**
 

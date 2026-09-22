@@ -7,6 +7,9 @@
  */
 #include "ui/ui_controller_navigation_activate.h"
 
+#include <cstdio>
+
+#include "ui/menu_model.h"
 #include "ui/menu_model_channel.h"
 
 namespace clockfw::ui {
@@ -84,6 +87,8 @@ void UiController::activateCurrentSetting() {
         case SettingsPage::DiagnosticsInputs:
         case SettingsPage::DiagnosticsOutputs:
         case SettingsPage::Licenses:
+            openSelectedInformationPopover();
+            return;
         case SettingsPage::Updates:
             // Read-only pages deliberately ignore encoder activation.
             return;
@@ -145,7 +150,9 @@ void UiController::activateGeneralSetting() {
 }
 
 void UiController::activateInfoSetting() {
-    if (navigation_.cursor == 3U) {
+    if (navigation_.cursor <= 2U) {
+        openSelectedInformationPopover();
+    } else if (navigation_.cursor == 3U) {
         openSettingsPage(SettingsPage::Licenses);
     } else if (navigation_.cursor == 4U) {
         openSettingsPage(SettingsPage::Updates);
@@ -155,6 +162,32 @@ void UiController::activateInfoSetting() {
         navigation_.editing = false;
         invalidate();
     }
+}
+
+void UiController::openSelectedInformationPopover() {
+    const MenuRow row = buildMenuRow(
+        navigation_.settingsPage,
+        navigation_.cursor,
+        navigation_.selectedChannel,
+        state_,
+        navigation_.highScoreResetAvailable);
+    if (!row.expandableInformation || row.value[0] == '\0' ||
+        !renderer_.informationValueOverflows(row.label, row.value)) {
+        return;
+    }
+    std::snprintf(
+        navigation_.informationPopoverTitle.data(),
+        navigation_.informationPopoverTitle.size(),
+        "%s",
+        row.label);
+    std::snprintf(
+        navigation_.informationPopoverValue.data(),
+        navigation_.informationPopoverValue.size(),
+        "%s",
+        row.value);
+    navigation_.editing = false;
+    navigation_.screen = Screen::InformationPopover;
+    invalidate();
 }
 
 void UiController::activatePreferencesSetting() {
@@ -217,6 +250,10 @@ void UiController::activateGrooveSetting() {
         openGrooveSlots(GrooveSlotAction::Activate);
     } else if (navigation_.cursor == 4U) {
         openGrooveEditor();
+    } else if (navigation_.cursor == 5U) {
+        openGrooveSlots(GrooveSlotAction::Rename);
+    } else if (navigation_.cursor == 6U) {
+        openGrooveSlots(GrooveSlotAction::Delete);
     } else {
         toggleCurrentSettingEditing();
     }

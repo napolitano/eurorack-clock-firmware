@@ -286,6 +286,11 @@ enum class TextId : std::uint16_t {
     GrooveStoreUnavailable,
     CustomGrooveStatusFormat,
     ZoomFormat,
+    Rename,
+    Delete,
+    RenameGroove,
+    DeleteGroove,
+    DeleteGrooveConfirm,
     Count
 };
 
@@ -297,7 +302,7 @@ using TextCatalog = std::array<const char*, kTextCount>;
 
 /** English (United States) catalog shipped by the prerelease firmware. */
 inline constexpr TextCatalog kEnglishUs{{
-    "SSL CLOCK", "F401CC",
+    "Clock", "F401CC",
     "O", "C", "E", "S", "OFF", "CLOCK", "EUCLID", "SEQUENCER", "ONE CLOCK", "DIVIDER", "ONE", "DIV", "SEQ",
     "INT", "EXT", "AUTO", "PLAY", "PAUSE", "STOP",
     "RISE", "FALL", "FREE", "LOW", "MEDIUM", "FULL", "ON", "OFF", "GLOBAL",
@@ -331,7 +336,8 @@ inline constexpr TextCatalog kEnglishUs{{
     "HI-SCORES", "CLEAR HI-SCORES?", "GROOVE", "PRESET", "AMOUNT", "PATTERN", "TIMING", "OUTPUT", "G:",
     "HARDWARE", "INPUT 1", "INPUT 2", "CONFIG", "RUN", "START", "STOP", "RESTART", "TAP", "FILL",
     "GROOVE MENU", "GROOVE EDITOR", "SAVE", "LOAD", "ZOOM", "GROOVE NAME", "LOAD GROOVE", "SAVE GROOVE", "<EMPTY>", "FIT",
-    "OVERWRITE GROOVE?", "DISCARD CHANGES?", "GROOVE STORE N/A", "S%02u %+d  L%u", "Z%u"
+    "OVERWRITE GROOVE?", "DISCARD CHANGES?", "GROOVE STORE N/A", "S%02u %+d  L%u", "Z%u",
+    "RENAME", "DELETE", "RENAME GROOVE", "DELETE GROOVE", "DELETE GROOVE?"
 }};
 
 /** Musical qualifier pool used for generated Custom Groove default names. */

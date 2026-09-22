@@ -61,9 +61,9 @@ The design must preserve migration from the supported pre-V1 formats, the v7 rel
 
 ## 1.1 custom-groove slot target
 
-The accepted 1.1 UX target is **up to 99 named Custom groove slots**, with rename, overwrite and delete support and explicit `YES / NO` confirmation before destructive overwrite/delete operations. This is a target for the Stage-2 custom editor, not permission to enlarge `ClockState`.
+The frozen **1.1.0 release scope is 10 named Custom Groove slots**, with rename, overwrite and delete support and explicit `YES / NO` confirmation before destructive overwrite/delete operations. The earlier **up-to-99-slot** goal remains a later storage target, not a 1.1.0 release requirement and not permission to enlarge `ClockState`.
 
-The current Stage-2 implementation deliberately does **not** enlarge the 8-KiB logical image. It uses the otherwise free range **3136-4095** for **10 fixed 96-byte Custom Groove records**. Each record holds a 16-character name, one 1-64-step signed microtiming pattern, metadata and its own CRC. This preserves the four historical 16-byte score records at 3072-3135 and leaves the existing Top-100 region starting at 4096 untouched. The ten-slot count is therefore an implementation limit of this storage revision, not a revision of the longer-term 99-slot UX target.
+The Stage-2 implementation deliberately does **not** enlarge the 8-KiB logical image. It uses the otherwise free range **3136-4095** for **10 fixed 96-byte Custom Groove records**. Each record holds a 16-character name, one 1-64-step signed microtiming pattern, metadata and its own CRC. This preserves the four historical 16-byte score records at 3072-3135 and leaves the existing Top-100 region starting at 4096 untouched. The ten-slot count is therefore both the implementation limit of this storage revision and the explicit 1.1.0 release scope; it does not cancel the longer-term 99-slot storage research target.
 
 The current persistence policy leaves at most **4,096 additional logical bytes** between the V1 8-KiB image and the 12-KiB architectural ceiling. If all 99 Custom slots were stored entirely in that extension, the absolute mathematical ceiling would be about **41 bytes per slot before any shared directory/header overhead** (`4096 / 99`). A realistic fixed-slot design therefore needs a record at or below roughly 40 bytes, or a compact variable/sparse representation. The final feasibility depends on the still-open Custom-groove grid length, marker resolution, name encoding and record-integrity metadata.
 
@@ -74,7 +74,7 @@ Accordingly, 99 slots are **architecturally plausible but not yet release-proven
 - preserve migration from schema v11 through schema v10, schema v9 and supported 1.0.x records;
 - prove the enlarged logical-image/BSS cost with a real STM32F401 ELF and the existing memory gate;
 - keep overwrite/delete power-loss-safe under the A/B commit contract;
-- add explicit persistence tests for the remaining rename/delete flows, `NO` cancellation and interrupted commits.
+- preserve the now-implemented rename/delete/`NO`-cancellation/interrupted-commit regressions when the storage format changes.
 
 If the final groove representation cannot satisfy that budget safely, the slot count must be reduced or the storage architecture changed deliberately; it must not be achieved by weakening the persistence or memory gates.
 

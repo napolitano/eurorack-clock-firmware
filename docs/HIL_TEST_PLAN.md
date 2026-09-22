@@ -120,6 +120,27 @@ Measure phase offsets on two otherwise identical channels.
 
 - measured offset agrees with the expected scheduler-quantized phase within **<= 50 us**
 
+### CLOCK 1.1 Groove vectors
+
+These vectors close the 1.1 Groove definition-of-done at the test-plan level. They define
+physical captures to perform; they are **not** marked PASS until real jack-level evidence exists.
+For every vector, capture at least 100 rising edges and compare them with scheduler-derived
+expected timestamps from the same configuration.
+
+| ID | Configuration | Purpose |
+| --- | --- | --- |
+| `HIL-GRV-001` | 120 BPM, x1, `SWING 54`, Amount 50%, Rotate 0 | subtle displacement |
+| `HIL-GRV-002` | 120 BPM, x1, `SWING 66`, Amount 100%, Rotate 0 | triplet-like factory groove |
+| `HIL-GRV-003` | 120 BPM, x1, 4-step Custom `[0, +120, -120, 0]`, Amount 100%, Rotate 0 | extreme signed Custom timing |
+
+**Pass criteria**
+
+- every captured rising edge remains in the same musical order as the scheduler vector;
+- no edge is missed or duplicated;
+- jack-level edge time agrees with the expected scheduler-quantized timestamp within **<= 50 us**;
+- the gate-off safety rule remains intact: a requested pulse may shorten, but must never swallow the following rising edge;
+- repeated pattern cycles do not accumulate phase walk beyond scheduler quantization.
+
 ## 6. External SYNC / RST inputs
 
 The firmware already accepts conditioned SYNC/RST levels through interrupt-driven capture queues. These HIL tests become authoritative once the final comparator circuit and PCB pin routing exist. The simulator's ideal comparator is not evidence for any electrical pass criterion below.

@@ -168,7 +168,15 @@ void GrooveEditorRenderer::renderSlots(
     display_.clear();
     display_.setFont(hal::DisplayFont::Small);
     display_.setTextColor(hal::PixelColor::White);
-    display_.drawText(0, 0, text::get(navigation.grooveSlotAction != GrooveSlotAction::Save ? text::TextId::LoadGroove : text::TextId::SaveGroove));
+    text::TextId title = text::TextId::LoadGroove;
+    if (navigation.grooveSlotAction == GrooveSlotAction::Save) {
+        title = text::TextId::SaveGroove;
+    } else if (navigation.grooveSlotAction == GrooveSlotAction::Rename) {
+        title = text::TextId::RenameGroove;
+    } else if (navigation.grooveSlotAction == GrooveSlotAction::Delete) {
+        title = text::TextId::DeleteGroove;
+    }
+    display_.drawText(0, 0, text::get(title));
     display_.drawHorizontalLine(0, 9, hal::OledDisplay::kWidth);
     for (std::uint8_t row = 0U; row < 5U; ++row) {
         const std::uint8_t slot = static_cast<std::uint8_t>(navigation.scrollOffset + row);
@@ -204,7 +212,13 @@ void GrooveEditorRenderer::renderNameEntry(const NavigationState& navigation) {
     display_.clear();
     display_.setFont(hal::DisplayFont::Small);
     display_.setTextColor(hal::PixelColor::White);
-    display_.drawText(0, 0, text::get(text::TextId::GrooveName));
+    display_.drawText(
+        0,
+        0,
+        text::get(
+            navigation.grooveSlotAction == GrooveSlotAction::Rename
+                ? text::TextId::RenameGroove
+                : text::TextId::GrooveName));
     display_.drawHorizontalLine(0, 9, hal::OledDisplay::kWidth);
     display_.drawText(16, 15, navigation.grooveNameBuffer.data());
     const std::int16_t cursorX = static_cast<std::int16_t>(16 + navigation.nameCharacterIndex * 6U);

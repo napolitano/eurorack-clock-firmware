@@ -124,13 +124,25 @@ void UiRenderer::render(
         case Screen::GrooveOverwriteConfirm:
             grooveEditorRenderer_.renderConfirm(text::get(text::TextId::OverwriteGroove), navigation);
             break;
+        case Screen::GrooveDeleteConfirm:
+            grooveEditorRenderer_.renderConfirm(text::get(text::TextId::DeleteGrooveConfirm), navigation);
+            break;
         case Screen::GrooveDiscardConfirm:
             grooveEditorRenderer_.renderConfirm(text::get(text::TextId::DiscardChanges), navigation);
             break;
         case Screen::GrooveNameEntry:
             grooveEditorRenderer_.renderNameEntry(navigation);
             break;
+        case Screen::InformationPopover:
+            settingsRenderer_.renderInformationPopover(navigation);
+            break;
     }
+}
+
+bool UiRenderer::informationValueOverflows(
+    const char* const label,
+    const char* const value) {
+    return settingsRenderer_.informationValueOverflows(label, value);
 }
 
 void UiRenderer::renderBootScreen(std::uint32_t elapsedMs) {

@@ -204,6 +204,24 @@ void UiController::prepareGrooveName(const std::uint32_t nowMs) {
     navigation_.nameCharacterIndex = 0U;
 }
 
+bool UiController::prepareExistingGrooveName() {
+    if (customGrooveStore_ == nullptr ||
+        !customGrooveStore_->exists(navigation_.selectedGrooveSlot)) {
+        return false;
+    }
+    navigation_.grooveNameBuffer.fill(' ');
+    navigation_.grooveNameBuffer.back() = '\0';
+    char existing[services::CustomGrooveStore::kNameLength + 1U]{};
+    customGrooveStore_->name(navigation_.selectedGrooveSlot, existing, sizeof(existing));
+    for (std::size_t index = 0U;
+         index < services::CustomGrooveStore::kNameLength && existing[index] != '\0';
+         ++index) {
+        navigation_.grooveNameBuffer[index] = existing[index];
+    }
+    navigation_.nameCharacterIndex = 0U;
+    return true;
+}
+
 void UiController::adjustGrooveNameCharacter(const std::int8_t delta) {
     char& character = navigation_.grooveNameBuffer[navigation_.nameCharacterIndex];
     const int current = static_cast<int>(presetname::characterIndex(character));
@@ -241,6 +259,70 @@ void UiController::saveCustomGroove(
         navigation_.grooveDraft,
         false);
     activateSavedCustomGroove(nowMs);
+}
+
+void UiController::renameSelectedGroove() {
+    if (customGrooveStore_ == nullptr) {
+        return;
+    }
+    CustomGroovePattern pattern{};
+    if (!customGrooveStore_->load(navigation_.selectedGrooveSlot, pattern)) {
+        navigation_.screen = Screen::GrooveSlots;
+        invalidate();
+        return;
+    }
+    char name[services::CustomGrooveStore::kNameLength + 1U]{};
+    std::copy_n(
+        navigation_.grooveNameBuffer.data(),
+        services::CustomGrooveStore::kNameLength,
+        name);
+    name[services::CustomGrooveStore::kNameLength] = '\0';
+    if (!customGrooveStore_->save(navigation_.selectedGrooveSlot, name, pattern)) {
+        // Keep the edited name on screen so a transient/aborted durable write can
+        // be retried without forcing the user to re-enter the text.
+        navigation_.screen = Screen::GrooveNameEntry;
+        invalidate();
+        return;
+    }
+    navigation_.screen = Screen::GrooveSlots;
+    navigation_.cursor = navigation_.selectedGrooveSlot;
+    invalidate();
+}
+
+void UiController::removeSelectedGroove(const std::uint32_t nowMs) {
+    if (customGrooveStore_ == nullptr) {
+        return;
+    }
+    const std::uint8_t slot = navigation_.selectedGrooveSlot;
+    if (!customGrooveStore_->clear(slot)) {
+        navigation_.screen = Screen::GrooveSlots;
+        invalidate();
+        return;
+    }
+
+    // Clear the runtime copy as well so a later preset referencing a deleted
+    // library slot resolves to straight timing rather than a stale in-RAM groove.
+    engine_.updateCustomGrooveSlot(slot, CustomGroovePattern{}, true);
+
+    bool currentStateChanged = false;
+    auto detach = [&](GrooveSettings& settings) {
+        if (settings.preset == GroovePreset::Custom && settings.customSlot == slot) {
+            settings = GrooveSettings{};
+            currentStateChanged = true;
+        }
+    };
+    detach(state_.unifiedClock.groove);
+    for (auto& channel : state_.channels) {
+        detach(channel.common.groove);
+    }
+    if (currentStateChanged) {
+        engine_.updateConfiguration(state_, true);
+        persistCurrentState(nowMs);
+    }
+
+    navigation_.screen = Screen::GrooveSlots;
+    navigation_.cursor = slot;
+    invalidate();
 }
 
 void UiController::activateSavedCustomGroove(const std::uint32_t nowMs) {

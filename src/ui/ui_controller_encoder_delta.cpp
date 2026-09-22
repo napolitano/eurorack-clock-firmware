@@ -48,6 +48,7 @@ void UiController::handleEncoderDelta(
     }
 
     if (navigation_.screen == Screen::GrooveOverwriteConfirm ||
+        navigation_.screen == Screen::GrooveDeleteConfirm ||
         navigation_.screen == Screen::GrooveDiscardConfirm) {
         navigation_.cursor = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(navigation_.cursor) + delta, 0, 1));

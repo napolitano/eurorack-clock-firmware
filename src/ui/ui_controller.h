@@ -167,6 +167,9 @@ private:
     /** @brief Activates one row on the Info settings page. */
     void activateInfoSetting();
 
+    /** @brief Opens a full-text popover for the selected read-only informational row. */
+    void openSelectedInformationPopover();
+
     /** @brief Activates one row on the Preferences settings page. */
     void activatePreferencesSetting();
 
@@ -246,11 +249,20 @@ private:
     /** @brief Prepares the 16-character Custom Groove name editor with a generated default. */
     void prepareGrooveName(std::uint32_t nowMs);
 
+    /** @brief Loads the selected Custom Groove's current name into the rename editor. */
+    bool prepareExistingGrooveName();
+
     /** @brief Rotates the active Custom Groove name character. */
     void adjustGrooveNameCharacter(std::int8_t delta);
 
     /** @brief Saves the current draft into the selected fixed-record Custom Groove slot. */
     void saveCustomGroove(std::uint32_t nowMs, bool keepExistingName);
+
+    /** @brief Renames the selected persistent Custom Groove without changing its pattern. */
+    void renameSelectedGroove();
+
+    /** @brief Deletes the selected persistent Custom Groove after explicit confirmation. */
+    void removeSelectedGroove(std::uint32_t nowMs);
 
     /** @brief Commits the selected slot as the active Groove and returns to the Groove page. */
     void activateSavedCustomGroove(std::uint32_t nowMs);

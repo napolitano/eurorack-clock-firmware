@@ -92,7 +92,7 @@ std::uint8_t settingsPageItemCount(
         case SettingsPage::UnifiedClock: return 3U;
         case SettingsPage::UnifiedTiming: return 6U;
         case SettingsPage::UnifiedOutput: return 2U;
-        case SettingsPage::Groove: return 5U;
+        case SettingsPage::Groove: return 7U;
         case SettingsPage::GrooveEditorMenu: return 4U;
         case SettingsPage::DividerBank: return 3U;
         default: return 0U;
@@ -267,10 +267,13 @@ MenuRow buildMenuRow(
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
         if (rowIndex == 0U) {
             copyText(row.value, sizeof(row.value), text::TextId::FirmwareName);
+            row.expandableInformation = true;
         } else if (rowIndex == 1U) {
             std::snprintf(row.value, sizeof(row.value), "%s", CLOCK_FIRMWARE_VERSION);
+            row.expandableInformation = true;
         } else if (rowIndex == 2U) {
             copyText(row.value, sizeof(row.value), text::TextId::AuthorName);
+            row.expandableInformation = true;
         } else {
             copyText(row.value, sizeof(row.value), text::TextId::Arrow);
         }
@@ -299,6 +302,7 @@ MenuRow buildMenuRow(
         } else {
             copyText(row.value, sizeof(row.value), text::TextId::ApacheShort);
         }
+        row.expandableInformation = true;
     } else if (page == SettingsPage::Updates) {
         copyText(row.label, sizeof(row.label), text::TextId::Updates);
     } else if (page == SettingsPage::Channel) {

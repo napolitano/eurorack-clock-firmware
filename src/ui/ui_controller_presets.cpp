@@ -77,6 +77,23 @@ void UiController::loadSelectedPreset(const std::uint32_t nowMs) {
         return;
     }
 
+    // Deleting a Custom Groove is intentionally one atomic library operation; it
+    // does not rewrite every named preset. When an older preset later references
+    // a slot that no longer exists, resolve that dangling reference to Groove OFF
+    // rather than exposing a misleading CUSTOM state backed by no durable pattern.
+    if (customGrooveStore_ != nullptr) {
+        const auto detachMissingCustom = [this](GrooveSettings& groove) {
+            if (groove.preset == GroovePreset::Custom &&
+                !customGrooveStore_->exists(groove.customSlot)) {
+                groove = GrooveSettings{};
+            }
+        };
+        detachMissingCustom(state_.unifiedClock.groove);
+        for (auto& channel : state_.channels) {
+            detachMissingCustom(channel.common.groove);
+        }
+    }
+
     engine_.updateConfiguration(state_, true);
     persistCurrentState(nowMs);
     navigation_.screen = Screen::Performance;

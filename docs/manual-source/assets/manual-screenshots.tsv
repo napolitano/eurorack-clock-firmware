@@ -20,12 +20,12 @@ performance-auto-external	AUTO clock source locked to external timing
 channel-overview-independent	Independent-mode eight-channel overview
 channel-overview-one-clock	Global overview in One Clock mode
 channel-overview-divider-bank	Global overview in Divider Bank mode
-mode-select-one-clock	Six-function mode palette
-mode-select-divider-bank	Six-function mode palette
-mode-select-clock	Six-function mode palette
-mode-select-euclid	Six-function mode palette
-mode-select-sequencer	Six-function mode palette
-mode-select-off	Six-function mode palette
+mode-select-one-clock	Horizontal mode carousel
+mode-select-divider-bank	Horizontal mode carousel
+mode-select-clock	Horizontal mode carousel
+mode-select-euclid	Horizontal mode carousel
+mode-select-sequencer	Horizontal mode carousel
+mode-select-off	Horizontal mode carousel
 mode-change-confirm-no	Mode-change confirmation with safe default NO
 mode-change-confirm-yes	Mode-change confirmation with YES selected
 sequencer-editor	64-step Sequencer editor

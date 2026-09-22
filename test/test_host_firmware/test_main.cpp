@@ -724,6 +724,20 @@ void testCustomGrooveStorePreservesRegionsAndRejectsCorruption() {
                              raw.data(), raw.size()));
     CHECK(!store.load(2U, restored));
 
+    // Rename and delete are each one A/B image commit. A simulated power loss
+    // before COMMIT must leave the previous generation fully readable.
+    CHECK(store.save(3U, "OLD NAME", shortPattern));
+    hal::PersistentStorage::powerLossBeforeCommitForTest();
+    CHECK(!store.save(3U, "NEW NAME", shortPattern));
+    char preservedName[services::CustomGrooveStore::kNameLength + 1U]{};
+    store.name(3U, preservedName, sizeof(preservedName));
+    CHECK(std::strcmp(preservedName, "OLD NAME") == 0);
+    hal::PersistentStorage::powerLossBeforeCommitForTest();
+    CHECK(!store.clear(3U));
+    CHECK(store.exists(3U));
+    store.name(3U, preservedName, sizeof(preservedName));
+    CHECK(std::strcmp(preservedName, "OLD NAME") == 0);
+
     CHECK(store.clear(1U));
     CHECK(!store.exists(1U));
 }
@@ -1728,7 +1742,11 @@ void testMenuModelAndFormatters() {
     CHECK(std::strcmp(diagnosticInputs.label, "INPUTS") == 0);
     CHECK(std::strcmp(diagnosticOutputs.label, "OUTPUTS") == 0);
     const auto infoProduct = ui::buildMenuRow(ui::SettingsPage::Info, 0U, 0U, state);
-    CHECK(std::strcmp(infoProduct.value, "SSL CLOCK") == 0);
+    CHECK(std::strcmp(infoProduct.value, "Clock") == 0);
+    CHECK(infoProduct.expandableInformation);
+    const auto infoAuthor = ui::buildMenuRow(ui::SettingsPage::Info, 2U, 0U, state);
+    CHECK(std::strcmp(infoAuthor.value, "AXEL NAPOLITANO") == 0);
+    CHECK(infoAuthor.expandableInformation);
     const auto infoLicenses = ui::buildMenuRow(ui::SettingsPage::Info, 3U, 0U, state);
     const auto infoUpdates = ui::buildMenuRow(ui::SettingsPage::Info, 4U, 0U, state);
     const auto infoFactoryReset = ui::buildMenuRow(ui::SettingsPage::Info, 5U, 0U, state);
@@ -1736,6 +1754,7 @@ void testMenuModelAndFormatters() {
     CHECK(std::strcmp(infoUpdates.label, "UPDATES") == 0);
     CHECK(std::strcmp(infoFactoryReset.label, "FACTORY RESET") == 0);
     CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Info), 6U);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Groove), 7U);
     state.channels[0].common.mode = ChannelMode::Sequencer;
     const auto channelModeRow = ui::buildMenuRow(ui::SettingsPage::Channel, 0U, 0U, state);
     CHECK(std::strcmp(channelModeRow.value, "SEQUENCER") == 0);
@@ -3317,14 +3336,22 @@ void testRenderEveryScreenAndState() {
     nav.screen = ui::Screen::GrooveSlots;
     nav.scrollOffset = 0U;
     nav.cursor = 0U;
-    for (const auto action : {ui::GrooveSlotAction::LoadEditor, ui::GrooveSlotAction::Activate, ui::GrooveSlotAction::Save}) {
+    for (const auto action : {
+             ui::GrooveSlotAction::LoadEditor,
+             ui::GrooveSlotAction::Activate,
+             ui::GrooveSlotAction::Save,
+             ui::GrooveSlotAction::Rename,
+             ui::GrooveSlotAction::Delete}) {
         nav.grooveSlotAction = action;
         renderer.render(state, nav, engine.snapshot());
     }
     nav.scrollOffset = 8U;
     nav.cursor = 9U;
     renderer.render(state, nav, engine.snapshot());
-    for (const auto screen : {ui::Screen::GrooveOverwriteConfirm, ui::Screen::GrooveDiscardConfirm}) {
+    for (const auto screen : {
+             ui::Screen::GrooveOverwriteConfirm,
+             ui::Screen::GrooveDeleteConfirm,
+             ui::Screen::GrooveDiscardConfirm}) {
         nav.screen = screen;
         for (std::uint8_t choice = 0U; choice < 2U; ++choice) {
             nav.cursor = choice;
@@ -3339,6 +3366,10 @@ void testRenderEveryScreenAndState() {
         nav.nameCharacterIndex = character;
         renderer.render(state, nav, engine.snapshot());
     }
+    nav.screen = ui::Screen::InformationPopover;
+    std::snprintf(nav.informationPopoverTitle.data(), nav.informationPopoverTitle.size(), "%s", "AUTHOR");
+    std::snprintf(nav.informationPopoverValue.data(), nav.informationPopoverValue.size(), "%s", "AXEL NAPOLITANO");
+    renderer.render(state, nav, engine.snapshot());
     nav.cursor=5U; nav.scrollOffset=5U; renderer.render(state,nav,engine.snapshot());
     renderer.renderBootScreen(0U); renderer.renderBootScreen(config::kBootDurationMs/2U); renderer.renderBootScreen(config::kBootDurationMs+100U);
     nav.screen=static_cast<ui::Screen>(99U); renderer.render(state,nav,engine.snapshot());
@@ -3452,6 +3483,60 @@ void testSettingsSelectionUsesFullRowInversionWithoutLeftCursor() {
     navigation.editing = true;
     renderer.renderSettings(state, navigation);
     CHECK(display.framebufferForTest() != selectedFrame);
+}
+
+void testReadOnlyInformationOverflowUsesPopoverWithoutEditingSemantics() {
+    resetFakes();
+    prepareDisplaySuccess();
+    ClockState state = makeDefaultState();
+    hal::OledDisplay display;
+    CHECK(display.begin());
+
+    ui::SettingsRenderer settingsRenderer(display);
+    ui::NavigationState navigation{};
+    navigation.screen = ui::Screen::Settings;
+    navigation.settingsPage = ui::SettingsPage::Info;
+    navigation.cursor = 0U; // Keep AUTHOR visible but not inverted.
+    settingsRenderer.renderSettings(state, navigation);
+    const auto authorFrame = display.framebufferForTest();
+
+    // The full value is wider than the space remaining after the AUTHOR label.
+    // The rendered row must preserve the configured gap instead of allowing the
+    // informational value to collide with its label.
+    const ui::MenuRow authorRow = ui::buildMenuRow(ui::SettingsPage::Info, 2U, 0U, state);
+    const auto authorLabelBounds = display.measureText(authorRow.label, 0, 0);
+    const auto fullAuthorBounds = display.measureText(authorRow.value, 0, 0);
+    const std::int16_t authorLabelRight = static_cast<std::int16_t>(2 + authorLabelBounds.width);
+    const std::int16_t availableAuthorWidth = static_cast<std::int16_t>(121 - authorLabelRight - 3);
+    CHECK(static_cast<std::int16_t>(fullAuthorBounds.width) > availableAuthorWidth);
+    CHECK_EQ(countFramebufferPixels(authorFrame, authorLabelRight, 31, 3, 7), 0U);
+
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    engine::ClockEngine engine(gates);
+    engine.begin(state);
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    services::PersistentStateService persistentState(storage);
+    persistentState.begin();
+    ui::UiRenderer renderer(display, persistentState);
+    ui::UiController controller(state, engine, renderer, persistentState);
+    std::uint32_t now = 100U;
+    controllerOpenSettingsChord(controller, now);
+    controllerTurn(controller, 3, now); // INFO
+    controllerShortPress(controller, now);
+    controllerShortPress(controller, now); // PRODUCT fits and is not expandable in practice
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Info);
+    controllerTurn(controller, 2, now); // AUTHOR
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::InformationPopover);
+    CHECK(std::strcmp(controller.navigation().informationPopoverTitle.data(), "AUTHOR") == 0);
+    CHECK(std::strcmp(controller.navigation().informationPopoverValue.data(), "AXEL NAPOLITANO") == 0);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Info);
+    CHECK(!controller.navigation().editing);
 }
 
 void testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition() {
@@ -4450,7 +4535,9 @@ void testUiControllerFlows() {
                 CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Preferences);
             } else {
                 CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Info);
-                controllerShortPress(controller, now);
+                controllerShortPress(controller, now); // short PRODUCT fits; no popover
+                CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
+                CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Info);
                 CHECK(!controller.navigation().editing);
             }
             controllerReset(controller, now); // child -> Root
@@ -5648,6 +5735,54 @@ void testCustomGrooveEditorControllerWorkflow() {
     controllerShortPress(controller, now); // YES
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
 
+    // Rename an occupied Custom Groove from the normal Groove page. The name
+    // editor reuses the existing name rather than generating a new one.
+    char nameBeforeRename[services::CustomGrooveStore::kNameLength + 1U]{};
+    grooveStore.name(0U, nameBeforeRename, sizeof(nameBeforeRename));
+    controllerTurn(controller, 1, now); // RENAME
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    controllerShortPress(controller, now); // slot 0
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveNameEntry);
+    CHECK_EQ(controller.navigation().grooveSlotAction, ui::GrooveSlotAction::Rename);
+    CHECK(controller.navigation().grooveNameBuffer[0] == nameBeforeRename[0]);
+    controllerTurn(controller, 1, now);
+    hal::PersistentStorage::powerLossBeforeCommitForTest();
+    controllerLongPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveNameEntry);
+    char nameAfterFailedRename[services::CustomGrooveStore::kNameLength + 1U]{};
+    grooveStore.name(0U, nameAfterFailedRename, sizeof(nameAfterFailedRename));
+    CHECK(std::strcmp(nameBeforeRename, nameAfterFailedRename) == 0);
+    controllerLongPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    char nameAfterRename[services::CustomGrooveStore::kNameLength + 1U]{};
+    grooveStore.name(0U, nameAfterRename, sizeof(nameAfterRename));
+    CHECK(std::strcmp(nameBeforeRename, nameAfterRename) != 0);
+
+    // Delete requires an explicit YES. NO must be a true no-op.
+    CustomGroovePattern disposable{};
+    disposable.length = 4U;
+    disposable.offsets256[1] = 32;
+    CHECK(grooveStore.save(1U, "DELETE ME", disposable));
+    controllerReset(controller, now); // RENAME slot list -> Groove
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+    CHECK_EQ(controller.navigation().cursor, 5U);
+    controllerTurn(controller, 1, now); // DELETE
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    controllerTurn(controller, 1, now); // slot 1
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveDeleteConfirm);
+    controllerShortPress(controller, now); // NO
+    CHECK(grooveStore.exists(1U));
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    controllerShortPress(controller, now); // slot 1 again
+    controllerTurn(controller, 1, now); // YES
+    controllerShortPress(controller, now);
+    CHECK(!grooveStore.exists(1U));
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    controllerReset(controller, now); // DELETE slot list -> Groove
+
     // Independent mode exercises the per-channel preview/update/restore branches.
     state.operatingMode = OperatingMode::Independent;
     state.channels[0].common.mode = ChannelMode::Clock;
@@ -5760,6 +5895,7 @@ int main() {
     RUN_TEST(testRenderEveryScreenAndState);
     RUN_TEST(testHierarchicalSettingsRenderDistinctRootAndGroupPages);
     RUN_TEST(testSettingsSelectionUsesFullRowInversionWithoutLeftCursor);
+    RUN_TEST(testReadOnlyInformationOverflowUsesPopoverWithoutEditingSemantics);
     RUN_TEST(testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition);
     RUN_TEST(testPerformanceRendererShowsStaticPreCountPopoverAndMeterProgress);
     RUN_TEST(testPreCountPopoverRedrawsAtBeatBoundariesAndClearsOnCompletion);
