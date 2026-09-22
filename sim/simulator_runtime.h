@@ -16,6 +16,7 @@
 
 #include "app/clock_application.h"
 #include "domain/clock_types.h"
+#include "engine/clock_engine.h"
 #include "simulator_persistence.h"
 #include "virtual_input_signal.h"
 
@@ -113,6 +114,9 @@ public:
 
     /** @brief Returns transport transition timing used by the developer scope timebase. */
     TransportTelemetry transportTelemetry() const;
+
+    /** @brief Returns the real engine phase snapshot used to phase-lock the developer scope grid. */
+    engine::EngineSnapshot engineSnapshot() const;
 
     /** @brief Freezes or resumes rolling waveform-history pruning for STOP inspection. */
     void setTelemetryHistoryFrozen(bool frozen);

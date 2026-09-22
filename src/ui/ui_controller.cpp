@@ -196,8 +196,12 @@ void UiController::handleResetButton(
             leaveGrooveEditor(true);
         }
     } else if (navigation_.screen == Screen::GrooveSlots) {
-        navigation_.screen = Screen::GrooveEditor;
-        invalidate();
+        if (navigation_.grooveSlotAction == GrooveSlotAction::Activate) {
+            openSettingsPage(SettingsPage::Groove, 3U);
+        } else {
+            navigation_.screen = Screen::GrooveEditor;
+            invalidate();
+        }
     } else if (navigation_.screen == Screen::GrooveNameEntry ||
                navigation_.screen == Screen::GrooveOverwriteConfirm) {
         navigation_.screen = Screen::GrooveSlots;
@@ -254,6 +258,11 @@ void UiController::stopTransport(const std::uint32_t nowMs) {
 
 void UiController::registerExternalTapTempo(const std::uint32_t timestampMs) {
     registerTapTempo(timestampMs);
+}
+
+void UiController::seedGeneratedNames(const std::uint32_t seed) {
+    generatedNameSeed_ = seed != 0U ? seed : 0xC10C2026U;
+    generatedNameSequence_ = 0U;
 }
 
 void UiController::registerTapTempo(const std::uint32_t nowMs) {

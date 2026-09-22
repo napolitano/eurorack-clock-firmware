@@ -431,13 +431,14 @@ void SettingsRenderer::renderNameEntry(const NavigationState& navigation) {
         display_.setTextColor(hal::PixelColor::White);
     }
 
-    const char* const footer = text::get(text::TextId::PushNext);
-    const hal::TextBounds footerBounds = display_.measureText(footer, 0, 0);
+    const char* const nextText = text::get(text::TextId::PushNext);
+    const char* const saveText = text::get(text::TextId::HoldToSave);
+    const hal::TextBounds saveBounds = display_.measureText(saveText, 0, 0);
+    display_.drawText(0, 55, nextText);
     display_.drawText(
-        static_cast<std::int16_t>(
-            (static_cast<int>(hal::OledDisplay::kWidth) - static_cast<int>(footerBounds.width)) / 2),
+        static_cast<std::int16_t>(hal::OledDisplay::kWidth - saveBounds.width),
         55,
-        footer);
+        saveText);
     display_.present();
 }
 

@@ -10,6 +10,7 @@
 #include <algorithm>
 #include <cstdio>
 
+#include "ui/groove_name_generator.h"
 #include "ui/preset_name_alphabet.h"
 
 namespace clockfw::ui {
@@ -151,9 +152,55 @@ void UiController::loadSelectedGroove() {
     invalidate();
 }
 
-void UiController::prepareGrooveName() {
+void UiController::activateSelectedGroove(const std::uint32_t nowMs) {
+    if (customGrooveStore_ == nullptr) {
+        openSettingsPage(SettingsPage::Groove, 3U);
+        return;
+    }
+
+    CustomGroovePattern pattern{};
+    if (!customGrooveStore_->load(navigation_.selectedGrooveSlot, pattern)) {
+        navigation_.screen = Screen::GrooveSlots;
+        invalidate();
+        return;
+    }
+
+    // Refresh the real-time library before making the slot active. LOAD from the
+    // normal Groove page is an immediate preset recall, not an editor preview.
+    engine_.updateCustomGrooveSlot(navigation_.selectedGrooveSlot, pattern, false);
+    GrooveSettings& settings = activeGrooveSettings(state_, navigation_.selectedChannel);
+    settings.preset = GroovePreset::Custom;
+    settings.customSlot = navigation_.selectedGrooveSlot;
+    settings.amountPercent = 100U;
+    settings.rotation = 0U;
+    if (state_.operatingMode == OperatingMode::UnifiedClock) {
+        engine_.updateConfiguration(state_, true);
+    } else {
+        engine_.updateChannel(
+            navigation_.selectedChannel,
+            state_.channels[navigation_.selectedChannel],
+            true);
+    }
+    persistCurrentState(nowMs);
+    openSettingsPage(SettingsPage::Groove, 3U);
+}
+
+void UiController::prepareGrooveName(const std::uint32_t nowMs) {
     navigation_.grooveNameBuffer.fill(' ');
     navigation_.grooveNameBuffer.back() = '\0';
+
+    char generated[services::CustomGrooveStore::kNameLength + 1U]{};
+    groovename::generateDefaultName(
+        generatedNameSeed_,
+        generatedNameSequence_++,
+        nowMs ^ static_cast<std::uint32_t>(navigation_.selectedGrooveSlot),
+        generated,
+        sizeof(generated));
+    for (std::size_t index = 0U;
+         index < services::CustomGrooveStore::kNameLength && generated[index] != '\0';
+         ++index) {
+        navigation_.grooveNameBuffer[index] = generated[index];
+    }
     navigation_.nameCharacterIndex = 0U;
 }
 
@@ -212,7 +259,7 @@ void UiController::activateSavedCustomGroove(const std::uint32_t nowMs) {
     grooveEditorOriginalSettings_ = settings;
     grooveEditorDirty_ = false;
     navigation_.settingsExitScreen = Screen::Performance;
-    openSettingsPage(SettingsPage::Groove, 3U);
+    openSettingsPage(SettingsPage::Groove, 4U);
 }
 
 void UiController::leaveGrooveEditor(const bool discardChanges) {
@@ -228,7 +275,7 @@ void UiController::leaveGrooveEditor(const bool discardChanges) {
     }
     grooveEditorDirty_ = false;
     navigation_.settingsExitScreen = Screen::Performance;
-    openSettingsPage(SettingsPage::Groove, 3U);
+    openSettingsPage(SettingsPage::Groove, 4U);
 }
 
 }  // namespace clockfw::ui

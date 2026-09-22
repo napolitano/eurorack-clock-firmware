@@ -214,6 +214,8 @@ void UiController::activateTimingSetting() {
 
 void UiController::activateGrooveSetting() {
     if (navigation_.cursor == 3U) {
+        openGrooveSlots(GrooveSlotAction::Activate);
+    } else if (navigation_.cursor == 4U) {
         openGrooveEditor();
     } else {
         toggleCurrentSettingEditing();
@@ -238,7 +240,7 @@ void UiController::activateGrooveEditorMenuSetting() {
         navigation_.cursor = 0U;
         invalidate();
     } else {
-        openGrooveSlots(GrooveSlotAction::Load);
+        openGrooveSlots(GrooveSlotAction::LoadEditor);
     }
 }
 

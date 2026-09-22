@@ -163,15 +163,28 @@ void PanelRenderer::renderDeveloperPanel(
         static_cast<float>(kChannelCount - 1U) * rowHeight + 32.0F;
 
     if (scopeView.started) {
-        // Musical references are generated from the unswung/unhumanized clock
-        // lattice. PLAY from STOP defines serial 0 at t=0. Swing, phase and
-        // Humanize therefore remain visible as displacement from the reference.
-        const std::int64_t signedStartUs = static_cast<std::int64_t>(startUs);
-        const std::uint64_t firstSerial = scope::firstMinorReferenceSerialAtOrAfter(
-            signedStartUs, grid);
+        // Keep the ruler unswung/unhumanized, but phase-lock it to the real engine
+        // position instead of reconstructing historical phase from current BPM.
+        // This prevents tempo, external-sync and rate changes from making the
+        // reference ruler visibly walk away from the pulses it is meant to explain.
+        const scope::GridAnchor anchor = scope::phaseLockedGridAnchor(
+            state, runtime.engineSnapshot(), referenceUs, grid);
         const std::uint64_t serialStep = std::max<std::uint32_t>(grid.minorEvery, 1U);
-        for (std::uint64_t serial = firstSerial;; serial += serialStep) {
-            const double gridTimeUs = scope::referenceTimeUs(serial, grid);
+        const double timeStepUs = grid.intervalUs * static_cast<double>(serialStep);
+        std::uint64_t serial = anchor.serial - (anchor.serial % serialStep);
+        double gridTimeUs = anchor.timeUs -
+            static_cast<double>(anchor.serial - serial) * grid.intervalUs;
+
+        while (serial >= serialStep && gridTimeUs - timeStepUs >= startUs) {
+            serial -= serialStep;
+            gridTimeUs -= timeStepUs;
+        }
+        while (gridTimeUs < startUs && serial <= UINT64_MAX - serialStep) {
+            serial += serialStep;
+            gridTimeUs += timeStepUs;
+        }
+
+        for (;;) {
             if (gridTimeUs > referenceUs) {
                 break;
             }
@@ -193,6 +206,8 @@ void PanelRenderer::renderDeveloperPanel(
             if (serial > UINT64_MAX - serialStep) {
                 break;
             }
+            serial += serialStep;
+            gridTimeUs += timeStepUs;
         }
 
         setColor(renderer, 96U, 99U, 105U);

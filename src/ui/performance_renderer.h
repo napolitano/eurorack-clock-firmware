@@ -13,6 +13,7 @@
 #include "domain/clock_types.h"
 #include "engine/clock_engine.h"
 #include "hal/oled_display.h"
+#include "services/custom_groove_store.h"
 #include "ui/pattern_strip_renderer.h"
 #include "ui/ui_types.h"
 
@@ -25,7 +26,9 @@ public:
      * @brief Constructs the renderer around the shared OLED abstraction.
      * @param display Display HAL receiving all drawing commands.
      */
-    explicit PerformanceRenderer(hal::OledDisplay& display);
+    explicit PerformanceRenderer(
+        hal::OledDisplay& display,
+        const services::CustomGrooveStore* customGrooveStore = nullptr);
 
     /**
      * @brief Draws the complete performance screen and presents the framebuffer.
@@ -87,6 +90,7 @@ private:
     static char statusModeCharacter(ChannelMode mode);
 
     hal::OledDisplay& display_;
+    const services::CustomGrooveStore* customGrooveStore_ = nullptr;
     PatternStripRenderer patternStripRenderer_;
 };
 

@@ -40,7 +40,7 @@ This makes the simulator useful for UI work, timing regression checks, persisten
 - current settings, eight preset slots, and the arcade leaderboards through the durable 8192-byte host persistence image;
 - screensaver/dim/display-off behavior;
 - accelerated virtual time at 1×, 4×, or 16×;
-- a scrolling developer oscilloscope with rising-edge counters, transport-anchored musical reference lines, and fixed 0.5 / 1 / 2 / 4 / 8 / 16 / 32 second visible spans;
+- a scrolling developer oscilloscope with rising-edge counters, engine-phase-locked musical reference lines, and fixed 0.5 / 1 / 2 / 4 / 8 / 16 / 32 second visible spans;
 - explicit `HI` / `LO` state at every output jack;
 - virtual sources patched to **SYNC IN** and **RST IN**, each with SQUARE / SINE / TRIANGLE generation and an ideal comparator exposing conditioned `HI` / `LO`;
 - SYNC tempo/PPQN acquisition, lock/loss state, and phase/tempo injection into the real clock engine;
@@ -253,14 +253,14 @@ The right side of the simulator window is instrumentation, not part of the modul
 - virtual SYNC cable/run state, source waveform, comparator `HI`/`LO`, external BPM, PPQN, acquisition/lock state, and pulse count;
 - virtual RST cable/run state, source waveform, comparator `HI`/`LO`, period, and reset count;
 - 0.5 / 1 / 2 / 4 / 8 / 16 / 32 seconds of gate history for all eight channels;
-- vertical ruler lines anchored to transport-relative **musical** reference points: the scope remains armed until PLAY from STOP defines `t=0`, then the grid and waveform scroll together; the right edge is an explicit `NOW` cursor. In ONE CLOCK the ruler follows the unswung shared output rate, in DIVIDER it follows the undivided master beat, and in INDEPENDENT it uses the common 1/16 lattice shared by x1 EUCLID/SEQ and all supported CLOCK note values;
+- vertical ruler lines anchored to the engine's actual current **musical phase**: the scope remains armed until PLAY from STOP defines the captured-waveform epoch, while each rendered ruler anchor is derived from the live engine position rather than recomputing history from the current BPM/rate. This keeps the grid phase-coherent with recorded gates across tempo, external-SYNC, and rate changes. The right edge is an explicit `NOW` cursor. In ONE CLOCK the ruler follows the unswung shared output rate, in DIVIDER it follows the undivided master beat, and in INDEPENDENT it uses the common 1/16 lattice shared by x1 EUCLID/SEQ and all supported CLOCK note values;
 - zoom-dependent ruler spacing chosen to keep Swing/Humanize displacement readable; 16 s uses 1/4 s minor/major divisions and 32 s uses 2/8 s;
 - an interactive `FREEZE ON STOP` checkbox (enabled by default) that holds the reference time and retained waveform after STOP; disabling it lets the already-started scope continue scrolling;
 - rising-edge counts.
 
 Each output jack also carries an immediate logic annotation on the front-panel view: `HI` or `LO`, matching the gate source level currently written by firmware. Those annotations and the waveform remain logically exact at the MCU boundary. The separate LED above each jack adds a 75 ms perceptual hold at 1× virtual time (scaled with simulator speed) so a real 1–10 ms trigger cannot disappear between desktop render frames. The developer row also reports the most recently completed pulse width in milliseconds.
 
-This makes phase/synchronization bugs directly visible. Before the first PLAY the scope is ARMED and does not advance. PLAY from STOP defines the transport epoch at `t=0`; older waveform data and its transport-relative reference lines then move left together. The grid period is derived from the effective internal/external BPM rather than rounded wall-clock divisions, so 0% Swing remains aligned even at tempos such as 127 or 130 BPM. A CLOCK/EUCLID/SEQ alignment regression, Swing displacement, phase offset, or One Clock Humanize offset can therefore be inspected against the unswung musical reference lattice rather than a decorative or fixed-millisecond ruler.
+This makes phase/synchronization bugs directly visible. Before the first PLAY the scope is ARMED and does not advance. PLAY from STOP defines the waveform epoch; the musical ruler is then phase-locked to the engine snapshot at the current scope reference time. The grid period still follows effective internal/external BPM, but a later tempo, rate, or sync change does not retroactively slide the ruler away from already captured pulse timing. A CLOCK/EUCLID/SEQ alignment regression, Swing displacement, phase offset, or One Clock Humanize offset can therefore be inspected against the unswung musical reference lattice rather than a decorative or fixed-millisecond ruler.
 
 ## Headless screenshots
 

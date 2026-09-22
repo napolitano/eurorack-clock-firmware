@@ -99,6 +99,14 @@ void ClockApplication::begin(const ClockState& initialState) {
     if (!display_.begin()) {
         haltSafely();
     }
+
+    // CLOCK has no hardware RNG. Use boot-time jitter as a per-session seed and
+    // mix in stable state so generated Custom Groove names vary naturally without
+    // pretending to provide cryptographic randomness. Human save timing is mixed
+    // again when each name is generated.
+    const std::uint32_t nameSeed = static_cast<std::uint32_t>(hal::SystemClock::microseconds()) ^
+        (static_cast<std::uint32_t>(state_.bpm) << 16U) ^ 0x53474E4DU;
+    uiController_.seedGeneratedNames(nameSeed);
     synchronizeDevicePreferences(true);
 
 #ifdef CLOCK_SIMULATOR

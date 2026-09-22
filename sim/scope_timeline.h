@@ -12,6 +12,7 @@
 #include <cstdint>
 
 #include "domain/clock_types.h"
+#include "engine/clock_engine.h"
 
 namespace clockfw::sim::scope {
 
@@ -50,6 +51,12 @@ struct MusicalGridSpec {
     const char* basis = "BEAT";
 };
 
+/** @brief One exact phase-locked musical reference immediately at/before the scope reference time. */
+struct GridAnchor {
+    double timeUs = 0.0;
+    std::uint64_t serial = 0ULL;
+};
+
 /** @brief Returns the next shorter fixed window index, clamped at maximum zoom-in. */
 std::size_t zoomInIndex(std::size_t index);
 
@@ -76,6 +83,21 @@ MusicalGridSpec musicalGridSpec(
     const ClockState& state,
     std::uint32_t effectiveBpmMilli,
     std::uint64_t windowUs);
+
+/**
+ * @brief Phase-locks the visible ruler to the real engine musical position.
+ *
+ * The old simulator reconstructed every reference from transport t=0 and the
+ * current BPM/rate. After a tempo, sync or rate change that retroactively moved
+ * the ruler relative to already captured gates. This anchor uses the engine's
+ * actual current phase, so the ruler remains aligned with the clock that emitted
+ * the pulses.
+ */
+GridAnchor phaseLockedGridAnchor(
+    const ClockState& state,
+    const engine::EngineSnapshot& snapshot,
+    double referenceUs,
+    const MusicalGridSpec& grid);
 
 /** @brief Returns the first non-negative minor-reference serial visible at/after startUs. */
 std::uint64_t firstMinorReferenceSerialAtOrAfter(

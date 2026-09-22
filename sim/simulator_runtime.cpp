@@ -144,6 +144,10 @@ TransportTelemetry SimulatorRuntime::transportTelemetry() const {
     return {observedTransport_, transportStartSequence_, lastTransportStartUs_, lastTransportStopUs_};
 }
 
+engine::EngineSnapshot SimulatorRuntime::engineSnapshot() const {
+    return application_ != nullptr ? application_->engineSnapshotForSimulator() : engine::EngineSnapshot{};
+}
+
 void SimulatorRuntime::setTelemetryHistoryFrozen(const bool frozen) {
     telemetryHistoryFrozen_ = frozen;
 }

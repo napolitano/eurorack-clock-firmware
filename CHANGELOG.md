@@ -28,6 +28,9 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Groove Engine Stage 2 - Custom editor
 
+- Make Custom Groove save completion explicit: every new slot starts with an editable generated two-word musical name, and encoder long-press commits the name/pattern immediately (`HOLD TO SAVE`). The per-boot pseudo-random seed is mixed with generation order and human interaction timing; it is convenience naming, not cryptographic randomness.
+- Add `LOAD >` directly to the normal `GROOVE` settings page so a stored Custom Groove can be recalled without first entering the graphical editor.
+- Resolve active Custom Groove names from the persistent slot on the Performance screen so `G:<name>` shows the actual user-visible name instead of the generic `CUSTOM` label.
 - Render Custom Groove diamond markers as opaque overlays: clear the diamond footprint before drawing its outline/fill so beat and step guides cannot bleed through the marker; keep the grid continuous immediately above and below it.
 - Add framebuffer regression coverage that verifies grid continuity outside an unselected marker and explicit occlusion inside it.
 - Add the standard `GROOVE EDITOR` screen header and separator used by the other dedicated editors; move beat labels and the editable grid below the header while preserving the bottom status row.
@@ -57,9 +60,11 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Validation
 
-- Native inventory: **488 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **33 / 186**, Settings **88 / 261**, complete host firmware **37** cases across all tested display variants.
-- Repository coverage: **8631/8924 executable lines (96.72%) / 768/780 functions (98.46%) / 5258/5732 source decision branches (91.73%)**; the 95/95/90 gates remain unchanged.
-- Full ASan/UBSan Native/firmware matrix passes on the final r23 tree, including all focused suites plus legacy I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin firmware variants.
+- Native inventory: **488 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **33 / 186**, Settings **88 / 267**, complete host firmware **37** cases across all tested display variants.
+- Complete firmware host variants: legacy I2C **37 / 4,158**, SPI SSD1306 **37 / 3,121**, SPI SSD1315 **37 / 3,121**, and fixed-I2C/reset **37 / 4,141**, all with zero failures.
+- Repository coverage: **8638/9006 executable lines (95.91%) / 769/784 functions (98.09%) / 5277/5802 source decision branches (90.95%)**; the 95/95/90 gates remain unchanged.
+- Full ASan/UBSan Native/firmware matrix passes on the final r24 tree, including all focused suites plus legacy I2C, SPI SSD1306, SPI SSD1315 and fixed-I2C/reset-pin firmware variants.
+- Headless simulator integration remains **2/2 PASS**, including the engine-phase-locked scope reference regression.
 
 ### Changed
 
@@ -68,6 +73,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Fixed
 
+- Phase-lock the simulator developer-scope musical ruler to the real current engine position instead of reconstructing historical references from transport start plus the current BPM/rate. Tempo, external-SYNC, and rate changes can no longer make the ruler drift relative to already captured gate transitions.
 - Prevent selecting `RUN` in Settings from starting or stopping transport merely because the assigned comparator is already HIGH/LOW. RUN now captures a neutral baseline on boot and role reassignment; only a later physical level change may command transport, preserving the STOP-on-boot invariant.
 - Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v12 2,882-byte repeated-state footprint and 21-byte in-place growth ceiling.
 - Updated development and coverage documentation to the current 488-case Native inventory.

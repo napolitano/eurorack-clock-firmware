@@ -112,6 +112,34 @@ MusicalGridSpec musicalGridSpec(
     return grid;
 }
 
+GridAnchor phaseLockedGridAnchor(
+    const ClockState& state,
+    const engine::EngineSnapshot& snapshot,
+    const double referenceUs,
+    const MusicalGridSpec& grid) {
+    const long double masterBeats = static_cast<long double>(snapshot.masterPositionQ32) /
+        static_cast<long double>(core::kQ32One);
+
+    long double referenceCycles = masterBeats;
+    if (state.operatingMode == OperatingMode::UnifiedClock) {
+        std::uint32_t numerator = 1U;
+        std::uint32_t denominator = 1U;
+        resolveRate(state.unifiedClock.rate, numerator, denominator);
+        referenceCycles = masterBeats * static_cast<long double>(numerator) /
+            static_cast<long double>(std::max<std::uint32_t>(denominator, 1U));
+    } else if (state.operatingMode == OperatingMode::Independent) {
+        const std::uint8_t beatUnit = state.masterMeter.unit != 0U ? state.masterMeter.unit : 4U;
+        referenceCycles = masterBeats * 16.0L / static_cast<long double>(beatUnit);
+    }
+
+    const long double wholeCycles = std::floor(referenceCycles);
+    const long double phase = referenceCycles - wholeCycles;
+    GridAnchor anchor{};
+    anchor.serial = wholeCycles > 0.0L ? static_cast<std::uint64_t>(wholeCycles) : 0ULL;
+    anchor.timeUs = referenceUs - static_cast<double>(phase) * std::max(grid.intervalUs, 1.0);
+    return anchor;
+}
+
 std::uint64_t firstMinorReferenceSerialAtOrAfter(
     const std::int64_t startUs,
     const MusicalGridSpec& grid) {

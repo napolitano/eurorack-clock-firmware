@@ -334,6 +334,22 @@ inline constexpr TextCatalog kEnglishUs{{
     "OVERWRITE GROOVE?", "DISCARD CHANGES?", "GROOVE STORE N/A", "S%02u %+d  L%u", "Z%u"
 }};
 
+/** Musical qualifier pool used for generated Custom Groove default names. */
+inline constexpr std::array<const char*, 20U> kGrooveNameQualifiers{{
+    "DEEP", "DUSTY", "LATE", "LAZY", "LOOSE",
+    "NEON", "NIGHT", "RAW", "SOFT", "TIGHT",
+    "VELVET", "WARM", "COLD", "SILK", "BROKEN",
+    "DARK", "LIGHT", "SLOW", "WILD", "ODD",
+}};
+
+/** Rhythmic noun pool used for generated Custom Groove default names. */
+inline constexpr std::array<const char*, 20U> kGrooveNameRhythmWords{{
+    "POCKET", "PUSH", "PULL", "DRIFT", "SWING",
+    "PULSE", "SKIP", "LILT", "BOUNCE", "STRUT",
+    "GLIDE", "SNAP", "STEP", "SHUFFLE", "GROOVE",
+    "WALK", "ROLL", "NOD", "STOMP", "FLOW",
+}};
+
 /**
  * @brief Resolves a complete language catalog.
  * @param language Requested UI language.

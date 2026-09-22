@@ -92,7 +92,7 @@ Planned scope and implementation sequence:
 - Groove Amount to scale a stored pattern from straight through exaggerated timing;
 - pattern rotation/phase so related channels can share one groove with different starting positions;
 - **Stage 2 — Preset / Custom split (implemented in current 1.1 development):** keep factory presets read-only and add user-defined signed Custom grooves. Editing uses a 128x64 graphical beat/step grid with movable diamond timing markers, bounded zoom and live runtime preview;
-- The current 8-KiB persistence revision provides **10 named Custom Groove slots** using fixed records in bytes 3136-4095 without moving legacy score or Top-100 data. The accepted **99-slot** target remains conditional on a later compact/expanded persistence design and real target memory proof. Current Stage 2 implements save/load/overwrite/name-on-create; rename/delete remain follow-up work;
+- The current 8-KiB persistence revision provides **10 named Custom Groove slots** using fixed records in bytes 3136-4095 without moving legacy score or Top-100 data. The accepted **99-slot** target remains conditional on a later compact/expanded persistence design and real target memory proof. Current Stage 2 implements save/load/overwrite/name-on-create, generated editable two-word default names, direct `GROOVE → LOAD` recall, and the actual stored Custom Groove name on the Performance screen; rename/delete remain follow-up work;
 - Humanize remains a separate stochastic layer and is never conflated with deterministic groove timing.
 
 Dependencies and constraints:

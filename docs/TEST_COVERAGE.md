@@ -25,13 +25,13 @@ Compiler branches:  4288/5562 (77.09%, informational only)
 
 The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on the exact tagged source before publishing. Local pre-release verification covers the changed host renderer regression, the 96-case external-SYNC suite, release/manual tooling, documentation policies, and both headless simulator tests; the authoritative 1.0.1 repository-wide percentages are therefore produced by the release CI rather than copied forward from 1.0.0.
 
-Current 1.1 development working baseline after Groove Engine Stage 2, the readability sprint, and the horizontal Channel Mode carousel:
+Current 1.1 development working baseline after Groove Engine Stage 2, the readability sprint, the horizontal Channel Mode carousel, generated Custom Groove naming/direct LOAD, and the simulator scope phase-lock correction:
 
 ```text
-Executable lines:   8631/8924 (96.72%)
-Functions:            768/780  (98.46%)
-Decision branches:   5258/5732 (91.73%)
-Compiler branches:   5259/6684 (78.68%, informational only)
+Executable lines:   8638/9006 (95.91%)
+Functions:            769/784  (98.09%)
+Decision branches:   5277/5802 (90.95%)
+Compiler branches:   5278/6786 (77.78%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.
@@ -88,7 +88,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - nominal LM393-front-end design-model checks for the documented resistor/hysteresis network, including end-to-end modeled 2.5 V, 3 V and 4 V clocks at low/nominal/maximum supported tempo; this remains explicitly separate from physical comparator HIL
 - ISR-safe external reset on either physical input with configurable TRIGGER/GATE semantics, startup-HIGH handling, queue saturation, deterministic RESET-before-SYNC priority, and role removal/reassignment behavior
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release
-- channel overview selection, TAP-turn horizontal mode carousel, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, and preset overwrite/save/load/name-band workflow
+- channel overview selection, TAP-turn horizontal mode carousel, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, preset overwrite/save/load/name-band workflow, generated Custom Groove default names, direct Groove LOAD, and persisted Custom Groove names on the Performance screen
 - 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht PLAY/PAUSE/STOP, guarded NO/YES Beatknecht exit confirmation, launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, first-launch-gated HI-SCORES/CLEAR behavior, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-source-muted life-loss safety
 
 ## Decision branches versus compiler branches
@@ -124,7 +124,7 @@ cmake --build --preset simulator-headless
 ctest --preset simulator-headless
 ```
 
-These tests boot the complete firmware above the simulator HAL, exercise real debounced controls and scheduler callbacks, verify OLED output and gate edges, verify host-file persistence, power-cycle the application, enter the configured boot Easter egg through the real boot chord, check framebuffer-visible projectiles, drive ideal SYNC/RST comparator sources, and verify scope reset/re-arm semantics, reject historical PLAY epochs when a new scope session is opened in STOP, and attach a newly opened scope to the current live epoch when transport is already PLAYING. The virtual OLED additionally consumes the same physical transfer framebuffer used by hardware. Regressions prove canonical-framebuffer immutability, exact pixel mapping `(x,y) -> (127-x,63-y)` at 180 degrees, immediate reversal back to 0 degrees, and a fixed controller scan orientation. CI executes this layer on Windows, macOS, and Linux.
+These tests boot the complete firmware above the simulator HAL, exercise real debounced controls and scheduler callbacks, verify OLED output and gate edges, verify host-file persistence, power-cycle the application, enter the configured boot Easter egg through the real boot chord, check framebuffer-visible projectiles, drive ideal SYNC/RST comparator sources, and verify scope reset/re-arm semantics, reject historical PLAY epochs when a new scope session is opened in STOP, attach a newly opened scope to the current live epoch when transport is already PLAYING, and phase-lock the musical ruler to the real engine position so tempo/rate changes cannot retroactively move it away from captured gates. The virtual OLED additionally consumes the same physical transfer framebuffer used by hardware. Regressions prove canonical-framebuffer immutability, exact pixel mapping `(x,y) -> (127-x,63-y)` at 180 degrees, immediate reversal back to 0 degrees, and a fixed controller scan orientation. CI executes this layer on Windows, macOS, and Linux.
 
 ## Hardware-in-the-loop qualification remains explicit
 

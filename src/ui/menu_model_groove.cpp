@@ -38,6 +38,9 @@ MenuRow buildGrooveMenuRow(
                 length > 0U ? length - 1U : 0U);
         }
     } else if (rowIndex == 3U) {
+        std::snprintf(row.label, sizeof(row.label), "%s", text::get(text::TextId::Load));
+        std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Arrow));
+    } else if (rowIndex == 4U) {
         std::snprintf(row.label, sizeof(row.label), "%s", text::get(text::TextId::Editor));
         std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Arrow));
     }

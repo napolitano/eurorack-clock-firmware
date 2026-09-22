@@ -87,8 +87,12 @@ void formatClockPerformanceRate(
 
 }  // namespace
 
-PerformanceRenderer::PerformanceRenderer(hal::OledDisplay& display)
-    : display_(display), patternStripRenderer_(display) {}
+PerformanceRenderer::PerformanceRenderer(
+    hal::OledDisplay& display,
+    const services::CustomGrooveStore* const customGrooveStore)
+    : display_(display),
+      customGrooveStore_(customGrooveStore),
+      patternStripRenderer_(display) {}
 
 void PerformanceRenderer::render(
     const ClockState& state,

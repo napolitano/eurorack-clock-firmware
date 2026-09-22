@@ -168,7 +168,7 @@ void GrooveEditorRenderer::renderSlots(
     display_.clear();
     display_.setFont(hal::DisplayFont::Small);
     display_.setTextColor(hal::PixelColor::White);
-    display_.drawText(0, 0, text::get(navigation.grooveSlotAction == GrooveSlotAction::Load ? text::TextId::LoadGroove : text::TextId::SaveGroove));
+    display_.drawText(0, 0, text::get(navigation.grooveSlotAction != GrooveSlotAction::Save ? text::TextId::LoadGroove : text::TextId::SaveGroove));
     display_.drawHorizontalLine(0, 9, hal::OledDisplay::kWidth);
     for (std::uint8_t row = 0U; row < 5U; ++row) {
         const std::uint8_t slot = static_cast<std::uint8_t>(navigation.scrollOffset + row);
@@ -224,7 +224,14 @@ void GrooveEditorRenderer::renderNameEntry(const NavigationState& navigation) {
         display_.drawCharacter(x, 35, character);
         display_.setTextColor(hal::PixelColor::White);
     }
-    display_.drawText(37, 55, text::get(text::TextId::PushNext));
+    const char* const nextText = text::get(text::TextId::PushNext);
+    const char* const saveText = text::get(text::TextId::HoldToSave);
+    const hal::TextBounds saveBounds = display_.measureText(saveText, 0, 0);
+    display_.drawText(0, 55, nextText);
+    display_.drawText(
+        static_cast<std::int16_t>(hal::OledDisplay::kWidth - saveBounds.width),
+        55,
+        saveText);
     display_.present();
 }
 

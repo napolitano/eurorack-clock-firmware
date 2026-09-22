@@ -22,13 +22,22 @@ void PerformanceRenderer::drawGrooveStatus(
         return;
     }
 
+    const char* grooveLabel = groove::presetLabel(settings.preset);
+    char customName[services::CustomGrooveStore::kNameLength + 1U]{};
+    if (settings.preset == GroovePreset::Custom && customGrooveStore_ != nullptr) {
+        customGrooveStore_->name(settings.customSlot, customName, sizeof(customName));
+        if (customName[0] != '\0') {
+            grooveLabel = customName;
+        }
+    }
+
     char label[21]{};
     std::snprintf(
         label,
         sizeof(label),
         "%s%s",
         text::get(text::TextId::GroovePrefix),
-        groove::presetLabel(settings.preset));
+        grooveLabel);
     display_.setFont(hal::DisplayFont::Small);
     display_.drawText(1, y, label);
 }

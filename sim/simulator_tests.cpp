@@ -6,12 +6,14 @@
  * @license PolyForm-Noncommercial-1.0.0
  */
 #include <array>
+#include <cmath>
 #include <cstdint>
 #include <filesystem>
 #include <iostream>
 
 #include "simulator_contract_tests.h"
 #include "scope_session.h"
+#include "scope_timeline.h"
 #include "simulator_runtime.h"
 
 namespace {
@@ -284,6 +286,55 @@ int main() {
     runtime.advanceMicroseconds(35000ULL);
     runtime.setButton(clockfw::sim::SimButton::Stop, false);
     runtime.advanceMicroseconds(35000ULL);
+
+    // A fresh runtime verifies the developer-scope ruler against real emitted
+    // gate edges both before and after a live tempo change. The grid is allowed
+    // to remain unswung, but its nominal phase must not walk away from x1 pulses.
+    const std::filesystem::path scopeStatePath = ".clock-simulator-scope-phase-test.bin";
+    std::filesystem::remove(scopeStatePath);
+    SimulatorRuntime scopeRuntime(scopeStatePath);
+    scopeRuntime.begin();
+    scopeRuntime.advanceMicroseconds(1050000ULL);
+    scope::Session phaseSession{};
+    scopeRuntime.setButton(SimButton::Play, true);
+    scopeRuntime.advanceMicroseconds(35000ULL);
+    scopeRuntime.setButton(SimButton::Play, false);
+    scopeRuntime.advanceMicroseconds(1300000ULL);
+    phaseSession.update(scopeRuntime);
+
+    const auto checkScopePhase = [&](const char* const message) -> int {
+        const scope::SessionView view = phaseSession.view();
+        const SyncInputTelemetry sync = scopeRuntime.syncInputTelemetry();
+        const std::uint32_t bpmMilli = scope::effectiveReferenceBpmMilli(
+            scopeRuntime.state(), sync.locked, sync.engineBpmMilli);
+        const scope::MusicalGridSpec grid = scope::musicalGridSpec(
+            scopeRuntime.state(), bpmMilli, view.windowUs);
+        const scope::GridAnchor anchor = scope::phaseLockedGridAnchor(
+            scopeRuntime.state(), scopeRuntime.engineSnapshot(),
+            static_cast<double>(view.referenceUs), grid);
+        const std::uint64_t risingAbsoluteUs = scopeRuntime.telemetry()[0].lastRisingUs;
+        if (risingAbsoluteUs < view.epochSimulatorUs) {
+            return fail(message);
+        }
+        const double risingUs = static_cast<double>(risingAbsoluteUs - view.epochSimulatorUs);
+        const double referenceSteps = std::round((risingUs - anchor.timeUs) / grid.intervalUs);
+        const double nearestReferenceUs = anchor.timeUs + referenceSteps * grid.intervalUs;
+        if (std::fabs(risingUs - nearestReferenceUs) > 100.0) {
+            return fail(message);
+        }
+        return 0;
+    };
+
+    if (checkScopePhase("developer scope ruler must align with real x1 gate phase") != 0) {
+        return 1;
+    }
+    scopeRuntime.rotateEncoder(17);
+    scopeRuntime.advanceMicroseconds(1200000ULL);
+    phaseSession.update(scopeRuntime);
+    if (checkScopePhase("developer scope ruler must stay phase-locked after live BPM changes") != 0) {
+        return 1;
+    }
+    std::filesystem::remove(scopeStatePath);
 
     // Firmware coalesces durable CURRENT writes for three seconds and never
     // commits while PLAYING; advance STOP time so the real persistence service flushes.

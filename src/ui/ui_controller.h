@@ -94,6 +94,9 @@ public:
     /** @brief Feeds an externally captured TAP edge into the normal Tap Tempo estimator. */
     void registerExternalTapTempo(std::uint32_t timestampMs);
 
+    /** @brief Seeds pseudo-random human-readable default names for this boot session. */
+    void seedGeneratedNames(std::uint32_t seed);
+
 private:
     /** @brief Routes one encoder detent according to the active screen and edit state. */
     void handleEncoderDelta(std::int8_t delta, bool tapPressed, bool transportPressed);
@@ -237,8 +240,11 @@ private:
     /** @brief Loads the selected Custom Groove slot into the draft and live preview. */
     void loadSelectedGroove();
 
-    /** @brief Prepares the 16-character Custom Groove name editor. */
-    void prepareGrooveName();
+    /** @brief Activates one stored Custom Groove directly from the normal Groove menu. */
+    void activateSelectedGroove(std::uint32_t nowMs);
+
+    /** @brief Prepares the 16-character Custom Groove name editor with a generated default. */
+    void prepareGrooveName(std::uint32_t nowMs);
 
     /** @brief Rotates the active Custom Groove name character. */
     void adjustGrooveNameCharacter(std::int8_t delta);
@@ -308,6 +314,8 @@ private:
     bool grooveEditorDirty_ = false;
     bool grooveLoadPendingAfterDiscard_ = false;
     bool transportPressConsumedByGrooveZoom_ = false;
+    std::uint32_t generatedNameSeed_ = 0xC10C2026U;
+    std::uint32_t generatedNameSequence_ = 0U;
 };
 
 }  // namespace clockfw::ui

@@ -113,6 +113,26 @@ int runStaticContracts() {
         return fail("ONE CLOCK scope grid must follow the unswung shared-clock event interval");
     }
 
+    // The visible grid phase comes from the engine's real musical position, not
+    // from replaying current BPM backwards to transport t=0. This is what keeps
+    // reference lines phase-coherent after a tempo/sync/rate change.
+    clockfw::engine::EngineSnapshot phaseSnapshot{};
+    phaseSnapshot.masterPositionQ32 = (2ULL << 32U) + (1ULL << 31U); // 2.5 master beats
+    const scope::GridAnchor phaseAnchor = scope::phaseLockedGridAnchor(
+        gridState, phaseSnapshot, 1000000.0, unifiedGrid);
+    if (phaseAnchor.serial != 5ULL ||
+        std::fabs(phaseAnchor.timeUs - 1000000.0) > 0.001) {
+        return fail("ONE CLOCK scope anchor must follow real engine phase and output rate");
+    }
+
+    phaseSnapshot.masterPositionQ32 = (2ULL << 32U) + (1ULL << 30U); // 2.25 beats -> 4.5 x2 events
+    const scope::GridAnchor halfPhaseAnchor = scope::phaseLockedGridAnchor(
+        gridState, phaseSnapshot, 1000000.0, unifiedGrid);
+    if (halfPhaseAnchor.serial != 4ULL ||
+        std::fabs(halfPhaseAnchor.timeUs - (1000000.0 - unifiedGrid.intervalUs * 0.5)) > 0.001) {
+        return fail("scope anchor must preserve fractional engine phase between reference events");
+    }
+
     // External tempo must drive the reference ruler even when it lies outside
     // the user's manual MIN/MAX BPM range.
     gridState.source = clockfw::ClockSource::External;
@@ -137,7 +157,7 @@ int runStaticContracts() {
         4123456LL, unifiedGrid);
     const double firstVisibleTime = scope::referenceTimeUs(firstVisible, unifiedGrid);
     if (firstVisibleTime < 4123456.0 || !scope::isMajorReference(0U, unifiedGrid)) {
-        return fail("scope reference serials must stay anchored to transport t=0");
+        return fail("scope reference serial utility must remain mathematically stable");
     }
     const double gridXBefore = scope::normalizedPosition(firstVisibleTime, 4000000.0, 1000000ULL);
     const double gridXAfter = scope::normalizedPosition(firstVisibleTime, 4100000.0, 1000000ULL);

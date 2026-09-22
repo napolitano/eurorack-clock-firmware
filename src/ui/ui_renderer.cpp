@@ -50,7 +50,7 @@ UiRenderer::UiRenderer(
     const services::PersistentStateService& persistentState)
     : display_(display),
       persistentState_(persistentState),
-      performanceRenderer_(display),
+      performanceRenderer_(display, nullptr),
       channelNavigationRenderer_(display),
       settingsRenderer_(display),
       grooveEditorRenderer_(display),
@@ -63,7 +63,7 @@ UiRenderer::UiRenderer(
     : display_(display),
       persistentState_(persistentState),
       customGrooveStore_(&customGrooveStore),
-      performanceRenderer_(display),
+      performanceRenderer_(display, &customGrooveStore),
       channelNavigationRenderer_(display),
       settingsRenderer_(display),
       grooveEditorRenderer_(display),

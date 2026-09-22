@@ -182,7 +182,7 @@ CI requires:
 - function coverage >= **95%**
 - non-throw decision-branch coverage >= **90%**
 
-Current 1.1 working baseline after the readability sprint, Groove marker quiet-zone fix, and horizontal Channel Mode carousel: **8631/8924 lines (96.72%)**, **768/780 functions (98.46%)**, and **5258/5732 decision branches (91.73%)**. Raw compiler branches are **5259/6684 (78.68%)** and remain informational.
+Current 1.1 working baseline after the readability sprint, Groove marker quiet-zone fix, horizontal Channel Mode carousel, Custom Groove save/load naming UX, and simulator scope phase-lock correction: **8638/9006 lines (95.91%)**, **769/784 functions (98.09%)**, and **5277/5802 decision branches (90.95%)**. Raw compiler branches are **5278/6786 (77.78%)** and remain informational.
 - AddressSanitizer = **clean**
 - UndefinedBehaviorSanitizer = **clean**
 

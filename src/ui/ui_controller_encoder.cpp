@@ -33,7 +33,9 @@ void UiController::handleEncoderButton(
         nowMs - encoderPressedAtMs_ >= config::kEncoderLongPressMs &&
         (navigation_.screen == Screen::Performance ||
          navigation_.screen == Screen::ChannelQuickSelect ||
-         navigation_.screen == Screen::GrooveEditor)) {
+         navigation_.screen == Screen::GrooveEditor ||
+         navigation_.screen == Screen::NameEntry ||
+         navigation_.screen == Screen::GrooveNameEntry)) {
         encoderLongPressHandled_ = true;
         handleLongEncoderPress(nowMs);
         return;
@@ -135,15 +137,17 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
 
         case Screen::GrooveSlots:
             navigation_.selectedGrooveSlot = navigation_.cursor;
-            if (navigation_.grooveSlotAction == GrooveSlotAction::Load) {
+            if (navigation_.grooveSlotAction == GrooveSlotAction::LoadEditor) {
                 loadSelectedGroove();
+            } else if (navigation_.grooveSlotAction == GrooveSlotAction::Activate) {
+                activateSelectedGroove(nowMs);
             } else if (customGrooveStore_ != nullptr &&
                        customGrooveStore_->exists(navigation_.selectedGrooveSlot)) {
                 navigation_.screen = Screen::GrooveOverwriteConfirm;
                 navigation_.cursor = 0U;
                 invalidate();
             } else {
-                prepareGrooveName();
+                prepareGrooveName(nowMs);
                 navigation_.screen = Screen::GrooveNameEntry;
                 invalidate();
             }
@@ -167,7 +171,7 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
             } else if (grooveLoadPendingAfterDiscard_) {
                 grooveEditorDirty_ = false;
                 grooveLoadPendingAfterDiscard_ = false;
-                openGrooveSlots(GrooveSlotAction::Load);
+                openGrooveSlots(GrooveSlotAction::LoadEditor);
             } else {
                 leaveGrooveEditor(true);
             }
@@ -205,8 +209,15 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
 
 
 void UiController::handleLongEncoderPress(const std::uint32_t nowMs) {
-    (void)nowMs;
     const Screen origin = navigation_.screen;
+    if (origin == Screen::GrooveNameEntry) {
+        saveCustomGroove(nowMs, false);
+        return;
+    }
+    if (origin == Screen::NameEntry) {
+        saveNamedPreset(nowMs);
+        return;
+    }
     if (origin == Screen::GrooveEditor) {
         navigation_.settingsExitScreen = Screen::GrooveEditor;
         openSettingsPage(SettingsPage::GrooveEditorMenu);

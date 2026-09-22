@@ -3317,7 +3317,7 @@ void testRenderEveryScreenAndState() {
     nav.screen = ui::Screen::GrooveSlots;
     nav.scrollOffset = 0U;
     nav.cursor = 0U;
-    for (const auto action : {ui::GrooveSlotAction::Load, ui::GrooveSlotAction::Save}) {
+    for (const auto action : {ui::GrooveSlotAction::LoadEditor, ui::GrooveSlotAction::Activate, ui::GrooveSlotAction::Save}) {
         nav.grooveSlotAction = action;
         renderer.render(state, nav, engine.snapshot());
     }
@@ -3503,6 +3503,24 @@ void testPerformanceRendererShowsActiveGrooveAtModeSpecificPosition() {
     state.unifiedClock.groove = {GroovePreset::Swing58, 100U, 0U};
     renderer.render(state, navigation, snapshot);
     CHECK(countFramebufferPixels(display.framebufferForTest(), 0, 54, 80, 10) > 0U);
+
+    // A stored Custom Groove must expose its real user name on Performance, not
+    // collapse every library entry to the generic CUSTOM label.
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage grooveStorage;
+    services::CustomGrooveStore grooveStore(grooveStorage);
+    CustomGroovePattern pattern{};
+    pattern.length = 16U;
+    CHECK(grooveStore.save(0U, "VELVET PUSH", pattern));
+    state.unifiedClock.groove = {GroovePreset::Custom, 100U, 0U, 0U};
+    renderer.render(state, navigation, snapshot);
+    const auto genericCustomFrame = display.framebufferForTest();
+    ui::PerformanceRenderer namedRenderer(display, &grooveStore);
+    namedRenderer.render(state, navigation, snapshot);
+    const auto namedCustomFrame = display.framebufferForTest();
+    CHECK(namedCustomFrame != genericCustomFrame);
+    CHECK(countFramebufferPixels(namedCustomFrame, 0, 54, 110, 10) >
+          countFramebufferPixels(genericCustomFrame, 0, 54, 110, 10));
 }
 
 void testPerformanceRendererShowsStaticPreCountPopoverAndMeterProgress() {
@@ -5485,7 +5503,7 @@ void testCustomGrooveEditorControllerWorkflow() {
         controllerTurn(controller, 4, now); // GROOVE
         controllerShortPress(controller, now);
         CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
-        controllerTurn(controller, 3, now); // EDITOR
+        controllerTurn(controller, 4, now); // EDITOR
         controllerShortPress(controller, now);
         CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
     };
@@ -5537,22 +5555,41 @@ void testCustomGrooveEditorControllerWorkflow() {
     controllerReset(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
 
-    // SAVE into a new slot, edit the name, and commit the Custom Groove.
+    // SAVE into a new slot. A generated musical name is present immediately and
+    // encoder long-press commits it without forcing the user through 16 characters.
+    controller.seedGeneratedNames(0x12345678U);
     controllerLongPress(controller, now);
     controllerShortPress(controller, now); // SAVE
     CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
     controllerShortPress(controller, now); // empty slot 0 -> name entry
     CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveNameEntry);
-    controllerTurn(controller, 1, now);
-    for (std::uint8_t index = 0U; index < services::CustomGrooveStore::kNameLength; ++index) {
-        controllerShortPress(controller, now);
-    }
+    CHECK(controller.navigation().grooveNameBuffer[0] != ' ');
+    CHECK(controller.navigation().grooveNameBuffer[0] != '\0');
+    controllerTurn(controller, 1, now); // generated default remains editable
+    controllerLongPress(controller, now); // explicit HOLD TO SAVE contract
     CHECK(grooveStore.exists(0U));
+    char savedGrooveName[services::CustomGrooveStore::kNameLength + 1U]{};
+    grooveStore.name(0U, savedGrooveName, sizeof(savedGrooveName));
+    CHECK(savedGrooveName[0] != '\0');
     CHECK_EQ(state.unifiedClock.groove.preset, GroovePreset::Custom);
     CHECK_EQ(state.unifiedClock.groove.customSlot, 0U);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+    CHECK_EQ(controller.navigation().cursor, 4U);
+
+    // Normal Groove settings expose LOAD directly; loading activates the stored
+    // Custom Groove without first entering the graphical editor.
+    state.unifiedClock.groove = {GroovePreset::Off, 100U, 0U, 0U};
+    engine.updateConfiguration(state, true);
+    controllerTurn(controller, -1, now); // LOAD
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    controllerShortPress(controller, now); // slot 0
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+    CHECK_EQ(state.unifiedClock.groove.preset, GroovePreset::Custom);
+    CHECK_EQ(state.unifiedClock.groove.customSlot, 0U);
 
     // Reopening an active Custom Groove must load the stored slot into the draft.
+    controllerTurn(controller, 1, now); // EDITOR
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
     CHECK_EQ(controller.navigation().grooveDraft.length, kCustomGrooveMaximumSteps);
@@ -5627,7 +5664,7 @@ void testCustomGrooveEditorControllerWorkflow() {
     controllerShortPress(controller, now);
     controllerTurn(controller, 4, now); // Groove
     controllerShortPress(controller, now);
-    controllerTurn(controller, 3, now); // Editor
+    controllerTurn(controller, 4, now); // Editor
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
     controllerTurn(controller, -1, now);

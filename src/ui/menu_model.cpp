@@ -92,7 +92,7 @@ std::uint8_t settingsPageItemCount(
         case SettingsPage::UnifiedClock: return 3U;
         case SettingsPage::UnifiedTiming: return 6U;
         case SettingsPage::UnifiedOutput: return 2U;
-        case SettingsPage::Groove: return 4U;
+        case SettingsPage::Groove: return 5U;
         case SettingsPage::GrooveEditorMenu: return 4U;
         case SettingsPage::DividerBank: return 3U;
         default: return 0U;

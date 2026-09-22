@@ -81,7 +81,7 @@ enum class ModeFunction : std::uint8_t {
 enum class PresetSlotAction : std::uint8_t { Load, Save };
 
 /** @brief Operation being performed on Custom Groove slots. */
-enum class GrooveSlotAction : std::uint8_t { Load, Save };
+enum class GrooveSlotAction : std::uint8_t { LoadEditor, Activate, Save };
 
 /** @brief Live digital levels shown by the hardware diagnostics pages. */
 struct DiagnosticSnapshot {
@@ -118,7 +118,7 @@ struct NavigationState {
     std::uint8_t selectedPresetSlot = 0U;
     std::uint8_t nameCharacterIndex = 0U;
     std::array<char, 17U> presetNameBuffer{};
-    GrooveSlotAction grooveSlotAction = GrooveSlotAction::Load;
+    GrooveSlotAction grooveSlotAction = GrooveSlotAction::LoadEditor;
     std::uint8_t selectedGrooveSlot = 0U;
     std::uint8_t grooveCursor = 0U;
     /** 0 = FIT; otherwise visible window size in four-step increments. */
