@@ -28,8 +28,8 @@ The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on
 Current 1.1 development working baseline after Groove Engine Stage 2 and the source-readability/maintainability refactor:
 
 ```text
-Executable lines:   8615/8907 (96.72%)
-Functions:            766/778  (98.46%)
+Executable lines:   8625/8917 (96.73%)
+Functions:            767/779  (98.46%)
 Decision branches:   5256/5729 (91.74%)
 Compiler branches:   5257/6679 (78.71%, informational only)
 ```

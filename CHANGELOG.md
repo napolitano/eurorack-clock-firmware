@@ -22,6 +22,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Groove Engine Stage 2 - Custom editor
 
+- Render Custom Groove diamond markers as opaque overlays: clear the diamond footprint before drawing its outline/fill so beat and step guides cannot bleed through the marker; keep the grid continuous immediately above and below it.
+- Add framebuffer regression coverage that verifies grid continuity outside an unselected marker and explicit occlusion inside it.
 - Add the standard `GROOVE EDITOR` screen header and separator used by the other dedicated editors; move beat labels and the editable grid below the header while preserving the bottom status row.
 - Add framebuffer regressions for the editor header, separator, reserved header area and grid/status layout.
 - Add a graphical 128x64 Custom Groove editor with solid beat guides, dotted step guides, diamond timing markers, selected-marker fill, beat labels and bounded 4-step zoom.
@@ -50,7 +52,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 ### Validation
 
 - Native inventory: **488 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **33 / 186**, Settings **88 / 261**, complete host firmware **37** cases across all tested display variants.
-- Repository coverage: **8615/8907 executable lines (96.72%) / 766/778 functions (98.46%) / 5256/5729 source decision branches (91.74%)**; the 95/95/90 gates remain unchanged.
+- Repository coverage: **8625/8917 executable lines (96.73%) / 767/779 functions (98.46%) / 5256/5729 source decision branches (91.74%)**; the 95/95/90 gates remain unchanged.
 - Full ASan/UBSan Native/firmware matrix passes, including legacy I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin variants.
 
 ### Changed

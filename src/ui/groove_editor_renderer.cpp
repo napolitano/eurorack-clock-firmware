@@ -51,8 +51,21 @@ std::int16_t nominalX(const std::uint8_t localStep, const std::uint8_t visible) 
         kLeft + (static_cast<int>(kRight - kLeft) * localStep) / (visible - 1U));
 }
 
+void clearDiamondBackground(hal::OledDisplay& display, const std::int16_t x) {
+    // Markers sit on top of the timing grid. Clear the complete diamond footprint
+    // first so nominal grid lines cannot visually bleed through an outline marker.
+    display.setPixel(x, kMarkerY - 3, hal::PixelColor::Black);
+    display.drawHorizontalLine(x - 1, kMarkerY - 2, 3, hal::PixelColor::Black);
+    display.drawHorizontalLine(x - 2, kMarkerY - 1, 5, hal::PixelColor::Black);
+    display.drawHorizontalLine(x - 3, kMarkerY, 7, hal::PixelColor::Black);
+    display.drawHorizontalLine(x - 2, kMarkerY + 1, 5, hal::PixelColor::Black);
+    display.drawHorizontalLine(x - 1, kMarkerY + 2, 3, hal::PixelColor::Black);
+    display.setPixel(x, kMarkerY + 3, hal::PixelColor::Black);
+}
+
 void drawDiamond(hal::OledDisplay& display, const std::int16_t x, const bool selected) {
     constexpr std::int16_t r = 3;
+    clearDiamondBackground(display, x);
     display.drawLine(x, kMarkerY - r, x + r, kMarkerY);
     display.drawLine(x + r, kMarkerY, x, kMarkerY + r);
     display.drawLine(x, kMarkerY + r, x - r, kMarkerY);

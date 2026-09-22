@@ -3262,6 +3262,15 @@ void testRenderEveryScreenAndState() {
     CHECK(groovePixelSet(4, 20));
     CHECK(grooveStatusPixels > 0U);
 
+    // An unselected marker must occlude the nominal grid line inside the
+    // diamond while leaving the line intact immediately outside its footprint.
+    // Step 1 is unselected and remains at its nominal x=4 position in FIT mode.
+    CHECK(groovePixelSet(4, 31));
+    CHECK(groovePixelSet(4, 32)); // diamond outline
+    CHECK(!groovePixelSet(4, 35)); // grid is hidden inside the marker
+    CHECK(groovePixelSet(4, 38)); // diamond outline
+    CHECK(groovePixelSet(4, 39));
+
     nav.grooveZoomSteps = 4U;
     renderer.render(state, nav, engine.snapshot());
     CHECK(display.framebufferForTest() != grooveFitFrame);
