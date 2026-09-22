@@ -1,6 +1,6 @@
 /**
  * @file mode_functions.h
- * @brief Mapping between the six graphical mode actions and persistent clock state.
+ * @brief Mapping between graphical mode-selector actions and persistent clock state.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -16,19 +16,23 @@
 
 namespace clockfw::ui {
 
-/** Stable display order used by the 2x3 mode palette. */
-inline constexpr std::array<ModeFunction, 6U> kModeFunctions{{
+/** Stable left-to-right order used by the horizontal mode carousel.
+ *
+ * The array intentionally uses class template argument deduction so adding a
+ * future mode does not require a second, easy-to-forget item-count update.
+ */
+inline constexpr std::array kModeFunctions{
     ModeFunction::UnifiedClock,
     ModeFunction::DividerBank,
     ModeFunction::Clock,
     ModeFunction::Euclid,
     ModeFunction::Sequencer,
-    ModeFunction::Off}};
+    ModeFunction::Off};
 
-/** @brief Returns the currently active palette entry for one selected channel/context. */
+/** @brief Returns the currently active carousel entry for one selected channel/context. */
 std::uint8_t modeFunctionIndexForState(const ClockState& state, std::uint8_t selectedChannel);
 
-/** @brief Applies one palette action to the persistent state model. */
+/** @brief Applies one mode-selector action to the persistent state model. */
 void applyModeFunction(
     ClockState& state,
     std::uint8_t selectedChannel,

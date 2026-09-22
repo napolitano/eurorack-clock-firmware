@@ -215,7 +215,7 @@ The UI is split by responsibility:
 - `menu_model` — settings rows and localized values;
 - `UiRenderer` — top-level dispatch;
 - `PerformanceRenderer` — performance screen;
-- `ChannelNavigationRenderer` — channel overview, mode palette, sequencer editor;
+- `ChannelNavigationRenderer` — channel overview, horizontal mode carousel, sequencer editor;
 - `SettingsRenderer` — settings, preset lists, confirmation/name entry;
 - `ScreensaverRenderer` — STOP-mode display protection/animation.
 

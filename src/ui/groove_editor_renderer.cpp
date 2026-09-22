@@ -52,15 +52,17 @@ std::int16_t nominalX(const std::uint8_t localStep, const std::uint8_t visible) 
 }
 
 void clearDiamondBackground(hal::OledDisplay& display, const std::int16_t x) {
-    // Markers sit on top of the timing grid. Clear the complete diamond footprint
-    // first so nominal grid lines cannot visually bleed through an outline marker.
-    display.setPixel(x, kMarkerY - 3, hal::PixelColor::Black);
-    display.drawHorizontalLine(x - 1, kMarkerY - 2, 3, hal::PixelColor::Black);
-    display.drawHorizontalLine(x - 2, kMarkerY - 1, 5, hal::PixelColor::Black);
-    display.drawHorizontalLine(x - 3, kMarkerY, 7, hal::PixelColor::Black);
-    display.drawHorizontalLine(x - 2, kMarkerY + 1, 5, hal::PixelColor::Black);
-    display.drawHorizontalLine(x - 1, kMarkerY + 2, 3, hal::PixelColor::Black);
-    display.setPixel(x, kMarkerY + 3, hal::PixelColor::Black);
+    // A one-pixel black quiet zone separates every marker from the timing grid.
+    // Clearing only the geometric diamond interior still leaves guide pixels
+    // visually touching its diagonal edges, which reads as a line through the
+    // marker on a 1-bit OLED. The 9x9 backdrop makes the marker unambiguous.
+    constexpr std::int16_t kBackdropRadius = 4;
+    display.fillRectangle(
+        static_cast<std::int16_t>(x - kBackdropRadius),
+        static_cast<std::int16_t>(kMarkerY - kBackdropRadius),
+        static_cast<std::int16_t>(kBackdropRadius * 2 + 1),
+        static_cast<std::int16_t>(kBackdropRadius * 2 + 1),
+        hal::PixelColor::Black);
 }
 
 void drawDiamond(hal::OledDisplay& display, const std::int16_t x, const bool selected) {

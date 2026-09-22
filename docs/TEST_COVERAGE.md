@@ -25,13 +25,13 @@ Compiler branches:  4288/5562 (77.09%, informational only)
 
 The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on the exact tagged source before publishing. Local pre-release verification covers the changed host renderer regression, the 96-case external-SYNC suite, release/manual tooling, documentation policies, and both headless simulator tests; the authoritative 1.0.1 repository-wide percentages are therefore produced by the release CI rather than copied forward from 1.0.0.
 
-Current 1.1 development working baseline after Groove Engine Stage 2 and the source-readability/maintainability refactor:
+Current 1.1 development working baseline after Groove Engine Stage 2, the readability sprint, and the horizontal Channel Mode carousel:
 
 ```text
-Executable lines:   8625/8917 (96.73%)
-Functions:            767/779  (98.46%)
-Decision branches:   5256/5729 (91.74%)
-Compiler branches:   5257/6679 (78.71%, informational only)
+Executable lines:   8631/8924 (96.72%)
+Functions:            768/780  (98.46%)
+Decision branches:   5258/5732 (91.73%)
+Compiler branches:   5259/6684 (78.68%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.
@@ -70,7 +70,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 88-case Settings suite also locks down min/max coupling, enum boundaries, SYNC smoothing labels and cross-setting invariants
 - tap tempo and all factory templates
 - all menu pages, labels, compact formatters and localization fallback
-- performance, pictographic 2×4 channel overview, six-function 2×3 mode palette, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Blox/Matrix/Cube Cover/Fractal/Orbit/Make Music/Labyrinth/Starfield/Fireworks screensaver effects, preset overwrite/name-band, templates and sequencer render paths
+- performance, pictographic 2×4 channel overview, horizontal centered mode carousel, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Blox/Matrix/Cube Cover/Fractal/Orbit/Make Music/Labyrinth/Starfield/Fireworks screensaver effects, preset overwrite/name-band, templates and sequencer render paths
 - I2C auto-probe success/fallback/failure, fixed-address mode, deferred 24-byte-chunk refresh, NACK retry/latest-frame-wins behavior, SPI transport and optional reset-pin path
 - framebuffer text/primitives, all font roles, pixel clipping, dirty-page updates, unchanged-frame suppression and black/white drawing
 - TIM4 hardware quadrature accumulation on PB6/PB7, detent-phase resynchronization, first-detent/reversal recovery, counter wraparound, fast-turn backlog handling, and button debounce edges
@@ -88,7 +88,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - nominal LM393-front-end design-model checks for the documented resistor/hysteresis network, including end-to-end modeled 2.5 V, 3 V and 4 V clocks at low/nominal/maximum supported tempo; this remains explicitly separate from physical comparator HIL
 - ISR-safe external reset on either physical input with configurable TRIGGER/GATE semantics, startup-HIGH handling, queue saturation, deterministic RESET-before-SYNC priority, and role removal/reassignment behavior
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release
-- channel overview selection, TAP-turn six-function palette, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, and preset overwrite/save/load/name-band workflow
+- channel overview selection, TAP-turn horizontal mode carousel, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, and preset overwrite/save/load/name-band workflow
 - 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht PLAY/PAUSE/STOP, guarded NO/YES Beatknecht exit confirmation, launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, first-launch-gated HI-SCORES/CLEAR behavior, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-source-muted life-loss safety
 
 ## Decision branches versus compiler branches

@@ -67,15 +67,13 @@ enum class SettingsPage : std::uint8_t {
     DividerBank
 };
 
-/** @brief One action exposed by the six-tile graphical mode palette. */
+/** @brief One action exposed by the horizontally scrolling mode selector. */
 enum class ModeFunction : std::uint8_t {
     Off,
     Clock,
     Euclid,
     Sequencer,
     UnifiedClock,
-    Groove,
-    GrooveEditorMenu,
     DividerBank
 };
 

@@ -2208,7 +2208,7 @@ void testOperatingModesPersistenceAndGlobalEditors() {
         }
     }
 
-    // The graphical six-function palette maps both directions without hidden state.
+    // The graphical mode carousel maps both directions without hidden state.
     state = makeFactoryState();
     CHECK_EQ(state.operatingMode, OperatingMode::UnifiedClock);
     CHECK_EQ(ui::modeFunctionIndexForState(state, 2U), 0U);
@@ -3184,10 +3184,39 @@ void testRenderEveryScreenAndState() {
     state.operatingMode = OperatingMode::UnifiedClock;
     renderer.render(state, nav, engine.snapshot());
     state.operatingMode = OperatingMode::Independent;
-    nav.screen=ui::Screen::ModeSelect; for(std::uint8_t c=0;c<6U;++c){nav.cursor=c;renderer.render(state,nav,engine.snapshot());}
+    nav.screen = ui::Screen::ModeSelect;
+    for (std::size_t modeIndex = 0U; modeIndex < ui::kModeFunctions.size(); ++modeIndex) {
+        nav.cursor = static_cast<std::uint8_t>(modeIndex);
+        renderer.render(state, nav, engine.snapshot());
+    }
+
+    // The carousel keeps the active item centered, inverts only that center
+    // slot, and leaves its neighbors unframed on the black background.
+    nav.cursor = ui::modeFunctionIndexForState(state, 0U);
+    renderer.render(state, nav, engine.snapshot());
+    const auto modeCarouselClockFrame = display.framebufferForTest();
+    const auto modePixelSet = [&](const auto& frame, const int x, const int y) {
+        const std::size_t index = static_cast<std::size_t>(x) +
+            static_cast<std::size_t>(y / 8) * static_cast<std::size_t>(hal::OledDisplay::kWidth);
+        const std::uint8_t mask = static_cast<std::uint8_t>(1U << (y & 7));
+        return (frame[index] & mask) != 0U;
+    };
+    CHECK(modePixelSet(modeCarouselClockFrame, 43, 14));
+    CHECK(modePixelSet(modeCarouselClockFrame, 84, 53));
+    CHECK(!modePixelSet(modeCarouselClockFrame, 42, 14));
+    CHECK(!modePixelSet(modeCarouselClockFrame, 85, 14));
+
+    nav.cursor = static_cast<std::uint8_t>(
+        (nav.cursor + 1U) % ui::kModeFunctions.size());
+    renderer.render(state, nav, engine.snapshot());
+    const auto modeCarouselNextFrame = display.framebufferForTest();
+    CHECK(modeCarouselNextFrame != modeCarouselClockFrame);
+    CHECK(modePixelSet(modeCarouselNextFrame, 43, 14));
+    CHECK(modePixelSet(modeCarouselNextFrame, 84, 53));
+
     nav.screen=ui::Screen::ModeChangeConfirm;
-    for (std::uint8_t c=0U; c<6U; ++c) {
-        nav.pendingModeFunction = static_cast<ui::ModeFunction>(c);
+    for (const ui::ModeFunction modeFunction : ui::kModeFunctions) {
+        nav.pendingModeFunction = modeFunction;
         for (std::uint8_t choice=0U; choice<2U; ++choice) {
             nav.cursor=choice;
             renderer.render(state,nav,engine.snapshot());
@@ -3262,14 +3291,16 @@ void testRenderEveryScreenAndState() {
     CHECK(groovePixelSet(4, 20));
     CHECK(grooveStatusPixels > 0U);
 
-    // An unselected marker must occlude the nominal grid line inside the
-    // diamond while leaving the line intact immediately outside its footprint.
-    // Step 1 is unselected and remains at its nominal x=4 position in FIT mode.
-    CHECK(groovePixelSet(4, 31));
-    CHECK(groovePixelSet(4, 32)); // diamond outline
-    CHECK(!groovePixelSet(4, 35)); // grid is hidden inside the marker
-    CHECK(groovePixelSet(4, 38)); // diamond outline
-    CHECK(groovePixelSet(4, 39));
+    // An unselected marker gets a one-pixel quiet zone around the diamond.
+    // This prevents a solid beat guide from visually touching the diagonal
+    // edges and reading as a line through the hollow marker.
+    CHECK(groovePixelSet(4, 30));  // grid above the backdrop
+    CHECK(!groovePixelSet(4, 31)); // quiet-zone margin
+    CHECK(groovePixelSet(4, 32));  // diamond outline
+    CHECK(!groovePixelSet(4, 35)); // no grid inside the hollow diamond
+    CHECK(groovePixelSet(4, 38));  // diamond outline
+    CHECK(!groovePixelSet(4, 39)); // quiet-zone margin
+    CHECK(groovePixelSet(4, 40));  // grid resumes below the backdrop
 
     nav.grooveZoomSteps = 4U;
     renderer.render(state, nav, engine.snapshot());
@@ -4219,7 +4250,7 @@ void testUiControllerFlows() {
     controllerReset(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
 
-    // TAP + Turn inside the overview opens the six-function mode palette.
+    // TAP + Turn inside the overview opens the horizontal mode carousel.
     // Releasing TAP now requests a mode change; changing mode always requires
     // an explicit YES before the new configuration is applied.
     controllerShortPress(controller, now);

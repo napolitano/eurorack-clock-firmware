@@ -269,13 +269,13 @@ private:
 
         constexpr std::array<const char*, 6U> kModeNames{{
             "one-clock", "divider-bank", "clock", "euclid", "sequencer", "off"}};
-        for (std::uint8_t mode = 0U; mode < 6U; ++mode) {
+        for (std::size_t mode = 0U; mode < kModeNames.size(); ++mode) {
             reset();
             navigation_.screen = ui::Screen::ModeSelect;
-            navigation_.cursor = mode;
+            navigation_.cursor = static_cast<std::uint8_t>(mode);
             renderCurrent(
                 (std::string("mode-select-") + kModeNames[mode]).c_str(),
-                "Six-function mode palette");
+                "Horizontal mode carousel");
         }
 
         reset();

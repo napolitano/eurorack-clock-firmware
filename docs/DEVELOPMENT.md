@@ -182,7 +182,7 @@ CI requires:
 - function coverage >= **95%**
 - non-throw decision-branch coverage >= **90%**
 
-Current 1.1 working baseline after the readability/maintainability refactor: **8625/8917 lines (96.73%)**, **767/779 functions (98.46%)**, and **5256/5729 decision branches (91.74%)**. Raw compiler branches are **5257/6679 (78.71%)** and remain informational.
+Current 1.1 working baseline after the readability sprint, Groove marker quiet-zone fix, and horizontal Channel Mode carousel: **8631/8924 lines (96.72%)**, **768/780 functions (98.46%)**, and **5258/5732 decision branches (91.73%)**. Raw compiler branches are **5259/6684 (78.68%)** and remain informational.
 - AddressSanitizer = **clean**
 - UndefinedBehaviorSanitizer = **clean**
 

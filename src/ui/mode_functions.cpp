@@ -1,6 +1,6 @@
 /**
  * @file mode_functions.cpp
- * @brief Mapping implementation for the graphical six-function mode palette.
+ * @brief Mapping implementation for the graphical horizontal mode selector.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -13,7 +13,7 @@
 namespace clockfw::ui {
 namespace {
 
-/** Maps a per-channel generator mode onto its palette action. */
+/** Maps a per-channel generator mode onto its selector action. */
 ModeFunction channelModeFunction(const ChannelMode mode) {
     switch (mode) {
         case ChannelMode::Off: return ModeFunction::Off;
@@ -43,7 +43,10 @@ std::uint8_t modeFunctionIndexForState(
             return static_cast<std::uint8_t>(index);
         }
     }
-    return 2U;
+
+    // kModeFunctions is the single selector catalog. Falling back to its first
+    // entry avoids coupling this mapper to a particular hard-coded index.
+    return 0U;
 }
 
 void applyModeFunction(

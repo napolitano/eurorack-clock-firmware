@@ -64,7 +64,7 @@ Use this file for the user-visible factory state:
 
 - master BPM, user MIN/MAX BPM limits, and meter
 - initial transport and clock source
-- factory operating mode (`ONE CLOCK`) and channel-mode palette order
+- factory operating mode (`ONE CLOCK`) and channel-mode carousel order
 - default channel mode/rate
 - swing, probability, gate length, phase, reset mode, mute, and One Clock Humanize default
 - CLOCK meter
@@ -75,7 +75,7 @@ Use this file for the user-visible factory state:
 
 No factory-setting value should be duplicated in renderer or engine code.
 
-Factory mode is **ONE CLOCK**. The UI palette order is **ONE CLOCK, DIVIDER, CLOCK, EUCLID, SEQUENCER, OFF**. Gate-length choices are `1/2/5/10/20/50/100 ms`; the factory value is `10 ms`. External clock source defaults to `AUTO`; SYNC period smoothing defaults to `LOW` (75% new period / 25% previous), with `OFF`, `MEDIUM`, and `FULL` also available. The microsecond `FILTER` remains a separate glitch-rejection setting.
+Factory mode is **ONE CLOCK**. The UI carousel order is **ONE CLOCK, DIVIDER, CLOCK, EUCLID, SEQUENCER, OFF**. Gate-length choices are `1/2/5/10/20/50/100 ms`; the factory value is `10 ms`. External clock source defaults to `AUTO`; SYNC period smoothing defaults to `LOW` (75% new period / 25% previous), with `OFF`, `MEDIUM`, and `FULL` also available. The microsecond `FILTER` remains a separate glitch-rejection setting.
 
 ## Gate-output electrical contract
 

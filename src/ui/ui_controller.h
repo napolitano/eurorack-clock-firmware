@@ -131,7 +131,7 @@ private:
     /** @brief Opens a text settings page at a specific row and resets edit/scroll state. */
     void openSettingsPage(SettingsPage page, std::uint8_t initialCursor = 0U);
 
-    /** @brief Opens the graphical six-function mode palette and remembers its return screen. */
+    /** @brief Opens the graphical horizontal mode selector and remembers its return screen. */
     void openModeSelect(Screen returnScreen);
 
     /** @brief Requests the highlighted mode function, asking for confirmation when it changes state. */

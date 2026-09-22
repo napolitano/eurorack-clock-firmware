@@ -11,35 +11,9 @@
 #include <cstdio>
 
 #include "ui/text_formatter.h"
-#include "ui/mode_functions.h"
 #include "ui_text.h"
 
 namespace clockfw::ui {
-namespace {
-
-text::TextId modeFunctionTitleId(const ModeFunction modeFunction) {
-    switch (modeFunction) {
-        case ModeFunction::Off: return text::TextId::ModeOffLong;
-        case ModeFunction::Clock: return text::TextId::ModeClockLong;
-        case ModeFunction::Euclid: return text::TextId::ModeEuclidLong;
-        case ModeFunction::Sequencer: return text::TextId::ModeSequencerLong;
-        case ModeFunction::UnifiedClock: return text::TextId::ModeUnifiedLong;
-        case ModeFunction::DividerBank: return text::TextId::ModeDividerLong;
-        default: return text::TextId::ModeClockLong;
-    }
-}
-
-const char* modeFunctionHint(const ModeFunction modeFunction) {
-    if (modeFunction == ModeFunction::UnifiedClock) {
-        return text::get(text::TextId::UnifiedModeHint);
-    }
-    if (modeFunction == ModeFunction::DividerBank) {
-        return text::get(text::TextId::DividerModeHint);
-    }
-    return "";
-}
-
-}  // namespace
 
 ChannelNavigationRenderer::ChannelNavigationRenderer(hal::OledDisplay& display)
     : display_(display), patternStripRenderer_(display) {}
@@ -110,105 +84,6 @@ void ChannelNavigationRenderer::renderChannelQuickSelect(
     display_.present();
 }
 
-void ChannelNavigationRenderer::renderModeSelect(const NavigationState& navigation) {
-    display_.clear();
-    display_.setFont(hal::DisplayFont::Small);
-    display_.setTextColor(hal::PixelColor::White);
-
-    const std::uint8_t modeIndex = navigation.cursor < kModeFunctions.size()
-        ? navigation.cursor
-        : 2U;
-    const ModeFunction modeFunction = kModeFunctions[modeIndex];
-    const char* const title = text::get(modeFunctionTitleId(modeFunction));
-    const hal::TextBounds titleBounds = display_.measureText(title, 0, 0);
-    display_.drawText(
-        static_cast<std::int16_t>(
-            (static_cast<int>(hal::OledDisplay::kWidth) - static_cast<int>(titleBounds.width)) / 2),
-        0,
-        title);
-
-    const char* const hint = modeFunctionHint(modeFunction);
-    if (hint[0] != '\0') {
-        const hal::TextBounds hintBounds = display_.measureText(hint, 0, 0);
-        display_.drawText(
-            static_cast<std::int16_t>(
-                (static_cast<int>(hal::OledDisplay::kWidth) - static_cast<int>(hintBounds.width)) / 2),
-            8,
-            hint);
-    }
-
-    constexpr std::int16_t kGridLeft = 2;
-    constexpr std::int16_t kGridTop = 18;
-    constexpr std::int16_t kTileWidth = 40;
-    constexpr std::int16_t kTileHeight = 20;
-    constexpr std::int16_t kColumnPitch = 42;
-    constexpr std::int16_t kRowPitch = 22;
-
-    for (std::uint8_t tileIndex = 0U; tileIndex < 6U; ++tileIndex) {
-        const std::int16_t column = static_cast<std::int16_t>(tileIndex % 3U);
-        const std::int16_t row = static_cast<std::int16_t>(tileIndex / 3U);
-        const std::int16_t tileX = static_cast<std::int16_t>(kGridLeft + column * kColumnPitch);
-        const std::int16_t tileY = static_cast<std::int16_t>(kGridTop + row * kRowPitch);
-        const bool selected = navigation.cursor == tileIndex;
-        const hal::PixelColor foreground = selected
-            ? hal::PixelColor::Black
-            : hal::PixelColor::White;
-
-        if (selected) {
-            display_.fillRectangle(tileX, tileY, kTileWidth, kTileHeight);
-        } else {
-            display_.drawRectangle(tileX, tileY, kTileWidth, kTileHeight);
-        }
-
-        drawModeFunctionIcon(kModeFunctions[tileIndex], tileX, static_cast<std::int16_t>(tileY - 1), foreground);
-    }
-
-    display_.present();
-}
-
-void ChannelNavigationRenderer::renderModeChangeConfirm(const NavigationState& navigation) {
-    display_.clear();
-    display_.setFont(hal::DisplayFont::Small);
-    display_.setTextColor(hal::PixelColor::White);
-
-    const char* const title = text::get(text::TextId::ChangeMode);
-    const hal::TextBounds titleBounds = display_.measureText(title, 0, 0);
-    display_.drawText(
-        static_cast<std::int16_t>((hal::OledDisplay::kWidth - titleBounds.width) / 2),
-        4,
-        title);
-
-    const char* const modeName = text::get(
-        modeFunctionTitleId(navigation.pendingModeFunction));
-    const hal::TextBounds modeBounds = display_.measureText(modeName, 0, 0);
-    display_.drawText(
-        static_cast<std::int16_t>((hal::OledDisplay::kWidth - modeBounds.width) / 2),
-        21,
-        modeName);
-
-    const char* const choices[2] = {
-        text::get(text::TextId::No),
-        text::get(text::TextId::Yes)};
-    constexpr std::int16_t kChoiceCenterX[2] = {31, 96};
-    for (std::uint8_t index = 0U; index < 2U; ++index) {
-        const hal::TextBounds bounds = display_.measureText(choices[index], 0, 0);
-        const std::int16_t boxWidth = static_cast<std::int16_t>(bounds.width + 10U);
-        const std::int16_t boxX = static_cast<std::int16_t>(kChoiceCenterX[index] - boxWidth / 2);
-        if (navigation.cursor == index) {
-            display_.fillRectangle(boxX, 40, boxWidth, 14);
-            display_.setTextColor(hal::PixelColor::Black);
-        } else {
-            display_.drawRectangle(boxX, 40, boxWidth, 14);
-        }
-        display_.drawText(
-            static_cast<std::int16_t>(kChoiceCenterX[index] - bounds.width / 2),
-            43,
-            choices[index]);
-        display_.setTextColor(hal::PixelColor::White);
-    }
-    display_.present();
-}
-
 void ChannelNavigationRenderer::renderGlobalModeOverview(const ClockState& state) {
     const bool unified = state.operatingMode == OperatingMode::UnifiedClock;
     const char* const heading = text::get(text::TextId::GlobalMode);
@@ -233,14 +108,6 @@ void ChannelNavigationRenderer::renderGlobalModeOverview(const ClockState& state
         49,
         modeName);
     display_.present();
-}
-
-void ChannelNavigationRenderer::drawOffModeIcon(
-    const std::int16_t x,
-    const std::int16_t y,
-    const hal::PixelColor color) {
-    display_.drawRectangle(x, y, 12, 12, color);
-    display_.drawLine(x + 2, y + 9, x + 9, y + 2, color);
 }
 
 void ChannelNavigationRenderer::renderSequencerEditor(
@@ -300,83 +167,6 @@ void ChannelNavigationRenderer::renderSequencerEditor(
     display_.present();
 }
 
-void ChannelNavigationRenderer::drawClockModeIcon(
-    const std::int16_t x,
-    const std::int16_t y,
-    const hal::PixelColor color) {
-    display_.drawLine(x, y + 8, x, y + 3, color);
-    display_.drawLine(x, y + 3, x + 7, y + 3, color);
-    display_.drawLine(x + 7, y + 3, x + 7, y + 8, color);
-    display_.drawLine(x + 7, y + 8, x + 14, y + 8, color);
-    display_.drawLine(x + 14, y + 8, x + 14, y + 3, color);
-    display_.drawLine(x + 14, y + 3, x + 21, y + 3, color);
-}
-
-void ChannelNavigationRenderer::drawEuclidModeIcon(
-    const std::int16_t centerX,
-    const std::int16_t centerY,
-    const hal::PixelColor color) {
-    constexpr std::int8_t kXOffsets[8] = {0, 5, 7, 5, 0, -5, -7, -5};
-    constexpr std::int8_t kYOffsets[8] = {-7, -5, 0, 5, 7, 5, 0, -5};
-    constexpr bool kFilledPoints[8] = {true, false, false, true, false, true, false, false};
-
-    for (std::uint8_t pointIndex = 0U; pointIndex < 8U; ++pointIndex) {
-        const std::int16_t pointX = centerX + kXOffsets[pointIndex];
-        const std::int16_t pointY = centerY + kYOffsets[pointIndex];
-        if (kFilledPoints[pointIndex]) {
-            display_.fillRectangle(pointX - 1, pointY - 1, 3, 3, color);
-        } else {
-            display_.fillRectangle(pointX, pointY, 1, 1, color);
-        }
-    }
-}
-
-void ChannelNavigationRenderer::drawSequencerModeIcon(
-    const std::int16_t x,
-    const std::int16_t y,
-    const hal::PixelColor color) {
-    for (std::uint8_t step = 0U; step < 6U; ++step) {
-        const std::int16_t stepX = static_cast<std::int16_t>(x + static_cast<int>(step) * 5);
-        if (step == 0U || step == 2U || step == 5U) {
-            display_.fillRectangle(stepX, y, 4, 7, color);
-        } else {
-            display_.drawRectangle(stepX, y + 3, 4, 4, color);
-        }
-    }
-}
-
-void ChannelNavigationRenderer::drawUnifiedModeIcon(
-    const std::int16_t x,
-    const std::int16_t y,
-    const hal::PixelColor color) {
-    display_.drawVerticalLine(x, y + 3, 8, color);
-    display_.drawHorizontalLine(x, y + 6, 8, color);
-    display_.drawVerticalLine(x + 8, y + 1, 12, color);
-    display_.drawHorizontalLine(x + 8, y + 1, 10, color);
-    display_.drawHorizontalLine(x + 8, y + 6, 10, color);
-    display_.drawHorizontalLine(x + 8, y + 11, 10, color);
-    display_.fillRectangle(x + 18, y, 3, 3, color);
-    display_.fillRectangle(x + 18, y + 5, 3, 3, color);
-    display_.fillRectangle(x + 18, y + 10, 3, 3, color);
-}
-
-void ChannelNavigationRenderer::drawDividerModeIcon(
-    const std::int16_t x,
-    const std::int16_t y,
-    const hal::PixelColor color) {
-    display_.drawHorizontalLine(x, y, 24, color);
-    for (std::int16_t tick = 0; tick <= 24; tick += 6) {
-        display_.drawVerticalLine(static_cast<std::int16_t>(x + tick), y, 3, color);
-    }
-    display_.drawHorizontalLine(x, y + 6, 24, color);
-    for (std::int16_t tick = 0; tick <= 24; tick += 12) {
-        display_.drawVerticalLine(static_cast<std::int16_t>(x + tick), y + 6, 3, color);
-    }
-    display_.drawHorizontalLine(x, y + 12, 24, color);
-    display_.drawVerticalLine(x, y + 12, 3, color);
-    display_.drawVerticalLine(x + 24, y + 12, 3, color);
-}
-
 void ChannelNavigationRenderer::drawOverviewModeIcon(
     const ClockState& state,
     const std::uint8_t channelIndex,
@@ -417,32 +207,5 @@ void ChannelNavigationRenderer::drawOverviewModeIcon(
     }
 }
 
-void ChannelNavigationRenderer::drawModeFunctionIcon(
-    const ModeFunction modeFunction,
-    const std::int16_t x,
-    const std::int16_t y,
-    const hal::PixelColor color) {
-    switch (modeFunction) {
-        case ModeFunction::Off:
-            drawOffModeIcon(x + 14, y + 5, color);
-            break;
-        case ModeFunction::Clock:
-            drawClockModeIcon(x + 9, y + 5, color);
-            break;
-        case ModeFunction::Euclid:
-            drawEuclidModeIcon(x + 20, y + 11, color);
-            break;
-        case ModeFunction::Sequencer:
-            drawSequencerModeIcon(x + 5, y + 8, color);
-            break;
-        case ModeFunction::UnifiedClock:
-            drawUnifiedModeIcon(x + 9, y + 4, color);
-            break;
-        case ModeFunction::DividerBank:
-        default:
-            drawDividerModeIcon(x + 8, y + 4, color);
-            break;
-    }
-}
 
 }  // namespace clockfw::ui

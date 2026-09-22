@@ -43,8 +43,8 @@ public:
         const NavigationState& navigation);
 
     /**
-     * @brief Draws the six-function 2x3 graphical mode palette.
-     * @param navigation Current selected channel and mode cursor.
+     * @brief Draws the horizontally scrolling mode carousel.
+     * @param navigation Current selected channel and centered mode cursor.
      */
     void renderModeSelect(const NavigationState& navigation);
 
@@ -92,7 +92,7 @@ private:
         std::int16_t y,
         hal::PixelColor color);
 
-    /** @brief Draws one large palette icon for the supplied mode function. */
+    /** @brief Draws one large mode-selector icon for the supplied mode function. */
     void drawModeFunctionIcon(
         ModeFunction modeFunction,
         std::int16_t x,

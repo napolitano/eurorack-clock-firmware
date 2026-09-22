@@ -36,6 +36,7 @@ enum class TextId : std::uint16_t {
     ModeDividerLong,
     ModeUnifiedShort,
     ModeDividerShort,
+    ModeSequencerBand,
     SourceInternal,
     SourceExternal,
     SourceAuto,
@@ -297,7 +298,7 @@ using TextCatalog = std::array<const char*, kTextCount>;
 /** English (United States) catalog shipped by the prerelease firmware. */
 inline constexpr TextCatalog kEnglishUs{{
     "SSL CLOCK", "F401CC",
-    "O", "C", "E", "S", "OFF", "CLOCK", "EUCLID", "SEQUENCER", "ONE CLOCK", "DIVIDER", "ONE", "DIV",
+    "O", "C", "E", "S", "OFF", "CLOCK", "EUCLID", "SEQUENCER", "ONE CLOCK", "DIVIDER", "ONE", "DIV", "SEQ",
     "INT", "EXT", "AUTO", "PLAY", "PAUSE", "STOP",
     "RISE", "FALL", "FREE", "LOW", "MEDIUM", "FULL", "ON", "OFF", "GLOBAL",
     "SETTINGS", "MASTER", "SYNC", "TEMPLATES", "INFO", "RESET", "PHASE RESET", "FACTORY RESET", "FACTORY RESET?", "ERASE ALL DATA",

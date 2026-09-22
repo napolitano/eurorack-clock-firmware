@@ -10,6 +10,12 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Changed
+
+- Replaced the fixed 2×3 Channel Mode palette with a horizontally scrolling, center-anchored mode carousel. Only the selected mode is inverted; neighboring pictograms remain unframed and carry compact labels below them. The renderer now derives its neighbors from the mode catalog so future modes can extend the same UI without changing the layout.
+- Refined Custom Groove marker occlusion with a one-pixel black quiet zone around each diamond so timing-grid guides cannot visually read through or touch hollow markers.
+
+
 ### Code quality and readability
 
 - Refactor persistence startup so current/preset schema probing is expressed once and migration order reads explicitly newest-to-oldest instead of repeating low-level byte-read boilerplate.
@@ -52,8 +58,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 ### Validation
 
 - Native inventory: **488 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **33 / 186**, Settings **88 / 261**, complete host firmware **37** cases across all tested display variants.
-- Repository coverage: **8625/8917 executable lines (96.73%) / 767/779 functions (98.46%) / 5256/5729 source decision branches (91.74%)**; the 95/95/90 gates remain unchanged.
-- Full ASan/UBSan Native/firmware matrix passes, including legacy I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin variants.
+- Repository coverage: **8631/8924 executable lines (96.72%) / 768/780 functions (98.46%) / 5258/5732 source decision branches (91.73%)**; the 95/95/90 gates remain unchanged.
+- Full ASan/UBSan Native/firmware matrix passes on the final r23 tree, including all focused suites plus legacy I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin firmware variants.
 
 ### Changed
 
