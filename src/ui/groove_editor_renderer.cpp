@@ -15,9 +15,11 @@
 
 namespace clockfw::ui {
 namespace {
-constexpr std::int16_t kGridTop = 10;
+constexpr std::int16_t kHeaderRuleY = 9;
+constexpr std::int16_t kBeatLabelY = 11;
+constexpr std::int16_t kGridTop = 20;
 constexpr std::int16_t kGridBottom = 48;
-constexpr std::int16_t kMarkerY = 34;
+constexpr std::int16_t kMarkerY = 35;
 constexpr std::int16_t kLeft = 4;
 constexpr std::int16_t kRight = 123;
 
@@ -90,6 +92,9 @@ void GrooveEditorRenderer::renderEditor(const NavigationState& navigation) {
     display_.clear();
     display_.setFont(hal::DisplayFont::Small);
     display_.setTextColor(hal::PixelColor::White);
+    display_.drawText(0, 0, text::get(text::TextId::GrooveEditorTitle));
+    display_.drawHorizontalLine(0, kHeaderRuleY, hal::OledDisplay::kWidth);
+
     const std::uint8_t visible = visibleSteps(navigation);
     const std::uint8_t start = windowStart(navigation, visible);
 
@@ -101,7 +106,10 @@ void GrooveEditorRenderer::renderEditor(const NavigationState& navigation) {
             char beat[4]{};
             std::snprintf(beat, sizeof(beat), "%u", static_cast<unsigned>(step / 4U + 1U));
             const hal::TextBounds bounds = display_.measureText(beat, 0, 0);
-            display_.drawText(static_cast<std::int16_t>(x - static_cast<std::int16_t>(bounds.width / 2U)), 0, beat);
+            display_.drawText(
+                static_cast<std::int16_t>(x - static_cast<std::int16_t>(bounds.width / 2U)),
+                kBeatLabelY,
+                beat);
         } else {
             for (std::int16_t y = kGridTop; y <= kGridBottom; y += 2) {
                 display_.setPixel(x, y);

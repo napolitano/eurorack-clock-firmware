@@ -271,6 +271,7 @@ enum class TextId : std::uint16_t {
     Tap,
     Fill,
     GrooveMenu,
+    GrooveEditorTitle,
     Save,
     Load,
     Zoom,
@@ -328,7 +329,7 @@ inline constexpr TextCatalog kEnglishUs{{
     "ENCODER DIR", "NORMAL", "REVERSED", "ORIENTATION", "0 DEG", "180 DEG",
     "HI-SCORES", "CLEAR HI-SCORES?", "GROOVE", "PRESET", "AMOUNT", "PATTERN", "TIMING", "OUTPUT", "G:",
     "HARDWARE", "INPUT 1", "INPUT 2", "CONFIG", "RUN", "START", "STOP", "RESTART", "TAP", "FILL",
-    "GROOVE MENU", "SAVE", "LOAD", "ZOOM", "GROOVE NAME", "LOAD GROOVE", "SAVE GROOVE", "<EMPTY>", "FIT",
+    "GROOVE MENU", "GROOVE EDITOR", "SAVE", "LOAD", "ZOOM", "GROOVE NAME", "LOAD GROOVE", "SAVE GROOVE", "<EMPTY>", "FIT",
     "OVERWRITE GROOVE?", "DISCARD CHANGES?", "GROOVE STORE N/A", "S%02u %+d  L%u", "Z%u"
 }};
 

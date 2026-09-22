@@ -12,6 +12,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Groove Engine Stage 2 - Custom editor
 
+- Add the standard `GROOVE EDITOR` screen header and separator used by the other dedicated editors; move beat labels and the editable grid below the header while preserving the bottom status row.
+- Add framebuffer regressions for the editor header, separator, reserved header area and grid/status layout.
 - Add a graphical 128x64 Custom Groove editor with solid beat guides, dotted step guides, diamond timing markers, selected-marker fill, beat labels and bounded 4-step zoom.
 - Keep editing non-destructive: live audition is a runtime preview only; BACK can discard the draft and restores the pre-editor Groove assignment without writing Flash.
 - Support fine encoder timing moves, TAP+encoder coarse moves, TAP marker advance, START+encoder quick zoom, and the standard long-press menu for SAVE, LOAD, ZOOM and LENGTH.
@@ -38,7 +40,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 ### Validation
 
 - Native inventory: **488 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **33 / 186**, Settings **88 / 261**, complete host firmware **37** cases across all tested display variants.
-- Repository coverage: **8650/8934 executable lines (96.82%) / 713/724 functions (98.48%) / 5397/5897 source decision branches (91.52%)**; the 95/95/90 gates remain unchanged.
+- Repository coverage: **8653/8937 executable lines (96.82%) / 713/724 functions (98.48%) / 5400/5900 source decision branches (91.53%)**; the 95/95/90 gates remain unchanged.
 - Full ASan/UBSan Native/firmware matrix passes, including legacy I2C, default/SSD1306 SPI, SSD1315 SPI and fixed-I2C/reset-pin variants.
 
 ### Changed

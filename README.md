@@ -285,9 +285,9 @@ python scripts/run_host_tests.py
 Current validated aggregate baseline:
 
 ```text
-Executable lines     8650 / 8934   96.82 %
+Executable lines     8653 / 8937   96.82 %
 Functions              713 / 724    98.48 %
-Decision branches     5397 / 5897   91.52 %
+Decision branches     5400 / 5900   91.53 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).

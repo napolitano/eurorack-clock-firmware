@@ -3229,6 +3229,39 @@ void testRenderEveryScreenAndState() {
     nav.screen = ui::Screen::GrooveEditor;
     renderer.render(state, nav, engine.snapshot());
     const auto grooveFitFrame = display.framebufferForTest();
+
+    // Dedicated editors use the same title row and separator contract. The
+    // Custom Groove grid must begin below that reserved header area and keep
+    // the bottom status row independent from the timing canvas.
+    CHECK(std::strcmp(text::get(text::TextId::GrooveEditorTitle), "GROOVE EDITOR") == 0);
+    const auto groovePixelSet = [&](const int x, const int y) {
+        const std::size_t index = static_cast<std::size_t>(x) +
+            static_cast<std::size_t>(y / 8) * static_cast<std::size_t>(hal::OledDisplay::kWidth);
+        const std::uint8_t mask = static_cast<std::uint8_t>(1U << (y & 7));
+        return (grooveFitFrame[index] & mask) != 0U;
+    };
+    std::size_t grooveTitlePixels = 0U;
+    std::size_t grooveRulePixels = 0U;
+    std::size_t grooveStatusPixels = 0U;
+    for (int y = 0; y < 8; ++y) {
+        for (int x = 0; x < hal::OledDisplay::kWidth; ++x) {
+            if (groovePixelSet(x, y)) ++grooveTitlePixels;
+        }
+    }
+    for (int x = 0; x < hal::OledDisplay::kWidth; ++x) {
+        if (groovePixelSet(x, 9)) ++grooveRulePixels;
+    }
+    for (int y = 55; y < hal::OledDisplay::kHeight; ++y) {
+        for (int x = 0; x < hal::OledDisplay::kWidth; ++x) {
+            if (groovePixelSet(x, y)) ++grooveStatusPixels;
+        }
+    }
+    CHECK(grooveTitlePixels > 20U);
+    CHECK_EQ(grooveRulePixels, static_cast<std::size_t>(hal::OledDisplay::kWidth));
+    CHECK(!groovePixelSet(4, 18));
+    CHECK(groovePixelSet(4, 20));
+    CHECK(grooveStatusPixels > 0U);
+
     nav.grooveZoomSteps = 4U;
     renderer.render(state, nav, engine.snapshot());
     CHECK(display.framebufferForTest() != grooveFitFrame);

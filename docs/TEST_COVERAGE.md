@@ -28,10 +28,10 @@ The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on
 Current 1.1 development working baseline after Groove Engine Stage 2, schema-v12 migration coverage and Custom Groove editor/store regression coverage:
 
 ```text
-Executable lines:   8650/8934 (96.82%)
+Executable lines:   8653/8937 (96.82%)
 Functions:            713/724  (98.48%)
-Decision branches:   5397/5897 (91.52%)
-Compiler branches:   5398/6860 (78.69%, informational only)
+Decision branches:   5400/5900 (91.53%)
+Compiler branches:   5401/6866 (78.66%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.
