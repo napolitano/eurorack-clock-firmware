@@ -535,6 +535,16 @@ void testGrooveRecorderGuardsClampAndClearCaptureState() {
     TEST_ASSERT_FALSE(recorder.capture(core::kQ32One, invalid));
     TEST_ASSERT_TRUE(recorder.capture(core::kQ32One, pattern));
     TEST_ASSERT_TRUE(recorder.view().capturedMask != 0ULL);
+
+    // Extreme early/late taps clamp symmetrically to the signed storage range.
+    recorder.reset(services::GrooveRecordMode::Endless, 0U);
+    recorder.start(2ULL * core::kQ32One, core::kQ32One, pattern.length);
+    const std::uint64_t maximumRepresentableOffset = (core::kQ32One * 15ULL) / 32ULL;
+    TEST_ASSERT_TRUE(recorder.capture(2ULL * core::kQ32One + maximumRepresentableOffset, pattern));
+    TEST_ASSERT_EQUAL(kCustomGrooveMaximumOffset256, pattern.offsets256[0]);
+    TEST_ASSERT_TRUE(recorder.capture(3ULL * core::kQ32One - maximumRepresentableOffset, pattern));
+    TEST_ASSERT_EQUAL(-kCustomGrooveMaximumOffset256, pattern.offsets256[0]);
+
     recorder.clearCaptured();
     TEST_ASSERT_EQUAL_UINT64(0ULL, recorder.view().capturedMask);
 }

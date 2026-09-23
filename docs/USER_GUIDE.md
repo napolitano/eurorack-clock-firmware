@@ -284,6 +284,20 @@ The Settings-root **PHASE RESET** command applies that global musical reset imme
 
 ![Timing reference diagram comparing the ideal grid with Swing and Phase offsets and showing One Clock Humanize as small per-output displacement around the common reference.](manual-source/assets/timing-swing-phase.svg)
 
+### Swing, Groove, and Humanize — what changes?
+
+All three change **when** an output edge occurs, but they solve different musical problems and remain separate controls.
+
+| Timing tool | Character | Repeats how? | Scope | Main controls |
+| --- | --- | --- | --- | --- |
+| **Swing** | Regular long/short feel | Alternates every second subdivision | One Clock globally or per Independent channel | `SWING 0–50%` |
+| **Groove** | Deterministic rhythmic microtiming pattern | Repeats over the selected 1–64-step Groove pattern | One Clock globally or per Independent channel; not Divider Bank | preset/custom pattern, `AMOUNT`, `ROTATE` |
+| **Humanize** | Small deterministic per-output displacement around the shaped grid | Deterministic event/channel sequence rather than a stored Groove pattern | **One Clock only** | `OFF / 250 / 500 / 1000 / 2000 µs` |
+
+Swing is the simplest choice when the desired feel is a regular alternating shuffle. Groove is for a repeatable timing fingerprint that can span more than two events, including early as well as late Custom-Groove steps. Humanize is different again: it slightly separates otherwise coincident One Clock outputs without becoming part of the Groove pattern. The common restart/downbeat remains exact.
+
+The layers can be combined. CLOCK first shapes the nominal event with Swing and Groove, then applies the bounded One Clock Humanize displacement. Safety limits reduce effective displacement when necessary so adjacent events remain ordered and at least one scheduler quantum apart.
+
 ## 16. Grooves and Custom Groove Record
 
 Groove is deterministic microtiming applied to the same master timeline as Clock, Euclid and Sequencer. It is separate from One Clock **Humanize**, which is a bounded deterministic per-output displacement. Divider Bank deliberately remains Groove-free.

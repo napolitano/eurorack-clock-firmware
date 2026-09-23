@@ -36,6 +36,10 @@ Groove is a deterministic timing layer on the existing master timeline, not a se
 
 Custom Groove offsets are signed and represented relative to the nominal step interval. The engine clamps effective event positions so timestamps remain monotonic and a marker cannot overtake the preceding or following event. Gate-off scheduling is still bounded against the resulting effective interval, so deep Groove cannot create a rising-edge/gate-off inversion. Straight timing, classic Swing and Groove therefore share the same scheduler invariants.
 
+### Swing, Groove, and Humanize are distinct layers
+
+Classic Swing is an alternating long/short displacement. Groove is a repeating deterministic per-step pattern with Amount and Rotate, including signed early/late offsets for Custom Grooves. Humanize is a separate One Clock-only deterministic per-output displacement and is never serialized into Groove data. The engine applies Swing + Groove shaping before Humanize, then bounds the effective result so event order and the scheduler-quantum safety margin are preserved.
+
 `GROOVE → RECORD` captures the front-panel TAP button against the live Q32 musical position. The physical button layer preserves the original press timestamp before debounce; after the press is validated, the recorder uses that high-resolution timestamp instead of the later debounced foreground time. TAP is consumed by the recorder and is not sent to Tap Tempo while the Record screen is active.
 
 Recorder Count-In is independent from the global transport Pre-Count. It gates **capture readiness**, not the master transport configuration. `ONE SHOT` stops at the end of the selected 1–64-step pattern; `ENDLESS` wraps and replaces only steps receiving a new TAP. PLAY from the Record screen controls recorder start/stop, while PLAY+TURN is consumed as a zoom chord and must not issue a transport command. The visible playhead is derived from the same engine phase used for capture, so UI and stored offsets share one musical reference.

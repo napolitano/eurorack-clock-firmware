@@ -136,6 +136,51 @@ def validate_odt(path: Path, version: str) -> None:
             if archive.read(qr_href) != REPOSITORY_QR.read_bytes():
                 raise RuntimeError("Embedded repository QR does not match the canonical asset")
 
+        if "Grooves and Custom Groove Record" in content_xml:
+            content_ns = {
+                "text": "urn:oasis:names:tc:opendocument:xmlns:text:1.0",
+                "draw": "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0",
+            }
+            content_root = ET.fromstring(content_xml)
+            chapter_headings = [
+                element
+                for element in content_root.findall(".//text:h", content_ns)
+                if element.attrib.get(f"{{{content_ns['text']}}}outline-level") == "1"
+            ]
+            if len(chapter_headings) != 24:
+                raise RuntimeError(
+                    f"Manual must expose exactly 24 semantic chapter headings for PDF navigation; "
+                    f"found {len(chapter_headings)}"
+                )
+            for required in (
+                "Swing, Groove and Humanize",
+                "Pre-Count versus Recorder Count-In",
+                "Record a Groove by feel",
+                "10-pin (2×5) Eurorack header",
+            ):
+                if required not in content_xml:
+                    raise RuntimeError(f"Manual didactic contract is missing: {required}")
+            for forbidden in (
+                "standard Eurorack 2×8 power cable",
+                "The gate buffer remains disabled while the firmware initializes",
+            ):
+                if forbidden in content_xml:
+                    raise RuntimeError(f"Manual contains obsolete hardware wording: {forbidden}")
+            for frame_name in ("ManualImage20", "ManualImage21", "ManualImage22", "ManualImage23"):
+                frame = next(
+                    (
+                        element for element in content_root.findall(".//draw:frame", content_ns)
+                        if element.attrib.get(f"{{{content_ns['draw']}}}name") == frame_name
+                    ),
+                    None,
+                )
+                if frame is None:
+                    raise RuntimeError(f"Manual direct screenshot frame is missing: {frame_name}")
+                if frame.attrib.get(f"{{{content_ns['text']}}}anchor-type") != "as-char":
+                    raise RuntimeError(
+                        f"Manual direct screenshot frame must be inline/as-char to avoid text overlap: {frame_name}"
+                    )
+
         full_pages = page_images(content_xml, archive)
         if len(full_pages) != 2:
             raise RuntimeError(f"Expected two full-page cover images, found {len(full_pages)}")

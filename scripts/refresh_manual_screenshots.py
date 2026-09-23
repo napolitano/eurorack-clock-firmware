@@ -52,6 +52,8 @@ DIRECT_SCREENSHOTS: dict[str, str] = {
     "ManualImage19": "beatknecht.png",
     "ManualImage20": "groove-editor-custom.png",
     "ManualImage21": "groove-record-live.png",
+    "ManualImage22": "performance-pre-count-progress.png",
+    "ManualImage23": "settings-info-author-popover.png",
 }
 
 

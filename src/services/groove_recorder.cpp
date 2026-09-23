@@ -153,9 +153,12 @@ bool GrooveRecorder::capture(
     const std::uint64_t boundedMagnitude = std::min<std::uint64_t>(
         scaled,
         static_cast<std::uint64_t>(kCustomGrooveMaximumOffset256));
-    const std::int16_t signedOffset = late
-        ? static_cast<std::int16_t>(boundedMagnitude)
-        : -static_cast<std::int16_t>(boundedMagnitude);
+    // Negating an int16_t promotes it to int. Keep the sign operation in a
+    // type that can represent the complete intermediate range explicitly so
+    // Clang -Wconversion/-Werror builds do not depend on an implicit narrowing.
+    const std::int32_t signedOffset = late
+        ? static_cast<std::int32_t>(boundedMagnitude)
+        : -static_cast<std::int32_t>(boundedMagnitude);
     pattern.offsets256[step] = static_cast<std::int8_t>(signedOffset);
     capturedMask_ |= (1ULL << step);
     playheadStep_ = step;

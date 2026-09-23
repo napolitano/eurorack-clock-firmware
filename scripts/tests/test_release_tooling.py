@@ -602,6 +602,20 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("QP-07", bench)
         self.assertIn('"overall_status": "IN_PROGRESS"', ledger)
 
+    def test_github_actions_use_node24_capable_action_majors(self) -> None:
+        workflows = {
+            path.name: path.read_text(encoding="utf-8")
+            for path in (ROOT / ".github" / "workflows").glob("*.yml")
+        }
+        for name, workflow in workflows.items():
+            self.assertNotIn("actions/cache@v4", workflow, name)
+            self.assertNotIn("actions/cache@v5", workflow, name)
+            self.assertNotIn("actions/upload-artifact@v4", workflow, name)
+            self.assertNotIn("actions/upload-artifact@v5", workflow, name)
+        self.assertIn("actions/cache@v6", workflows["ci.yml"])
+        self.assertIn("actions/cache@v6", workflows["release.yml"])
+        self.assertIn("actions/upload-artifact@v7", workflows["release.yml"])
+
     def test_polyform_license_is_present_and_identified(self) -> None:
         license_text = (ROOT / "LICENSE.md").read_text(encoding="utf-8")
         readme = (ROOT / "README.md").read_text(encoding="utf-8")

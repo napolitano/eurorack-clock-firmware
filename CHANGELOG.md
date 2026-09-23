@@ -10,6 +10,13 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### CI and documentation hardening
+
+- Fix the Groove Recorder signed-offset expression so strict Clang simulator builds with `-Wconversion -Werror` do not narrow the promoted negation result implicitly.
+- Add symmetric extreme early/late recorder regression coverage.
+- Move GitHub Actions cache usage to `actions/cache@v6` and release artifact upload to `actions/upload-artifact@v7`, keeping repository workflows on Node.js 24-capable action majors.
+- Expand the user manual with an explicit Swing/Groove/Humanize comparison, complete Pre-Count guidance, corrected boot/power wording, semantic heading navigation, and safer inline Groove screenshots.
+
 ### Documentation and publication refresh
 
 - Refresh the main README around the current 1.1 development line, adding useful CI/manual/release/toolchain/coverage/license badges and making Grooves the primary visible 1.1 feature rather than leaving them buried in the roadmap.
