@@ -10,6 +10,10 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+No unreleased changes.
+
+## [1.1.0] - 2026-09-23
+
 ### CI and documentation hardening
 
 - Fix the Groove Recorder signed-offset expression so strict Clang simulator builds with `-Wconversion -Werror` do not narrow the promoted negation result implicitly.
@@ -19,12 +23,12 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Documentation and publication refresh
 
-- Refresh the main README around the current 1.1 development line, adding useful CI/manual/release/toolchain/coverage/license badges and making Grooves the primary visible 1.1 feature rather than leaving them buried in the roadmap.
+- Refresh the main README around the 1.1.0 release line, adding useful CI/manual/release/toolchain/coverage/license badges and making Grooves the primary visible 1.1 feature rather than leaving them buried in the roadmap.
 - Add real production-renderer Custom Groove Editor and live TAP Recorder screenshots to the README and User Guide.
 - Regenerate the complete deterministic OLED screenshot catalog from the current renderer, including the horizontal mode carousel, current Info screen, Custom Groove Editor/Recorder and the full-value read-only information popover.
 - Expand the GitHub User Guide and editable ODT manual with factory Grooves, Custom Groove editing, TAP recording, Count-In, One-Shot/Endless capture, the 10-slot library, Rename/Delete, the horizontal mode carousel and long read-only information handling.
-- Synchronize Architecture, Configuration, Timing, Simulator, manual-workspace and coverage documentation with schema v12, the frozen 10-slot Custom Groove layout, the Recorder timing contract and the verified r26 host baseline.
-- Preserve historical/stable 1.0.1 release documents as release-history artifacts rather than rewriting them to describe unreleased 1.1 behavior.
+- Synchronize Architecture, Configuration, Timing, Simulator, manual-workspace and coverage documentation with schema v12, the frozen 10-slot Custom Groove layout, the Recorder timing contract and the verified 1.1.0 release baseline.
+- Preserve historical/stable 1.0.1 release documents as release-history artifacts rather than rewriting them to describe 1.1.0 behavior.
 
 ### Changed
 
@@ -47,7 +51,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Freeze the 1.1.0 Custom Groove persistence scope at 10 named slots in the existing 8-KiB layout; keep the longer-term 99-slot target conditional on a later compact/expanded storage design and real STM32F401 ELF/RAM proof.
 - Add direct Custom Groove `RENAME` and `DELETE` actions with explicit destructive confirmation and retry-safe persistence semantics.
 - Add an exhaustive Groove qualification sweep across all 1-64 step lengths and 0-100% Amount values plus engine vectors spanning 20/120/999 BPM, divide/multiply/rational rates, 1/4/16/64-step grids and 0/50/100% Amount.
-- Define `HIL-GRV-001..003` bench vectors for subtle, triplet-like and extreme signed Groove timing without misrepresenting those planned captures as host-test evidence.
+- Define `HIL-GRV-001..004` bench vectors for subtle, triplet-like and extreme signed Groove timing without misrepresenting those planned captures as host-test evidence.
 - Correct the Info product value from the compact internal identity to `Clock`.
 - Add generic read-only information overflow handling: long informational values are ellipsized with `...` in list rows and open a full-value popover on activation; editable setting values are explicitly excluded from this behavior.
 
@@ -74,7 +78,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Support fine encoder timing moves, TAP+encoder coarse moves, TAP marker advance, START+encoder quick zoom, and the standard long-press menu for SAVE, LOAD, ZOOM and LENGTH.
 - Add signed per-step microtiming for 1-64-step Custom Grooves while preserving monotonic bounded event scheduling when combined with Swing.
 - Add CRC-protected fixed Custom Groove records outside repeated ClockState persistence. The current 8-KiB layout stores 10 named 64-step slots at bytes 3136-4095, preserving the legacy score records at 3072-3135 and the Top-100 region from 4096 onward.
-- Advance development persistence to schema v12 by appending one Custom Groove slot reference for One Clock and each Independent channel; schema v11 and all previously supported formats remain explicit migration inputs.
+- Advance persistence to schema v12 by appending one Custom Groove slot reference for One Clock and each Independent channel; schema v11 and all previously supported formats remain explicit migration inputs.
 - Keep the accepted 99-slot UX target as future persistence work; it is not claimed by this implementation because the existing 8-KiB image cannot hold 99 full 64-step records safely.
 
 
@@ -89,15 +93,15 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add `GENERAL SETTINGS → INPUTS` with direct INPUT 1/2 role editing and `CONFIG >` for shared external timing/reset parameters.
 - Add `GENERAL SETTINGS → HARDWARE` and move ENCODER DIR / ORIENTATION into it.
 - Replace the left Settings cursor with full-row inversion, reclaiming horizontal display width; active value editing is counter-inverted inside the selected row.
-- Advance current development persistence to schema v11; migrate schema-v10 records by injecting the factory `SYNC / RESET` roles. The repeated CURRENT + eight-preset footprint is now 2,801 bytes with 30 bytes of remaining in-place payload growth.
+- Advance 1.1.0 persistence to schema v11; migrate schema-v10 records by injecting the factory `SYNC / RESET` roles. The repeated CURRENT + eight-preset footprint is now 2,801 bytes with 30 bytes of remaining in-place payload growth.
 - Regenerate deterministic manual screenshots for GENERAL, INPUTS, input CONFIG and HARDWARE from the production framebuffer.
 
 ### Validation
 
-- Native inventory: **496 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing/Recorder **39 / 211,220**, Settings **88 / 290**, complete host firmware **39** cases across all tested display variants.
+- Native inventory: **496 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing/Recorder **39 / 211,224**, Settings **88 / 290**, complete host firmware **39** cases across all tested display variants.
 - Complete firmware host variants: legacy I2C **39 / 4,294**, SPI default/SSD1306/SSD1315 **39 / 3,257** each, and fixed-I2C/reset **39 / 4,277**, all with zero failures.
-- Repository coverage: **9258/9665 executable lines (95.79%) / 805/819 functions (98.29%) / 5639/6246 source decision branches (90.28%)**; the 95/95/90 gates remain unchanged.
-- Full ASan/UBSan Native/firmware matrix passes on the final r26 tree, including all focused suites plus legacy I2C, SPI SSD1306, SPI SSD1315 and fixed-I2C/reset-pin firmware variants.
+- Repository coverage: **9260/9667 executable lines (95.79%) / 805/819 functions (98.29%) / 5639/6246 source decision branches (90.28%)**; the 95/95/90 gates remain unchanged.
+- Full ASan/UBSan Native/firmware matrix passes on the 1.1.0 release-preparation tree, including all focused suites plus legacy I2C, SPI SSD1306, SPI SSD1315 and fixed-I2C/reset-pin firmware variants.
 - Headless simulator integration remains **2/2 PASS**, including the engine-phase-locked scope reference regression.
 
 ### Changed
@@ -114,7 +118,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Groove Engine Stage 1
 
-- Add the first preset-based deterministic Groove Engine for 1.1 development. One Clock owns one shared groove; Independent mode owns groove settings per channel; Divider Bank remains groove-free.
+- Add the first preset-based deterministic Groove Engine for 1.1.0. One Clock owns one shared groove; Independent mode owns groove settings per channel; Divider Bank remains groove-free.
 - Add read-only factory presets `SWING 54`, `SWING 58`, `SWING 62`, `SWING 66`, `POCKET A`, `POCKET B`, and `POCKET C`, plus explicit `OFF`.
 - Add `AMOUNT` (0-100%) and `ROTATE` controls without merging deterministic Groove timing with the separate Humanize layer.
 - Bound combined Swing + Groove displacement so event timestamps remain monotonic and gate lengths cannot consume the next rising edge.

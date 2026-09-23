@@ -683,7 +683,7 @@ Multiple installations are a common source of confusing package/version behavior
 
 ### `undefined reference to setup` / `loop`
 
-`src/main.cpp` must include `Arduino.h`, and global Arduino `setup()`/`loop()` must keep the framework's expected linkage. Do not move them into a namespace.
+CLOCK no longer uses the Arduino/STM32duino runtime. Seeing a `setup()` / `loop()` linker error therefore indicates a stale build directory, an obsolete local configuration, or the wrong PlatformIO framework. Clean the build output and confirm that `platformio.ini` still selects `framework = stm32cube`; do **not** reintroduce `Arduino.h`, `setup()` or `loop()` into the current firmware.
 
 ### Native coverage says `g++` or `gcov` is missing
 
@@ -704,15 +704,15 @@ CI runs automatically on pushes and pull requests. It checks architecture, Pytho
 Release tags must exactly match `src/version.h`:
 
 ```text
-Firmware: 1.0.1
-Tag:      v1.0.1
+Firmware: 1.1.0
+Tag:      v1.1.0
 ```
 
 Prerelease tags containing `-` are published as GitHub prereleases.
 
 Release preparation freezes two human-authored sources: the versioned ODT manual and `docs/releases/<version>/RELEASE_SUMMARY.md`. The summary is intentionally user-facing; `CHANGELOG.md` remains the detailed engineering history.
 
-`scripts/package_release.py firmware` turns each release ELF into a persistence-safe sparse DfuSe image with the boot and application Flash elements only. The default BEATKNECHT build is `clock-v<version>-stm32f401cc.dfu`; the Pixel Raid, Formula 1, Breakout, and Egg Journey builds add the corresponding variant suffix before `.dfu`. `finalize` adds the versioned ODT/PDF manual, full changelog, user summary, and SHA256 checksums. The simulator is explicitly excluded from release assets. A future VCV Rack build can publish versioned packages through `dist/vcv/`.
+`scripts/package_release.py firmware` turns each release ELF into a persistence-safe sparse DfuSe image with the boot and application Flash elements only. Release filenames are `eurorack-clock-firmware-<flavor>-<version>.dfu` for `default`, `pixel-raid`, `formula-1`, `breakout`, and `egg-journey`. `finalize` adds the versioned ODT/PDF manual, full changelog, user summary, generated release notes, project/manual licenses, third-party notices, build provenance, and SHA-256/MD5 manifests. The simulator is explicitly excluded from release assets. A future VCV Rack build can publish versioned packages through `dist/vcv/`.
 
 ## 32. Recommended first-day validation
 

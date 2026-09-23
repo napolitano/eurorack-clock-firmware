@@ -83,7 +83,7 @@ The current hardware target is **0 V LOW / nominal +5 V HIGH** at OUT 1–8. The
 
 ## Analog/CV product boundary
 
-Hardware Rev 1 deliberately stops at digital timing I/O: eight 0/+5 V gate/trigger outputs plus two LM393-conditioned digital comparator inputs. Their current PCB/net names remain SYNC and RST, but current 1.1 firmware exposes them globally as configurable INPUT 1 / INPUT 2 roles. They are **not** general parameter-CV inputs; analog CV/modulation outputs and a general modulation matrix remain outside the hardware contract.
+Hardware Rev 1 deliberately stops at digital timing I/O: eight 0/+5 V gate/trigger outputs plus two LM393-conditioned digital comparator inputs. Their current PCB/net names remain SYNC and RST, but firmware 1.1.0 exposes them globally as configurable INPUT 1 / INPUT 2 roles. They are **not** general parameter-CV inputs; analog CV/modulation outputs and a general modulation matrix remain outside the hardware contract.
 
 For analog modulation outputs, the project quality target would require an eight-channel 16-bit DAC-class path and two quad output-op-amp stages. A 12-bit MCP-class DAC is not accepted as a quality shortcut for this use. The current project estimate is roughly EUR 30-40 extra BOM cost before the additional fine-pitch SMD assembly, PCB routing, calibration, and validation effort. General CV inputs would add separate analog input-conditioning/routing and panel-I/O costs.
 
@@ -147,7 +147,7 @@ Use CLOCK's framework-independent encoded pin constants (`clockfw::mcu::PA7`, `c
 
 The SPI bus is deliberately limited to **1 MHz** for prototype/first-PCB bring-up margin. Both supported controller families permit substantially faster serial operation, but the prototype wiring is not treated as a controlled-impedance PCB interconnect.
 
-The final comparator outputs are physically fixed at PA8 for the SYNC-net path and PA9 for the RST-net path. These are hardware/net identities, not fixed musical roles: current 1.1 firmware factory-assigns them as `INPUT 1 = SYNC` and `INPUT 2 = RESET`, and the global INPUTS page may reassign supported digital roles. Jack-detect contacts remain unassigned in firmware unless a later PCB revision routes dedicated detect signals.
+The final comparator outputs are physically fixed at PA8 for the SYNC-net path and PA9 for the RST-net path. These are hardware/net identities, not fixed musical roles: firmware 1.1.0 factory-assigns them as `INPUT 1 = SYNC` and `INPUT 2 = RESET`, and the global INPUTS page may reassign supported digital roles. Jack-detect contacts remain unassigned in firmware unless a later PCB revision routes dedicated detect signals.
 
 ## `src/ui_text.h`
 
@@ -160,7 +160,7 @@ This arrangement means adding another language does not require changes to scree
 
 ## Persistent configuration
 
-Persistent user state is not configured by scattered constants. `PersistentStateService` stores one autosaved `CURRENT` state plus eight named user preset slots. Each state includes master settings (including Pre-Count), configurable INPUT 1/2 roles and external-sync parameters, display/screensaver preferences, every channel's common settings including Groove selection, CLOCK meter data, Euclid parameters, complete 64-bit Sequencer patterns, and the active Custom Groove slot reference. The current 1.1 development write format is **schema v12**. Schema v11, v10, v9, stable 1.0.x schema v8, schema v7, and earlier supported formats remain explicit migration sources; missing newer fields are injected with their documented factory-safe defaults.
+Persistent user state is not configured by scattered constants. `PersistentStateService` stores one autosaved `CURRENT` state plus eight named user preset slots. Each state includes master settings (including Pre-Count), configurable INPUT 1/2 roles and external-sync parameters, display/screensaver preferences, every channel's common settings including Groove selection, CLOCK meter data, Euclid parameters, complete 64-bit Sequencer patterns, and the active Custom Groove slot reference. Firmware 1.1.0 writes **schema v12**. Schema v11, v10, v9, stable 1.0.x schema v8, schema v7, and earlier supported formats remain explicit migration sources; missing newer fields are injected with their documented factory-safe defaults.
 
 The current logical persistence image remains **8192 bytes**. The lower 4096 bytes preserve the established settings/preset and legacy-score layout while using bytes **3136–4095** for ten fixed 96-byte named Custom Groove records; the upper half stores the four independent arcade Top-100 tables. A Custom Groove record carries a 16-character name, one signed 1–64-step microtiming pattern, metadata and its own CRC. Ten slots are the frozen 1.1.0 release scope. The older 99-slot idea is a later storage target and may not be implemented by silently enlarging the repeated `ClockState` payload.
 

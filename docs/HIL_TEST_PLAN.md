@@ -120,19 +120,35 @@ Measure phase offsets on two otherwise identical channels.
 
 - measured offset agrees with the expected scheduler-quantized phase within **<= 50 us**
 
-### CLOCK 1.1 Groove vectors
+### CLOCK 1.1 Groove qualification
 
-These vectors close the 1.1 Groove definition-of-done at the test-plan level. They define
-physical captures to perform; they are **not** marked PASS until real jack-level evidence exists.
-For every vector, capture at least 100 rising edges and compare them with scheduler-derived
-expected timestamps from the same configuration.
+The 1.1 Groove vectors are normative HIL entries in the qualification ledger. They define physical captures to perform; they remain `PENDING` until real jack-level evidence exists. For every vector, capture at least 100 rising edges and compare them with scheduler-derived expected timestamps from the same configuration.
 
-| ID | Configuration | Purpose |
-| --- | --- | --- |
-| `HIL-GRV-001` | 120 BPM, x1, `SWING 54`, Amount 50%, Rotate 0 | subtle displacement |
-| `HIL-GRV-002` | 120 BPM, x1, `SWING 66`, Amount 100%, Rotate 0 | triplet-like factory groove |
-| `HIL-GRV-003` | 120 BPM, x1, 4-step Custom `[0, +120, -120, 0]`, Amount 100%, Rotate 0 | extreme signed Custom timing |
-| `HIL-GRV-004` | 120 BPM, 16-step Custom Groove Record, Count-In 4, tap every nominal step with a known external reference | physical TAP-capture latency/jitter and recorded offset fidelity |
+### HIL-GRV-001 — Subtle factory Groove displacement
+
+Configuration: 120 BPM, x1, `SWING 54`, Amount 50%, Rotate 0.
+
+**Pass criteria**
+
+- every captured rising edge remains in the same musical order as the scheduler vector;
+- no edge is missed or duplicated;
+- jack-level edge time agrees with the expected scheduler-quantized timestamp within **<= 50 us**;
+- repeated pattern cycles do not accumulate phase walk beyond scheduler quantization.
+
+### HIL-GRV-002 — Triplet-like factory Groove
+
+Configuration: 120 BPM, x1, `SWING 66`, Amount 100%, Rotate 0.
+
+**Pass criteria**
+
+- every captured rising edge remains in the same musical order as the scheduler vector;
+- no edge is missed or duplicated;
+- jack-level edge time agrees with the expected scheduler-quantized timestamp within **<= 50 us**;
+- repeated pattern cycles do not accumulate phase walk beyond scheduler quantization.
+
+### HIL-GRV-003 — Extreme signed Custom Groove
+
+Configuration: 120 BPM, x1, 4-step Custom `[0, +120, -120, 0]`, Amount 100%, Rotate 0.
 
 **Pass criteria**
 
@@ -141,7 +157,19 @@ expected timestamps from the same configuration.
 - jack-level edge time agrees with the expected scheduler-quantized timestamp within **<= 50 us**;
 - the gate-off safety rule remains intact: a requested pulse may shorten, but must never swallow the following rising edge;
 - repeated pattern cycles do not accumulate phase walk beyond scheduler quantization.
-- for `HIL-GRV-004`, record the physical TAP transition and resulting stored/played gate timing from the same reference; document fixed latency separately from jitter and verify that debounce does not quantize the recorded offsets to 1 ms or 25 ms steps.
+
+### HIL-GRV-004 — Custom Groove TAP Recorder latency and offset fidelity
+
+Configuration: 120 BPM, 16-step Custom Groove Record, Count-In 4. Tap every nominal step against a known external reference while capturing the physical TAP transition and the resulting stored/played gate timing from the same reference.
+
+**Pass criteria**
+
+- every captured/stored event remains assigned to the intended musical step;
+- no recording event or resulting gate is missed or duplicated;
+- fixed TAP-to-capture latency is documented separately from jitter;
+- debounce does not quantize recorded offsets to 1 ms or 25 ms steps;
+- replayed jack-level timing preserves the recorded signed offsets within the scheduler-quantized **<= 50 us** timing criterion, apart from the separately documented fixed physical input latency;
+- repeated pattern cycles do not accumulate phase walk beyond scheduler quantization.
 
 ## 6. External SYNC / RST inputs
 

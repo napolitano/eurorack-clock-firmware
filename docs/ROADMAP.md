@@ -8,7 +8,7 @@ This roadmap separates the first stable DIY release from later musical expansion
 
 ```mermaid
 flowchart LR
-    V1["NOW<br/>1.0.1<br/>Stable V1"] --> G["1.1.x<br/>Swing 2.0<br/>Groove Engine"]
+    V1["1.0.1<br/>Stable baseline"] --> G["NOW<br/>1.1.0<br/>Grooves + Pre-Count"]
     G --> S["1.2.x<br/>Sequencer 2.0"]
     S --> E["1.3.x<br/>Euclid Auto-Fill<br/>Conditions"]
     E --> R["1.4.x<br/>Ratchet / Burst"]
@@ -25,14 +25,15 @@ flowchart LR
     classDef virtual fill:#EEE7F7,color:#221832,stroke:#74509A,stroke-width:1.5px;
     classDef research fill:#F2F2F2,color:#222222,stroke:#777777,stroke-dasharray: 4 3;
 
-    class V1 current;
-    class G,S,E,R,I,P music;
+    class G current;
+    class V1 stable;
+    class S,E,R,I,P music;
     class N gate;
     class VCV virtual;
     class X research;
 ```
 
-**Reading the diagram:** the main firmware line stays deliberately narrow. `1.0.0` stabilizes the product that already exists; `1.1` through `1.4` deepen musical timing and gate behavior; `1.5` adds structured generative behavior and is also the point where the physical HIL ledger becomes a hard release gate. VCV Rack is a separate implementation track, not another firmware milestone.
+**Reading the diagram:** the main firmware line stays deliberately narrow. `1.0.0` stabilizes the product that already exists; `1.1` delivers the Groove/Pre-Count expansion; `1.2` through `1.4` deepen later gate and sequencing behavior; `1.5` adds structured generative behavior and is also the point where the physical HIL ledger becomes a hard release gate. VCV Rack is a separate implementation track, not another firmware milestone.
 
 ## Product boundary
 
@@ -77,22 +78,22 @@ The hard all-PASS HIL gate starts with **1.5.0**. Release candidates and stable 
 
 ## Post-1.0 milestone detail
 
-### 1.1.x — Swing 2.0 and Groove Engine
+### 1.1.0 — Groove Engine, Custom Groove Record and Pre-Count — released
 
 **Goal:** make timing feel a first-class musical parameter rather than a single alternating delay value.
 
-Planned scope and implementation sequence:
+Released scope:
 
 - configurable 1–64-beat Pre-Count with silent gate suppression and a centered static popover that shows the remaining count plus meter-step progress; external Pre-Count uses the configured master-meter beat unit, not a hard-coded quarter note;
-- **Stage 1 — preset-based Groove Engine (implemented in current 1.1 development):** read-only factory groove library with explicit `OFF`; in **One Clock** the selected groove is global, while **Independent** owns it per channel. Divider Bank remains groove-free;
-- **Configurable digital inputs (implemented in current 1.1 development):** the two Rev-1 comparator paths keep their physical SYNC/PA8 and RST/PA9 net identities, while `GENERAL SETTINGS → INPUTS` assigns global roles `OFF / SYNC / RESET / RUN / START / STOP / RESTART / TAP`; active roles are exclusive and `FILL` is reserved for the later Fill milestone. Factory assignment remains SYNC/RESET;
-- **Hardware/UI organization (implemented in current 1.1 development):** encoder direction and display orientation live under `GENERAL SETTINGS → HARDWARE`; Settings selection uses full-row inversion instead of a left cursor to reclaim horizontal pixels;
+- **Stage 1 — preset-based Groove Engine (released in 1.1.0):** read-only factory groove library with explicit `OFF`; in **One Clock** the selected groove is global, while **Independent** owns it per channel. Divider Bank remains groove-free;
+- **Configurable digital inputs (released in 1.1.0):** the two Rev-1 comparator paths keep their physical SYNC/PA8 and RST/PA9 net identities, while `GENERAL SETTINGS → INPUTS` assigns global roles `OFF / SYNC / RESET / RUN / START / STOP / RESTART / TAP`; active roles are exclusive and `FILL` is reserved for the later Fill milestone. Factory assignment remains SYNC/RESET;
+- **Hardware/UI organization (released in 1.1.0):** encoder direction and display orientation live under `GENERAL SETTINGS → HARDWARE`; Settings selection uses full-row inversion instead of a left cursor to reclaim horizontal pixels;
 - **Stage-1 UI contract:** active Groove is surfaced on Performance as `G:<preset>` (lower-left for Clock/One Clock, above the step strip for Euclid/Sequencer). Channel settings use one explicit hierarchy level per musical group, ordered by relevance: Clock/One Clock lead with `TIMING >`; Euclid/Sequencer lead with their mode-specific page; `OUTPUT >` remains last. `TIMING >` contains rate/polyrhythm/Swing and `GROOVE >`; Sequencer keeps `PATTERN >` inside `SEQUENCER >`;
 - grid-aware classic drum-machine-style swing with a musically familiar straight-to-deep range;
 - Groove Amount to scale a stored pattern from straight through exaggerated timing;
 - pattern rotation/phase so related channels can share one groove with different starting positions;
-- **Stage 2 — Preset / Custom split (implemented in current 1.1 development):** keep factory presets read-only and add user-defined signed Custom grooves. Editing uses a 128x64 graphical beat/step grid with movable diamond timing markers, bounded zoom and live runtime preview;
-- **Stage 2 — Tap Record (implemented in current 1.1 development):** `RECORD >` is a second input mode over the same Custom Groove draft. PLAY starts/stops capture, TAP writes the nearest signed microtiming offset from high-resolution physical-button timing, PLAY+TURN controls zoom, the live engine phase drives the playhead, Count-In is independently configurable `OFF / 1-64`, and One-Shot/Endless determine stop-versus-wrap behavior. Recorded grooves use the same save/load/rename/delete slots and remain editable in `EDITOR >`;
+- **Stage 2 — Preset / Custom split (released in 1.1.0):** keep factory presets read-only and add user-defined signed Custom grooves. Editing uses a 128x64 graphical beat/step grid with movable diamond timing markers, bounded zoom and live runtime preview;
+- **Stage 2 — Tap Record (released in 1.1.0):** `RECORD >` is a second input mode over the same Custom Groove draft. PLAY starts/stops capture, TAP writes the nearest signed microtiming offset from high-resolution physical-button timing, PLAY+TURN controls zoom, the live engine phase drives the playhead, Count-In is independently configurable `OFF / 1-64`, and One-Shot/Endless determine stop-versus-wrap behavior. Recorded grooves use the same save/load/rename/delete slots and remain editable in `EDITOR >`;
 - The current 8-KiB persistence revision provides **10 named Custom Groove slots** using fixed records in bytes 3136-4095 without moving legacy score or Top-100 data. **Ten slots are the frozen 1.1.0 release scope.** The longer-term **99-slot** target remains conditional on a later compact/expanded persistence design and real target memory proof. Stage 2 now implements save/load/overwrite/rename/delete, generated editable two-word default names, direct `GROOVE → LOAD` recall, the actual stored Custom Groove name on the Performance screen, explicit destructive confirmations, and retry-safe rename semantics;
 - Humanize remains a separate stochastic layer and is never conflated with deterministic groove timing.
 
@@ -109,7 +110,7 @@ Definition of done:
 - **implemented:** exhaustive Custom-Groove lookup sweep over all 1-64 step lengths and every 0-100% Amount value, plus engine vectors spanning 20/120/999 BPM, divide/multiply/rational rates, 1/4/16/64-step grids and 0/50/100% Amount;
 - **implemented:** simulator views for editing, tap recording/playhead feedback and performance feedback;
 - **implemented:** Straight/Swing regression vectors remain in the same timing suite;
-- **defined for bench execution:** `HIL-GRV-001..003` cover subtle, triplet-like and extreme Groove cases against the existing <=50 us scheduler-quantized timing criterion. Physical captures remain HIL evidence rather than host-test claims.
+- **defined for bench execution:** `HIL-GRV-001..004` cover subtle, triplet-like, extreme Custom-Groove and physical TAP-record cases against the existing <=50 us scheduler-quantized timing criterion. Physical captures remain HIL evidence rather than host-test claims.
 
 ### 1.2.x — Sequencer 2.0
 

@@ -1,6 +1,6 @@
 <!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
-# South Signal Lab CLOCK Test Coverage — stable v1.0.1 / 1.1 development
+# South Signal Lab CLOCK Test Coverage — stable v1.1.0
 
 The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 496 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
@@ -14,7 +14,7 @@ The following are mandatory:
 
 The release gates remain stringent without requiring synthetic tests for every defensive/error path. The coverage report still lists every uncovered production function and source decision so regressions remain visible during review.
 
-Last complete repository-wide validated baseline before the 1.0.1 maintenance patch (`1.0.0`):
+Historical reference — the last complete repository-wide baseline before the 1.0.1 maintenance patch (`1.0.0`) was:
 
 ```text
 Executable lines:   7108/7365 (96.51%)
@@ -23,12 +23,10 @@ Decision branches:  4287/4759 (90.08%)
 Compiler branches:  4288/5562 (77.09%, informational only)
 ```
 
-The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on the exact tagged source before publishing. Local pre-release verification covers the changed host renderer regression, the 96-case external-SYNC suite, release/manual tooling, documentation policies, and both headless simulator tests; the authoritative 1.0.1 repository-wide percentages are therefore produced by the release CI rather than copied forward from 1.0.0.
-
-Current 1.1 development working baseline after Groove Engine Stage 2 plus Tap Record, the readability sprint, the horizontal Channel Mode carousel, generated Custom Groove naming/direct LOAD, Rename/Delete management, read-only information overflow popovers, the exhaustive Groove sweep, and the simulator scope phase-lock correction:
+CLOCK 1.1.0 release baseline after Groove Engine Stage 2 plus Tap Record, the readability sprint, the horizontal Channel Mode carousel, generated Custom Groove naming/direct LOAD, Rename/Delete management, read-only information overflow popovers, the exhaustive Groove sweep, and the simulator scope phase-lock correction:
 
 ```text
-Executable lines:   9258/9665 (95.79%)
+Executable lines:   9260/9667 (95.79%)
 Functions:            805/819  (98.29%)
 Decision branches:   5639/6246 (90.28%)
 Compiler branches:   5640/7322 (77.03%, informational only)

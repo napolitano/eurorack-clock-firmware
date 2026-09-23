@@ -9,7 +9,7 @@ This audit does **not** implement post-1.0 features. It records the constraints 
 
 ## Result
 
-The current V1 runtime is suitable for release qualification, with one important persistence constraint: **post-1.0 per-step metadata must not be added by simply expanding the repeated ClockState record.** The 1.1 development line now uses schema v12 for Pre-Count, Stage-1 Groove assignments, the two configurable external-input roles, and Custom Groove slot references, but this does not change the constraint. There is a clean migration path, but the V1 logical layout does not contain enough repeated-record headroom for that approach.
+The current V1 runtime is suitable for release qualification, with one important persistence constraint: **post-1.0 per-step metadata must not be added by simply expanding the repeated ClockState record.** Firmware 1.1.0 uses schema v12 for Pre-Count, Stage-1 Groove assignments, the two configurable external-input roles, and Custom Groove slot references, but this does not change the constraint. There is a clean migration path, but the V1 logical layout does not contain enough repeated-record headroom for that approach.
 
 No V1 feature must be added to solve this now. The correct action before 1.0 is to freeze and test the current layout, document the migration boundary, and require a new schema/layout design when the first storage-heavy 1.x feature is implemented.
 
@@ -95,7 +95,7 @@ Post-1.0 storage-heavy rhythm data must therefore remain outside the small hot-p
 ## Public-contract decisions frozen for V1
 
 - Hardware Rev 1 remains gate/trigger focused; no analog CV subsystem is required for 1.0.
-- Persistent schema v12 is the current 1.1 development write format. Schema v11, schema v10, schema v9, stable 1.0.x schema v8, schema v7, and the earlier supported formats remain explicit migration sources for upgrades. Schema v10 migrates with the factory input roles `SYNC / RESET` injected.
+- Persistent schema v12 is the 1.1.0 write format. Schema v11, schema v10, schema v9, stable 1.0.x schema v8, schema v7, and the earlier supported formats remain explicit migration sources for upgrades. Schema v10 migrates with the factory input roles `SYNC / RESET` injected.
 - Boot always enters STOP regardless of stored transport history.
 - CURRENT and eight named presets remain the user-facing persistence model.
 - No future 1.x feature may silently invalidate V1 presets; migration or explicit compatibility handling is required.

@@ -186,7 +186,7 @@ CI requires:
 - function coverage >= **95%**
 - non-throw decision-branch coverage >= **90%**
 
-Current 1.1 working baseline after the Custom Groove tap recorder, readability sprint, Groove marker quiet-zone fix, horizontal Channel Mode carousel, named Custom Groove save/load/rename/delete UX, read-only information overflow handling, exhaustive Groove sweeps, and simulator scope phase-lock correction: **9258/9665 lines (95.79%)**, **805/819 functions (98.29%)**, and **5639/6246 decision branches (90.28%)**. Raw compiler branches are **5640/7322 (77.03%)** and remain informational.
+The 1.1.0 release baseline after the Custom Groove tap recorder, readability sprint, Groove marker quiet-zone fix, horizontal Channel Mode carousel, named Custom Groove save/load/rename/delete UX, read-only information overflow handling, exhaustive Groove sweeps, and simulator scope phase-lock correction: **9260/9667 lines (95.79%)**, **805/819 functions (98.29%)**, and **5639/6246 decision branches (90.28%)**. Raw compiler branches are **5640/7322 (77.03%)** and remain informational.
 - AddressSanitizer = **clean**
 - UndefinedBehaviorSanitizer = **clean**
 
@@ -246,8 +246,8 @@ The STM32 firmware build only runs after host coverage and both native-simulator
 A release tag must exactly match `src/version.h`:
 
 ```text
-firmware: 1.0.1
-Git tag:   v1.0.1
+firmware: 1.1.0
+Git tag:   v1.1.0
 ```
 
 A mismatch fails before publication.

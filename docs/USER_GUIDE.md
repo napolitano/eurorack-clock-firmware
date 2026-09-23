@@ -2,9 +2,9 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Stable baseline: v1.0.1 · current development: 1.1.0**
+> **Current stable release: v1.1.0**
 >
-> CLOCK 1.0.1 remains the current stable release. This maintained guide also documents the active 1.1.0 development line, including Pre-Count, configurable digital-input roles, Groove Engine Stage 1/2, Custom Groove editing/recording and the horizontal Channel Mode carousel. These sections describe implemented development behavior; they are not a claim that 1.1.0 has already been released. Physical comparator thresholds, jack-level timing, gate jitter and Groove/TAP-record timing remain tracked HIL evidence.
+> CLOCK 1.1.0 is the current stable release. This guide covers Pre-Count, configurable digital-input roles, Groove Engine Stage 1/2, Custom Groove editing/recording and the horizontal Channel Mode carousel together with the established 1.0 functionality. Physical comparator thresholds, jack-level timing, gate jitter and Groove/TAP-record timing remain tracked HIL evidence rather than host-test claims.
 
 This guide is the GitHub-readable operating reference for CLOCK. OLED screenshots are generated from the **production renderer and the real 128×64 framebuffer**, then enlarged with nearest-neighbor scaling. They are not hand-drawn UI mockups.
 

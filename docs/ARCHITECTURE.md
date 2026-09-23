@@ -258,7 +258,7 @@ The DFU upload helper emits separated firmware regions so ordinary firmware upda
 
 ## Configurable external-input boundary
 
-The engine-side clock/reset/transport input semantics and interrupt-driven digital capture boundary are implemented and simulator/host-testable. The final Rev 1 pin map still routes the physical SYNC-net comparator to PA8 and the RST-net comparator to PA9; current 1.1 firmware assigns musical roles only after capture:
+The engine-side clock/reset/transport input semantics and interrupt-driven digital capture boundary are implemented and simulator/host-testable. The final Rev 1 pin map still routes the physical SYNC-net comparator to PA8 and the RST-net comparator to PA9; firmware 1.1.0 assigns musical roles only after capture:
 
 ```mermaid
 flowchart LR

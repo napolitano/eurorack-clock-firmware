@@ -1,7 +1,7 @@
 {
   "schema": 1,
   "product": "South Signal Lab CLOCK",
-  "baseline": "1.0.1",
+  "baseline": "1.1.0",
   "scheduler_tick_us": 50,
   "overall_status": "IN_PROGRESS",
   "tests": [
@@ -45,6 +45,27 @@
       "id": "HIL-TIME-002",
       "status": "PENDING",
       "evidence": []
+    },
+    {
+      "id": "HIL-GRV-001",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-GRV-002",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-GRV-003",
+      "status": "PENDING",
+      "evidence": []
+    },
+    {
+      "id": "HIL-GRV-004",
+      "status": "PENDING",
+      "evidence": [],
+      "note": "Physical TAP-capture latency/jitter and recorded-offset fidelity have not yet been measured on hardware."
     },
     {
       "id": "HIL-SYNC-001",

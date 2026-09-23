@@ -66,7 +66,7 @@ class ManualToolingTests(unittest.TestCase):
         actual_entries = {path.name for path in archive.iterdir()}
         self.assertEqual(actual_entries, expected_files)
         self.assertTrue(all(path.is_file() for path in archive.iterdir()))
-        self.assertEqual({"1.0.0", "1.0.1"}, stable_versions)
+        self.assertEqual({"1.0.0", "1.0.1", "1.1.0"}, stable_versions)
 
     def test_prerelease_manual_defaults_outside_archive(self) -> None:
         version = "1.1.0-beta.1"

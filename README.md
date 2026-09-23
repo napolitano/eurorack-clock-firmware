@@ -21,11 +21,11 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Stable firmware: `1.0.1`. Active development: `1.1.0`.** V1 remains the stable maintenance line. The 1.1 development branch adds Pre-Count, configurable digital-input roles, Swing/Groove expansion, named Custom Grooves, a graphical Groove Editor, live TAP recording, the horizontal Channel Mode carousel, and related UI/persistence work. `src/version.h` remains `1.0.1` until the 1.1 release is actually prepared and tagged.
+> **Stable firmware: `1.1.0`.** This release makes Grooves a first-class timing tool, adds Pre-Count and configurable digital-input roles, and expands Custom Grooves with graphical editing, live TAP recording, named storage, the horizontal Channel Mode carousel, and the related UI/persistence work.
 
 **HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. Physical Groove/TAP-record captures are therefore tracked qualification evidence, not substituted by host tests. See [`docs/qualification/`](docs/qualification/README.md) and [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).
 
-## 1.1.0 development — Grooves become a first-class timing tool
+## 1.1.0 — Grooves become a first-class timing tool
 
 The headline change in 1.1 is the **Groove Engine**. Groove is deterministic microtiming layered onto the same master timeline used by Clock, Euclid and Sequencer. It is not Humanize and it does not create a second free-running clock.
 
@@ -42,7 +42,7 @@ Custom Grooves go further. A 1–64-step graphical editor uses movable diamond m
 
 `RECORD >` is a second input mode over the same Custom Groove draft: **PLAY** starts/stops capture, **TAP** records an event with the high-resolution physical button timestamp, **PLAY + encoder** zooms, and the moving playhead follows the real engine phase. Recorder Count-In is independently configurable `OFF / 1–64` (default `4`); `ONE SHOT` stops at the end while `ENDLESS` wraps and overwrites only steps that receive a new TAP. A recorded Groove can be opened immediately in `EDITOR >` for cleanup before saving.
 
-Other 1.1 work includes the optional 1–64-beat **Pre-Count**, globally configurable `INPUT 1 / INPUT 2` roles (`OFF / SYNC / RESET / RUN / START / STOP / RESTART / TAP`), a scalable horizontal Channel Mode carousel, improved long-information handling on the OLED, and tighter simulator/host qualification. The detailed 1.1 contract lives in [`docs/ROADMAP.md`](docs/ROADMAP.md).
+CLOCK 1.1.0 also adds the optional 1–64-beat **Pre-Count**, globally configurable `INPUT 1 / INPUT 2` roles (`OFF / SYNC / RESET / RUN / START / STOP / RESTART / TAP`), a scalable horizontal Channel Mode carousel, improved long-information handling on the OLED, and tighter simulator/host qualification. The frozen 1.1 scope and later milestones are documented in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Why another Eurorack Clock?
 
@@ -61,7 +61,7 @@ This is an independent South Signal Lab development. It is not a firmware port f
 
 ### Why no general CV modulation?
 
-CLOCK deliberately stays in the **digital timing, gate, and trigger** domain. Hardware Rev 1 has two LM393-conditioned digital comparator inputs, physically/net-named SYNC and RST on the current PCB, but no general parameter-CV inputs, analog modulation outputs, or CV modulation matrix. In current 1.1 development their firmware roles are configurable globally; the factory assignment remains `INPUT 1 = SYNC`, `INPUT 2 = RESET`. This is a product boundary, not a general CV subsystem.
+CLOCK deliberately stays in the **digital timing, gate, and trigger** domain. Hardware Rev 1 has two LM393-conditioned digital comparator inputs, physically/net-named SYNC and RST on the current PCB, but no general parameter-CV inputs, analog modulation outputs, or CV modulation matrix. In firmware 1.1.0 their roles are configurable globally; the factory assignment remains `INPUT 1 = SYNC`, `INPUT 2 = RESET`. This is a product boundary, not a general CV subsystem.
 
 A quality eight-channel analog modulation-output stage would move the module into a different cost and assembly class. Our quality target would require an eight-channel **16-bit DAC-class solution** plus two quad output-op-amp stages; a 12-bit MCP-class compromise is not considered good enough for this direction. The current project estimate is roughly **EUR 30-40 additional BOM cost**, before the wider impact of fine-pitch SMD assembly, PCB complexity, calibration, testing, and documentation. General CV parameter inputs would add their own analog front ends, routing, jacks, and validation scope.
 
@@ -73,7 +73,7 @@ CLOCK reached **1.0** by stabilizing and qualifying the product that already exi
 
 ```mermaid
 flowchart LR
-    V1["1.0.1<br/>Stable V1"] --> G["NOW<br/>1.1.0 development<br/>Grooves + Pre-Count"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
+    V1["1.0.1<br/>Stable baseline"] --> G["NOW<br/>1.1.0<br/>Grooves + Pre-Count"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
     V1 -. separate track .-> VCV["VCV Rack<br/>Reference port"]
 
     classDef current fill:#0B4FC0,color:#ffffff,stroke:#062F75,stroke-width:2px;
@@ -97,7 +97,7 @@ The hard physical-HIL release gate deliberately starts at **1.5.0**; before then
 | --- | --- |
 | Format | Eurorack, 3U, 10 HP reference panel |
 | Outputs | 8 gate/clock outputs, target 0/+5 V, individual activity LEDs |
-| Inputs | Two LM393-conditioned digital comparator inputs; Rev 1 physical nets remain SYNC/PA8 and RST/PA9, while current 1.1 firmware assigns their musical roles globally |
+| Inputs | Two LM393-conditioned digital comparator inputs; Rev 1 physical nets remain SYNC/PA8 and RST/PA9, while firmware 1.1.0 assigns their musical roles globally |
 | MCU | STM32F401CCU6 Black Pill, 84 MHz Cortex-M4 |
 | Display | 128×64 SSD1306/SSD1315 over the final 4-wire SPI pin map |
 | Controls | Push encoder + PLAY/PAUSE + TAP + STOP/BACK |
@@ -106,9 +106,9 @@ The hard physical-HIL release gate deliberately starts at **1.5.0**; before then
 | Tempo | 1–999 BPM technical range; factory user range 20–999 BPM |
 | Euclid | 1–64 steps, hits and rotation |
 | Sequencer | 1–64 binary gate steps per channel, four 16-step editor pages |
-| Groove Engine (1.1 development) | Factory Swing/Pocket grooves, Amount/Rotate, 1–64-step Custom Editor and TAP Record |
-| Custom Groove library (1.1 development) | 10 named durable slots with save/load/overwrite/rename/delete |
-| Pre-Count (1.1 development) | Optional silent 1–64-beat count-in before a fresh STOP→PLAY |
+| Groove Engine | Factory Swing/Pocket grooves, Amount/Rotate, 1–64-step Custom Editor and TAP Record |
+| Custom Groove library | 10 named durable slots with save/load/overwrite/rename/delete |
+| Pre-Count | Optional silent 1–64-beat count-in before a fresh STOP→PLAY |
 | Persistence | CURRENT auto-save + 8 named presets + factory templates, CRC/schema protected |
 | Timing service | 20 kHz deterministic scheduler, 50 µs service quantum |
 | Simulator | SDL3 interactive front panel + headless integration target |
@@ -172,7 +172,7 @@ The detailed timing contract is normative: [`docs/TIMING.md`](docs/TIMING.md).
 
 ## Configurable external inputs
 
-Hardware Rev 1 provides two electrically equivalent LM393-conditioned digital comparator paths. The current PCB/net names remain **SYNC on PA8** and **RST on PA9**, but current 1.1 firmware treats them as **INPUT 1** and **INPUT 2** at the product layer. Factory assignment remains `INPUT 1 = SYNC` and `INPUT 2 = RESET`, so existing patches keep their expected behavior.
+Hardware Rev 1 provides two electrically equivalent LM393-conditioned digital comparator paths. The current PCB/net names remain **SYNC on PA8** and **RST on PA9**, but firmware 1.1.0 treats them as **INPUT 1** and **INPUT 2** at the product layer. Factory assignment remains `INPUT 1 = SYNC` and `INPUT 2 = RESET`, so existing patches keep their expected behavior.
 
 Open `SETTINGS → GENERAL SETTINGS → INPUTS` to assign a role. Current selectable roles are:
 
@@ -312,7 +312,7 @@ python scripts/run_host_tests.py
 Current validated aggregate baseline:
 
 ```text
-Executable lines     9258 / 9665   95.79 %
+Executable lines     9260 / 9667   95.79 %
 Functions              805 / 819    98.29 %
 Decision branches     5639 / 6246   90.28 %
 ```
@@ -330,7 +330,7 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | [Configuration](docs/CONFIGURATION.md) | Build-time and runtime configuration |
 | [Simulator](docs/SIMULATOR.md) | Desktop simulator and headless usage |
 | [HIL Test Plan](docs/HIL_TEST_PLAN.md) | Physical qualification evidence; advisory to release automation through 1.4.x, enforced from 1.5.0 |
-| [Roadmap](docs/ROADMAP.md) | Current 1.1 Groove/Pre-Count contract, later 1.x milestones, and the VCV track |
+| [Roadmap](docs/ROADMAP.md) | Released 1.1 Groove/Pre-Count scope, later 1.x milestones, and the VCV track |
 | [GitHub Wiki publication](docs/WIKI.md) | Generated Wiki structure, automatic sync and ODT manual download |
 | [V1 Forward-Compatibility Audit](docs/V1_FORWARD_COMPATIBILITY.md) | Persistence/event-architecture constraints that protect later 1.x migration |
 | [Development](docs/DEVELOPMENT.md) | Developer workflow and quality gates |
