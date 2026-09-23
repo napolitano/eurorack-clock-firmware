@@ -3,12 +3,18 @@
   <desc id="desc">Black 10 HP South Signal Lab Clock panel generated from sim/panel_layout.ini. Positions and physical sizes follow the native simulator geometry.</desc>
   <!-- GENERATED from sim/panel_layout.ini by scripts/generate_vcv_panel.py. -->
   <defs><style>
-    .label{font-family:DejaVu Sans,Arial,sans-serif;fill:#f4f4f4;font-size:6.2px;font-weight:600}.small{font-size:6px;font-weight:600}.output{font-size:6.8px;font-weight:700}.title{font-size:12.5px;font-weight:700;letter-spacing:.25px}.brand{font-size:5.4px;font-weight:600;letter-spacing:.45px}
-    .jackNut{fill:#d8d9db;stroke:#77797c;stroke-width:.8}.jackBush{fill:#afb1b4;stroke:#707276;stroke-width:.55}.jackHole{fill:#08090a}.led{fill:#5a2020;stroke:#a64242;stroke-width:.45}.screw{fill:#a8aaad;stroke:#696b6e;stroke-width:.5}
+    .label{font-family:DejaVu Sans,Arial,sans-serif;fill:#f4f4f4;font-size:7.2px;font-weight:650}.secondary{fill:#8d8f93;font-size:6.5px;font-weight:600}.input{font-size:7.2px;font-weight:650}.output{font-size:7.6px;font-weight:700}.brand{font-size:6.5px;font-weight:650;letter-spacing:.5px}
+    .jackNut{fill:#d8d9db;stroke:#77797c;stroke-width:.8}.jackBush{fill:#afb1b4;stroke:#707276;stroke-width:.55}.jackHole{fill:#08090a}.led{fill:#111113;stroke:#4a2426;stroke-width:.45}.screw{fill:#a8aaad;stroke:#696b6e;stroke-width:.5}
   </style></defs>
   <rect width="150" height="380" fill="#050506"/>
   <rect x="0.4429" y="0.2854" width="149.1142" height="379.4291" fill="#0a0a0b" stroke="#343438" stroke-width="0.8"/>
-  <text class="label title" x="75" y="15.3445" text-anchor="middle">CLOCK</text>
+  <g transform="translate(21.1122 2.6476) scale(0.842)" fill="none" stroke="#f4f4f4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M28 12 C25 10 22 9 18 9 C11 10 8 15 8 20 C8 25 11 30 18 31 C22 31 25 30 28 28"/>
+    <path d="M38 10 L38 31 L49 31"/>
+    <path d="M60 9 C65 9 70 14 70 20 C70 26 65 31 60 31 C55 31 50 26 50 20 C50 14 55 9 60 9 Z"/>
+    <path d="M96 12 C93 10 90 9 86 9 C79 10 76 15 76 20 C76 25 79 30 86 31 C90 31 93 30 96 28"/>
+    <path d="M104 10 L104 31 M104 20 L118 10 M104 20 L118 31"/>
+  </g>
   <rect x="7.8986" y="43.5536" width="106.0367" height="53.2532" rx="1.2" fill="#050607" stroke="#525457" stroke-width="0.8"/>
   <circle class="screw" cx="6.6561" cy="6.9389" r="2.0"/>
   <circle class="screw" cx="143.3849" cy="6.9389" r="2.0"/>
@@ -16,24 +22,22 @@
   <circle class="screw" cx="143.3849" cy="373.0611" r="2.0"/>
   <circle cx="130.5035" cy="68.5162" r="12.4261" fill="#3a3b3e" stroke="#17181a" stroke-width="0.8"/>
   <circle cx="29.0232" cy="144.2355" r="13.2874" fill="#B02020" stroke="#191a1c" stroke-width="0.8"/>
-  <text class="label" x="29.0232" y="161.3615" text-anchor="middle">PLAY</text>
-  <text class="label" x="29.0232" y="167.7099" text-anchor="middle">/ PAUSE</text>
+  <text class="label" x="29.0232" y="161.2139" text-anchor="middle">PLAY</text>
+  <text class="label secondary" x="29.0232" y="167.8576" text-anchor="middle">PAUSE</text>
   <circle cx="70.8579" cy="144.2355" r="13.2874" fill="#707070" stroke="#191a1c" stroke-width="0.8"/>
-  <text class="label" x="70.8579" y="161.3615" text-anchor="middle">TAP</text>
-  <text class="label" x="70.8579" y="167.7099" text-anchor="middle">/ SHIFT</text>
+  <text class="label" x="70.8579" y="161.2139" text-anchor="middle">TAP</text>
+  <text class="label secondary" x="70.8579" y="167.8576" text-anchor="middle">SHIFT</text>
   <circle cx="112.6928" cy="144.2355" r="13.2874" fill="#1C1C1C" stroke="#191a1c" stroke-width="0.8"/>
-  <text class="label" x="112.6928" y="161.3615" text-anchor="middle">STOP</text>
-  <text class="label" x="112.6928" y="167.7099" text-anchor="middle">/ BACK</text>
+  <text class="label" x="112.6928" y="161.2139" text-anchor="middle">STOP</text>
+  <text class="label secondary" x="112.6928" y="167.8576" text-anchor="middle">BACK</text>
   <circle class="jackNut" cx="21.9815" cy="207.4738" r="11.5896"/>
   <circle class="jackBush" cx="21.9815" cy="207.4738" r="8.8583"/>
   <circle class="jackHole" cx="21.9815" cy="207.4738" r="5.315"/>
   <circle class="jackNut" cx="55.5322" cy="207.4738" r="11.5896"/>
   <circle class="jackBush" cx="55.5322" cy="207.4738" r="8.8583"/>
   <circle class="jackHole" cx="55.5322" cy="207.4738" r="5.315"/>
-  <text class="label small" x="21.9815" y="222.7543" text-anchor="middle">IN 1</text>
-  <text class="label small" x="21.9815" y="229.1028" text-anchor="middle">/ SYNC</text>
-  <text class="label small" x="55.5322" y="222.7543" text-anchor="middle">IN 2</text>
-  <text class="label small" x="55.5322" y="229.1028" text-anchor="middle">/ RST</text>
+  <text class="label input" x="21.9815" y="223.1972" text-anchor="middle">IN 1</text>
+  <text class="label input" x="55.5322" y="223.1972" text-anchor="middle">IN 2</text>
   <circle class="led" cx="19.9107" cy="265.7193" r="4.4291"/>
   <circle class="jackNut" cx="19.9107" cy="283.1931" r="11.5896"/>
   <circle class="jackBush" cx="19.9107" cy="283.1931" r="8.8583"/>

@@ -119,18 +119,25 @@ struct ClockModule final : Module {
     std::unique_ptr<clockfw::vcv::ClockVcvRuntime> runtime{};
     std::filesystem::path statePath{};
     std::array<std::atomic<std::uint8_t>, clockfw::hal::OledDisplay::kFramebufferSize> display{};
-    int lastEncoderDetent = 0;
+    std::atomic<int> queuedEncoderDetents{0};
+    std::atomic<bool> encoderPointerDown{false};
+    std::atomic<bool> encoderPointerDragging{false};
+    std::atomic<bool> encoderClickReleased{false};
+    bool encoderPressForwarded = false;
+    double encoderStationarySeconds = 0.0;
+    double encoderClickPulseSeconds = 0.0;
     std::uint32_t displayDivider = 0U;
-    std::array<float, 8U> activityHoldSeconds{};
     bool ownsHostRuntime = false;
 
     ClockModule() {
         config(PARAMS_LEN, INPUTS_LEN, OUTPUTS_LEN, LIGHTS_LEN);
-        configParam(ENCODER_PARAM, -128.0F, 128.0F, 0.0F, "Encoder");
-        getParamQuantity(ENCODER_PARAM)->snapEnabled = true;
+        // Legacy hidden parameter IDs are retained so early experimental Rack patches keep
+        // their parameter indexing. The interactive endless encoder is handled directly by the
+        // custom widget below rather than by a bounded Rack ParamQuantity.
+        configParam(ENCODER_PARAM, -128.0F, 128.0F, 0.0F, "Encoder (legacy hidden)");
         getParamQuantity(ENCODER_PARAM)->resetEnabled = false;
         getParamQuantity(ENCODER_PARAM)->randomizeEnabled = false;
-        configButton(ENCODER_PUSH_PARAM, "Encoder push");
+        configButton(ENCODER_PUSH_PARAM, "Encoder push (legacy hidden)");
         configButton(PLAY_PARAM, "PLAY / PAUSE");
         configButton(TAP_PARAM, "TAP / SHIFT");
         configButton(STOP_PARAM, "STOP / BACK");
@@ -167,6 +174,25 @@ struct ClockModule final : Module {
         }
     }
 
+    void queueEncoderDetents(const int detents) noexcept {
+        if (detents != 0) {
+            queuedEncoderDetents.fetch_add(detents, std::memory_order_relaxed);
+        }
+    }
+
+    void setEncoderPointerState(const bool down, const bool dragging) noexcept {
+        encoderPointerDragging.store(dragging, std::memory_order_relaxed);
+        encoderPointerDown.store(down, std::memory_order_release);
+    }
+
+    void releaseEncoderPointer(const bool wasDrag) noexcept {
+        if (!wasDrag) {
+            encoderClickReleased.store(true, std::memory_order_release);
+        }
+        encoderPointerDragging.store(false, std::memory_order_relaxed);
+        encoderPointerDown.store(false, std::memory_order_release);
+    }
+
     void process(const ProcessArgs& args) override {
         if (!runtime) {
             for (int index = 0; index < 8; ++index) {
@@ -175,18 +201,49 @@ struct ClockModule final : Module {
             return;
         }
 
-        const int encoderDetent = static_cast<int>(std::lround(params[ENCODER_PARAM].getValue()));
-        if (encoderDetent != lastEncoderDetent) {
-            runtime->rotateEncoder(encoderDetent - lastEncoderDetent);
-            lastEncoderDetent = encoderDetent;
+        const int encoderDetents = queuedEncoderDetents.exchange(0, std::memory_order_acq_rel);
+        if (encoderDetents != 0) {
+            runtime->rotateEncoder(encoderDetents);
         }
-        if (encoderDetent >= 120 || encoderDetent <= -120) {
-            params[ENCODER_PARAM].setValue(0.0F);
-            lastEncoderDetent = 0;
+
+        // One physical control must support two distinct gestures without overlapping Rack
+        // widgets: vertical drag is endless rotation; a stationary hold is encoder push. A short
+        // click that ends before the push arm delay is replayed as a debounced 40-ms press.
+        constexpr double kEncoderPushArmSeconds = 0.060;
+        constexpr double kEncoderClickPulseSeconds = 0.040;
+        const bool encoderDown = encoderPointerDown.load(std::memory_order_acquire);
+        const bool encoderDragging = encoderPointerDragging.load(std::memory_order_relaxed);
+        const bool encoderClickEnded = encoderClickReleased.exchange(
+            false, std::memory_order_acq_rel);
+        if (encoderDown && !encoderDragging) {
+            encoderStationarySeconds += static_cast<double>(args.sampleTime);
+            if (encoderStationarySeconds >= kEncoderPushArmSeconds) {
+                encoderPressForwarded = true;
+            }
+        } else if (encoderDragging) {
+            encoderStationarySeconds = 0.0;
+            encoderPressForwarded = false;
+        }
+
+        if (!encoderDown) {
+            if (encoderClickEnded && !encoderPressForwarded) {
+                encoderClickPulseSeconds = kEncoderClickPulseSeconds;
+            }
+            encoderStationarySeconds = 0.0;
+        }
+
+        bool encoderPressed = encoderDown && !encoderDragging && encoderPressForwarded;
+        if (encoderClickPulseSeconds > 0.0) {
+            encoderPressed = true;
+            encoderClickPulseSeconds = std::max(
+                0.0, encoderClickPulseSeconds - static_cast<double>(args.sampleTime));
+        }
+        if (!encoderDown && encoderClickPulseSeconds <= 0.0) {
+            encoderPressForwarded = false;
         }
 
         clockfw::vcv::PanelControls controls{};
-        controls.encoderPressed = params[ENCODER_PUSH_PARAM].getValue() >= 0.5F;
+        controls.encoderPressed = encoderPressed;
         controls.playPressed = params[PLAY_PARAM].getValue() >= 0.5F;
         controls.tapPressed = params[TAP_PARAM].getValue() >= 0.5F;
         controls.stopPressed = params[STOP_PARAM].getValue() >= 0.5F;
@@ -207,17 +264,11 @@ struct ClockModule final : Module {
             const bool gateHigh = gateVoltage > 0.0F;
             outputs[OUT1_OUTPUT + index].setVoltage(gateVoltage);
 
-            // The physical default gate can be only 10 ms long, shorter than one 60-Hz GUI
-            // frame. Keep the Rack activity LED visible for 75 ms without stretching the actual
-            // gate voltage. This matches the native simulator's perceptual LED policy.
-            if (gateHigh) {
-                activityHoldSeconds[channel] = 0.075F;
-            } else {
-                activityHoldSeconds[channel] = std::max(
-                    0.0F, activityHoldSeconds[channel] - args.sampleTime);
-            }
-            lights[OUT1_LIGHT + index].setBrightness(
-                (gateHigh || activityHoldSeconds[channel] > 0.0F) ? 1.0F : 0.0F);
+            // Rack's engine light smoothing gives short gates an immediate visible attack and a
+            // bounded decay, without a separate hold timer that can make activity appear latched.
+            // The actual output voltage above remains the instantaneous production gate state.
+            lights[OUT1_LIGHT + index].setBrightnessSmooth(
+                gateHigh ? 1.0F : 0.0F, args.sampleTime);
         }
 
         ++displayDivider;
@@ -338,13 +389,14 @@ struct ClockPanelLabels final : Widget {
         const Vec& position,
         const char* text,
         const float size,
+        const NVGcolor color,
         const int align = NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE) {
         if (APP == nullptr || APP->window == nullptr || !APP->window->uiFont) {
             return;
         }
         nvgFontFaceId(vg, APP->window->uiFont->handle);
         nvgFontSize(vg, size);
-        nvgFillColor(vg, nvgRGB(244, 244, 244));
+        nvgFillColor(vg, color);
         nvgTextAlign(vg, align);
         nvgText(vg, position.x, position.y, text, nullptr);
     }
@@ -353,74 +405,163 @@ struct ClockPanelLabels final : Widget {
         using namespace clockfw::vcv::panel;
         constexpr float panelCenterX = kPanelWidthMm * 0.5F;
 
-        // Keep the product name visually dominant and independent from control geometry.
-        drawLabel(args.vg, panelPoint(panelCenterX, 5.10F), "CLOCK", 12.0F);
+        const NVGcolor primary = nvgRGB(244, 244, 244);
+        const NVGcolor secondary = nvgRGB(142, 144, 148);
 
-        // Control and jack labels always sit below the corresponding physical element.
-        // The encoder deliberately carries no label: its push/turn behavior is self-evident
-        // from the control and the OLED UI, and the space is better left visually quiet.
-        const float buttonLabelY = kPlayCenter.y + kButtonActuatorDiameterMm * 0.5F + 1.3F;
-        constexpr float labelLineGapMm = 2.15F;
-        drawLabel(args.vg, panelPoint(kPlayCenter.x, buttonLabelY), "PLAY", 6.2F);
-        drawLabel(args.vg, panelPoint(kPlayCenter.x, buttonLabelY + labelLineGapMm), "/ PAUSE", 6.2F);
-        drawLabel(args.vg, panelPoint(kTapCenter.x, buttonLabelY), "TAP", 6.2F);
-        drawLabel(args.vg, panelPoint(kTapCenter.x, buttonLabelY + labelLineGapMm), "/ SHIFT", 6.2F);
-        drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY), "STOP", 6.2F);
-        drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY + labelLineGapMm), "/ BACK", 6.2F);
+        // The CLOCK wordmark itself is project-owned vector geometry in the generated panel SVG.
+        // Control labels always sit below their hardware. The encoder deliberately remains
+        // unlabelled, because the OLED UI carries its context and the panel benefits from space.
+        const float buttonLabelY = kPlayCenter.y + kButtonActuatorDiameterMm * 0.5F + 1.25F;
+        constexpr float labelLineGapMm = 2.25F;
+        drawLabel(args.vg, panelPoint(kPlayCenter.x, buttonLabelY), "PLAY", 7.2F, primary);
+        drawLabel(args.vg, panelPoint(kPlayCenter.x, buttonLabelY + labelLineGapMm), "PAUSE", 6.5F, secondary);
+        drawLabel(args.vg, panelPoint(kTapCenter.x, buttonLabelY), "TAP", 7.2F, primary);
+        drawLabel(args.vg, panelPoint(kTapCenter.x, buttonLabelY + labelLineGapMm), "SHIFT", 6.5F, secondary);
+        drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY), "STOP", 7.2F, primary);
+        drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY + labelLineGapMm), "BACK", 6.5F, secondary);
 
-        const float inputLabelY = kSyncCenter.y + kJackNutDiameterMm * 0.5F + 1.25F;
-        drawLabel(args.vg, panelPoint(kSyncCenter.x, inputLabelY), "IN 1", 6.0F);
-        drawLabel(args.vg, panelPoint(kSyncCenter.x, inputLabelY + labelLineGapMm), "/ SYNC", 6.0F);
-        drawLabel(args.vg, panelPoint(kResetCenter.x, inputLabelY), "IN 2", 6.0F);
-        drawLabel(args.vg, panelPoint(kResetCenter.x, inputLabelY + labelLineGapMm), "/ RST", 6.0F);
+        const float inputLabelY = kSyncCenter.y + kJackNutDiameterMm * 0.5F + 1.4F;
+        drawLabel(args.vg, panelPoint(kSyncCenter.x, inputLabelY), "IN 1", 7.2F, primary);
+        drawLabel(args.vg, panelPoint(kResetCenter.x, inputLabelY), "IN 2", 7.2F, primary);
 
         for (std::size_t index = 0U; index < kOutputCenters.size(); ++index) {
             const auto& center = kOutputCenters[index];
             const float labelY = center.y + kJackNutDiameterMm * 0.5F + 1.5F;
             const std::string label = std::to_string(index + 1U);
-            drawLabel(args.vg, panelPoint(center.x, labelY), label.c_str(), 6.8F);
+            drawLabel(args.vg, panelPoint(center.x, labelY), label.c_str(), 7.6F, primary);
         }
 
-        drawLabel(args.vg, panelPoint(panelCenterX, 123.15F), "SOUTH SIGNAL LAB", 5.4F);
-    }
-};
-
-struct ClockEncoderKnob final : app::SvgKnob {
-    ClockEncoderKnob() {
-        constexpr float kPi = 3.14159265358979323846F;
-        minAngle = -0.83F * kPi;
-        maxAngle = 0.83F * kPi;
-        snap = true;
-        forceLinear = true;
-        speed = 2.0F;
-        setSvg(window::Svg::load(asset::plugin(pluginInstance, "res/encoder.svg")));
-    }
-
-    void onHoverScroll(const HoverScrollEvent& event) override {
-        engine::ParamQuantity* quantity = getParamQuantity();
-        if (quantity == nullptr || event.scrollDelta.y == 0.0F) {
-            return;
-        }
-        // A hardware encoder is relative. One wheel event therefore means at least one detent,
-        // independent of Rack's global knob-scroll sensitivity setting.
-        const float detent = event.scrollDelta.y > 0.0F ? 1.0F : -1.0F;
-        quantity->setValue(quantity->getValue() + detent);
-        event.consume(this);
+        drawLabel(args.vg, panelPoint(panelCenterX, 123.15F), "SOUTH SIGNAL LAB", 6.5F, primary);
     }
 };
 
 /**
- * @brief Transparent centre switch that models the encoder's physical push shaft.
+ * @brief Endless push encoder with conflict-free Rack gestures.
  *
- * The outer encoder ring remains a Rack knob for rotation. Holding the centre keeps the real
- * encoder-button level asserted, so firmware short-press, long-press and chord timing use their
- * production debounce/gesture implementation instead of a synthetic fixed-duration click.
+ * Click-dragging vertically rotates the encoder in discrete detents, matching normal Rack knob
+ * interaction while preserving the hardware's endless nature. A stationary click/hold is the
+ * physical encoder push. Because both gestures are resolved by this one widget, there is no
+ * overlapping centre switch to steal drags and no bounded parameter whose indicator can jump.
  */
-struct ClockEncoderPushButton final : app::SvgSwitch {
-    ClockEncoderPushButton() {
-        momentary = true;
-        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/encoder-push-0.svg")));
-        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/encoder-push-1.svg")));
+struct ClockEncoderWidget final : widget::OpaqueWidget {
+    ClockModule* clockModule = nullptr;
+    float visibleDiameterPx = 0.0F;
+    float dragAccumulatorPx = 0.0F;
+    float dragDistancePx = 0.0F;
+    float indicatorAngle = -1.57079632679489661923F;
+    bool pointerDown = false;
+    bool dragging = false;
+
+    static constexpr float kPi = 3.14159265358979323846F;
+    static constexpr float kDragThresholdPx = 3.0F;
+    static constexpr float kPixelsPerDetent = 5.0F;
+    static constexpr float kAnglePerDetent = 2.0F * kPi / 20.0F;
+
+    void queueDetents(const int detents) {
+        if (detents == 0 || clockModule == nullptr) {
+            return;
+        }
+        clockModule->queueEncoderDetents(detents);
+        indicatorAngle = std::remainder(
+            indicatorAngle + static_cast<float>(detents) * kAnglePerDetent,
+            2.0F * kPi);
+    }
+
+    void draw(const DrawArgs& args) override {
+        const Vec center = box.size.div(2.0F);
+        const float radius = std::max(2.0F, visibleDiameterPx * 0.5F);
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, center.x, center.y, radius);
+        nvgFillColor(args.vg, nvgRGB(47, 48, 51));
+        nvgFill(args.vg);
+        nvgStrokeWidth(args.vg, 1.2F);
+        nvgStrokeColor(args.vg, nvgRGB(18, 19, 21));
+        nvgStroke(args.vg);
+
+        nvgBeginPath(args.vg);
+        nvgCircle(args.vg, center.x, center.y, std::max(1.0F, radius - 2.2F));
+        nvgFillColor(args.vg, nvgRGB(37, 38, 40));
+        nvgFill(args.vg);
+
+        const float inner = radius * 0.28F;
+        const float outer = radius * 0.78F;
+        const float sx = center.x + std::cos(indicatorAngle) * inner;
+        const float sy = center.y + std::sin(indicatorAngle) * inner;
+        const float ex = center.x + std::cos(indicatorAngle) * outer;
+        const float ey = center.y + std::sin(indicatorAngle) * outer;
+        nvgBeginPath(args.vg);
+        nvgMoveTo(args.vg, sx, sy);
+        nvgLineTo(args.vg, ex, ey);
+        nvgStrokeWidth(args.vg, 1.5F);
+        nvgStrokeColor(args.vg, nvgRGB(240, 241, 242));
+        nvgLineCap(args.vg, NVG_ROUND);
+        nvgStroke(args.vg);
+    }
+
+    void onButton(const ButtonEvent& event) override {
+        if (event.button != GLFW_MOUSE_BUTTON_LEFT) {
+            return;
+        }
+        if (event.action == GLFW_PRESS) {
+            pointerDown = true;
+            dragging = false;
+            dragAccumulatorPx = 0.0F;
+            dragDistancePx = 0.0F;
+            if (clockModule != nullptr) {
+                clockModule->setEncoderPointerState(true, false);
+            }
+            event.consume(this);
+        }
+    }
+
+    void onDragStart(const DragStartEvent& event) override {
+        if (event.button == GLFW_MOUSE_BUTTON_LEFT) {
+            APP->window->cursorLock();
+        }
+    }
+
+    void onDragMove(const DragMoveEvent& event) override {
+        if (event.button != GLFW_MOUSE_BUTTON_LEFT || !pointerDown) {
+            return;
+        }
+        dragDistancePx += event.mouseDelta.norm();
+        if (!dragging && dragDistancePx >= kDragThresholdPx) {
+            dragging = true;
+            if (clockModule != nullptr) {
+                clockModule->setEncoderPointerState(true, true);
+            }
+        }
+        if (dragging) {
+            dragAccumulatorPx += -event.mouseDelta.y;
+            const int detents = static_cast<int>(dragAccumulatorPx / kPixelsPerDetent);
+            if (detents != 0) {
+                dragAccumulatorPx -= static_cast<float>(detents) * kPixelsPerDetent;
+                queueDetents(detents);
+            }
+        }
+        event.consume(this);
+    }
+
+    void onDragEnd(const DragEndEvent& event) override {
+        if (event.button != GLFW_MOUSE_BUTTON_LEFT) {
+            return;
+        }
+        APP->window->cursorUnlock();
+        pointerDown = false;
+        if (clockModule != nullptr) {
+            clockModule->releaseEncoderPointer(dragging);
+        }
+        dragging = false;
+        dragAccumulatorPx = 0.0F;
+        dragDistancePx = 0.0F;
+    }
+
+    void onHoverScroll(const HoverScrollEvent& event) override {
+        if (event.scrollDelta.y == 0.0F) {
+            return;
+        }
+        queueDetents(event.scrollDelta.y > 0.0F ? 1 : -1);
+        event.consume(this);
     }
 };
 
@@ -470,10 +611,17 @@ struct ClockWidget final : ModuleWidget {
         display->module = module;
         addChild(display);
 
-        addParam(createParamCentered<ClockEncoderKnob>(
-            panelPoint(kEncoderCenter), module, ClockModule::ENCODER_PARAM));
-        addParam(createParamCentered<ClockEncoderPushButton>(
-            panelPoint(kEncoderCenter), module, ClockModule::ENCODER_PUSH_PARAM));
+        // The physical encoder is an endless relative control, not a bounded Rack parameter.
+        // One combined widget resolves vertical drag versus stationary push so the gestures cannot
+        // overlap or steal events from each other.
+        constexpr float kEncoderHitDiameterMm = 12.0F;
+        const Vec encoderCenter = panelPoint(kEncoderCenter);
+        const Vec encoderSize = mm2px(Vec(kEncoderHitDiameterMm, kEncoderHitDiameterMm));
+        auto* encoder = createWidget<ClockEncoderWidget>(encoderCenter.minus(encoderSize.div(2.0F)));
+        encoder->box.size = encoderSize;
+        encoder->visibleDiameterPx = mm2px(Vec(kEncoderDiameterMm, kEncoderDiameterMm)).x;
+        encoder->clockModule = module;
+        addChild(encoder);
 
         addParam(createParamCentered<ClockPlayButton>(panelPoint(kPlayCenter), module, ClockModule::PLAY_PARAM));
         addParam(createParamCentered<ClockTapButton>(panelPoint(kTapCenter), module, ClockModule::TAP_PARAM));

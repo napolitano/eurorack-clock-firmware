@@ -17,21 +17,21 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add a Rack-independent `ClockVcvRuntime` adapter that advances the existing 20 kHz/50-us scheduler from Rack sample time, forwards physical panel gestures, drives conditioned SYNC/RST levels and exposes the real 128x64 framebuffer plus 0/+5-V gate states.
 - Embed the complete logical CLOCK persistence image in Rack patch JSON so presets/settings/Custom Grooves reuse the existing schema and migration path.
 - Generate the functional 10-HP Rack panel from `sim/panel_layout.ini` instead of maintaining an independent VCV placement: OLED upper left, push encoder upper right, PLAY/TAP/STOP row, left-aligned SYNC/RST and the hardware 4x2 output/LED matrix now match the native simulator geometry.
-- Generate Rack widget coordinates and control artwork from the same millimetre source, add the eight 3 mm output activity LEDs, and split the encoder interaction into outer-ring rotation plus a transparent centre push surface so held pushes reach the real firmware long-press path.
+- Generate Rack widget coordinates and control artwork from the same millimetre source and add the eight 3 mm output activity LEDs.
 - Enforce an explicit one-active-instance limit for the first alpha because the current host HAL/application callback boundary is process-global; additional instances stay muted rather than corrupting shared state.
 - Add `vcv_runtime_adapter_tests` to CMake/CTest and a dedicated GitHub Actions workflow that builds/packages the plugin against pinned Rack SDK 2.6.6 on Linux x64.
 - Verify the generated `.vcvplugin` payload structure and Rack SDK `make install` target in CI before exposing the package as a workflow artifact.
 - Add direct host-input driving for SYNC/RST, including explicit HIGH release when a virtual cable is removed, with simulator regression coverage.
 - Capture SYNC/RST level transitions at Rack sample rate in a fixed allocation-free queue before replaying them into the 20 kHz CLOCK scheduler, preventing one-sample Rack trigger pulses from being lost between adjacent 50-us firmware ticks.
-- Rename the Rack-visible module to **South Signal Lab Clock** and switch the generated functional panel to a black plate with white labels: **PLAY / PAUSE**, **TAP / SHIFT**, **STOP / BACK**, **IN 1 / SYNC**, **IN 2 / RST**, and outputs **1–8**.
+- Rename the Rack-visible module to **South Signal Lab Clock** and switch the generated functional panel to a black high-contrast plate with button, input and output labelling derived from the physical layout.
 - Document the Trial-First deployment path from adapter tests to `.vcvplugin` CI artifacts and later tagged-release integration.
 - Add a dedicated cross-platform VCV developer guide covering external SDK setup, adapter tests, panel generation, local build/package/install, isolated Rack profiles, package inspection, logs and manual smoke testing.
 - Formalize the Rack licensing/dependency boundary: keep the SDK external, confine Rack API use to `vcv/`, reject bundled SDK/`libRack` payloads, and document the free-of-charge plugin exception assumption.
 - Fix generated VCV C++ geometry literals so integral millimetre values are emitted as standard `9.0F`/`3.0F` literals instead of invalid GNU `9F`/`3F` tokens, and add a regression that rejects integer-plus-`F` output.
 - Draw Rack panel lettering through a NanoVG overlay using Rack's bundled UI font because Rack's NanoSVG loader does not render SVG `<text>` nodes; keep the SVG text only for standalone previews/documentation.
-- Refine the functional VCV panel hierarchy: center a larger CLOCK title at the top, center SOUTH SIGNAL LAB at the bottom, enlarge all control/port labels, keep every button/jack label below its hardware, and leave the encoder intentionally unlabelled.
-- Make the virtual encoder easier to turn by enlarging only its Rack interaction viewport, shrinking the dedicated push-centre hit target, forcing predictable linear drag behavior and mapping mouse-wheel events directly to relative encoder detents.
-- Keep VCV activity LEDs visible for 75 ms after short gates, matching the native simulator's perceptual LED policy without stretching the real 0/+5-V gate outputs.
+- Refine the functional VCV panel hierarchy: reuse the canonical CLOCK vector wordmark at larger scale, enlarge SOUTH SIGNAL LAB, enlarge all control/port labels, render button secondary functions in grey without slash separators, keep input jack labels to IN 1 / IN 2, keep every label below its hardware, and leave the encoder intentionally unlabelled.
+- Replace the bounded overlapping Rack knob/push pair with one endless relative encoder widget: vertical click-drag produces hardware-style detents, stationary click/hold remains encoder push, mouse wheel remains relative, and the indicator rotates continuously without parameter-boundary jumps.
+- Replace the manual 75 ms VCV activity-latch timer with Rack's bounded light smoothing and dark inactive panel apertures, while leaving the real 0/+5-V gate outputs instantaneous and unchanged.
 - Add adapter regressions that verify factory One Clock rising-edge periodicity and eight-output phase coherence at 44.1, 48 and 96 kHz Rack sample rates.
 
 ### Documentation
