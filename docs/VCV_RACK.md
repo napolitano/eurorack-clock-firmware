@@ -14,7 +14,11 @@ The Trial-First module must teach the hardware layout rather than merely expose 
 
 The VCV functional plate is black with white labelling and identifies the module as **South Signal Lab Clock**. The user-facing labels are **PLAY / PAUSE**, **TAP / SHIFT**, **STOP / BACK**, **IN 1 / SYNC**, **IN 2 / RST**, and outputs **1–8**. Geometry changes belong in the simulator INI and are then regenerated into Rack; hand-editing an independent VCV placement is a regression. This remains functional VCV artwork, not a manufacturing drawing for the later physical panel.
 
-The encoder uses a Rack-specific interaction overlay without changing physical geometry: its outer area remains the rotary control, while the transparent centre is the momentary push surface. Holding that centre passes a continuous button level into the production control path, which is required for firmware long-press timing.
+The encoder uses a Rack-specific interaction overlay without changing physical geometry: its outer area remains the rotary control, while the transparent centre is the momentary push surface. The visible knob keeps the simulator-defined diameter, while only the Rack hit viewport is enlarged and the centre-push target narrowed to make rotation reliable. Dragging is forced to Rack's linear relative mode and wheel events map directly to encoder detents. Holding the centre passes a continuous button level into the production control path, which is required for firmware long-press timing.
+
+Rack's NanoSVG loader does not render SVG `<text>` nodes. The generated `CLOCK.svg` therefore remains useful as a standalone preview, but all actual in-Rack panel lettering is redrawn by a NanoVG overlay using Rack's own UI font. This avoids bundling an additional font while keeping the black/white functional panel legible.
+
+Output LEDs are presentation only: a short gate refreshes a 75 ms activity hold so a 10 ms gate cannot disappear between GUI frames. OUT 1–8 themselves remain tied to the instantaneous production gate state and are not pulse-stretched.
 
 ## Current verified boundary
 
@@ -23,6 +27,7 @@ The Rack-independent adapter is built and exercised by normal CMake/CTest. It ha
 - normal CLOCK boot path;
 - PLAY-driven engine start;
 - eight coherent 0/+5-V logical gate outputs;
+- factory One Clock edge periodicity at 44.1, 48 and 96 kHz host sample rates;
 - the real CLOCK OLED framebuffer;
 - held encoder push through the real long-press path;
 - raw CLOCK persistence-image export/import;

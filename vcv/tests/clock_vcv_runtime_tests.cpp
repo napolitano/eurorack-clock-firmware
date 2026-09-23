@@ -5,11 +5,15 @@
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
  */
+#include <algorithm>
 #include <array>
 #include <cassert>
 #include <cstdint>
+#include <cmath>
 #include <filesystem>
 #include <iostream>
+#include <string>
+#include <vector>
 
 #include "clock_vcv_runtime.h"
 
@@ -61,10 +65,58 @@ void oneSampleResetPulse(clockfw::vcv::ClockVcvRuntime& runtime, const double sa
     runtime.processSample(sampleTime, false, 0.0F, true, 0.0F);
 }
 
+void assertRegularOneClockGates(const double sampleRate, const char* suffix) {
+    const auto statePath = std::filesystem::temp_directory_path() /
+        (std::string("ssl-clock-vcv-gate-test-") + suffix + ".bin");
+    std::error_code ignored;
+    std::filesystem::remove(statePath, ignored);
+
+    clockfw::vcv::ClockVcvRuntime runtime(statePath);
+    runtime.begin();
+    advance(runtime, 1.100, sampleRate);
+    click(runtime, &clockfw::vcv::PanelControls::playPressed, sampleRate);
+
+    std::array<bool, 8U> previousHigh{};
+    std::array<std::vector<std::size_t>, 8U> risingSamples{};
+    const std::size_t sampleCount = static_cast<std::size_t>(2.100 * sampleRate);
+    for (std::size_t sample = 0U; sample < sampleCount; ++sample) {
+        runtime.processSample(1.0 / sampleRate, false, 0.0F, false, 0.0F);
+        for (std::size_t channel = 0U; channel < 8U; ++channel) {
+            const bool high = runtime.gateVoltage(channel) == 5.0F;
+            if (high && !previousHigh[channel]) {
+                risingSamples[channel].push_back(sample);
+            }
+            previousHigh[channel] = high;
+        }
+    }
+
+    assert(risingSamples[0].size() >= 3U);
+    for (std::size_t channel = 1U; channel < risingSamples.size(); ++channel) {
+        assert(risingSamples[channel].size() == risingSamples[0].size());
+        assert(risingSamples[channel] == risingSamples[0]);
+    }
+
+    const double expectedSamples = sampleRate * 0.5;
+    const double toleranceSamples = std::max(4.0, sampleRate * 0.0001);
+    for (std::size_t index = 1U; index < risingSamples[0].size(); ++index) {
+        const double actualSamples = static_cast<double>(
+            risingSamples[0][index] - risingSamples[0][index - 1U]);
+        assert(std::abs(actualSamples - expectedSamples) <= toleranceSamples);
+    }
+
+    std::filesystem::remove(statePath, ignored);
+}
+
 }  // namespace
 
 int main() {
     constexpr double kSampleRate = 48000.0;
+
+    // The actual Rack output voltage must remain periodic independently of the GUI LED refresh.
+    // Test common Rack sample rates so sample-to-50-us scheduler conversion cannot hide a drift.
+    assertRegularOneClockGates(44100.0, "44100");
+    assertRegularOneClockGates(48000.0, "48000");
+    assertRegularOneClockGates(96000.0, "96000");
     const auto statePath = std::filesystem::temp_directory_path() / "ssl-clock-vcv-runtime-test.bin";
     std::error_code ignored;
     std::filesystem::remove(statePath, ignored);

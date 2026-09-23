@@ -7,6 +7,7 @@
  */
 #include "plugin.hpp"
 
+#include <algorithm>
 #include <array>
 #include <atomic>
 #include <cmath>
@@ -120,6 +121,7 @@ struct ClockModule final : Module {
     std::array<std::atomic<std::uint8_t>, clockfw::hal::OledDisplay::kFramebufferSize> display{};
     int lastEncoderDetent = 0;
     std::uint32_t displayDivider = 0U;
+    std::array<float, 8U> activityHoldSeconds{};
     bool ownsHostRuntime = false;
 
     ClockModule() {
@@ -200,9 +202,22 @@ struct ClockModule final : Module {
             resetConnected ? inputs[RESET_INPUT].getVoltage() : 0.0F);
 
         for (int index = 0; index < 8; ++index) {
-            const float gateVoltage = runtime->gateVoltage(static_cast<std::size_t>(index));
+            const std::size_t channel = static_cast<std::size_t>(index);
+            const float gateVoltage = runtime->gateVoltage(channel);
+            const bool gateHigh = gateVoltage > 0.0F;
             outputs[OUT1_OUTPUT + index].setVoltage(gateVoltage);
-            lights[OUT1_LIGHT + index].setBrightness(gateVoltage > 0.0F ? 1.0F : 0.0F);
+
+            // The physical default gate can be only 10 ms long, shorter than one 60-Hz GUI
+            // frame. Keep the Rack activity LED visible for 75 ms without stretching the actual
+            // gate voltage. This matches the native simulator's perceptual LED policy.
+            if (gateHigh) {
+                activityHoldSeconds[channel] = 0.075F;
+            } else {
+                activityHoldSeconds[channel] = std::max(
+                    0.0F, activityHoldSeconds[channel] - args.sampleTime);
+            }
+            lights[OUT1_LIGHT + index].setBrightness(
+                (gateHigh || activityHoldSeconds[channel] > 0.0F) ? 1.0F : 0.0F);
         }
 
         ++displayDivider;
@@ -300,13 +315,90 @@ struct ClockDisplayWidget final : Widget {
     }
 };
 
+/**
+ * @brief Draws all panel lettering with Rack's UI font.
+ *
+ * Rack's NanoSVG renderer intentionally does not render SVG <text> elements. The generated SVG
+ * keeps text for standalone previews/documentation, while this overlay makes the same labels
+ * visible in the actual Rack module without bundling a second font.
+ */
+struct ClockPanelLabels final : Widget {
+    static Vec panelPoint(const clockfw::vcv::panel::PointMm& point) {
+        using namespace clockfw::vcv::panel;
+        return mm2px(Vec(point.x + kPanelOffsetXmm, point.y + kPanelOffsetYmm));
+    }
+
+    static Vec panelPoint(const float xMm, const float yMm) {
+        using namespace clockfw::vcv::panel;
+        return mm2px(Vec(xMm + kPanelOffsetXmm, yMm + kPanelOffsetYmm));
+    }
+
+    static void drawLabel(
+        NVGcontext* vg,
+        const Vec& position,
+        const char* text,
+        const float size,
+        const int align = NVG_ALIGN_CENTER | NVG_ALIGN_MIDDLE) {
+        if (APP == nullptr || APP->window == nullptr || !APP->window->uiFont) {
+            return;
+        }
+        nvgFontFaceId(vg, APP->window->uiFont->handle);
+        nvgFontSize(vg, size);
+        nvgFillColor(vg, nvgRGB(244, 244, 244));
+        nvgTextAlign(vg, align);
+        nvgText(vg, position.x, position.y, text, nullptr);
+    }
+
+    void draw(const DrawArgs& args) override {
+        using namespace clockfw::vcv::panel;
+        drawLabel(args.vg, panelPoint(3.15F, 3.10F), "SOUTH SIGNAL LAB", 4.8F,
+            NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+        drawLabel(args.vg, panelPoint(3.15F, 6.55F), "CLOCK", 8.0F,
+            NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+
+        drawLabel(args.vg,
+            panelPoint(kEncoderCenter.x, kEncoderCenter.y + kEncoderDiameterMm * 0.5F + 1.7F),
+            "ENC / PUSH", 4.6F);
+
+        const float buttonLabelY = kPlayCenter.y + kButtonActuatorDiameterMm * 0.5F + 1.5F;
+        drawLabel(args.vg, panelPoint(kPlayCenter.x, buttonLabelY), "PLAY / PAUSE", 4.7F);
+        drawLabel(args.vg, panelPoint(kTapCenter.x, buttonLabelY), "TAP / SHIFT", 4.7F);
+        drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY), "STOP / BACK", 4.7F);
+
+        const float inputLabelY = kSyncCenter.y - 6.85F;
+        drawLabel(args.vg, panelPoint(kSyncCenter.x, inputLabelY), "IN 1 / SYNC", 4.8F);
+        drawLabel(args.vg, panelPoint(kResetCenter.x, inputLabelY), "IN 2 / RST", 4.8F);
+
+        for (std::size_t index = 0U; index < kOutputCenters.size(); ++index) {
+            const auto& center = kOutputCenters[index];
+            const float labelY = center.y + kJackNutDiameterMm * 0.5F + 1.2F;
+            const std::string label = std::to_string(index + 1U);
+            drawLabel(args.vg, panelPoint(center.x, labelY), label.c_str(), 5.8F);
+        }
+    }
+};
+
 struct ClockEncoderKnob final : app::SvgKnob {
     ClockEncoderKnob() {
         constexpr float kPi = 3.14159265358979323846F;
         minAngle = -0.83F * kPi;
         maxAngle = 0.83F * kPi;
         snap = true;
+        forceLinear = true;
+        speed = 2.0F;
         setSvg(window::Svg::load(asset::plugin(pluginInstance, "res/encoder.svg")));
+    }
+
+    void onHoverScroll(const HoverScrollEvent& event) override {
+        engine::ParamQuantity* quantity = getParamQuantity();
+        if (quantity == nullptr || event.scrollDelta.y == 0.0F) {
+            return;
+        }
+        // A hardware encoder is relative. One wheel event therefore means at least one detent,
+        // independent of Rack's global knob-scroll sensitivity setting.
+        const float detent = event.scrollDelta.y > 0.0F ? 1.0F : -1.0F;
+        quantity->setValue(quantity->getValue() + detent);
+        event.consume(this);
     }
 };
 
@@ -360,6 +452,10 @@ struct ClockWidget final : ModuleWidget {
 
         setModule(module);
         setPanel(createPanel(asset::plugin(pluginInstance, "res/CLOCK.svg")));
+
+        auto* labels = createWidget<ClockPanelLabels>(Vec(0.0F, 0.0F));
+        labels->box.size = box.size;
+        addChild(labels);
 
         auto* display = createWidget<ClockDisplayWidget>(
             mm2px(Vec(kDisplay.x + kPanelOffsetXmm, kDisplay.y + kPanelOffsetYmm)));

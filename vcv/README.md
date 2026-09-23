@@ -32,9 +32,11 @@ python scripts/generate_vcv_panel.py
 
 after changing panel geometry. This regenerates the Rack panel SVG, the C++ millimetre coordinate header, the encoder artwork and the three transport-button frame pairs. CI runs the same command in `--check` mode and rejects stale Rack panel assets.
 
-The Rack module uses a black functional front plate with white labelling while retaining the simulator-defined geometry. The Rack-visible identity is **South Signal Lab Clock**. Controls are labelled **PLAY / PAUSE**, **TAP / SHIFT** and **STOP / BACK**; the two inputs are **IN 1 / SYNC** and **IN 2 / RST**; outputs are numbered **1–8** in the simulator-defined 4x2 matrix with one 3 mm red activity LED above each jack.
+The Rack module uses a black functional front plate with white labelling while retaining the simulator-defined geometry. The Rack-visible identity is **South Signal Lab Clock**. Controls are labelled **PLAY / PAUSE**, **TAP / SHIFT** and **STOP / BACK**; the two inputs are **IN 1 / SYNC** and **IN 2 / RST**; outputs are numbered **1–8** in the simulator-defined 4x2 matrix with one 3 mm red activity LED above each jack. Rack's NanoSVG loader does not render SVG `<text>` nodes, so the actual module draws this lettering as a NanoVG overlay with Rack's bundled UI font; the generated SVG keeps matching text for standalone previews.
 
-The push encoder deliberately has two Rack interaction zones: drag/scroll the outer knob area to turn it, and click/hold the transparent centre area to press it. A centre hold is passed through continuously, so short press, long press and TAP+encoder-push timing are handled by the real CLOCK debounce/gesture code.
+The push encoder deliberately has two Rack interaction zones: drag/scroll the outer knob area to turn it, and click/hold the transparent centre area to press it. The visible knob remains at the simulator-defined physical diameter, but Rack receives a larger transparent rotary hit area and a smaller centre-push target so rotation is not confined to a narrow annulus. Dragging uses forced linear relative movement; mouse-wheel events map directly to detents instead of depending on Rack's global knob-scroll sensitivity. A centre hold is passed through continuously, so short press, long press and TAP+encoder-push timing are handled by the real CLOCK debounce/gesture code.
+
+The gate voltage itself is never visually stretched. Because the factory 10 ms gate can be shorter than a GUI frame, the Rack activity LED is held visibly on for 75 ms after gate activity, matching the native simulator's perceptual LED behavior while OUT 1–8 continue to expose the real instantaneous 0/+5 V state.
 
 ## Source sharing
 
@@ -58,7 +60,7 @@ cmake --build --preset simulator-headless
 ctest --preset simulator-headless --output-on-failure
 ```
 
-`vcv_runtime_adapter_tests` currently verifies real boot, held encoder long-press, physical PLAY, coherent 0/+5-V gate output across all eight channels, persistence-image round trip, and one-Rack-sample SYNC/RST pulse capture at 48 kHz.
+`vcv_runtime_adapter_tests` currently verifies real boot, held encoder long-press, physical PLAY, coherent 0/+5-V gate output across all eight channels, factory One Clock rising-edge periodicity at 44.1/48/96 kHz, persistence-image round trip, and one-Rack-sample SYNC/RST pulse capture at 48 kHz.
 
 ## Build against the real Rack SDK
 

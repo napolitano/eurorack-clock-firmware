@@ -170,9 +170,13 @@ def transparent_hit_svg(size_px: float) -> str:
 
 
 def knob_svg(parser: configparser.ConfigParser) -> str:
-    size = to_px(parser.getfloat("encoder", "knob_diameter_mm"))
+    physical_size = to_px(parser.getfloat("encoder", "knob_diameter_mm"))
+    # Rack needs a slightly larger virtual hit area than the literal hardware knob. The visible
+    # circle remains the simulator-defined physical diameter; only the transparent SVG viewport
+    # is enlarged so mouse dragging is reliable on high-DPI displays.
+    size = max(physical_size * 1.45, to_px(12.0))
     c = size * 0.5
-    r = c - 0.9
+    r = physical_size * 0.5 - 0.9
     return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{fmt(size)}" height="{fmt(size)}" viewBox="0 0 {fmt(size)} {fmt(size)}">
   <circle cx="{fmt(c)}" cy="{fmt(c)}" r="{fmt(r)}" fill="#3a3b3e" stroke="#151618" stroke-width="1.2"/>
   <circle cx="{fmt(c)}" cy="{fmt(c)}" r="{fmt(max(1.0, r - 2.0))}" fill="#2b2c2e"/>
@@ -269,7 +273,7 @@ def generated_panel_svg(parser: configparser.ConfigParser) -> str:
 
 def outputs(parser: configparser.ConfigParser) -> dict[Path, str]:
     button_size = to_px(parser.getfloat("play", "actuator_diameter_mm"))
-    encoder_push_size = to_px(parser.getfloat("encoder", "knob_diameter_mm")) * 0.54
+    encoder_push_size = to_px(parser.getfloat("encoder", "knob_diameter_mm")) * 0.38
     return {
         DEFAULT_PANEL: generated_panel_svg(parser),
         DEFAULT_HEADER: generated_header(parser),
