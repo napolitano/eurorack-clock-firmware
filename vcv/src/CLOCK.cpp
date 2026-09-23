@@ -120,8 +120,6 @@ struct ClockModule final : Module {
     std::array<std::atomic<std::uint8_t>, clockfw::hal::OledDisplay::kFramebufferSize> display{};
     int lastEncoderDetent = 0;
     std::uint32_t displayDivider = 0U;
-    std::atomic<bool> encoderPushRequested{false};
-    std::uint32_t encoderPushSamplesRemaining = 0U;
     bool ownsHostRuntime = false;
 
     ClockModule() {
@@ -132,12 +130,12 @@ struct ClockModule final : Module {
         getParamQuantity(ENCODER_PARAM)->randomizeEnabled = false;
         configButton(ENCODER_PUSH_PARAM, "Encoder push");
         configButton(PLAY_PARAM, "PLAY / PAUSE");
-        configButton(TAP_PARAM, "TAP");
+        configButton(TAP_PARAM, "TAP / SHIFT");
         configButton(STOP_PARAM, "STOP / BACK");
-        configInput(SYNC_INPUT, "SYNC");
-        configInput(RESET_INPUT, "RST");
+        configInput(SYNC_INPUT, "IN 1 / SYNC");
+        configInput(RESET_INPUT, "IN 2 / RST");
         for (int index = 0; index < 8; ++index) {
-            configOutput(OUT1_OUTPUT + index, "Gate " + std::to_string(index + 1));
+            configOutput(OUT1_OUTPUT + index, std::to_string(index + 1));
         }
         for (auto& byte : display) {
             byte.store(0U, std::memory_order_relaxed);
@@ -154,10 +152,6 @@ struct ClockModule final : Module {
             runtime->begin();
             publishDisplay();
         }
-    }
-
-    void requestEncoderPush() noexcept {
-        encoderPushRequested.store(true, std::memory_order_release);
     }
 
     ~ClockModule() override {
@@ -189,17 +183,8 @@ struct ClockModule final : Module {
             lastEncoderDetent = 0;
         }
 
-        if (encoderPushRequested.exchange(false, std::memory_order_acq_rel)) {
-            encoderPushSamplesRemaining = static_cast<std::uint32_t>(
-                std::max(1.0F, args.sampleRate * 0.050F));
-        }
-
         clockfw::vcv::PanelControls controls{};
-        controls.encoderPressed = params[ENCODER_PUSH_PARAM].getValue() >= 0.5F ||
-            encoderPushSamplesRemaining > 0U;
-        if (encoderPushSamplesRemaining > 0U) {
-            --encoderPushSamplesRemaining;
-        }
+        controls.encoderPressed = params[ENCODER_PUSH_PARAM].getValue() >= 0.5F;
         controls.playPressed = params[PLAY_PARAM].getValue() >= 0.5F;
         controls.tapPressed = params[TAP_PARAM].getValue() >= 0.5F;
         controls.stopPressed = params[STOP_PARAM].getValue() >= 0.5F;
@@ -316,8 +301,6 @@ struct ClockDisplayWidget final : Widget {
 };
 
 struct ClockEncoderKnob final : app::SvgKnob {
-    ClockModule* clockModule = nullptr;
-
     ClockEncoderKnob() {
         constexpr float kPi = 3.14159265358979323846F;
         minAngle = -0.83F * kPi;
@@ -325,12 +308,20 @@ struct ClockEncoderKnob final : app::SvgKnob {
         snap = true;
         setSvg(window::Svg::load(asset::plugin(pluginInstance, "res/encoder.svg")));
     }
+};
 
-    void onAction(const ActionEvent& e) override {
-        (void)e;
-        if (clockModule != nullptr) {
-            clockModule->requestEncoderPush();
-        }
+/**
+ * @brief Transparent centre switch that models the encoder's physical push shaft.
+ *
+ * The outer encoder ring remains a Rack knob for rotation. Holding the centre keeps the real
+ * encoder-button level asserted, so firmware short-press, long-press and chord timing use their
+ * production debounce/gesture implementation instead of a synthetic fixed-duration click.
+ */
+struct ClockEncoderPushButton final : app::SvgSwitch {
+    ClockEncoderPushButton() {
+        momentary = true;
+        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/encoder-push-0.svg")));
+        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/encoder-push-1.svg")));
     }
 };
 
@@ -376,10 +367,10 @@ struct ClockWidget final : ModuleWidget {
         display->module = module;
         addChild(display);
 
-        auto* encoder = createParamCentered<ClockEncoderKnob>(
-            panelPoint(kEncoderCenter), module, ClockModule::ENCODER_PARAM);
-        encoder->clockModule = module;
-        addParam(encoder);
+        addParam(createParamCentered<ClockEncoderKnob>(
+            panelPoint(kEncoderCenter), module, ClockModule::ENCODER_PARAM));
+        addParam(createParamCentered<ClockEncoderPushButton>(
+            panelPoint(kEncoderCenter), module, ClockModule::ENCODER_PUSH_PARAM));
 
         addParam(createParamCentered<ClockPlayButton>(panelPoint(kPlayCenter), module, ClockModule::PLAY_PARAM));
         addParam(createParamCentered<ClockTapButton>(panelPoint(kTapCenter), module, ClockModule::TAP_PARAM));

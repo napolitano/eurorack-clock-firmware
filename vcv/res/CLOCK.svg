@@ -1,74 +1,74 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="150" height="380" viewBox="0 0 150 380" role="img" aria-labelledby="title desc">
-  <title id="title">South Signal Lab CLOCK functional VCV Rack panel</title>
-  <desc id="desc">Functional 10 HP panel generated from sim/panel_layout.ini. Positions and physical sizes follow the native simulator geometry.</desc>
+  <title id="title">South Signal Lab Clock functional VCV Rack panel</title>
+  <desc id="desc">Black 10 HP South Signal Lab Clock panel generated from sim/panel_layout.ini. Positions and physical sizes follow the native simulator geometry.</desc>
   <!-- GENERATED from sim/panel_layout.ini by scripts/generate_vcv_panel.py. -->
   <defs><style>
-    .label{font-family:DejaVu Sans,Arial,sans-serif;fill:#26272a;font-size:5px;font-weight:600}.small{font-size:4.2px;font-weight:500}.tiny{font-size:3.8px;font-weight:500}.title{font-size:7px;font-weight:700}.sub{font-size:3.4px;font-weight:500;letter-spacing:.18px}
-    .jackNut{fill:#d8d9db;stroke:#66686b;stroke-width:.8}.jackBush{fill:#afb1b4;stroke:#707276;stroke-width:.55}.jackHole{fill:#17181a}.led{fill:#5a3434;stroke:#7c3636;stroke-width:.45}.screw{fill:#a8aaad;stroke:#696b6e;stroke-width:.5}
+    .label{font-family:DejaVu Sans,Arial,sans-serif;fill:#f4f4f4;font-size:5px;font-weight:600}.small{font-size:4px;font-weight:600}.tiny{font-size:3.8px;font-weight:600}.title{font-size:7px;font-weight:700}.brand{font-size:3.7px;font-weight:600;letter-spacing:.35px}
+    .jackNut{fill:#d8d9db;stroke:#77797c;stroke-width:.8}.jackBush{fill:#afb1b4;stroke:#707276;stroke-width:.55}.jackHole{fill:#08090a}.led{fill:#5a2020;stroke:#a64242;stroke-width:.45}.screw{fill:#a8aaad;stroke:#696b6e;stroke-width:.5}
   </style></defs>
-  <rect width="150" height="380" fill="#121315"/>
-  <rect x="0.4429" y="0.2854" width="149.1142" height="379.4291" fill="#cdCfd1" stroke="#4b4d50" stroke-width="0.8"/>
-  <text class="label title" x="9.7441" y="10.4724">CLOCK</text>
-  <text class="label sub" x="9.7441" y="19.7736">8-CHANNEL CLOCK · VCV RACK TRIAL</text>
+  <rect width="150" height="380" fill="#050506"/>
+  <rect x="0.4429" y="0.2854" width="149.1142" height="379.4291" fill="#0a0a0b" stroke="#343438" stroke-width="0.8"/>
+  <text class="label brand" x="9.7441" y="9.439">SOUTH SIGNAL LAB</text>
+  <text class="label title" x="9.7441" y="19.626">CLOCK</text>
   <rect x="7.8986" y="43.5536" width="106.0367" height="53.2532" rx="1.2" fill="#050607" stroke="#525457" stroke-width="0.8"/>
   <circle class="screw" cx="6.6561" cy="6.9389" r="2.0"/>
   <circle class="screw" cx="143.3849" cy="6.9389" r="2.0"/>
   <circle class="screw" cx="6.6561" cy="373.0611" r="2.0"/>
   <circle class="screw" cx="143.3849" cy="373.0611" r="2.0"/>
   <circle cx="130.5035" cy="68.5162" r="12.4261" fill="#3a3b3e" stroke="#17181a" stroke-width="0.8"/>
-  <text class="label tiny" x="130.5035" y="85.962" text-anchor="middle">ENC</text>
+  <text class="label tiny" x="130.5035" y="85.962" text-anchor="middle">ENC / PUSH</text>
   <circle cx="29.0232" cy="144.2355" r="13.2874" fill="#B02020" stroke="#191a1c" stroke-width="0.8"/>
-  <text class="label small" x="29.0232" y="161.9521" text-anchor="middle">PLAY</text>
+  <text class="label small" x="29.0232" y="161.9521" text-anchor="middle">PLAY / PAUSE</text>
   <circle cx="70.8579" cy="144.2355" r="13.2874" fill="#707070" stroke="#191a1c" stroke-width="0.8"/>
-  <text class="label small" x="70.8579" y="161.9521" text-anchor="middle">TAP</text>
+  <text class="label small" x="70.8579" y="161.9521" text-anchor="middle">TAP / SHIFT</text>
   <circle cx="112.6928" cy="144.2355" r="13.2874" fill="#1C1C1C" stroke="#191a1c" stroke-width="0.8"/>
-  <text class="label small" x="112.6928" y="161.9521" text-anchor="middle">STOP</text>
+  <text class="label small" x="112.6928" y="161.9521" text-anchor="middle">STOP / BACK</text>
   <circle class="jackNut" cx="21.9815" cy="207.4738" r="11.5896"/>
   <circle class="jackBush" cx="21.9815" cy="207.4738" r="8.8583"/>
   <circle class="jackHole" cx="21.9815" cy="207.4738" r="5.315"/>
   <circle class="jackNut" cx="55.5322" cy="207.4738" r="11.5896"/>
   <circle class="jackBush" cx="55.5322" cy="207.4738" r="8.8583"/>
   <circle class="jackHole" cx="55.5322" cy="207.4738" r="5.315"/>
-  <text class="label small" x="21.9815" y="187.2474" text-anchor="middle">SYNC IN</text>
-  <text class="label small" x="55.5322" y="187.2474" text-anchor="middle">RST IN</text>
+  <text class="label small" x="21.9815" y="187.2474" text-anchor="middle">IN 1 / SYNC</text>
+  <text class="label small" x="55.5322" y="187.2474" text-anchor="middle">IN 2 / RST</text>
   <circle class="led" cx="19.9107" cy="265.7193" r="4.4291"/>
   <circle class="jackNut" cx="19.9107" cy="283.1931" r="11.5896"/>
   <circle class="jackBush" cx="19.9107" cy="283.1931" r="8.8583"/>
   <circle class="jackHole" cx="19.9107" cy="283.1931" r="5.315"/>
-  <text class="label tiny" x="19.9107" y="298.326" text-anchor="middle">OUT1</text>
+  <text class="label small" x="19.9107" y="298.326" text-anchor="middle">1</text>
   <circle class="led" cx="53.4614" cy="265.7193" r="4.4291"/>
   <circle class="jackNut" cx="53.4614" cy="283.1931" r="11.5896"/>
   <circle class="jackBush" cx="53.4614" cy="283.1931" r="8.8583"/>
   <circle class="jackHole" cx="53.4614" cy="283.1931" r="5.315"/>
-  <text class="label tiny" x="53.4614" y="298.326" text-anchor="middle">OUT2</text>
+  <text class="label small" x="53.4614" y="298.326" text-anchor="middle">2</text>
   <circle class="led" cx="87.0121" cy="265.7193" r="4.4291"/>
   <circle class="jackNut" cx="87.0121" cy="283.1931" r="11.5896"/>
   <circle class="jackBush" cx="87.0121" cy="283.1931" r="8.8583"/>
   <circle class="jackHole" cx="87.0121" cy="283.1931" r="5.315"/>
-  <text class="label tiny" x="87.0121" y="298.326" text-anchor="middle">OUT3</text>
+  <text class="label small" x="87.0121" y="298.326" text-anchor="middle">3</text>
   <circle class="led" cx="120.5628" cy="265.7193" r="4.4291"/>
   <circle class="jackNut" cx="120.5628" cy="283.1931" r="11.5896"/>
   <circle class="jackBush" cx="120.5628" cy="283.1931" r="8.8583"/>
   <circle class="jackHole" cx="120.5628" cy="283.1931" r="5.315"/>
-  <text class="label tiny" x="120.5628" y="298.326" text-anchor="middle">OUT4</text>
+  <text class="label small" x="120.5628" y="298.326" text-anchor="middle">4</text>
   <circle class="led" cx="19.9107" cy="314.8121" r="4.4291"/>
   <circle class="jackNut" cx="19.9107" cy="332.2859" r="11.5896"/>
   <circle class="jackBush" cx="19.9107" cy="332.2859" r="8.8583"/>
   <circle class="jackHole" cx="19.9107" cy="332.2859" r="5.315"/>
-  <text class="label tiny" x="19.9107" y="347.4188" text-anchor="middle">OUT5</text>
+  <text class="label small" x="19.9107" y="347.4188" text-anchor="middle">5</text>
   <circle class="led" cx="53.4614" cy="314.8121" r="4.4291"/>
   <circle class="jackNut" cx="53.4614" cy="332.2859" r="11.5896"/>
   <circle class="jackBush" cx="53.4614" cy="332.2859" r="8.8583"/>
   <circle class="jackHole" cx="53.4614" cy="332.2859" r="5.315"/>
-  <text class="label tiny" x="53.4614" y="347.4188" text-anchor="middle">OUT6</text>
+  <text class="label small" x="53.4614" y="347.4188" text-anchor="middle">6</text>
   <circle class="led" cx="87.0121" cy="314.8121" r="4.4291"/>
   <circle class="jackNut" cx="87.0121" cy="332.2859" r="11.5896"/>
   <circle class="jackBush" cx="87.0121" cy="332.2859" r="8.8583"/>
   <circle class="jackHole" cx="87.0121" cy="332.2859" r="5.315"/>
-  <text class="label tiny" x="87.0121" y="347.4188" text-anchor="middle">OUT7</text>
+  <text class="label small" x="87.0121" y="347.4188" text-anchor="middle">7</text>
   <circle class="led" cx="120.5628" cy="314.8121" r="4.4291"/>
   <circle class="jackNut" cx="120.5628" cy="332.2859" r="11.5896"/>
   <circle class="jackBush" cx="120.5628" cy="332.2859" r="8.8583"/>
   <circle class="jackHole" cx="120.5628" cy="332.2859" r="5.315"/>
-  <text class="label tiny" x="120.5628" y="347.4188" text-anchor="middle">OUT8</text>
+  <text class="label small" x="120.5628" y="347.4188" text-anchor="middle">8</text>
 </svg>

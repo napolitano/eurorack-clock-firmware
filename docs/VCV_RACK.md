@@ -10,9 +10,11 @@ The initial implementation lives in [`../vcv/`](../vcv/). It builds the producti
 
 ## Functional panel contract
 
-The Trial-First module must teach the hardware layout rather than merely expose the same feature list. `scripts/generate_vcv_panel.py` therefore derives the Rack panel and C++ widget coordinates directly from `sim/panel_layout.ini`. The current geometry is the same 10 HP / 3U arrangement used by the simulator: OLED at the upper left, push encoder at the upper right, PLAY/TAP/STOP across one row, SYNC/RST below, and eight output jacks in a 4x2 matrix with 3 mm activity LEDs immediately above their matching outputs.
+The Trial-First module must teach the hardware layout rather than merely expose the same feature list. `scripts/generate_vcv_panel.py` therefore derives the Rack panel and C++ widget coordinates directly from `sim/panel_layout.ini`. The current geometry is the same 10 HP / 3U arrangement used by the simulator: OLED at the upper left, push encoder at the upper right, the three transport buttons across one row, the two inputs below, and eight output jacks in a 4x2 matrix with 3 mm activity LEDs immediately above their matching outputs.
 
-The appearance is intentionally functional until final hardware artwork exists. Geometry changes belong in the simulator INI and are then regenerated into Rack; hand-editing an independent VCV placement is a regression.
+The VCV functional plate is black with white labelling and identifies the module as **South Signal Lab Clock**. The user-facing labels are **PLAY / PAUSE**, **TAP / SHIFT**, **STOP / BACK**, **IN 1 / SYNC**, **IN 2 / RST**, and outputs **1–8**. Geometry changes belong in the simulator INI and are then regenerated into Rack; hand-editing an independent VCV placement is a regression. This remains functional VCV artwork, not a manufacturing drawing for the later physical panel.
+
+The encoder uses a Rack-specific interaction overlay without changing physical geometry: its outer area remains the rotary control, while the transparent centre is the momentary push surface. Holding that centre passes a continuous button level into the production control path, which is required for firmware long-press timing.
 
 ## Current verified boundary
 
@@ -20,10 +22,11 @@ The Rack-independent adapter is built and exercised by normal CMake/CTest. It ha
 
 - normal CLOCK boot path;
 - PLAY-driven engine start;
-- eight 0/+5-V logical gate outputs;
+- eight coherent 0/+5-V logical gate outputs;
 - the real CLOCK OLED framebuffer;
+- held encoder push through the real long-press path;
 - raw CLOCK persistence-image export/import;
-- direct conditioned external-input levels driven on Rack sample time.
+- Rack-sample input transition capture before the 20 kHz firmware boundary, including one-sample SYNC/RST pulses.
 
 This does **not** yet constitute a real Rack SDK build or in-Rack runtime test. The repository CI workflow `.github/workflows/vcv.yml` performs the first real SDK build using the pinned Rack SDK.
 

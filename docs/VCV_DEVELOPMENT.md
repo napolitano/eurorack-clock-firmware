@@ -6,7 +6,7 @@ Status: **EXPERIMENTAL / post-1.1.0**.
 
 This guide describes how to build, install, package, inspect and smoke-test the CLOCK Trial-First plugin locally without vendoring the VCV Rack SDK into this repository.
 
-**Windows is the primary local development path.** The Rack plugin build on Windows must be run from the **MSYS2 MinGW 64-bit shell**. PowerShell is useful for downloading, extracting and inspecting files, but PowerShell syntax such as `$env:RACK_DIR = ...` is different from the POSIX `export ...` syntax used by MSYS2.
+**Windows is the primary local development path.** CLOCK development remains a normal Windows/VSCodium/PlatformIO/CMake workflow. Only the final Rack plugin binary uses VCV's required **MSYS2 MinGW 64-bit** toolchain. Your existing repository stays on the normal Windows drive and is visible from MSYS2 as `/c/...`; no second clone is required.
 
 The guiding rule is simple: **Rack is the host container; CLOCK remains the product code.** The VCV shell may depend on the Rack API, but `src/`, `lib/clock_core/`, `sim/` and the embedded build must not acquire Rack dependencies.
 
@@ -24,14 +24,26 @@ Update the package database:
 pacman -Syu
 ```
 
-Close and reopen the **MinGW 64-bit** shell when MSYS2 asks you to do so, then install the VCV prerequisites:
+Close and reopen the **MinGW 64-bit** shell when MSYS2 asks you to do so. Install the prerequisites in a separate command so an unavailable optional package cannot abort the database upgrade itself:
 
 ```bash
-pacman -Syu git wget make tar unzip zip \
+pacman -S --needed \
+  git wget make tar unzip zip \
   mingw-w64-x86_64-gcc mingw-w64-x86_64-gdb \
   mingw-w64-x86_64-cmake autoconf automake libtool \
-  mingw-w64-x86_64-jq python zstd mingw-w64-x86_64-pkgconf
+  jq python zstd mingw-w64-x86_64-pkgconf
 ```
+
+Verify the two essentials before continuing:
+
+```bash
+command -v make
+command -v g++
+make --version
+g++ --version
+```
+
+If `make` is missing, install it directly with `pacman -S --needed make`.
 
 Verify that you are in the correct shell:
 
@@ -86,7 +98,7 @@ C:\SDK\Rack-SDK\plugin.mk
 If you are currently in PowerShell, use PowerShell syntax:
 
 ```powershell
-$env:RACK_DIR = "C:\SDK\Rack-SDK-2.6.6"
+$env:RACK_DIR = "C:\SDK\Rack-SDK"  # example; use the directory that actually contains plugin.mk
 
 if (Test-Path "$env:RACK_DIR\plugin.mk") {
     Write-Host "Rack SDK OK: $env:RACK_DIR"
@@ -104,19 +116,25 @@ This verifies the Windows path only. The actual plugin build should still be per
 Windows drives are mounted by MSYS2 below `/c`, `/d`, and so on. Therefore:
 
 ```text
-C:\SDK\Rack-SDK-2.6.6
+C:\SDK\Rack-SDK
 ```
 
 becomes:
 
 ```text
-/c/SDK/Rack-SDK-2.6.6
+/c/SDK/Rack-SDK
 ```
 
-Set and visibly verify the SDK path:
+Do not guess the extracted directory name. Find `plugin.mk` first:
 
 ```bash
-export RACK_DIR="/c/SDK/Rack-SDK-2.6.6"
+find /c/SDK -maxdepth 3 -name plugin.mk -print
+```
+
+Then set and visibly verify the parent directory reported by that command, for example:
+
+```bash
+export RACK_DIR="/c/SDK/Rack-SDK"
 
 if [ -f "$RACK_DIR/plugin.mk" ]; then
   echo "Rack SDK OK: $RACK_DIR"
@@ -144,14 +162,20 @@ Then set `RACK_DIR` to the parent directory containing that file.
 
 ### 1.5 Open the CLOCK repository in the same MSYS2 shell
 
-Example:
+A normal Windows checkout is directly accessible. For example, if Explorer/VSCodium uses:
+
+```text
+C:\Users\you\Downloads\free-modular-clock-stm32f401-ui
+```
+
+then MSYS2 uses:
 
 ```bash
-cd /c/Projects/eurorack-clock-firmware
+cd /c/Users/you/Downloads/free-modular-clock-stm32f401-ui
 pwd
 ```
 
-Avoid spaces in the repository path and SDK path because the Rack Makefile build system is sensitive to them.
+No copy or second Git clone is needed. Avoid spaces in the repository path and SDK path because the Rack Makefile build system is sensitive to them.
 
 ### 1.6 Run the SDK-independent CLOCK/VCV tests first
 
@@ -248,16 +272,16 @@ This avoids changing your normal Rack profile.
 
 ### 1.11 Windows smoke test
 
-Start VCV Rack 2 and locate **South Signal Lab / CLOCK** in the Module Browser.
+Start VCV Rack 2 and locate **South Signal Lab Clock** in the Module Browser.
 
 Minimum Trial-First smoke test:
 
 1. Add one CLOCK module to an empty patch and observe the normal CLOCK boot sequence.
-2. Press PLAY. Patch OUT 1 to a scope or gate-visible destination and verify 0/+5-V behavior.
-3. Turn and click the encoder. Verify that navigation and settings match the native simulator.
-4. Exercise PLAY, TAP and STOP/BACK and compare the OLED transitions with the simulator.
-5. Patch a clock into SYNC and verify acquisition, lock, source behavior and loss handling.
-6. Patch a trigger/gate into RST and verify the configured RESET role/behavior.
+2. Press **PLAY / PAUSE**. Patch output **1** to a scope or gate-visible destination and verify 0/+5-V behavior; in factory One Clock mode, outputs 1–8 must fire coherently.
+3. Drag/scroll the encoder outer area to turn it. Click its centre for a short push, then hold the centre for more than 650 ms and verify that the production long-press action occurs.
+4. Exercise **PLAY / PAUSE**, **TAP / SHIFT** and **STOP / BACK** and compare OLED transitions with the simulator.
+5. Patch a clock into **IN 1 / SYNC** and verify acquisition, lock, source behavior and loss handling. Also try a one-sample/very-short Rack trigger source; accepted edges must not depend sporadically on alignment with the 50 us CLOCK scheduler tick.
+6. Patch a trigger/gate into **IN 2 / RST** and verify the configured RESET role/behavior.
 7. Exercise One Clock, Independent, Divider Bank, Clock, Euclid, Sequencer, Swing, Groove, Humanize and Pre-Count as applicable.
 8. Save the Rack patch, close/reopen Rack, reload it and verify that CLOCK settings/presets/Custom Grooves restore while transport still boots in STOP.
 9. Add a second CLOCK instance. Until the host-HAL refactor lands, it must show `ONE INSTANCE` and keep all outputs LOW.

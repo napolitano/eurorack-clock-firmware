@@ -21,18 +21,88 @@ void ClockVcvRuntime::begin() {
     runtime_.begin();
 }
 
+void ClockVcvRuntime::InputTransitionBridge::disconnect() noexcept {
+    head = 0U;
+    count = 0U;
+    connected = false;
+    sampledHigh = false;
+    schedulerHigh = false;
+}
+
+void ClockVcvRuntime::InputTransitionBridge::update(
+    const bool nextConnected,
+    const bool nextHigh) noexcept {
+    if (!nextConnected) {
+        disconnect();
+        return;
+    }
+
+    const bool effectiveHigh = nextHigh;
+    if (!connected) {
+        connected = true;
+        sampledHigh = false;
+        schedulerHigh = false;
+        head = 0U;
+        count = 0U;
+    }
+
+    if (effectiveHigh == sampledHigh) {
+        return;
+    }
+    sampledHigh = effectiveHigh;
+
+    if (count < kCapacity) {
+        const std::size_t tail = (head + count) % kCapacity;
+        pending[tail] = effectiveHigh;
+        ++count;
+        return;
+    }
+
+    // The production scheduler cannot consume more than one input transition per 50-us tick.
+    // If a pathological Rack signal outruns that boundary, discard stale backlog and preserve
+    // the latest sampled level rather than allocating or blocking on the audio thread.
+    head = 0U;
+    count = 1U;
+    pending[0] = effectiveHigh;
+}
+
+bool ClockVcvRuntime::InputTransitionBridge::nextSchedulerLevel() noexcept {
+    if (!connected) {
+        schedulerHigh = false;
+        return false;
+    }
+    if (count == 0U) {
+        schedulerHigh = sampledHigh;
+        return schedulerHigh;
+    }
+
+    schedulerHigh = pending[head];
+    head = (head + 1U) % kCapacity;
+    --count;
+    return schedulerHigh;
+}
+
 void ClockVcvRuntime::processSample(
     const double sampleTimeSeconds,
     const bool syncConnected,
     const float syncVoltage,
     const bool resetConnected,
     const float resetVoltage) {
-    const bool nextSyncHigh = updateInputLevel(syncVoltage, syncHigh_);
-    const bool nextResetHigh = updateInputLevel(resetVoltage, resetHigh_);
-    syncHigh_ = nextSyncHigh;
-    resetHigh_ = nextResetHigh;
-    runtime_.setExternalSyncInput(syncConnected, syncHigh_);
-    runtime_.setExternalResetInput(resetConnected, resetHigh_);
+    const bool previousSyncHigh = syncBridge_.sampledHigh;
+    const bool previousResetHigh = resetBridge_.sampledHigh;
+    const bool nextSyncHigh = syncConnected && updateInputLevel(syncVoltage, previousSyncHigh);
+    const bool nextResetHigh = resetConnected && updateInputLevel(resetVoltage, previousResetHigh);
+    syncBridge_.update(syncConnected, nextSyncHigh);
+    resetBridge_.update(resetConnected, nextResetHigh);
+
+    // Preserve the simulator's immediate cable-removal semantics even when this Rack sample does
+    // not advance a complete 50-us scheduler quantum.
+    if (!syncConnected) {
+        runtime_.setExternalSyncInput(false, false);
+    }
+    if (!resetConnected) {
+        runtime_.setExternalResetInput(false, false);
+    }
 
     if (sampleTimeSeconds <= 0.0 || !std::isfinite(sampleTimeSeconds)) {
         return;
@@ -41,6 +111,8 @@ void ClockVcvRuntime::processSample(
     pendingSchedulerUs_ += sampleTimeSeconds * 1000000.0;
     const double schedulerQuantumUs = static_cast<double>(config::kSchedulerTickUs);
     while (pendingSchedulerUs_ >= schedulerQuantumUs) {
+        runtime_.setExternalSyncInput(syncBridge_.connected, syncBridge_.nextSchedulerLevel());
+        runtime_.setExternalResetInput(resetBridge_.connected, resetBridge_.nextSchedulerLevel());
         runtime_.advanceMicroseconds(config::kSchedulerTickUs);
         pendingSchedulerUs_ -= schedulerQuantumUs;
     }
@@ -93,6 +165,14 @@ void ClockVcvRuntime::restorePersistenceImage(
 
 bool ClockVcvRuntime::running() const {
     return runtime_.poweredOn() && !runtime_.easterEggActive();
+}
+
+std::uint64_t ClockVcvRuntime::syncPulseCountForTest() const {
+    return runtime_.syncInputTelemetry().pulseCount;
+}
+
+std::uint64_t ClockVcvRuntime::resetPulseCountForTest() const {
+    return runtime_.resetInputTelemetry().resetCount;
 }
 
 bool ClockVcvRuntime::updateInputLevel(const float voltage, const bool previousLevel) {

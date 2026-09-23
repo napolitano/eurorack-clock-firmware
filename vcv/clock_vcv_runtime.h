@@ -30,8 +30,8 @@ struct PanelControls final {
  * @brief Adapts Rack sample time and voltages to the same CLOCK application used by the simulator.
  *
  * This class contains no musical timing implementation. It advances SimulatorRuntime in exact
- * 50-us CLOCK scheduler quanta, feeds conditioned SYNC/RST logic levels, forwards panel gestures,
- * and exposes the real gate states and OLED framebuffer.
+ * 50-us CLOCK scheduler quanta, captures Rack input transitions before that lower-rate boundary,
+ * forwards panel gestures, and exposes the real gate states and OLED framebuffer.
  */
 class ClockVcvRuntime final {
 public:
@@ -45,7 +45,13 @@ public:
     /** @brief Boots the real CLOCK application. */
     void begin();
 
-    /** @brief Advances the runtime by one Rack audio sample. */
+    /**
+     * @brief Advances the runtime by one Rack audio sample.
+     *
+     * Input edges are first captured at Rack sample rate and then replayed in order at the
+     * firmware's 20-kHz scheduler boundary. This prevents short Rack trigger pulses from being
+     * lost merely because they fall between adjacent 50-us firmware scheduler ticks.
+     */
     void processSample(
         double sampleTimeSeconds,
         bool syncConnected,
@@ -75,15 +81,49 @@ public:
     /** @brief Returns true once the application has completed its real boot sequence. */
     bool running() const;
 
+    /** @brief Returns SYNC comparator rising edges observed by the shared simulator boundary. */
+    std::uint64_t syncPulseCountForTest() const;
+
+    /** @brief Returns RST comparator rising edges observed by the shared simulator boundary. */
+    std::uint64_t resetPulseCountForTest() const;
+
 private:
+    /**
+     * @brief Fixed-capacity transition bridge from Rack sample time to scheduler time.
+     *
+     * The bridge is allocation-free because processSample() runs on Rack's audio thread. Normal
+     * clock/trigger signals produce at most two queued transitions per pulse. Input transition
+     * rates above the 20-kHz CLOCK scheduler boundary cannot be represented faithfully by the
+     * production firmware and therefore collapse to the latest sampled level on overflow.
+     */
+    struct InputTransitionBridge final {
+        static constexpr std::size_t kCapacity = 16U;
+
+        /** @brief Captures one new Rack-sample input state. */
+        void update(bool nextConnected, bool nextHigh) noexcept;
+
+        /** @brief Returns the next level that must be presented to one scheduler tick. */
+        bool nextSchedulerLevel() noexcept;
+
+        /** @brief Clears queued transitions and returns to disconnected LOW. */
+        void disconnect() noexcept;
+
+        std::array<bool, kCapacity> pending{};
+        std::size_t head = 0U;
+        std::size_t count = 0U;
+        bool connected = false;
+        bool sampledHigh = false;
+        bool schedulerHigh = false;
+    };
+
     /** @brief Updates one hysteretic Rack voltage input into a conditioned logic level. */
     static bool updateInputLevel(float voltage, bool previousLevel);
 
     sim::SimulatorRuntime runtime_;
     PanelControls controls_{};
+    InputTransitionBridge syncBridge_{};
+    InputTransitionBridge resetBridge_{};
     double pendingSchedulerUs_ = 0.0;
-    bool syncHigh_ = false;
-    bool resetHigh_ = false;
 };
 
 }  // namespace clockfw::vcv

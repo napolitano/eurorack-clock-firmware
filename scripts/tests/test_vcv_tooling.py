@@ -22,7 +22,9 @@ class VcvManifestTests(unittest.TestCase):
         manifest = json.loads((ROOT / "vcv/plugin.json").read_text(encoding="utf-8"))
         self.assertEqual(manifest["slug"], "SouthSignalLab-CLOCK")
         self.assertEqual(manifest["brand"], "South Signal Lab")
+        self.assertEqual(manifest["name"], "South Signal Lab Clock")
         self.assertEqual(manifest["modules"][0]["slug"], "CLOCK")
+        self.assertEqual(manifest["modules"][0]["name"], "South Signal Lab Clock")
         self.assertTrue(str(manifest["version"]).startswith("2."))
         self.assertIn("Clock generator", manifest["modules"][0]["tags"])
         self.assertEqual(
@@ -47,6 +49,14 @@ class VcvManifestTests(unittest.TestCase):
         self.assertIn("runtime_.advanceMicroseconds(config::kSchedulerTickUs)", bridge)
         self.assertNotRegex(shell, r"bpm|euclid|grooveAmount|sequencerStep")
 
+    def test_rack_input_edges_are_buffered_before_scheduler_quantization(self) -> None:
+        header = (ROOT / "vcv/clock_vcv_runtime.h").read_text(encoding="utf-8")
+        bridge = (ROOT / "vcv/clock_vcv_runtime.cpp").read_text(encoding="utf-8")
+        self.assertIn("InputTransitionBridge", header)
+        self.assertIn("kCapacity = 16U", header)
+        self.assertIn("nextSchedulerLevel()", bridge)
+        self.assertIn("syncPulseCountForTest", header)
+        self.assertIn("resetPulseCountForTest", header)
 
 
     def test_panel_is_generated_from_native_simulator_geometry(self) -> None:
@@ -69,10 +79,25 @@ class VcvManifestTests(unittest.TestCase):
         self.assertIn("kOutputCenters", shell)
         self.assertIn("kLedCenters", shell)
         self.assertIn("MediumLight<RedLight>", shell)
-        self.assertIn("requestEncoderPush", shell)
+        self.assertIn("ClockEncoderPushButton", shell)
+        self.assertIn("ENCODER_PUSH_PARAM", shell)
+        self.assertNotIn("requestEncoderPush", shell)
+        self.assertNotIn("encoderPushSamplesRemaining", shell)
         self.assertNotIn("constexpr float kOutputX[2]", shell)
         self.assertNotIn("Vec(75.0F, 129.0F)", shell)
         self.assertIn("GENERATED from sim/panel_layout.ini", panel)
+        self.assertIn('fill="#0a0a0b"', panel)
+        self.assertIn("SOUTH SIGNAL LAB", panel)
+        self.assertIn("PLAY / PAUSE", panel)
+        self.assertIn("TAP / SHIFT", panel)
+        self.assertIn("STOP / BACK", panel)
+        self.assertIn("IN 1 / SYNC", panel)
+        self.assertIn("IN 2 / RST", panel)
+        self.assertNotIn("OUT1", panel)
+        for number in range(1, 9):
+            self.assertRegex(panel, rf">{number}</text>")
+        self.assertTrue((ROOT / "vcv/res/encoder-push-0.svg").exists())
+        self.assertTrue((ROOT / "vcv/res/encoder-push-1.svg").exists())
         self.assertIn("4x2", (ROOT / "vcv/README.md").read_text(encoding="utf-8"))
 
 class VcvWorkflowTests(unittest.TestCase):
@@ -98,8 +123,10 @@ class VcvWorkflowTests(unittest.TestCase):
         for required in (
             "Rack-SDK-2.6.6-win-x64.zip",
             "MSYS2 MinGW 64-bit",
-            '$env:RACK_DIR = "C:\\SDK\\Rack-SDK-2.6.6"',
-            'export RACK_DIR="/c/SDK/Rack-SDK-2.6.6"',
+            '$env:RACK_DIR = "C:\\SDK\\Rack-SDK"',
+            'export RACK_DIR="/c/SDK/Rack-SDK"',
+            "command -v make",
+            "pacman -S --needed make",
             "Get-ChildItem C:\\SDK -Filter plugin.mk -Recurse",
             "Rack-SDK-2.6.6-mac-x64.zip",
             "Rack-SDK-2.6.6-mac-arm64.zip",

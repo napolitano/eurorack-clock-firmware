@@ -13,8 +13,9 @@ Implemented in this first slice:
 - `vcv/` is a peer platform directory beside `sim/`;
 - the VCV bridge advances the real CLOCK 20 kHz / 50 us scheduler rather than implementing a Rack-specific clock engine;
 - the real 128x64 CLOCK OLED framebuffer is drawn in Rack;
-- PLAY, TAP, STOP/BACK, encoder turn and encoder push feed the same debounced control path as the hardware/simulator;
-- SYNC and RST feed the real external-input and synchronization services after a small Rack-voltage hysteresis boundary;
+- PLAY/PAUSE, TAP/SHIFT, STOP/BACK, encoder turn and encoder push feed the same debounced control path as the hardware/simulator;
+- the encoder centre is a real momentary push surface, so holding it reaches the production 650 ms long-press path instead of emitting a synthetic fixed-duration click;
+- IN 1 / SYNC and IN 2 / RST use Rack-voltage hysteresis plus an allocation-free transition queue before the 20 kHz firmware boundary, so one-sample Rack triggers are not lost between 50 us scheduler ticks;
 - OUT 1..8 expose the actual logical gate states as **0/+5 V**, matching the hardware contract;
 - Rack patch state embeds CLOCK's complete logical persistence image instead of inventing a second preset/schema format;
 - the functional 10 HP Rack panel is generated from `../sim/panel_layout.ini`, so OLED, encoder, transport buttons, SYNC/RST, eight 3 mm activity LEDs and the 4x2 output matrix use the same millimetre geometry as the native simulator; no independent Rack layout is maintained.
@@ -31,7 +32,9 @@ python scripts/generate_vcv_panel.py
 
 after changing panel geometry. This regenerates the Rack panel SVG, the C++ millimetre coordinate header, the encoder artwork and the three transport-button frame pairs. CI runs the same command in `--check` mode and rejects stale Rack panel assets.
 
-The Rack module deliberately keeps the current functional appearance rather than inventing final front-panel artwork. The physical arrangement is not provisional: it follows the simulator specification — OLED upper left, push encoder upper right, PLAY/TAP/STOP in one row, SYNC/RST below them on the left, and OUT 1–8 as two rows of four with one 3 mm red activity LED above each jack. Clicking the encoder without dragging produces the encoder-push gesture; dragging or scrolling it turns the same encoder parameter.
+The Rack module uses a black functional front plate with white labelling while retaining the simulator-defined geometry. The Rack-visible identity is **South Signal Lab Clock**. Controls are labelled **PLAY / PAUSE**, **TAP / SHIFT** and **STOP / BACK**; the two inputs are **IN 1 / SYNC** and **IN 2 / RST**; outputs are numbered **1–8** in the simulator-defined 4x2 matrix with one 3 mm red activity LED above each jack.
+
+The push encoder deliberately has two Rack interaction zones: drag/scroll the outer knob area to turn it, and click/hold the transparent centre area to press it. A centre hold is passed through continuously, so short press, long press and TAP+encoder-push timing are handled by the real CLOCK debounce/gesture code.
 
 ## Source sharing
 
@@ -55,7 +58,7 @@ cmake --build --preset simulator-headless
 ctest --preset simulator-headless --output-on-failure
 ```
 
-`vcv_runtime_adapter_tests` currently verifies real boot, physical PLAY, 0/+5-V gate output, persistence-image round trip and direct external-input driving at a 48 kHz Rack sample rate.
+`vcv_runtime_adapter_tests` currently verifies real boot, held encoder long-press, physical PLAY, coherent 0/+5-V gate output across all eight channels, persistence-image round trip, and one-Rack-sample SYNC/RST pulse capture at 48 kHz.
 
 ## Build against the real Rack SDK
 
@@ -64,7 +67,7 @@ The complete local workstation procedure now lives in [`../docs/VCV_DEVELOPMENT.
 On Windows, use **MSYS2 MinGW 64-bit** for the Rack build. PowerShell uses different environment-variable syntax and is not the shell for the Rack Makefile workflow. The Windows short path in MSYS2 is:
 
 ```bash
-export RACK_DIR="/c/SDK/Rack-SDK-2.6.6"
+export RACK_DIR="/c/SDK/Rack-SDK"
 [ -f "$RACK_DIR/plugin.mk" ] && echo "Rack SDK OK: $RACK_DIR"
 python scripts/generate_vcv_panel.py --check
 cmake --preset simulator-headless
@@ -84,11 +87,11 @@ The Rack SDK is deliberately kept outside the repository and is never shipped in
 
 For the first functional validation:
 
-1. Add **South Signal Lab CLOCK / CLOCK** to an empty patch and wait for the normal CLOCK boot sequence.
-2. Press PLAY and patch OUT 1 to a scope or gate-visible destination. The output must switch only between 0 V and +5 V.
-3. Exercise encoder turn/push and PLAY/TAP/STOP. The OLED must show the same menus and state transitions as the native simulator/hardware firmware.
-4. Patch a Rack clock into SYNC, select the corresponding CLOCK external-source mode, and verify acquisition/lock and loss behavior from the normal CLOCK UI.
-5. Patch a gate/trigger into RST and verify the configured RESET role/behavior through the real CLOCK settings.
+1. Add **South Signal Lab Clock** to an empty patch and wait for the normal CLOCK boot sequence.
+2. Press **PLAY / PAUSE** and patch output **1** to a scope or gate-visible destination. The output must switch only between 0 V and +5 V; outputs 1–8 must remain phase-coherent in factory One Clock mode.
+3. Drag/scroll the encoder outer ring to turn it. Click the centre for a short push and hold the centre for more than 650 ms to verify the production long-press path. Exercise **TAP / SHIFT** and **STOP / BACK** as well.
+4. Patch a Rack clock or short trigger into **IN 1 / SYNC** and verify acquisition/lock and loss behavior. Include a one-sample/very-short trigger source if available; edges must not be accepted only sporadically because of Rack/scheduler phase.
+5. Patch a gate/trigger into **IN 2 / RST** and verify the configured RESET role/behavior through the real CLOCK settings.
 6. Save the Rack patch, remove/reload it, and verify that CLOCK settings, presets and custom-groove persistence restore while transport still boots in STOP.
 7. Attempt to add a second CLOCK. The experimental single-instance guard must show `ONE INSTANCE` and keep its outputs LOW.
 

@@ -159,6 +159,16 @@ def circle_svg(size_px: float, fill: str, pressed: bool = False) -> str:
 '''
 
 
+def transparent_hit_svg(size_px: float) -> str:
+    """Generate an invisible Rack hit target without changing panel artwork."""
+    center = size_px * 0.5
+    radius = max(1.0, center - 0.25)
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{fmt(size_px)}" height="{fmt(size_px)}" viewBox="0 0 {fmt(size_px)} {fmt(size_px)}">
+  <circle cx="{fmt(center)}" cy="{fmt(center)}" r="{fmt(radius)}" fill="#ffffff" fill-opacity="0.001"/>
+</svg>
+'''
+
+
 def knob_svg(parser: configparser.ConfigParser) -> str:
     size = to_px(parser.getfloat("encoder", "knob_diameter_mm"))
     c = size * 0.5
@@ -205,8 +215,8 @@ def generated_panel_svg(parser: configparser.ConfigParser) -> str:
     screws = [pp(f"screw_{i}") for i in range(1, 5)]
 
     title_x = ox + to_px(3.15)
-    title_y = oy + to_px(3.45)
-    subtitle_y = oy + to_px(6.60)
+    brand_y = oy + to_px(3.10)
+    title_y = oy + to_px(6.55)
     encoder_label_y = encoder.y + knob_r + to_px(1.7)
     button_label_y = play.y + button_r + to_px(1.5)
     input_label_y = sync.y - to_px(6.85)
@@ -214,17 +224,17 @@ def generated_panel_svg(parser: configparser.ConfigParser) -> str:
     lines: list[str] = []
     a = lines.append
     a('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="380" viewBox="0 0 150 380" role="img" aria-labelledby="title desc">')
-    a('  <title id="title">South Signal Lab CLOCK functional VCV Rack panel</title>')
-    a('  <desc id="desc">Functional 10 HP panel generated from sim/panel_layout.ini. Positions and physical sizes follow the native simulator geometry.</desc>')
+    a('  <title id="title">South Signal Lab Clock functional VCV Rack panel</title>')
+    a('  <desc id="desc">Black 10 HP South Signal Lab Clock panel generated from sim/panel_layout.ini. Positions and physical sizes follow the native simulator geometry.</desc>')
     a('  <!-- GENERATED from sim/panel_layout.ini by scripts/generate_vcv_panel.py. -->')
     a('  <defs><style>')
-    a('    .label{font-family:DejaVu Sans,Arial,sans-serif;fill:#26272a;font-size:5px;font-weight:600}.small{font-size:4.2px;font-weight:500}.tiny{font-size:3.8px;font-weight:500}.title{font-size:7px;font-weight:700}.sub{font-size:3.4px;font-weight:500;letter-spacing:.18px}')
-    a('    .jackNut{fill:#d8d9db;stroke:#66686b;stroke-width:.8}.jackBush{fill:#afb1b4;stroke:#707276;stroke-width:.55}.jackHole{fill:#17181a}.led{fill:#5a3434;stroke:#7c3636;stroke-width:.45}.screw{fill:#a8aaad;stroke:#696b6e;stroke-width:.5}')
+    a('    .label{font-family:DejaVu Sans,Arial,sans-serif;fill:#f4f4f4;font-size:5px;font-weight:600}.small{font-size:4px;font-weight:600}.tiny{font-size:3.8px;font-weight:600}.title{font-size:7px;font-weight:700}.brand{font-size:3.7px;font-weight:600;letter-spacing:.35px}')
+    a('    .jackNut{fill:#d8d9db;stroke:#77797c;stroke-width:.8}.jackBush{fill:#afb1b4;stroke:#707276;stroke-width:.55}.jackHole{fill:#08090a}.led{fill:#5a2020;stroke:#a64242;stroke-width:.45}.screw{fill:#a8aaad;stroke:#696b6e;stroke-width:.5}')
     a('  </style></defs>')
-    a('  <rect width="150" height="380" fill="#121315"/>')
-    a(f'  <rect x="{fmt(ox)}" y="{fmt(oy)}" width="{fmt(pw)}" height="{fmt(ph)}" fill="#cdCfd1" stroke="#4b4d50" stroke-width="0.8"/>')
+    a('  <rect width="150" height="380" fill="#050506"/>')
+    a(f'  <rect x="{fmt(ox)}" y="{fmt(oy)}" width="{fmt(pw)}" height="{fmt(ph)}" fill="#0a0a0b" stroke="#343438" stroke-width="0.8"/>')
+    a(f'  <text class="label brand" x="{fmt(title_x)}" y="{fmt(brand_y)}">SOUTH SIGNAL LAB</text>')
     a(f'  <text class="label title" x="{fmt(title_x)}" y="{fmt(title_y)}">CLOCK</text>')
-    a(f'  <text class="label sub" x="{fmt(title_x)}" y="{fmt(subtitle_y)}">8-CHANNEL CLOCK · VCV RACK TRIAL</text>')
     a(f'  <rect x="{fmt(display_x)}" y="{fmt(display_y)}" width="{fmt(display_w)}" height="{fmt(display_h)}" rx="1.2" fill="#050607" stroke="#525457" stroke-width="0.8"/>')
 
     for screw in screws:
@@ -232,8 +242,8 @@ def generated_panel_svg(parser: configparser.ConfigParser) -> str:
 
     # Ghosted control silhouettes make the standalone SVG readable; real Rack widgets cover them.
     a(f'  <circle cx="{fmt(encoder.x)}" cy="{fmt(encoder.y)}" r="{fmt(knob_r)}" fill="#3a3b3e" stroke="#17181a" stroke-width="0.8"/>')
-    a(f'  <text class="label tiny" x="{fmt(encoder.x)}" y="{fmt(encoder_label_y)}" text-anchor="middle">ENC</text>')
-    for label, center, color in (("PLAY", play, parser["play"]["color"]), ("TAP", tap, parser["tap"]["color"]), ("STOP", stop, parser["stop"]["color"])):
+    a(f'  <text class="label tiny" x="{fmt(encoder.x)}" y="{fmt(encoder_label_y)}" text-anchor="middle">ENC / PUSH</text>')
+    for label, center, color in (("PLAY / PAUSE", play, parser["play"]["color"]), ("TAP / SHIFT", tap, parser["tap"]["color"]), ("STOP / BACK", stop, parser["stop"]["color"])):
         a(f'  <circle cx="{fmt(center.x)}" cy="{fmt(center.y)}" r="{fmt(button_r)}" fill="{color}" stroke="#191a1c" stroke-width="0.8"/>')
         a(f'  <text class="label small" x="{fmt(center.x)}" y="{fmt(button_label_y)}" text-anchor="middle">{label}</text>')
 
@@ -244,14 +254,14 @@ def generated_panel_svg(parser: configparser.ConfigParser) -> str:
 
     jack(sync)
     jack(reset)
-    a(f'  <text class="label small" x="{fmt(sync.x)}" y="{fmt(input_label_y)}" text-anchor="middle">SYNC IN</text>')
-    a(f'  <text class="label small" x="{fmt(reset.x)}" y="{fmt(input_label_y)}" text-anchor="middle">RST IN</text>')
+    a(f'  <text class="label small" x="{fmt(sync.x)}" y="{fmt(input_label_y)}" text-anchor="middle">IN 1 / SYNC</text>')
+    a(f'  <text class="label small" x="{fmt(reset.x)}" y="{fmt(input_label_y)}" text-anchor="middle">IN 2 / RST</text>')
 
     for index, center, led in outputs:
         a(f'  <circle class="led" cx="{fmt(led.x)}" cy="{fmt(led.y)}" r="{fmt(led_r)}"/>')
         jack(center)
         label_y = center.y + jack_nut_r + to_px(1.2)
-        a(f'  <text class="label tiny" x="{fmt(center.x)}" y="{fmt(label_y)}" text-anchor="middle">OUT{index}</text>')
+        a(f'  <text class="label small" x="{fmt(center.x)}" y="{fmt(label_y)}" text-anchor="middle">{index}</text>')
 
     a('</svg>')
     return "\n".join(lines) + "\n"
@@ -259,10 +269,13 @@ def generated_panel_svg(parser: configparser.ConfigParser) -> str:
 
 def outputs(parser: configparser.ConfigParser) -> dict[Path, str]:
     button_size = to_px(parser.getfloat("play", "actuator_diameter_mm"))
+    encoder_push_size = to_px(parser.getfloat("encoder", "knob_diameter_mm")) * 0.54
     return {
         DEFAULT_PANEL: generated_panel_svg(parser),
         DEFAULT_HEADER: generated_header(parser),
         VCV_DIR / "res" / "encoder.svg": knob_svg(parser),
+        VCV_DIR / "res" / "encoder-push-0.svg": transparent_hit_svg(encoder_push_size),
+        VCV_DIR / "res" / "encoder-push-1.svg": transparent_hit_svg(encoder_push_size),
         VCV_DIR / "res" / "button-play-0.svg": circle_svg(button_size, parser["play"]["color"], False),
         VCV_DIR / "res" / "button-play-1.svg": circle_svg(button_size, "#7A1616", True),
         VCV_DIR / "res" / "button-tap-0.svg": circle_svg(button_size, parser["tap"]["color"], False),
