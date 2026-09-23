@@ -83,6 +83,12 @@ DIRECT_HARDWARE_API_PATTERN = re.compile(
     r"\b(?:digitalWrite|digitalRead|pinMode|millis|micros|delay|noInterrupts|interrupts)\s*\(",
 )
 
+RACK_API_INCLUDE_PATTERN = re.compile(
+    r'^\s*#\s*include\s*[<"]rack\.hpp[>"]',
+    re.MULTILINE,
+)
+RACK_API_NAMESPACE_PATTERN = re.compile(r"\brack::")
+
 # Static strings beginning with a letter are assumed to be user-visible when
 # they appear in implementation code. Format-only literals such as "%u" are
 # deliberately excluded. All UI prose belongs in src/ui_text.h.
@@ -268,6 +274,44 @@ def check_hardware_boundaries(errors: list[str]) -> None:
             )
 
 
+def check_vcv_api_boundary(errors: list[str]) -> None:
+    """Confine VCV Rack API use to the dedicated vcv/ platform shell."""
+    candidates = sorted(
+        set(
+            list((ROOT / "src").rglob("*.h"))
+            + list((ROOT / "src").rglob("*.hpp"))
+            + list((ROOT / "src").rglob("*.cpp"))
+            + list((ROOT / "lib").rglob("*.h"))
+            + list((ROOT / "lib").rglob("*.hpp"))
+            + list((ROOT / "lib").rglob("*.cpp"))
+            + list((ROOT / "sim").rglob("*.h"))
+            + list((ROOT / "sim").rglob("*.hpp"))
+            + list((ROOT / "sim").rglob("*.cpp"))
+            + list((ROOT / "test").rglob("*.h"))
+            + list((ROOT / "test").rglob("*.hpp"))
+            + list((ROOT / "test").rglob("*.cpp"))
+        )
+    )
+    for path in candidates:
+        text = path.read_text(encoding="utf-8")
+        if RACK_API_INCLUDE_PATTERN.search(text) or RACK_API_NAMESPACE_PATTERN.search(text):
+            errors.append(
+                f"{repository_relative(path)}: Rack API references are only permitted under vcv/"
+            )
+
+    forbidden_sdk_roots = (
+        ROOT / "Rack-SDK",
+        ROOT / ".rack-sdk",
+    )
+    for sdk_root in forbidden_sdk_roots:
+        if sdk_root.exists():
+            errors.append(
+                f"{repository_relative(sdk_root)}: Rack SDK must remain external and must not be vendored into the repository"
+            )
+    if any(ROOT.glob("Rack-SDK-*")):
+        errors.append("Rack-SDK-*: Rack SDK must remain external and must not be vendored into the repository")
+
+
 def check_header_colocation(errors: list[str]) -> None:
     """Require implementation headers to live beside their corresponding .cpp files."""
     entry_point_sources = {
@@ -378,6 +422,7 @@ def main() -> int:
     check_api_briefs(errors)
     check_text_metadata(errors)
     check_hardware_boundaries(errors)
+    check_vcv_api_boundary(errors)
     check_header_colocation(errors)
     check_ui_text_centralization(errors)
     check_external_library_policy(errors)
@@ -396,6 +441,7 @@ def main() -> int:
     print("  Hardware APIs: STM32Cube confined to HAL/pin_map; host framework fakes confined to test/simulator boundaries")
     print("  Static UI text: centralized in src/ui_text.h")
     print("  Third-party PlatformIO libraries: none")
+    print("  VCV Rack API: confined to vcv/; Rack SDK must remain external")
     print("  Embedded heap allocation: prohibited in src/ and lib/")
     print("  Headers: explicit @file/@brief metadata and production API briefs; colocated implementations; executable header-only logic prohibited")
     return 0

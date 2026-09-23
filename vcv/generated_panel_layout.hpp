@@ -35,11 +35,11 @@ inline constexpr float kEncoderDiameterMm = 8.4166F;
 inline constexpr PointMm kPlayCenter{9.6792F, 48.7511F};
 inline constexpr PointMm kTapCenter{23.8472F, 48.7511F};
 inline constexpr PointMm kStopCenter{38.0153F, 48.7511F};
-inline constexpr float kButtonActuatorDiameterMm = 9F;
+inline constexpr float kButtonActuatorDiameterMm = 9.0F;
 inline constexpr PointMm kSyncCenter{7.2944F, 70.1678F};
 inline constexpr PointMm kResetCenter{18.6569F, 70.1678F};
 inline constexpr float kJackNutDiameterMm = 7.85F;
-inline constexpr float kLedDiameterMm = 3F;
+inline constexpr float kLedDiameterMm = 3.0F;
 inline constexpr std::array<PointMm, 8U> kOutputCenters{{
     {6.5931F, 95.8114F}, {17.9556F, 95.8114F}, {29.3181F, 95.8114F}, {40.6806F, 95.8114F}, {6.5931F, 112.4375F}, {17.9556F, 112.4375F}, {29.3181F, 112.4375F}, {40.6806F, 112.4375F}
 }};

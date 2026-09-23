@@ -11,7 +11,8 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 | learn the module as a musician, including 1.1 Grooves/Record | [`user-guide/README.md`](user-guide/README.md) — 24 manual-aligned chapters |
 | install or update firmware | [`FIRMWARE_UPDATE.md`](FIRMWARE_UPDATE.md) |
 | run or configure the native simulator | [`SIMULATOR.md`](SIMULATOR.md) |
-| build or test the experimental VCV Rack Trial-First port | [`VCV_RACK.md`](VCV_RACK.md) |
+| understand the experimental VCV Rack Trial-First port | [`VCV_RACK.md`](VCV_RACK.md) |
+| build, package and smoke-test the VCV plugin locally | [`VCV_DEVELOPMENT.md`](VCV_DEVELOPMENT.md) |
 | understand the firmware architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
 | understand timing and real-time/display isolation | [`TIMING.md`](TIMING.md) |
 | set up a development workstation | [`DEVELOPER_README.md`](DEVELOPER_README.md) |
@@ -39,6 +40,7 @@ flowchart LR
     Root --> Dev[DEVELOPER_README.md\nworkstation]
     Root --> Arch[ARCHITECTURE.md\ndesign]
     Root --> VCV[VCV_RACK.md\nTrial First port]
+    VCV --> VCVDev[VCV_DEVELOPMENT.md\nlocal build / test]
     User --> Manual[manual/\nODT source + publication assets]
     Dev --> Workflow[DEVELOPMENT.md]
     Dev --> Tests[TEST_COVERAGE.md]

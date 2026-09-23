@@ -47,6 +47,6 @@ production CLOCK code
         -> tagged CLOCK release artifact under dist/vcv/
 ```
 
-See [`../vcv/README.md`](../vcv/README.md) for build/install commands and the current smoke-test script.
+See [`VCV_DEVELOPMENT.md`](VCV_DEVELOPMENT.md) for the complete local SDK/build/package/install/smoke-test workflow and [`../vcv/README.md`](../vcv/README.md) for the adapter overview.
 
 <h6 align="center">From Munich with &#9829;</h6>

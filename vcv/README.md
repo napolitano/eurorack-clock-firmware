@@ -59,26 +59,26 @@ ctest --preset simulator-headless --output-on-failure
 
 ## Build against the real Rack SDK
 
-CLOCK currently pins VCV development validation to **Rack SDK 2.6.6**. Download the SDK for the development host from the official VCV downloads archive, extract it, and set `RACK_DIR`.
+The complete local workstation procedure now lives in [`../docs/VCV_DEVELOPMENT.md`](../docs/VCV_DEVELOPMENT.md). It covers Windows/MSYS2, macOS and Linux prerequisites; external SDK placement; `RACK_DIR`; adapter tests; panel regeneration; `make`, `make dist` and `make install`; isolated Rack user directories; package inspection; logs; manual smoke testing; CI parity; and the licensing boundary.
 
-Linux/macOS example:
+On Windows, use **MSYS2 MinGW 64-bit** for the Rack build. PowerShell uses different environment-variable syntax and is not the shell for the Rack Makefile workflow. The Windows short path in MSYS2 is:
 
 ```bash
-export RACK_DIR="$HOME/Rack-SDK"
-make -C vcv clean
-make -C vcv -j"$(getconf _NPROCESSORS_ONLN 2>/dev/null || sysctl -n hw.ncpu)" RACK_DIR="$RACK_DIR"
+export RACK_DIR="/c/SDK/Rack-SDK-2.6.6"
+[ -f "$RACK_DIR/plugin.mk" ] && echo "Rack SDK OK: $RACK_DIR"
+python scripts/generate_vcv_panel.py --check
+cmake --preset simulator-headless
+cmake --build --preset simulator-headless
+ctest --preset simulator-headless --output-on-failure
+make -C vcv clean RACK_DIR="$RACK_DIR"
+make -C vcv -j4 RACK_DIR="$RACK_DIR"
 make -C vcv dist RACK_DIR="$RACK_DIR"
-```
-
-The distributable package is written below `vcv/dist/` as a `.vcvplugin` file. VCV's own plugin build system defines this package format.
-
-To install directly into the local Rack user plugin directory:
-
-```bash
 make -C vcv install RACK_DIR="$RACK_DIR"
 ```
 
-Restart Rack after installation.
+`RACK_DIR` must be the directory that directly contains `plugin.mk`; see the full developer guide for PowerShell path verification and SDK discovery.
+
+The Rack SDK is deliberately kept outside the repository and is never shipped inside the CLOCK `.vcvplugin`.
 
 ## Manual smoke test in Rack
 

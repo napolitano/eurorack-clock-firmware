@@ -36,6 +36,15 @@ Release firmware is built with the pinned PlatformIO GNU Arm Embedded Toolchain 
 
 Every tagged firmware release captures the license material from the exact installed 7.2.1 toolchain package into `GNU-ARM-EMBEDDED-7.2.1-LICENSES.zip`. `BUILD-INFO.txt` is generated from the linker maps and records the static archives referenced by each firmware flavor. This avoids relying on a generic or newer toolchain license bundle when distributing binaries.
 
+
+## VCV Rack / Rack SDK (experimental VCV target only)
+
+The experimental `vcv/` plugin is built against the VCV Rack SDK. The SDK is an external build dependency, is not vendored into this repository, and is not bundled in the CLOCK `.vcvplugin`. Rack supplies its own runtime/API when loading the plugin.
+
+VCV Rack is GPL-3.0-or-later with the VCV Rack Non-Commercial Plugin License Exception. CLOCK relies on that exception for the free-of-charge Trial-First plugin's Rack API/link boundary. No Rack/Core source or VCV visual assets are copied into CLOCK.
+
+Upstream license: <https://github.com/VCVRack/Rack/blob/v2/LICENSE.md>
+
 ## Development and build tooling
 
 PlatformIO, dfu-util/OpenOCD, Python, GitHub Actions and editor extensions are development tools and retain their own upstream licenses. The GNU Arm compiler is also a build tool, while any runtime code actually linked from its support libraries is covered by the runtime notice above.

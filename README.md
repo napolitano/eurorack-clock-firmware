@@ -334,7 +334,8 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | [Architecture](docs/ARCHITECTURE.md) | Firmware boundaries and responsibilities |
 | [Configuration](docs/CONFIGURATION.md) | Build-time and runtime configuration |
 | [Simulator](docs/SIMULATOR.md) | Desktop simulator and headless usage |
-| [VCV Rack Trial First](docs/VCV_RACK.md) | Experimental digital-twin port, build/install and current limitations |
+| [VCV Rack Trial First](docs/VCV_RACK.md) | Experimental digital-twin port and current limitations |
+| [VCV Plugin Development](docs/VCV_DEVELOPMENT.md) | Local Rack SDK setup, build, package, install, smoke test and licensing boundary |
 | [HIL Test Plan](docs/HIL_TEST_PLAN.md) | Physical qualification evidence; advisory to release automation through 1.4.x, enforced from 1.5.0 |
 | [Roadmap](docs/ROADMAP.md) | Released 1.1 Groove/Pre-Count scope, later 1.x milestones, and the VCV track |
 | [GitHub Wiki publication](docs/WIKI.md) | Generated Wiki structure, automatic sync and ODT manual download |

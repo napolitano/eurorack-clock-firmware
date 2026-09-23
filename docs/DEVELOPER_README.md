@@ -697,6 +697,25 @@ Confirm the board is actually in DFU mode and visible to the operating system. F
 
 Host coverage is not a substitute for bench verification. Read `docs/TIMING.md` for the software timing contract and use `docs/HIL_TEST_PLAN.md` for gate timing, boot pulses, comparator thresholds, external sync, display-stress timing, and physical bus integrity.
 
+## 30A. VCV Rack Trial-First development
+
+The experimental `vcv/` target is a separate host platform around the real CLOCK runtime. The Rack SDK is intentionally **not** part of this repository. Developers download the pinned SDK independently, keep it outside the source tree and point the Rack build system at it through `RACK_DIR`.
+
+The full procedure is documented in [`VCV_DEVELOPMENT.md`](VCV_DEVELOPMENT.md). **Windows is documented first** and explicitly distinguishes PowerShell path verification from the required MSYS2 MinGW 64-bit Rack build shell. It includes:
+
+- Windows-first MSYS2 MinGW64 setup, PowerShell diagnostics, and `RACK_DIR` path conversion;
+- macOS and Linux prerequisites;
+- the pinned Rack SDK 2.6.6 download names;
+- adapter tests that run without Rack;
+- panel-generation checks;
+- `make`, `make dist`, and `make install`;
+- isolated Rack user directories and `log.txt`;
+- package-content inspection;
+- manual Trial-First smoke tests;
+- the hard Rack-API/licensing boundary.
+
+Do not add the Rack SDK as a submodule, vendor directory or repository artifact. Rack-specific API use belongs only under `vcv/`.
+
 ## 31. GitHub Actions and releases
 
 CI runs automatically on pushes and pull requests. It checks architecture, Python tooling, native tests, complete host coverage, sanitizers, the headless simulator on Windows/macOS/Linux, the SDL3 frontend build, the production SPI firmware builds, and memory budgets. Firmware binary packaging is enabled from the STM32CubeF4 target; release publication remains controlled by the release workflow.

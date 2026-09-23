@@ -40,6 +40,15 @@ class WikiGenerationTests(unittest.TestCase):
         self.assertEqual('24 Technical status and specifications', chapters[-1].title)
         self.assertTrue(all(page.source.startswith('docs/user-guide/') for page in chapters))
 
+    def test_wiki_exposes_vcv_overview_and_plugin_developer_guide(self) -> None:
+        pages = {page.slug: page for page in build_wiki.PAGES}
+        self.assertIn('VCV-Rack-Trial-First', pages)
+        self.assertEqual('docs/VCV_RACK.md', pages['VCV-Rack-Trial-First'].source)
+        self.assertEqual('Engineering', pages['VCV-Rack-Trial-First'].group)
+        self.assertIn('VCV-Plugin-Development', pages)
+        self.assertEqual('docs/VCV_DEVELOPMENT.md', pages['VCV-Plugin-Development'].source)
+        self.assertEqual('Development', pages['VCV-Plugin-Development'].group)
+
     def test_sidebar_keeps_manual_aligned_user_chapters_in_order(self) -> None:
         sidebar = build_wiki.render_sidebar(build_wiki.firmware_version())
         self.assertLess(sidebar.index('01 Start here'), sidebar.index('15 Settings map'))

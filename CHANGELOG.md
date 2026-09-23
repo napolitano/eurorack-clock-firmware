@@ -23,6 +23,9 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Verify the generated `.vcvplugin` payload structure and Rack SDK `make install` target in CI before exposing the package as a workflow artifact.
 - Add direct host-input driving for SYNC/RST, including explicit HIGH release when a virtual cable is removed, with simulator regression coverage.
 - Document the Trial-First deployment path from adapter tests to `.vcvplugin` CI artifacts and later tagged-release integration.
+- Add a dedicated cross-platform VCV developer guide covering external SDK setup, adapter tests, panel generation, local build/package/install, isolated Rack profiles, package inspection, logs and manual smoke testing.
+- Formalize the Rack licensing/dependency boundary: keep the SDK external, confine Rack API use to `vcv/`, reject bundled SDK/`libRack` payloads, and document the free-of-charge plugin exception assumption.
+- Fix generated VCV C++ geometry literals so integral millimetre values are emitted as standard `9.0F`/`3.0F` literals instead of invalid GNU `9F`/`3F` tokens, and add a regression that rejects integer-plus-`F` output.
 
 ### Documentation
 

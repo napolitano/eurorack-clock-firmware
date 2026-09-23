@@ -33,6 +33,20 @@ The display stack is project-owned: 128×64 framebuffer, drawing primitives, com
 
 SDL3 3.4.16 is an optional simulator-only dependency under the zlib license. It is not present in the embedded runtime graph.
 
+
+## VCV Rack SDK and host runtime
+
+The experimental Trial-First plugin has one additional **host-platform** dependency: the VCV Rack SDK. It is not an embedded dependency and does not enter STM32 firmware.
+
+| Component | Use | Repository status | Distributed inside CLOCK `.vcvplugin` |
+| --- | --- | --- | --- |
+| Rack SDK 2.6.6 headers / `plugin.mk` | compile/link interface for `vcv/` | external, pinned, not vendored | no |
+| Rack host / `libRack` | loads plugin and supplies Rack API at runtime | external application | no |
+
+CI downloads the official SDK archive directly to the ephemeral runner. Local developers keep the SDK outside the CLOCK checkout and set `RACK_DIR`. The plugin package contains CLOCK's plugin binary, manifest, project-owned documentation/license and project-generated resources only.
+
+Rack API references are architecture-confined to `vcv/`; production firmware, `clock_core` and the native simulator do not include Rack headers or use Rack namespaces.
+
 ## Architectural policy
 
 CI rejects new `lib_deps`, framework hardware access outside HAL/pin mapping, and any return of the Arduino framework to the embedded environment. New runtime dependencies require an explicit architecture and licensing review.

@@ -59,6 +59,11 @@ desktop.ini
 *.swo
 .idea/
 
+# External SDKs must stay outside the repository.
+Rack-SDK/
+Rack-SDK-*/
+.rack-sdk/
+
 # Native simulator local state and user-specific CMake overrides
 .clock-simulator-state.bin
 .clock-simulator-*.bin

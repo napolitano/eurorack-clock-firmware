@@ -37,6 +37,14 @@ def fmt(value: float) -> str:
     return f"{value:.4f}".rstrip("0").rstrip(".")
 
 
+def cpp_float(value: float) -> str:
+    """Format a standard C++ floating literal with an explicit decimal point."""
+    text = fmt(value)
+    if "." not in text and "e" not in text.lower():
+        text += ".0"
+    return f"{text}F"
+
+
 def read_layout(path: Path) -> configparser.ConfigParser:
     parser = configparser.ConfigParser(interpolation=None)
     with path.open("r", encoding="utf-8") as stream:
@@ -82,7 +90,7 @@ def generated_header(parser: configparser.ConfigParser) -> str:
     screws = [point_mm(parser, f"screw_{i}") for i in range(1, 5)]
 
     def p(point: Point) -> str:
-        return f"{{{fmt(point.x)}F, {fmt(point.y)}F}}"
+        return f"{{{cpp_float(point.x)}, {cpp_float(point.y)}}}"
 
     return f'''/**
  * @file generated_panel_layout.hpp
@@ -111,21 +119,21 @@ struct RectMm final {{
     float height;
 }};
 
-inline constexpr float kPanelWidthMm = {fmt(parser.getfloat("panel", "width_mm"))}F;
-inline constexpr float kPanelHeightMm = {fmt(parser.getfloat("panel", "height_mm"))}F;
-inline constexpr float kPanelOffsetXmm = {fmt((RACK_WIDTH_PX / PX_PER_MM - parser.getfloat("panel", "width_mm")) * 0.5)}F;
-inline constexpr float kPanelOffsetYmm = {fmt((RACK_HEIGHT_PX / PX_PER_MM - parser.getfloat("panel", "height_mm")) * 0.5)}F;
-inline constexpr RectMm kDisplay{{{fmt(display[0])}F, {fmt(display[1])}F, {fmt(display[2])}F, {fmt(display[3])}F}};
+inline constexpr float kPanelWidthMm = {cpp_float(parser.getfloat("panel", "width_mm"))};
+inline constexpr float kPanelHeightMm = {cpp_float(parser.getfloat("panel", "height_mm"))};
+inline constexpr float kPanelOffsetXmm = {cpp_float((RACK_WIDTH_PX / PX_PER_MM - parser.getfloat("panel", "width_mm")) * 0.5)};
+inline constexpr float kPanelOffsetYmm = {cpp_float((RACK_HEIGHT_PX / PX_PER_MM - parser.getfloat("panel", "height_mm")) * 0.5)};
+inline constexpr RectMm kDisplay{{{cpp_float(display[0])}, {cpp_float(display[1])}, {cpp_float(display[2])}, {cpp_float(display[3])}}};
 inline constexpr PointMm kEncoderCenter{p(point_mm(parser, "encoder"))};
-inline constexpr float kEncoderDiameterMm = {fmt(parser.getfloat("encoder", "knob_diameter_mm"))}F;
+inline constexpr float kEncoderDiameterMm = {cpp_float(parser.getfloat("encoder", "knob_diameter_mm"))};
 inline constexpr PointMm kPlayCenter{p(point_mm(parser, "play"))};
 inline constexpr PointMm kTapCenter{p(point_mm(parser, "tap"))};
 inline constexpr PointMm kStopCenter{p(point_mm(parser, "stop"))};
-inline constexpr float kButtonActuatorDiameterMm = {fmt(parser.getfloat("play", "actuator_diameter_mm"))}F;
+inline constexpr float kButtonActuatorDiameterMm = {cpp_float(parser.getfloat("play", "actuator_diameter_mm"))};
 inline constexpr PointMm kSyncCenter{p(point_mm(parser, "sync"))};
 inline constexpr PointMm kResetCenter{p(point_mm(parser, "reset"))};
-inline constexpr float kJackNutDiameterMm = {fmt(parser.getfloat("jack_ts", "nut_diameter_mm"))}F;
-inline constexpr float kLedDiameterMm = {fmt(parser.getfloat("leds", "diameter_mm"))}F;
+inline constexpr float kJackNutDiameterMm = {cpp_float(parser.getfloat("jack_ts", "nut_diameter_mm"))};
+inline constexpr float kLedDiameterMm = {cpp_float(parser.getfloat("leds", "diameter_mm"))};
 inline constexpr std::array<PointMm, 8U> kOutputCenters{{{{
     {', '.join(p(x) for x in outputs)}
 }}}};

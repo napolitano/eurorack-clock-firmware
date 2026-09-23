@@ -41,3 +41,22 @@ The firmware embeds only the native-resolution 1-bit numeral/dash raster data re
 ## Native simulator
 
 The optional desktop simulator links SDL3 under the zlib license. SDL is not linked into STM32 firmware and does not alter the embedded runtime license set.
+## VCV Rack Trial-First plugin
+
+The experimental `vcv/` plugin is project-owned CLOCK code and remains under **PolyForm Noncommercial License 1.0.0**. The Rack SDK is an external development dependency and is not stored in this repository or bundled in CLOCK release packages.
+
+VCV Rack is GPL-3.0-or-later with the upstream **VCV Rack Non-Commercial Plugin License Exception**. That exception permits a plugin distributed free of charge to use the Rack API in source and binary form and to link to Rack regardless of the plugin's own license terms. CLOCK relies on that exception only for the Rack API/link boundary.
+
+The project does not copy significant non-API Rack source code, Rack/Core module source, VCV Core visual design, or VCV Component Library artwork. The functional CLOCK Rack panel is generated from the project-owned `sim/panel_layout.ini` geometry.
+
+The distribution boundary is therefore:
+
+| Item | Repository | Build machine | `.vcvplugin` | License role |
+| --- | --- | --- | --- | --- |
+| CLOCK production/VCV adapter source | yes | yes | compiled binary | PolyForm Noncommercial 1.0.0 |
+| Rack SDK headers / `plugin.mk` | no | temporary/external | no | upstream Rack license + plugin exception |
+| `libRack` | no | link target | no; supplied by Rack host | upstream Rack runtime |
+| Rack/Core source and panel assets | no | no | no | deliberately not consumed |
+
+`scripts/check_architecture.py` rejects Rack API references outside `vcv/`, and the VCV workflow rejects packages containing SDK or Rack-runtime payloads. If CLOCK's Rack plugin is ever distributed for a fee, the licensing assumption must be reviewed before that distribution.
+

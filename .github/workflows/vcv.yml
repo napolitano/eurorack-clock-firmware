@@ -27,6 +27,7 @@ permissions:
 
 env:
   RACK_SDK_VERSION: '2.6.6'
+  RACK_SDK_PLATFORM: 'lin-x64'
 
 jobs:
   linux-x64:
@@ -40,8 +41,10 @@ jobs:
 
       - name: Download Rack SDK
         run: |
-          curl -fsSL -o "$RUNNER_TEMP/Rack-SDK.zip" \
-            "https://vcvrack.com/downloads/Rack-SDK-${RACK_SDK_VERSION}-lin-x64.zip"
+          sdk_url="https://vcvrack.com/downloads/Rack-SDK-${RACK_SDK_VERSION}-${RACK_SDK_PLATFORM}.zip"
+          echo "Downloading pinned Rack SDK: $sdk_url"
+          curl --proto '=https' --tlsv1.2 --fail --show-error --location \
+            -o "$RUNNER_TEMP/Rack-SDK.zip" "$sdk_url"
           unzip -q "$RUNNER_TEMP/Rack-SDK.zip" -d "$RUNNER_TEMP"
           test -f "$RUNNER_TEMP/Rack-SDK/plugin.mk"
 
@@ -62,6 +65,10 @@ jobs:
           grep -q '^SouthSignalLab-CLOCK/plugin.json$' "$RUNNER_TEMP/vcv-package.txt"
           grep -q '^SouthSignalLab-CLOCK/plugin.so$' "$RUNNER_TEMP/vcv-package.txt"
           grep -q '^SouthSignalLab-CLOCK/res/CLOCK.svg$' "$RUNNER_TEMP/vcv-package.txt"
+          ! grep -Eqi '(^|/)(Rack-SDK|include|dep)(/|$)' "$RUNNER_TEMP/vcv-package.txt"
+          ! grep -Eqi '(^|/)(libRack\.(so|dylib)|Rack\.dll)$' "$RUNNER_TEMP/vcv-package.txt"
+          readelf -d vcv/plugin.so | tee "$RUNNER_TEMP/vcv-plugin-dynamic.txt"
+          grep -q 'Shared library: \[libRack.so\]' "$RUNNER_TEMP/vcv-plugin-dynamic.txt"
           ls -lh "$package"
 
       - name: Verify Rack SDK install target

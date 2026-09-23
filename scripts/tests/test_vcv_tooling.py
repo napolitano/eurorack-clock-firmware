@@ -25,6 +25,10 @@ class VcvManifestTests(unittest.TestCase):
         self.assertEqual(manifest["modules"][0]["slug"], "CLOCK")
         self.assertTrue(str(manifest["version"]).startswith("2."))
         self.assertIn("Clock generator", manifest["modules"][0]["tags"])
+        self.assertEqual(
+            manifest["license"],
+            "https://polyformproject.org/licenses/noncommercial/1.0.0/",
+        )
 
     def test_makefile_compiles_production_sources_in_cpp17_mode(self) -> None:
         makefile = (ROOT / "vcv/Makefile").read_text(encoding="utf-8")
@@ -57,8 +61,11 @@ class VcvManifestTests(unittest.TestCase):
         shell = (ROOT / "vcv/src/CLOCK.cpp").read_text(encoding="utf-8")
         panel = (ROOT / "vcv/res/CLOCK.svg").read_text(encoding="utf-8")
 
-        self.assertIn(f"kPanelWidthMm = {parser.getfloat('panel', 'width_mm'):g}F", generated)
-        self.assertIn(f"kPanelHeightMm = {parser.getfloat('panel', 'height_mm'):g}F", generated)
+        self.assertIn("kPanelWidthMm = 50.5F", generated)
+        self.assertIn("kPanelHeightMm = 128.5F", generated)
+        self.assertIn("kButtonActuatorDiameterMm = 9.0F", generated)
+        self.assertIn("kLedDiameterMm = 3.0F", generated)
+        self.assertIsNone(re.search(r"(?<![A-Za-z0-9_.])[-+]?\d+F\b", generated))
         self.assertIn("kOutputCenters", shell)
         self.assertIn("kLedCenters", shell)
         self.assertIn("MediumLight<RedLight>", shell)
@@ -74,12 +81,59 @@ class VcvWorkflowTests(unittest.TestCase):
         self.assertIn("actions/checkout@v5", workflow)
         self.assertIn("actions/upload-artifact@v7", workflow)
         self.assertIn("RACK_SDK_VERSION: '2.6.6'", workflow)
+        self.assertIn("RACK_SDK_PLATFORM: 'lin-x64'", workflow)
+        self.assertIn("https://vcvrack.com/downloads/Rack-SDK-${RACK_SDK_VERSION}-${RACK_SDK_PLATFORM}.zip", workflow)
         self.assertIn("python scripts/generate_vcv_panel.py --check", workflow)
         self.assertIn("make -C vcv", workflow)
         self.assertIn("tar --zstd -tf", workflow)
         self.assertIn("make -C vcv install", workflow)
         self.assertIn("plugins-lin-x64", workflow)
+        self.assertIn("readelf -d vcv/plugin.so", workflow)
+        self.assertIn("libRack.so", workflow)
+        self.assertIn("Rack-SDK|include|dep", workflow)
         self.assertNotRegex(workflow, r"actions/(checkout|upload-artifact|cache)@v[1-4]\b")
+
+    def test_local_developer_guide_covers_build_test_install_and_license_boundary(self) -> None:
+        guide = (ROOT / "docs/VCV_DEVELOPMENT.md").read_text(encoding="utf-8")
+        for required in (
+            "Rack-SDK-2.6.6-win-x64.zip",
+            "MSYS2 MinGW 64-bit",
+            '$env:RACK_DIR = "C:\\SDK\\Rack-SDK-2.6.6"',
+            'export RACK_DIR="/c/SDK/Rack-SDK-2.6.6"',
+            "Get-ChildItem C:\\SDK -Filter plugin.mk -Recurse",
+            "Rack-SDK-2.6.6-mac-x64.zip",
+            "Rack-SDK-2.6.6-mac-arm64.zip",
+            "Rack-SDK-2.6.6-lin-x64.zip",
+            "cmake --preset simulator-headless",
+            "vcv_runtime_adapter_tests",
+            "make -C vcv dist",
+            "make -C vcv install",
+            "RACK_USER_DIR",
+            "log.txt",
+            "VCV Rack Non-Commercial Plugin License Exception",
+            "Rack API use: confined to `vcv/`",
+        ):
+            self.assertIn(required, guide)
+
+    def test_rack_sdk_is_not_vendored_and_api_boundary_is_documented(self) -> None:
+        self.assertFalse((ROOT / "Rack-SDK").exists())
+        self.assertFalse((ROOT / ".rack-sdk").exists())
+        self.assertFalse(any(ROOT.glob("Rack-SDK-*")))
+        gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+        self.assertIn("Rack-SDK/", gitignore)
+        self.assertIn("Rack-SDK-*/", gitignore)
+        architecture = (ROOT / "scripts/check_architecture.py").read_text(encoding="utf-8")
+        self.assertIn("check_vcv_api_boundary", architecture)
+        self.assertIn("Rack API references are only permitted under vcv/", architecture)
+
+    def test_licensing_docs_record_external_sdk_boundary(self) -> None:
+        licensing = (ROOT / "docs/LICENSING.md").read_text(encoding="utf-8")
+        dependencies = (ROOT / "docs/DEPENDENCIES.md").read_text(encoding="utf-8")
+        notices = (ROOT / "THIRD_PARTY_NOTICES.md").read_text(encoding="utf-8")
+        self.assertIn("VCV Rack Non-Commercial Plugin License Exception", licensing)
+        self.assertIn("Rack SDK 2.6.6", dependencies)
+        self.assertIn("not vendored", notices)
+        self.assertIn("not bundled", notices)
 
     def test_vcv_docs_disclose_single_instance_limit(self) -> None:
         readme = (ROOT / "vcv/README.md").read_text(encoding="utf-8")
