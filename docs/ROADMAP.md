@@ -66,7 +66,7 @@ The beta/RC line is therefore not empty. It has five concrete workstreams:
 | Hardware bring-up | complete P1 prototype, verify power path, 5 V logic, gate buffer, SYNC/RST comparator behavior and front-panel wiring | bench notes, measurements, schematic/PCB updates |
 | Timing | verify internal period accuracy, gate width, phase behavior, eight-output skew and external-SYNC behavior under representative loads | HIL captures and qualification ledger |
 | Display isolation | stress SPI while all timing engines are active; display may lose frame rate but must not own musical timing | comparative timing captures |
-| Persistence/update safety | validate CURRENT/presets, power-cycle behavior, schema-v9 persistence, schema-v8/v7/v6 recovery and the migration contract for later schemas | host tests plus representative-device tests |
+| Persistence/update safety | validate CURRENT/presets, the schema-v12 Custom Groove store, power-cycle behavior, migration from schema v11/v10/v9 and stable 1.0.x records, plus preservation of unrelated NVM regions | host tests plus representative-device tests |
 | Publication quality | build/flash instructions, BOM, troubleshooting, release artifacts, manual and repository docs describe the same product | CI, release checklist and manual review |
 
 ## HIL enforcement policy
@@ -92,6 +92,7 @@ Planned scope and implementation sequence:
 - Groove Amount to scale a stored pattern from straight through exaggerated timing;
 - pattern rotation/phase so related channels can share one groove with different starting positions;
 - **Stage 2 — Preset / Custom split (implemented in current 1.1 development):** keep factory presets read-only and add user-defined signed Custom grooves. Editing uses a 128x64 graphical beat/step grid with movable diamond timing markers, bounded zoom and live runtime preview;
+- **Stage 2 — Tap Record (implemented in current 1.1 development):** `RECORD >` is a second input mode over the same Custom Groove draft. PLAY starts/stops capture, TAP writes the nearest signed microtiming offset from high-resolution physical-button timing, PLAY+TURN controls zoom, the live engine phase drives the playhead, Count-In is independently configurable `OFF / 1-64`, and One-Shot/Endless determine stop-versus-wrap behavior. Recorded grooves use the same save/load/rename/delete slots and remain editable in `EDITOR >`;
 - The current 8-KiB persistence revision provides **10 named Custom Groove slots** using fixed records in bytes 3136-4095 without moving legacy score or Top-100 data. **Ten slots are the frozen 1.1.0 release scope.** The longer-term **99-slot** target remains conditional on a later compact/expanded persistence design and real target memory proof. Stage 2 now implements save/load/overwrite/rename/delete, generated editable two-word default names, direct `GROOVE → LOAD` recall, the actual stored Custom Groove name on the Performance screen, explicit destructive confirmations, and retry-safe rename semantics;
 - Humanize remains a separate stochastic layer and is never conflated with deterministic groove timing.
 
@@ -106,7 +107,7 @@ Dependencies and constraints:
 Definition of done:
 
 - **implemented:** exhaustive Custom-Groove lookup sweep over all 1-64 step lengths and every 0-100% Amount value, plus engine vectors spanning 20/120/999 BPM, divide/multiply/rational rates, 1/4/16/64-step grids and 0/50/100% Amount;
-- **implemented:** simulator views for editing and performance feedback;
+- **implemented:** simulator views for editing, tap recording/playhead feedback and performance feedback;
 - **implemented:** Straight/Swing regression vectors remain in the same timing suite;
 - **defined for bench execution:** `HIL-GRV-001..003` cover subtle, triplet-like and extreme Groove cases against the existing <=50 us scheduler-quantized timing criterion. Physical captures remain HIL evidence rather than host-test claims.
 

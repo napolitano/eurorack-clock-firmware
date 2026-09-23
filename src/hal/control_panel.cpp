@@ -27,6 +27,7 @@ void ControlPanel::DebouncedButton::begin(const std::uint32_t nowMs) {
     rawPressed_ = !platform::read(pin_);
     stablePressed_ = rawPressed_;
     rawChangedAtMs_ = nowMs;
+    rawChangedAtUs_ = platform::microseconds();
 }
 
 ButtonSample ControlPanel::DebouncedButton::sample(const std::uint32_t nowMs) {
@@ -34,6 +35,7 @@ ButtonSample ControlPanel::DebouncedButton::sample(const std::uint32_t nowMs) {
     if (currentRawPressed != rawPressed_) {
         rawPressed_ = currentRawPressed;
         rawChangedAtMs_ = nowMs;
+        rawChangedAtUs_ = platform::microseconds();
     }
 
     ButtonEdge edge = ButtonEdge::None;
@@ -42,7 +44,7 @@ ButtonSample ControlPanel::DebouncedButton::sample(const std::uint32_t nowMs) {
         edge = stablePressed_ ? ButtonEdge::Pressed : ButtonEdge::Released;
     }
 
-    return {edge, stablePressed_};
+    return {edge, stablePressed_, edge == ButtonEdge::None ? 0U : rawChangedAtUs_};
 }
 
 ControlPanel::ControlPanel()

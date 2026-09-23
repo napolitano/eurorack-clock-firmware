@@ -30,6 +30,8 @@ mode-change-confirm-no	Mode-change confirmation with safe default NO
 mode-change-confirm-yes	Mode-change confirmation with YES selected
 sequencer-editor	64-step Sequencer editor
 templates	Factory template selection
+groove-editor-custom	Custom Groove graphical editor
+groove-record-live	Custom Groove tap recorder while recording
 settings-root	Settings root
 settings-general	General settings
 settings-inputs	Global input-role assignments
@@ -52,6 +54,7 @@ settings-one-clock	One Clock group menu
 settings-one-clock-timing	One Clock Timing settings
 settings-one-clock-output	One Clock Output settings
 settings-divider-bank	Divider Bank settings
+settings-info-author-popover	Full read-only author value opened from the truncated Info row
 settings-editing	Settings value while actively editing
 preset-load	User preset load list
 preset-save	User preset save list

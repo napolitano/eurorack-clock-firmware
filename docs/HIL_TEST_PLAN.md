@@ -132,6 +132,7 @@ expected timestamps from the same configuration.
 | `HIL-GRV-001` | 120 BPM, x1, `SWING 54`, Amount 50%, Rotate 0 | subtle displacement |
 | `HIL-GRV-002` | 120 BPM, x1, `SWING 66`, Amount 100%, Rotate 0 | triplet-like factory groove |
 | `HIL-GRV-003` | 120 BPM, x1, 4-step Custom `[0, +120, -120, 0]`, Amount 100%, Rotate 0 | extreme signed Custom timing |
+| `HIL-GRV-004` | 120 BPM, 16-step Custom Groove Record, Count-In 4, tap every nominal step with a known external reference | physical TAP-capture latency/jitter and recorded offset fidelity |
 
 **Pass criteria**
 
@@ -140,6 +141,7 @@ expected timestamps from the same configuration.
 - jack-level edge time agrees with the expected scheduler-quantized timestamp within **<= 50 us**;
 - the gate-off safety rule remains intact: a requested pulse may shorten, but must never swallow the following rising edge;
 - repeated pattern cycles do not accumulate phase walk beyond scheduler quantization.
+- for `HIL-GRV-004`, record the physical TAP transition and resulting stored/played gate timing from the same reference; document fixed latency separately from jitter and verify that debounce does not quantize the recorded offsets to 1 ms or 25 ms steps.
 
 ## 6. External SYNC / RST inputs
 

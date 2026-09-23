@@ -71,7 +71,11 @@ void UiController::invalidate() {
 
 void UiController::processControls(
     const hal::ControlSample& controls,
-    const std::uint32_t nowMs) {
+    const std::uint32_t nowMs,
+    std::uint32_t nowUs) {
+    if (nowUs == 0U) {
+        nowUs = nowMs * 1000U;
+    }
     if (!activityClockInitialized_) {
         lastUserActivityAtMs_ = nowMs;
         activityClockInitialized_ = true;
@@ -100,7 +104,7 @@ void UiController::processControls(
 
     handleEncoderButton(controls.encoderButton, nowMs);
     handleTransportButton(controls.transportButton, nowMs);
-    handleTapButton(controls.tapButton, nowMs);
+    handleTapButton(controls.tapButton, nowMs, nowUs);
     handleResetButton(controls.resetButton, nowMs);
 
     if (settingsChordActive_ &&
@@ -117,10 +121,15 @@ const NavigationState& UiController::navigation() const {
 void UiController::handleTransportButton(
     const hal::ButtonSample& button,
     const std::uint32_t nowMs) {
-    if (navigation_.screen == Screen::GrooveEditor) {
+    if (navigation_.screen == Screen::GrooveEditor ||
+        navigation_.screen == Screen::GrooveRecorder) {
         if (button.edge == hal::ButtonEdge::Released) {
             if (!transportPressConsumedByGrooveZoom_) {
-                toggleTransport(nowMs);
+                if (navigation_.screen == Screen::GrooveRecorder) {
+                    toggleGrooveRecording(nowMs);
+                } else {
+                    toggleTransport(nowMs);
+                }
             }
             transportPressConsumedByGrooveZoom_ = false;
         }
@@ -141,7 +150,14 @@ void UiController::handleTransportButton(
 
 void UiController::handleTapButton(
     const hal::ButtonSample& button,
-    const std::uint32_t nowMs) {
+    const std::uint32_t nowMs,
+    const std::uint32_t nowUs) {
+    if (navigation_.screen == Screen::GrooveRecorder) {
+        if (button.edge == hal::ButtonEdge::Pressed) {
+            captureGrooveTap(button, nowUs);
+        }
+        return;
+    }
     if (button.edge != hal::ButtonEdge::Released) {
         return;
     }
@@ -186,7 +202,18 @@ void UiController::handleResetButton(
         openSettingsPage(SettingsPage::Preferences);
     } else if (navigation_.screen == Screen::PresetSlots) {
         openSettingsPage(SettingsPage::Preferences);
-    } else if (navigation_.screen == Screen::GrooveEditor) {
+    } else if (navigation_.screen == Screen::GrooveEditor ||
+               navigation_.screen == Screen::GrooveRecorder) {
+        grooveWorkspaceScreen_ = navigation_.screen;
+        if (navigation_.screen == Screen::GrooveRecorder) {
+            // BACK always leaves capture in a deterministic stopped state. A
+            // discard confirmation must never hide a still-running recorder
+            // that would jump forward when the user cancels the dialog.
+            grooveRecorder_.stop();
+            navigation_.grooveRecordState = GrooveRecordState::Ready;
+            navigation_.grooveRecordPlayheadStep = 0U;
+            navigation_.grooveRecordPlayheadPhase256 = 0U;
+        }
         if (grooveEditorDirty_) {
             grooveLoadPendingAfterDiscard_ = false;
             navigation_.screen = Screen::GrooveDiscardConfirm;
@@ -199,11 +226,11 @@ void UiController::handleResetButton(
         if (navigation_.grooveSlotAction == GrooveSlotAction::Activate) {
             openSettingsPage(SettingsPage::Groove, 3U);
         } else if (navigation_.grooveSlotAction == GrooveSlotAction::Rename) {
-            openSettingsPage(SettingsPage::Groove, 5U);
-        } else if (navigation_.grooveSlotAction == GrooveSlotAction::Delete) {
             openSettingsPage(SettingsPage::Groove, 6U);
+        } else if (navigation_.grooveSlotAction == GrooveSlotAction::Delete) {
+            openSettingsPage(SettingsPage::Groove, 7U);
         } else {
-            navigation_.screen = Screen::GrooveEditor;
+            navigation_.screen = grooveWorkspaceScreen_;
             invalidate();
         }
     } else if (navigation_.screen == Screen::GrooveNameEntry ||
@@ -216,7 +243,7 @@ void UiController::handleResetButton(
         navigation_.cursor = navigation_.selectedGrooveSlot;
         invalidate();
     } else if (navigation_.screen == Screen::GrooveDiscardConfirm) {
-        navigation_.screen = Screen::GrooveEditor;
+        navigation_.screen = grooveWorkspaceScreen_;
         invalidate();
     } else if (navigation_.screen == Screen::NameEntry ||
                navigation_.screen == Screen::OverwriteConfirm) {

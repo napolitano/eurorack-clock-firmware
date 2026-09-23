@@ -1,8 +1,8 @@
 <!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
-# South Signal Lab CLOCK Test Coverage — v1.0.1
+# South Signal Lab CLOCK Test Coverage — stable v1.0.1 / 1.1 development
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 491 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 496 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -25,13 +25,13 @@ Compiler branches:  4288/5562 (77.09%, informational only)
 
 The 1.0.1 release workflow re-runs the complete coverage and sanitizer matrix on the exact tagged source before publishing. Local pre-release verification covers the changed host renderer regression, the 96-case external-SYNC suite, release/manual tooling, documentation policies, and both headless simulator tests; the authoritative 1.0.1 repository-wide percentages are therefore produced by the release CI rather than copied forward from 1.0.0.
 
-Current 1.1 development working baseline after Groove Engine Stage 2, the readability sprint, the horizontal Channel Mode carousel, generated Custom Groove naming/direct LOAD, Rename/Delete management, read-only information overflow popovers, the exhaustive Groove sweep, and the simulator scope phase-lock correction:
+Current 1.1 development working baseline after Groove Engine Stage 2 plus Tap Record, the readability sprint, the horizontal Channel Mode carousel, generated Custom Groove naming/direct LOAD, Rename/Delete management, read-only information overflow popovers, the exhaustive Groove sweep, and the simulator scope phase-lock correction:
 
 ```text
-Executable lines:   8868/9232 (96.06%)
-Functions:            782/795  (98.36%)
-Decision branches:   5412/5967 (90.70%)
-Compiler branches:   5413/6983 (77.52%, informational only)
+Executable lines:   9258/9665 (95.79%)
+Functions:            805/819  (98.29%)
+Decision branches:   5639/6246 (90.28%)
+Compiler branches:   5640/7322 (77.03%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.
@@ -44,7 +44,7 @@ This is a host-coverage result, not HIL evidence. The 90% decision threshold is 
 2. focused realtime timing/SYNC/RST tests
 3. realtime tests through configured external GPIO IRQ pins
 4. atomic external-SYNC/input-front-end behavioral tests
-5. atomic swing and observed engine-edge tests
+5. atomic Swing, Custom Groove, TAP Recorder, and observed engine-edge tests
 6. deterministic One Clock Humanize tests
 7. Tap Tempo estimator edge-case tests
 8. rotary encoder and button HAL behavior tests
@@ -78,8 +78,8 @@ The complete firmware variants compile the real production `.cpp` files against 
 - periodic timer, interrupt lock and system clock wrappers
 - complete deterministic timing/pattern core invariants
 - sixteenth-note base-rate semantics for Euclid/Sequencer (`x1`: 16 steps per 4/4 bar)
-- complete CURRENT-state persistence plus CRC/schema validation and 8 named user preset slots, including screensaver mode/start/dim/off plus device-local encoder-direction/OLED-orientation preferences
-- schema-v10 to schema-v11 migration for configurable input roles, schema-v9 to schema-v10 Groove migration, the earlier v8/v7/v6/v5/v4/v3 migration chain, corrupt-record isolation, preset-name validation, and preservation of unrelated NVM bytes
+- complete CURRENT-state persistence plus CRC/schema validation, 8 named user preset slots, and the 10-record Custom Groove store, including screensaver mode/start/dim/off plus device-local encoder-direction/OLED-orientation preferences
+- schema-v11 to schema-v12 migration for Custom Groove slot references, schema-v10 to schema-v11 migration for configurable input roles, schema-v9 to schema-v10 Groove migration, the earlier v8/v7/v6/v5/v4/v3 migration chain, corrupt-record isolation, preset/Custom-Groove name validation, CRC-protected 10-slot Groove records, and preservation of unrelated NVM bytes
 - external-sync regression cases for 20/120/999 BPM, 1/2/4/24 PPQN, jitter, adaptive lock timeout, queue overflow/reacquisition, timestamp wraparound, effective-tempo gate release, monotonic scheduler time, phase alignment, ISR-safe pulse entry, and PPQN interpretation
 - 116-case atomic input/SYNC behavior: external clocks at 1/20/30/60/120/240/300/600/900/999 BPM plus configurable SYNC/RESET/RUN/START/STOP/RESTART/TAP roles on either physical input, role-change queue invalidation, input exclusivity, transport-neutral RUN assignment/boot baselining, level-authoritative RUN after a physical change, timestamp-preserving TAP, jitter/glitches, runtime PPQN/edge changes, loss policies and continuity recovery
 - external-SYNC `SMOOTHING` OFF/LOW/MEDIUM/FULL weighting, factory LOW default, live smoothing changes after lock, and menu-label coverage for all four modes
@@ -89,6 +89,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - ISR-safe external reset on either physical input with configurable TRIGGER/GATE semantics, startup-HIGH handling, queue saturation, deterministic RESET-before-SYNC priority, and role removal/reassignment behavior
 - fastest legal scheduler-rate/swing behavior and immediate full-state OFF/MUTE gate release
 - channel overview selection, TAP-turn horizontal mode carousel, TAP+encoder Settings chord, removed long-press behavior, OFF/Unified/Divider modes, deferred Flash commit, shared C/E/S epoch rescheduling, preset overwrite/save/load/name-band workflow, generated Custom Groove default names, direct Groove LOAD, and persisted Custom Groove names on the Performance screen
+- Custom Groove Recorder end-to-end behavior: independent `OFF / 1-64` Count-In, One-Shot stop, Endless wrap/targeted overwrite, live playhead, PLAY start/stop/rewind, TAP-as-capture without Tap Tempo side effects, PLAY+TURN quick zoom, high-resolution pre-debounce TAP timestamps, direct SAVE, and lossless handoff of the same draft into the graphical Editor
 - 1–999 BPM master accumulation, 60-second Tap Tempo input, all screensaver renderers/state sweeps, Pixel Raid gameplay model, Formula 1, Breakout, Egg Journey and Beatknecht PLAY/PAUSE/STOP, guarded NO/YES Beatknecht exit confirmation, launch/reset/control paths, game-only exit gestures, shared game-specific retro intro/initials/scrollable Top-100 flow, first-launch-gated HI-SCORES/CLEAR behavior, independent persistent Pixel Raid/Formula 1/Breakout/Egg Journey leaderboards with legacy single-score fallback, and gate-source-muted life-loss safety
 
 ## Decision branches versus compiler branches

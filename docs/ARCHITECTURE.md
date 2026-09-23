@@ -102,13 +102,13 @@ A persisted PLAY value is metadata only; it is never authorization to start outp
 
 The top-level `ClockState` contains:
 
-- master tempo and meter;
+- master tempo, meter, and optional Pre-Count;
 - user MIN/MAX BPM limits;
-- clock source and External Sync settings;
+- configurable INPUT 1/2 roles plus clock source and External Sync settings;
 - operating topology;
-- One Clock shared settings and Humanize;
+- One Clock shared settings, deterministic Groove assignment, and Humanize;
 - Divider Bank settings;
-- eight channel configurations;
+- eight channel configurations including per-channel Groove assignment in Independent mode;
 - display/screensaver preferences;
 - persisted UI-relevant configuration where appropriate.
 
@@ -213,10 +213,13 @@ The UI is split by responsibility:
 - `UiController` — input/gesture dispatch and screen transitions;
 - `SettingsEditor` — validated state mutation;
 - `menu_model` — settings rows and localized values;
+- `GrooveRecorder` — deterministic One-Shot/Endless TAP capture into the shared Custom Groove draft;
+- `CustomGrooveStore` — ten named CRC-protected Custom Groove records in the fixed 1.1 storage region;
 - `UiRenderer` — top-level dispatch;
-- `PerformanceRenderer` — performance screen;
+- `PerformanceRenderer` — performance screen including active Groove naming;
 - `ChannelNavigationRenderer` — channel overview, horizontal mode carousel, sequencer editor;
-- `SettingsRenderer` — settings, preset lists, confirmation/name entry;
+- `GrooveEditorRenderer` — shared graphical grid for Custom Groove edit/record views, marker occlusion, and record playhead;
+- `SettingsRenderer` — settings, preset/Custom-Groove lists, confirmation/name entry and read-only information popovers;
 - `ScreensaverRenderer` — STOP-mode display protection/animation.
 
 Static firmware strings live in `ui_text.h`. Renderers must not embed user-facing prose.
@@ -247,7 +250,7 @@ Layout:
 0x08020000  Sector 5  128 KiB   firmware
 ```
 
-Firmware budget: **224 KiB**. Persistence: **2 × 16 KiB**. Logical storage is 8 KiB with a hard 12 KiB future ceiling. The upper half currently hosts compact independent arcade Top-100 tables while the lower 4 KiB retains the established settings/preset and legacy-score layout.
+Firmware budget: **224 KiB**. Persistence: **2 × 16 KiB**. Logical storage is 8 KiB with a hard 12 KiB future ceiling. The upper half hosts compact independent arcade Top-100 tables. In the lower 4 KiB, bytes 3136–4095 hold ten fixed 96-byte Custom Groove records without moving the historical score region at 3072–3135. Ten named slots are the frozen 1.1.0 scope; larger libraries require a separate storage revision and real target-memory proof rather than growth of the repeated `ClockState` record.
 
 `PersistentStateService` serializes fields explicitly, validates ranges, checks CRC, and migrates supported prior schemas. The storage layer writes the inactive slot and programs COMMIT last.
 

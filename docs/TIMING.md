@@ -30,6 +30,18 @@ Both conditioned comparator paths remain GPIO-interrupt driven. Their ISR work i
 
 The current baseline timestamps conditioned comparator edges through GPIO EXTI; when one path owns the SYNC role, those timestamps feed the external-period estimator. Final hardware qualification must measure capture/output jitter under representative worst-case load. PA8 remains timer Input Capture capable, so hardware capture remains an escalation option if measured EXTI timing misses the requirement.
 
+## Groove and TAP-record timing
+
+Groove is a deterministic timing layer on the existing master timeline, not a second clock. Factory Groove presets and named Custom Grooves ultimately resolve to bounded per-step offsets. `AMOUNT` scales the stored offset and `ROTATE` changes which stored step is applied to the current event. In Independent mode the owning channel supplies the Groove; One Clock uses one shared Groove; Divider Bank bypasses Groove entirely. One Clock Humanize remains a separate deterministic per-output displacement and is not folded into stored Groove data.
+
+Custom Groove offsets are signed and represented relative to the nominal step interval. The engine clamps effective event positions so timestamps remain monotonic and a marker cannot overtake the preceding or following event. Gate-off scheduling is still bounded against the resulting effective interval, so deep Groove cannot create a rising-edge/gate-off inversion. Straight timing, classic Swing and Groove therefore share the same scheduler invariants.
+
+`GROOVE → RECORD` captures the front-panel TAP button against the live Q32 musical position. The physical button layer preserves the original press timestamp before debounce; after the press is validated, the recorder uses that high-resolution timestamp instead of the later debounced foreground time. TAP is consumed by the recorder and is not sent to Tap Tempo while the Record screen is active.
+
+Recorder Count-In is independent from the global transport Pre-Count. It gates **capture readiness**, not the master transport configuration. `ONE SHOT` stops at the end of the selected 1–64-step pattern; `ENDLESS` wraps and replaces only steps receiving a new TAP. PLAY from the Record screen controls recorder start/stop, while PLAY+TURN is consumed as a zoom chord and must not issue a transport command. The visible playhead is derived from the same engine phase used for capture, so UI and stored offsets share one musical reference.
+
+Host tests verify timestamp preservation, step assignment, One-Shot/Endless behavior and monotonic scheduling. Physical switch latency, contact behavior and end-to-end TAP-to-gate jitter remain HIL measurements (`HIL-GRV-004`).
+
 ## Display transports
 
 Final hardware uses SPI. The legacy I2C transport is retained only as a host regression path and is not a production Blackpill profile.
@@ -72,7 +84,9 @@ The following invariants are release requirements:
 - TIM4 encoder transitions must continue accumulating while foreground display work is active, and foreground detent conversion must not lose a complete mechanical detent;
 - conditioned SYNC/RST edges must remain capturable while OLED traffic is active;
 - legacy I2C regression builds may lower visual frame rate or skip stale frames under load;
-- persistence writes remain prohibited while PLAYING because STM32F4 Flash programming can stall instruction/data fetches.
+- persistence writes remain prohibited while PLAYING because STM32F4 Flash programming can stall instruction/data fetches;
+- Groove/Swing offsets must preserve monotonic event order and cannot move a rising event beyond its neighboring event boundary;
+- Groove Record must preserve the physical TAP press timestamp through debounce and must never route a recorder TAP into Tap Tempo.
 
 ## Verification layers
 

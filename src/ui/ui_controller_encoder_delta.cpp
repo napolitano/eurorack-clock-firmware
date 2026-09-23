@@ -29,6 +29,14 @@ void UiController::handleEncoderDelta(
         return;
     }
 
+    if (navigation_.screen == Screen::GrooveRecorder) {
+        if (transportPressed) {
+            transportPressConsumedByGrooveZoom_ = true;
+            adjustGrooveZoom(delta);
+        }
+        return;
+    }
+
     if (navigation_.screen == Screen::GrooveSlots) {
         navigation_.cursor = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(navigation_.cursor) + delta, 0,
@@ -160,6 +168,51 @@ void UiController::handleEncoderDelta(
                 grooveEditorDirty_ = true;
                 updateGroovePreview();
                 invalidate();
+            }
+        } else if (navigation_.editing && navigation_.settingsPage == SettingsPage::GrooveRecordMenu) {
+            if (navigation_.cursor == 0U) {
+                navigation_.grooveRecordMode = navigation_.grooveRecordMode == GrooveRecordMode::OneShot
+                    ? GrooveRecordMode::Endless
+                    : GrooveRecordMode::OneShot;
+                grooveRecorder_.setMode(
+                    navigation_.grooveRecordMode == GrooveRecordMode::OneShot
+                        ? services::GrooveRecordMode::OneShot
+                        : services::GrooveRecordMode::Endless);
+                invalidate();
+            } else if (navigation_.cursor == 1U) {
+                navigation_.grooveRecordCountInBeats = static_cast<std::uint8_t>(clampInt(
+                    static_cast<int>(navigation_.grooveRecordCountInBeats) + delta, 0, 64));
+                grooveRecorder_.setCountInBeats(navigation_.grooveRecordCountInBeats);
+                invalidate();
+            } else if (navigation_.cursor == 2U) {
+                const std::uint8_t previousLength = navigation_.grooveDraft.length;
+                const int nextLength = clampInt(
+                    static_cast<int>(navigation_.grooveDraft.length) + delta, 1,
+                    static_cast<int>(kCustomGrooveMaximumSteps));
+                navigation_.grooveDraft.length = static_cast<std::uint8_t>(nextLength);
+                if (navigation_.grooveDraft.length < previousLength) {
+                    for (std::size_t step = navigation_.grooveDraft.length;
+                         step < navigation_.grooveDraft.offsets256.size(); ++step) {
+                        navigation_.grooveDraft.offsets256[step] = 0;
+                    }
+                }
+                navigation_.grooveRecordCapturedMask &= navigation_.grooveDraft.length >= 64U
+                    ? UINT64_MAX
+                    : ((1ULL << navigation_.grooveDraft.length) - 1ULL);
+                // The recorder is stopped while its menu is open. Re-seed its
+                // capture bookkeeping after a length edit so a later pass cannot
+                // resurrect captured bits that are now outside the pattern.
+                grooveRecorder_.reset(
+                    navigation_.grooveRecordMode == GrooveRecordMode::OneShot
+                        ? services::GrooveRecordMode::OneShot
+                        : services::GrooveRecordMode::Endless,
+                    navigation_.grooveRecordCountInBeats,
+                    navigation_.grooveRecordCapturedMask);
+                grooveEditorDirty_ = true;
+                updateGroovePreview();
+                invalidate();
+            } else if (navigation_.cursor == 3U) {
+                adjustGrooveZoom(delta);
             }
         } else if (navigation_.editing) {
             settingsEditor_.adjust(

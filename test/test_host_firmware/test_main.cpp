@@ -1698,7 +1698,7 @@ void testMenuModelAndFormatters() {
     ui::formatChannelDetail(state.channels[0], buffer, sizeof(buffer)); CHECK_EQ(std::strlen(buffer), 0U);
     ui::formatChannelSummary(state.channels[0], buffer, sizeof(buffer)); CHECK(std::strcmp(buffer, "OFF") == 0);
 
-    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::InputAssignments,ui::SettingsPage::Hardware,ui::SettingsPage::Diagnostics,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::Groove,ui::SettingsPage::GrooveEditorMenu,ui::SettingsPage::DividerBank};
+    const ui::SettingsPage pages[] = {ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::InputAssignments,ui::SettingsPage::Hardware,ui::SettingsPage::Diagnostics,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::Groove,ui::SettingsPage::GrooveEditorMenu,ui::SettingsPage::GrooveRecordMenu,ui::SettingsPage::DividerBank};
     state.source=ClockSource::External; state.externalSync.edge=SyncEdge::Falling; state.externalSync.lossMode=SyncLossMode::Stop;
     state.channels[0].common.resetMode=ResetMode::Free; state.channels[0].common.muted=true;
     for (auto page: pages) {
@@ -1754,7 +1754,7 @@ void testMenuModelAndFormatters() {
     CHECK(std::strcmp(infoUpdates.label, "UPDATES") == 0);
     CHECK(std::strcmp(infoFactoryReset.label, "FACTORY RESET") == 0);
     CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Info), 6U);
-    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Groove), 7U);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Groove), 8U);
     state.channels[0].common.mode = ChannelMode::Sequencer;
     const auto channelModeRow = ui::buildMenuRow(ui::SettingsPage::Channel, 0U, 0U, state);
     CHECK(std::strcmp(channelModeRow.value, "SEQUENCER") == 0);
@@ -3096,10 +3096,18 @@ void testControlPanel() {
     // Debounced press and release for all four buttons.
     const std::uint32_t pins[]={pinmap::kEncoderPushButtonPin,pinmap::kPlayPauseButtonPin,pinmap::kTapTempoButtonPin,pinmap::kResetBackButtonPin};
     for(auto pin:pins) fakefw::setPin(pin,LOW);
+    fakefw::nowUs = 1'000U;
     sample=controls.sample(1U); CHECK_EQ(sample.transportButton.edge,hal::ButtonEdge::None);
+    fakefw::nowUs = 30'000U;
     sample=controls.sample(30U); CHECK_EQ(sample.transportButton.edge,hal::ButtonEdge::Pressed); CHECK(sample.transportButton.pressed);
+    CHECK_EQ(sample.tapButton.edgeTimestampUs, 1'000U);
     for(auto pin:pins) fakefw::setPin(pin,HIGH);
-    (void)controls.sample(31U); sample=controls.sample(60U); CHECK_EQ(sample.resetButton.edge,hal::ButtonEdge::Released);
+    fakefw::nowUs = 31'000U;
+    (void)controls.sample(31U);
+    fakefw::nowUs = 60'000U;
+    sample=controls.sample(60U); CHECK_EQ(sample.resetButton.edge,hal::ButtonEdge::Released);
+    CHECK_EQ(sample.tapButton.edgeTimestampUs, 31'000U);
+    fakefw::nowUs = 0U;
 
     // One full Gray-code detent in each direction. IRQ capture must not depend on
     // foreground sampling between individual A/B transitions.
@@ -3245,7 +3253,7 @@ void testRenderEveryScreenAndState() {
     renderer.render(state,nav,engine.snapshot());
     nav.screen=ui::Screen::SequencerEditor; state.channels[0].sequencer={20U,0U,0xAAAAULL}; for(std::uint8_t page=0;page<4U;++page){nav.sequencerPage=page;nav.sequencerCursor=7U;renderer.render(state,nav,engine.snapshot());}
     nav.screen=ui::Screen::Settings;
-    const ui::SettingsPage pages[]={ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::InputAssignments,ui::SettingsPage::Hardware,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::DividerBank};
+    const ui::SettingsPage pages[]={ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::InputAssignments,ui::SettingsPage::Hardware,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::Groove,ui::SettingsPage::GrooveEditorMenu,ui::SettingsPage::GrooveRecordMenu,ui::SettingsPage::DividerBank};
     for(auto page:pages){nav.settingsPage=page;const auto count=ui::settingsPageItemCount(page);for(std::uint8_t row=0;row<count;++row){nav.cursor=row;nav.scrollOffset=row>4U?static_cast<std::uint8_t>(row-4U):0U;nav.editing=(row&1U)!=0U;renderer.render(state,nav,engine.snapshot());}}
     ui::DiagnosticSnapshot diagnostics{};
     diagnostics.syncHigh = true;
@@ -3328,6 +3336,37 @@ void testRenderEveryScreenAndState() {
     nav.grooveCursor = 0U;
     nav.grooveZoomSteps = 4U;
     renderer.render(state, nav, engine.snapshot());
+
+    // Groove Record reuses the same timing grid, adds a moving playhead, and
+    // draws only captured markers. Marker quiet zones must remain above the
+    // playhead layer so captured timing stays visually unambiguous.
+    nav.grooveDraft = CustomGroovePattern{};
+    nav.grooveDraft.length = 4U;
+    nav.grooveZoomSteps = 4U;
+    nav.grooveCursor = 0U;
+    nav.grooveRecordCapturedMask = (1ULL << 1U);
+    nav.grooveRecordState = ui::GrooveRecordState::Recording;
+    nav.grooveRecordPlayheadStep = 0U;
+    nav.grooveRecordPlayheadPhase256 = 128U;
+    nav.screen = ui::Screen::GrooveRecorder;
+    renderer.render(state, nav, engine.snapshot());
+    const auto grooveRecordFrame = display.framebufferForTest();
+    CHECK(std::strcmp(text::get(text::TextId::GrooveRecordTitle), "GROOVE RECORD") == 0);
+    CHECK(modePixelSet(grooveRecordFrame, 23, 25)); // playhead between steps 1 and 2
+    CHECK(modePixelSet(grooveRecordFrame, 43, 32)); // captured diamond outline
+    CHECK(!modePixelSet(grooveRecordFrame, 43, 35)); // playhead/grid cannot pierce marker
+
+    nav.grooveRecordState = ui::GrooveRecordState::PreCount;
+    nav.grooveRecordCountInRemaining = 3U;
+    nav.grooveRecordPlayheadStep = 2U;
+    nav.grooveRecordPlayheadPhase256 = 64U;
+    renderer.render(state, nav, engine.snapshot());
+    CHECK(display.framebufferForTest() != grooveRecordFrame);
+    nav.grooveRecordState = ui::GrooveRecordState::Ready;
+    nav.grooveRecordPlayheadStep = 0U;
+    nav.grooveRecordPlayheadPhase256 = 0U;
+    renderer.render(state, nav, engine.snapshot());
+    CHECK(modePixelSet(display.framebufferForTest(), 4, 25));
 
     CustomGroovePattern storedGroove{};
     storedGroove.length = 8U;
@@ -5739,7 +5778,7 @@ void testCustomGrooveEditorControllerWorkflow() {
     // editor reuses the existing name rather than generating a new one.
     char nameBeforeRename[services::CustomGrooveStore::kNameLength + 1U]{};
     grooveStore.name(0U, nameBeforeRename, sizeof(nameBeforeRename));
-    controllerTurn(controller, 1, now); // RENAME
+    controllerTurn(controller, 2, now); // RENAME
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
     controllerShortPress(controller, now); // slot 0
@@ -5766,7 +5805,7 @@ void testCustomGrooveEditorControllerWorkflow() {
     CHECK(grooveStore.save(1U, "DELETE ME", disposable));
     controllerReset(controller, now); // RENAME slot list -> Groove
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
-    CHECK_EQ(controller.navigation().cursor, 5U);
+    CHECK_EQ(controller.navigation().cursor, 6U);
     controllerTurn(controller, 1, now); // DELETE
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
@@ -5808,6 +5847,179 @@ void testCustomGrooveEditorControllerWorkflow() {
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
     CHECK_EQ(state.channels[0].common.groove.preset, GroovePreset::Custom);
+}
+
+void testCustomGrooveRecorderControllerWorkflow() {
+    resetFakes();
+    prepareDisplaySuccess();
+    hal::OledDisplay display;
+    CHECK(display.begin());
+
+    ClockState state = makeDefaultState();
+    state.operatingMode = OperatingMode::UnifiedClock;
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    engine::ClockEngine engine(gates);
+    engine.begin(state);
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    services::PersistentStateService persistentState(storage);
+    persistentState.begin();
+    services::CustomGrooveStore grooveStore(storage);
+    ui::UiRenderer renderer(display, persistentState, grooveStore);
+    ui::UiController controller(state, engine, renderer, persistentState, grooveStore);
+    std::uint32_t now = 100U;
+
+    // SETTINGS -> CHANNEL SETTINGS -> TIMING -> GROOVE -> RECORD.
+    controllerOpenSettingsChord(controller, now);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 4, now);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 5, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveRecorder);
+    CHECK_EQ(controller.navigation().grooveRecordCountInBeats, 4U);
+    CHECK_EQ(controller.navigation().grooveRecordMode, ui::GrooveRecordMode::OneShot);
+    CHECK_EQ(controller.navigation().grooveRecordState, ui::GrooveRecordState::Ready);
+
+    // Default Count-In is a recorder-local four-beat pre-roll. PLAY starts the
+    // global clock if needed, then enters PRECOUNT; PLAY again cancels only the
+    // recorder and rewinds its playhead.
+    hal::ControlSample sample{};
+    sample.transportButton = releasedEdge();
+    controller.processControls(sample, now++);
+    CHECK_EQ(state.transport, TransportState::Playing);
+    CHECK_EQ(controller.navigation().grooveRecordState, ui::GrooveRecordState::PreCount);
+    CHECK_EQ(controller.navigation().grooveRecordCountInRemaining, 4U);
+    sample = {};
+    sample.transportButton = releasedEdge();
+    controller.processControls(sample, now++);
+    CHECK_EQ(controller.navigation().grooveRecordState, ui::GrooveRecordState::Ready);
+    CHECK_EQ(controller.navigation().grooveRecordPlayheadStep, 0U);
+
+    // Record menu: switch to ENDLESS, turn Count-In off and use a four-step pattern.
+    controllerLongPress(controller, now);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::GrooveRecordMenu);
+    controllerShortPress(controller, now); // MODE edit
+    controllerTurn(controller, 1, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().grooveRecordMode, ui::GrooveRecordMode::Endless);
+    controllerTurn(controller, 1, now); // COUNT IN
+    controllerShortPress(controller, now);
+    controllerTurn(controller, -4, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().grooveRecordCountInBeats, 0U);
+    controllerTurn(controller, 1, now); // LENGTH
+    controllerShortPress(controller, now);
+    controllerTurn(controller, -12, now);
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().grooveDraft.length, 4U);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveRecorder);
+
+    // PLAY starts recording and, from STOP, starts only the global musical clock.
+    sample = {};
+    sample.transportButton = releasedEdge();
+    const std::uint32_t playNowUs = now * 1000U;
+    controller.processControls(sample, now++, playNowUs);
+    CHECK_EQ(state.transport, TransportState::Playing);
+    CHECK_EQ(controller.navigation().grooveRecordState, ui::GrooveRecordState::Recording);
+
+    // TAP is a record event here, not Tap Tempo. Capture straight step 1 at the
+    // current engine position using the high-resolution physical edge timestamp.
+    const std::uint16_t bpmBeforeTap = state.bpm;
+    sample = {};
+    sample.tapButton = {hal::ButtonEdge::Pressed, true, 1'000'000U};
+    controller.processControls(sample, now++, 1'000'000U);
+    CHECK_EQ(state.bpm, bpmBeforeTap);
+    CHECK((controller.navigation().grooveRecordCapturedMask & 0x1ULL) != 0ULL);
+    CHECK_EQ(controller.navigation().grooveDraft.offsets256[0], 0);
+
+    // Advance slightly beyond the next nominal grid point and capture another
+    // marker. The recorded offset must become visible in the shared draft.
+    const std::uint64_t intervalQ32 = engine.nominalIntervalQ32(0U);
+    const std::uint64_t targetQ32 = intervalQ32 + intervalQ32 / 8ULL;
+    std::uint32_t guard = 0U;
+    while (engine.snapshot().masterPositionQ32 < targetQ32 && guard++ < 20'000U) {
+        engine.processSchedulerTick();
+    }
+    CHECK(guard < 20'000U);
+    sample = {};
+    sample.tapButton = {hal::ButtonEdge::Pressed, true, 2'000'000U};
+    controller.processControls(sample, now++, 2'000'000U);
+    CHECK((controller.navigation().grooveRecordCapturedMask & 0x2ULL) != 0ULL);
+    CHECK(controller.navigation().grooveDraft.offsets256[1] > 0);
+
+    // BACK stops capture before presenting the normal dirty-draft confirmation.
+    // Cancelling that dialog returns to RECORD in READY; recording never runs
+    // invisibly behind the modal screen.
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveDiscardConfirm);
+    CHECK_EQ(controller.navigation().grooveRecordState, ui::GrooveRecordState::Ready);
+    controllerReset(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveRecorder);
+    CHECK_EQ(controller.navigation().grooveRecordState, ui::GrooveRecordState::Ready);
+
+    sample = {};
+    sample.transportButton = releasedEdge();
+    controller.processControls(sample, now++);
+    CHECK_EQ(controller.navigation().grooveRecordState, ui::GrooveRecordState::Recording);
+
+    // PLAY+TURN is consumed by zoom and must not stop the active recorder.
+    const std::uint8_t zoomBefore = controller.navigation().grooveZoomSteps;
+    sample = {};
+    sample.transportButton = heldButton();
+    sample.encoderDelta = 1;
+    controller.processControls(sample, now++);
+    sample = {};
+    sample.transportButton = releasedEdge();
+    controller.processControls(sample, now++);
+    CHECK(controller.navigation().grooveZoomSteps != zoomBefore);
+    CHECK_EQ(controller.navigation().grooveRecordState, ui::GrooveRecordState::Recording);
+
+    // PLAY alone stops recording and rewinds the recorder playhead without
+    // stopping the global transport that supplies the clock.
+    sample = {};
+    sample.transportButton = releasedEdge();
+    controller.processControls(sample, now++);
+    CHECK_EQ(controller.navigation().grooveRecordState, ui::GrooveRecordState::Ready);
+    CHECK_EQ(controller.navigation().grooveRecordPlayheadStep, 0U);
+    CHECK_EQ(controller.navigation().grooveRecordPlayheadPhase256, 0U);
+    CHECK_EQ(state.transport, TransportState::Playing);
+
+    // SAVE from the Record menu uses the same durable Custom Groove store as
+    // the manual editor. This is the direct recorder save path requested by the UI.
+    const auto capturedDraft = controller.navigation().grooveDraft;
+    controllerLongPress(controller, now);
+    controllerTurn(controller, 4, now); // SAVE
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    controllerShortPress(controller, now); // slot 0 -> generated name
+    controllerLongPress(controller, now);
+    CHECK(grooveStore.exists(0U));
+    CustomGroovePattern stored{};
+    CHECK(grooveStore.load(0U, stored));
+    CHECK_EQ(stored.length, capturedDraft.length);
+    CHECK_EQ(stored.offsets256[0], capturedDraft.offsets256[0]);
+    CHECK_EQ(stored.offsets256[1], capturedDraft.offsets256[1]);
+    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
+    CHECK_EQ(controller.navigation().cursor, 5U); // RECORD
+
+    // Reopening RECORD loads the stored pattern. EDITOR then receives the exact
+    // same draft for normal marker-by-marker correction.
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveRecorder);
+    CHECK_EQ(controller.navigation().grooveDraft.offsets256[1], capturedDraft.offsets256[1]);
+    controllerLongPress(controller, now);
+    controllerTurn(controller, 5, now); // EDITOR
+    controllerShortPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveEditor);
+    CHECK_EQ(controller.navigation().grooveDraft.length, capturedDraft.length);
+    CHECK_EQ(controller.navigation().grooveDraft.offsets256[0], capturedDraft.offsets256[0]);
+    CHECK_EQ(controller.navigation().grooveDraft.offsets256[1], capturedDraft.offsets256[1]);
 }
 
 
@@ -5908,6 +6120,7 @@ int main() {
     RUN_TEST(testScreensaverRenderingAndPolicy);
     RUN_TEST(testNestedGroupNavigationCoverage);
     RUN_TEST(testCustomGrooveEditorControllerWorkflow);
+    RUN_TEST(testCustomGrooveRecorderControllerWorkflow);
     RUN_TEST(testUiControllerFlows);
     RUN_TEST(testHighScoreResetAppearsAfterStartAndClearsSafely);
     RUN_TEST(testEasterEggGameAndHighScore);

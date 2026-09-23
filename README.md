@@ -1,12 +1,16 @@
+<!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
+
 <p align="center">
   <img src="docs/assets/clock-header.jpg" alt="CLOCK eight-channel Eurorack clock and gate-rhythm generator" width="100%">
 </p>
 
 [![CI](https://github.com/napolitano/eurorack-clock-firmware/actions/workflows/ci.yml/badge.svg)](https://github.com/napolitano/eurorack-clock-firmware/actions/workflows/ci.yml)
+[![Manual publication](https://github.com/napolitano/eurorack-clock-firmware/actions/workflows/manual-publication.yml/badge.svg)](https://github.com/napolitano/eurorack-clock-firmware/actions/workflows/manual-publication.yml)
 [![Release](https://img.shields.io/github/v/release/napolitano/eurorack-clock-firmware?include_prereleases&sort=semver&label=release)](https://github.com/napolitano/eurorack-clock-firmware/releases)
+[![PlatformIO](https://img.shields.io/badge/PlatformIO-STM32F401-orange?logo=platformio&logoColor=white)](platformio.ini)
+[![C++17](https://img.shields.io/badge/C%2B%2B-17-00599C?logo=cplusplus&logoColor=white)](CMakeLists.txt)
+[![Coverage gates](https://img.shields.io/badge/coverage%20gates-95%2F95%2F90-2ea44f)](docs/TEST_COVERAGE.md)
 [![License](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue)](LICENSE.md)
-
-<!-- Author: Axel Napolitano | License: PolyForm-Noncommercial-1.0.0 -->
 
 # CLOCK
 
@@ -17,9 +21,28 @@ CLOCK is the firmware and reference design for our own **10 HP, eight-output Eur
 The project is deliberately DIY-oriented: commonly obtainable parts, a compact physical interface, reproducible builds, a native simulator, strong automated tests, and documentation that is meant to be useful at the workbench rather than merely satisfy a release checklist.
 
 > [!IMPORTANT]
-> **Current status: `1.0.1`.** V1 is feature-frozen. The stable line covers the implemented clock engine, UI, persistence, simulator, SPI display support, external SYNC/RST behavior, and release tooling. Physical HIL measurements remain tracked qualification evidence and stay advisory for automated release builds through 1.4.x; the hard HIL gate begins with 1.5.0 release candidates and stable releases.
+> **Stable firmware: `1.0.1`. Active development: `1.1.0`.** V1 remains the stable maintenance line. The 1.1 development branch adds Pre-Count, configurable digital-input roles, Swing/Groove expansion, named Custom Grooves, a graphical Groove Editor, live TAP recording, the horizontal Channel Mode carousel, and related UI/persistence work. `src/version.h` remains `1.0.1` until the 1.1 release is actually prepared and tagged.
 
-**HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. The current ledger remains 20 `PENDING`, 4 `BLOCKED`, 0 `PASS`. See [`docs/qualification/`](docs/qualification/README.md).
+**HIL policy:** the physical HIL ledger remains fully visible and evidence-checked, but incomplete HIL status is advisory for release automation through `1.4.x`. The hard all-PASS release gate activates for release candidates and stable releases from `1.5.0` onward. Physical Groove/TAP-record captures are therefore tracked qualification evidence, not substituted by host tests. See [`docs/qualification/`](docs/qualification/README.md) and [`docs/HIL_TEST_PLAN.md`](docs/HIL_TEST_PLAN.md).
+
+## 1.1.0 development — Grooves become a first-class timing tool
+
+The headline change in 1.1 is the **Groove Engine**. Groove is deterministic microtiming layered onto the same master timeline used by Clock, Euclid and Sequencer. It is not Humanize and it does not create a second free-running clock.
+
+Factory choices currently include `SWING 54 / 58 / 62 / 66` and `POCKET A / B / C`, with **Amount 0–100%** and **rotation**. One Clock owns one global Groove; Independent stores it per channel; Divider Bank deliberately remains Groove-free.
+
+Custom Grooves go further. A 1–64-step graphical editor uses movable diamond markers around the nominal beat/step grid, supports signed early/late timing, bounded zoom (`FIT / 32 / 16 / 8 / 4`) and live preview while the clock is running. Ten named Custom Groove slots are the frozen 1.1.0 storage scope, with save/load/overwrite/rename/delete, generated editable default names, and the actual stored Groove name on Performance.
+
+<table>
+<tr>
+<td align="center"><img src="docs/manual-source/assets/groove-editor-custom.png" alt="Custom Groove editor showing the beat and step grid with movable diamond timing markers." width="300"><br><sub><b>Editor:</b> shape deterministic microtiming directly on the 128×64 grid.</sub></td>
+<td align="center"><img src="docs/manual-source/assets/groove-record-live.png" alt="Custom Groove recorder showing recorded diamond markers and the moving playhead." width="300"><br><sub><b>Record:</b> capture TAP timing with Count-In, One-Shot/Endless and a live playhead.</sub></td>
+</tr>
+</table>
+
+`RECORD >` is a second input mode over the same Custom Groove draft: **PLAY** starts/stops capture, **TAP** records an event with the high-resolution physical button timestamp, **PLAY + encoder** zooms, and the moving playhead follows the real engine phase. Recorder Count-In is independently configurable `OFF / 1–64` (default `4`); `ONE SHOT` stops at the end while `ENDLESS` wraps and overwrites only steps that receive a new TAP. A recorded Groove can be opened immediately in `EDITOR >` for cleanup before saving.
+
+Other 1.1 work includes the optional 1–64-beat **Pre-Count**, globally configurable `INPUT 1 / INPUT 2` roles (`OFF / SYNC / RESET / RUN / START / STOP / RESTART / TAP`), a scalable horizontal Channel Mode carousel, improved long-information handling on the OLED, and tighter simulator/host qualification. The detailed 1.1 contract lives in [`docs/ROADMAP.md`](docs/ROADMAP.md).
 
 ## Why another Eurorack Clock?
 
@@ -50,7 +73,7 @@ CLOCK reached **1.0** by stabilizing and qualifying the product that already exi
 
 ```mermaid
 flowchart LR
-    V1["NOW<br/>1.0.1<br/>Stable V1"] --> G["1.1<br/>Swing 2.0<br/>Grooves"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
+    V1["1.0.1<br/>Stable V1"] --> G["NOW<br/>1.1.0 development<br/>Grooves + Pre-Count"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
     V1 -. separate track .-> VCV["VCV Rack<br/>Reference port"]
 
     classDef current fill:#0B4FC0,color:#ffffff,stroke:#062F75,stroke-width:2px;
@@ -59,8 +82,9 @@ flowchart LR
     classDef gate fill:#F4E8C1,color:#2A2416,stroke:#9D771B,stroke-width:1.5px;
     classDef virtual fill:#EEE7F7,color:#221832,stroke:#74509A,stroke-width:1.5px;
 
-    class V1 current;
-    class G,S,E,R,I,P planned;
+    class V1 stable;
+    class G current;
+    class S,E,R,I,P planned;
     class N gate;
     class VCV virtual;
 ```
@@ -82,6 +106,9 @@ The hard physical-HIL release gate deliberately starts at **1.5.0**; before then
 | Tempo | 1–999 BPM technical range; factory user range 20–999 BPM |
 | Euclid | 1–64 steps, hits and rotation |
 | Sequencer | 1–64 binary gate steps per channel, four 16-step editor pages |
+| Groove Engine (1.1 development) | Factory Swing/Pocket grooves, Amount/Rotate, 1–64-step Custom Editor and TAP Record |
+| Custom Groove library (1.1 development) | 10 named durable slots with save/load/overwrite/rename/delete |
+| Pre-Count (1.1 development) | Optional silent 1–64-beat count-in before a fresh STOP→PLAY |
 | Persistence | CURRENT auto-save + 8 named presets + factory templates, CRC/schema protected |
 | Timing service | 20 kHz deterministic scheduler, 50 µs service quantum |
 | Simulator | SDL3 interactive front panel + headless integration target |
@@ -93,7 +120,7 @@ CLOCK always boots in **STOP**. Stored state can restore configuration, but it n
 
 ### One Clock
 
-The factory topology. One shared configuration drives all eight outputs, which is ideal when several modules should receive the same master pulse. Shared controls include rate, rational ratio, Swing, gate length and phase.
+The factory topology. One shared configuration drives all eight outputs, which is ideal when several modules should receive the same master pulse. Shared controls include rate, rational ratio, Swing/Groove, gate length and phase.
 
 One Clock also owns **Humanize**. It adds a small deterministic per-output displacement while keeping the common restart/downbeat exact:
 
@@ -110,7 +137,7 @@ Each physical output becomes its own rhythmic channel while remaining anchored t
 - **SEQ** - a manually editable 1–64-step binary gate sequence;
 - **OFF** - no generated events.
 
-Common per-channel timing includes rate, rational numerator/denominator, Swing, probability, gate length, phase, reset policy and mute. This makes polymetric and polyrhythmic patches possible without sacrificing a shared downbeat.
+Common per-channel timing includes rate, rational numerator/denominator, Swing/Groove, probability, gate length, phase, reset policy and mute. This makes polymetric and polyrhythmic patches possible without sacrificing a shared downbeat.
 
 ### Divider Bank
 
@@ -188,7 +215,7 @@ The normal interaction grammar is deliberately small:
 | Encoder short press | Open overview | Confirm selection | Enter/confirm/toggle step |
 | Encoder long press | Open current context settings | Open highlighted settings | Context dependent |
 | TAP + encoder press | Open Settings | - | - |
-| Hold TAP + encoder turn | - | Open six-function palette | - |
+| Hold TAP + encoder turn | - | Open/scroll horizontal mode carousel | - |
 | PLAY/PAUSE | Play/pause | - | Sequencer: next 16-step page |
 | TAP | Tap Tempo | Modifier | Sequencer: previous 16-step page |
 | STOP/BACK | Stop + reset global phase | Back/cancel | Back/cancel |
@@ -258,23 +285,23 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **491 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **496 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
 | `test_clock_core` | 44 | deterministic rate, Q32, probability, Euclid and sequencer mathematics |
 | `test_realtime` | 28 | scheduler, physical gate driver and realtime input/timing integration |
 | `test_sync_behavior` | 116 | external clock acquisition plus configurable INPUT 1/2 role semantics, transport commands, reset/run levels, jitter/glitches/loss and nominal LM393-front-end modeling |
-| `test_swing` | 35 | atomic swing/groove mathematics plus observed engine edge spacing and pair-duration conservation |
+| `test_swing` | 39 | Swing/Groove mathematics, exhaustive Custom-Groove sweeps, Groove Record capture and engine timing invariants |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
 | `test_controls` | 51 | TIM4 quadrature counting, detent recovery, fast-turn behavior, NORMAL/REVERSED direction and button debounce |
 | `test_settings` | 88 | settings boundaries, input-role exclusivity, INPUTS/HARDWARE navigation, device preferences, grouped channel settings and invalid-input behavior |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
-| `test_host_firmware` | 38 | complete firmware/UI/HAL/persistence scenarios, schema migration and framebuffer/navigation contracts against deterministic framework fakes |
+| `test_host_firmware` | 39 | complete firmware/UI/HAL/persistence scenarios, Groove Editor/Record workflows, schema migration and framebuffer/navigation contracts against deterministic framework fakes |
 
-The default Native run executes more than **223,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
+The default Native run executes more than **433,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
 
 The broader host matrix additionally recompiles display variants, runs sanitizer configurations and produces aggregate coverage:
 
@@ -285,9 +312,9 @@ python scripts/run_host_tests.py
 Current validated aggregate baseline:
 
 ```text
-Executable lines     8653 / 8937   96.82 %
-Functions              713 / 724    98.48 %
-Decision branches     5400 / 5900   91.53 %
+Executable lines     9258 / 9665   95.79 %
+Functions              805 / 819    98.29 %
+Decision branches     5639 / 6246   90.28 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).
@@ -303,7 +330,7 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | [Configuration](docs/CONFIGURATION.md) | Build-time and runtime configuration |
 | [Simulator](docs/SIMULATOR.md) | Desktop simulator and headless usage |
 | [HIL Test Plan](docs/HIL_TEST_PLAN.md) | Physical qualification evidence; advisory to release automation through 1.4.x, enforced from 1.5.0 |
-| [Roadmap](docs/ROADMAP.md) | V1 freeze, 1.0 qualification path, post-1.0 musical roadmap and VCV track |
+| [Roadmap](docs/ROADMAP.md) | Current 1.1 Groove/Pre-Count contract, later 1.x milestones, and the VCV track |
 | [GitHub Wiki publication](docs/WIKI.md) | Generated Wiki structure, automatic sync and ODT manual download |
 | [V1 Forward-Compatibility Audit](docs/V1_FORWARD_COMPATIBILITY.md) | Persistence/event-architecture constraints that protect later 1.x migration |
 | [Development](docs/DEVELOPMENT.md) | Developer workflow and quality gates |

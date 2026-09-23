@@ -147,6 +147,7 @@ def realtime_sources() -> list[Path]:
         "src/domain/custom_groove.cpp",
         "src/domain/groove_catalog.cpp",
         "src/engine/clock_engine.cpp",
+        "src/engine/clock_engine_capture.cpp",
         "src/engine/clock_engine_custom_groove.cpp",
         "src/engine/clock_engine_sync.cpp",
         "src/engine/clock_engine_timing.cpp",
@@ -158,6 +159,7 @@ def realtime_sources() -> list[Path]:
         "src/hal/system_clock.cpp",
         "src/services/external_sync_controller.cpp",
         "src/services/external_sync_controller_inputs.cpp",
+        "src/services/groove_recorder.cpp",
     ]
     return [ROOT / item for item in relative]
 

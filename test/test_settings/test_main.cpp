@@ -210,10 +210,22 @@ void testGrooveMenuShapeIsStable(){
     TEST_ASSERT_EQUAL_UINT8(5U,ui::settingsPageItemCount(ui::SettingsPage::ChannelTiming,ChannelMode::Clock,false));
     TEST_ASSERT_EQUAL_UINT8(3U,ui::settingsPageItemCount(ui::SettingsPage::UnifiedClock,ChannelMode::Clock,false));
     TEST_ASSERT_EQUAL_UINT8(6U,ui::settingsPageItemCount(ui::SettingsPage::UnifiedTiming,ChannelMode::Clock,false));
-    TEST_ASSERT_EQUAL_UINT8(7U,ui::settingsPageItemCount(ui::SettingsPage::Groove,ChannelMode::Clock,false));
+    TEST_ASSERT_EQUAL_UINT8(8U,ui::settingsPageItemCount(ui::SettingsPage::Groove,ChannelMode::Clock,false));
     const auto row=ui::buildMenuRow(ui::SettingsPage::Groove,0U,0U,h.state);
     TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::GroovePreset),row.label)==0);
     TEST_ASSERT_TRUE(std::strcmp("OFF",row.value)==0);
+    TEST_ASSERT_TRUE(std::strcmp("EDITOR", ui::buildMenuRow(ui::SettingsPage::Groove, 4U, 0U, h.state).label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("RECORD", ui::buildMenuRow(ui::SettingsPage::Groove, 5U, 0U, h.state).label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("RENAME", ui::buildMenuRow(ui::SettingsPage::Groove, 6U, 0U, h.state).label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("DELETE", ui::buildMenuRow(ui::SettingsPage::Groove, 7U, 0U, h.state).label) == 0);
+    TEST_ASSERT_EQUAL_UINT8(7U, ui::settingsPageItemCount(ui::SettingsPage::GrooveRecordMenu, ChannelMode::Clock, false));
+    TEST_ASSERT_TRUE(std::strcmp("MODE", ui::buildMenuRow(ui::SettingsPage::GrooveRecordMenu, 0U, 0U, h.state).label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("COUNT IN", ui::buildMenuRow(ui::SettingsPage::GrooveRecordMenu, 1U, 0U, h.state).label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("LENGTH", ui::buildMenuRow(ui::SettingsPage::GrooveRecordMenu, 2U, 0U, h.state).label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("ZOOM", ui::buildMenuRow(ui::SettingsPage::GrooveRecordMenu, 3U, 0U, h.state).label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("SAVE", ui::buildMenuRow(ui::SettingsPage::GrooveRecordMenu, 4U, 0U, h.state).label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("EDITOR", ui::buildMenuRow(ui::SettingsPage::GrooveRecordMenu, 5U, 0U, h.state).label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("CLEAR", ui::buildMenuRow(ui::SettingsPage::GrooveRecordMenu, 6U, 0U, h.state).label) == 0);
 }
 
 void testChannelRootUsesModeAwareGroupPriority(){
@@ -256,7 +268,7 @@ void testAllSettingsPageTitlesAndCountsAreReachable(){
         ui::SettingsPage::Clock, ui::SettingsPage::Euclid, ui::SettingsPage::Sequencer,
         ui::SettingsPage::SequencerPattern, ui::SettingsPage::UnifiedClock,
         ui::SettingsPage::UnifiedTiming, ui::SettingsPage::UnifiedOutput,
-        ui::SettingsPage::Groove, ui::SettingsPage::DividerBank};
+        ui::SettingsPage::Groove, ui::SettingsPage::GrooveEditorMenu, ui::SettingsPage::GrooveRecordMenu, ui::SettingsPage::DividerBank};
     for (const auto page : pages) {
         TEST_ASSERT_TRUE(ui::settingsPageTitle(page) != nullptr);
         (void)ui::settingsPageItemCount(page, ChannelMode::Clock, false);
@@ -286,7 +298,7 @@ void testGrooveMenuRowsAndNoOpBranchesAreReachable(){
     Harness h;
     h.state.operatingMode = OperatingMode::UnifiedClock;
     h.state.unifiedClock.groove = {GroovePreset::PocketC, 73U, 5U};
-    for (std::uint8_t row = 0U; row < 7U; ++row) {
+    for (std::uint8_t row = 0U; row < 8U; ++row) {
         const auto menuRow = ui::buildMenuRow(ui::SettingsPage::Groove, row, 0U, h.state);
         TEST_ASSERT_TRUE(std::strlen(menuRow.label) > 0U);
         TEST_ASSERT_TRUE(std::strlen(menuRow.value) > 0U);
@@ -298,7 +310,7 @@ void testGrooveMenuRowsAndNoOpBranchesAreReachable(){
     TEST_ASSERT_EQUAL_UINT8(before.rotation, h.state.unifiedClock.groove.rotation);
     h.state.operatingMode = OperatingMode::Independent;
     h.state.channels[2].common.groove = {GroovePreset::PocketA, 44U, 2U};
-    for (std::uint8_t row = 0U; row < 7U; ++row) {
+    for (std::uint8_t row = 0U; row < 8U; ++row) {
         const auto menuRow = ui::buildMenuRow(ui::SettingsPage::Groove, row, 2U, h.state);
         TEST_ASSERT_TRUE(std::strlen(menuRow.label) > 0U);
     }

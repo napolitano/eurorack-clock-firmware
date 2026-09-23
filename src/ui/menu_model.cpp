@@ -57,6 +57,7 @@ const char* settingsPageTitle(const SettingsPage page) {
         case SettingsPage::UnifiedClock: return text::get(text::TextId::ModeUnifiedLong);
         case SettingsPage::Groove: return text::get(text::TextId::Groove);
         case SettingsPage::GrooveEditorMenu: return text::get(text::TextId::GrooveMenu);
+        case SettingsPage::GrooveRecordMenu: return text::get(text::TextId::GrooveRecordMenu);
         case SettingsPage::DividerBank: return text::get(text::TextId::ModeDividerLong);
         case SettingsPage::Root:
         default: return text::get(text::TextId::RootSettings);
@@ -92,8 +93,9 @@ std::uint8_t settingsPageItemCount(
         case SettingsPage::UnifiedClock: return 3U;
         case SettingsPage::UnifiedTiming: return 6U;
         case SettingsPage::UnifiedOutput: return 2U;
-        case SettingsPage::Groove: return 7U;
+        case SettingsPage::Groove: return 8U;
         case SettingsPage::GrooveEditorMenu: return 4U;
+        case SettingsPage::GrooveRecordMenu: return 7U;
         case SettingsPage::DividerBank: return 3U;
         default: return 0U;
     }
@@ -214,6 +216,14 @@ MenuRow buildMenuRow(
             text::TextId::Save, text::TextId::Load, text::TextId::Zoom, text::TextId::Length};
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
         if (rowIndex < 2U) {
+            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
+        }
+    } else if (page == SettingsPage::GrooveRecordMenu) {
+        constexpr text::TextId kLabels[] = {
+            text::TextId::Mode, text::TextId::CountIn, text::TextId::Length,
+            text::TextId::Zoom, text::TextId::Save, text::TextId::Editor, text::TextId::Clear};
+        copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
+        if (rowIndex == 4U || rowIndex == 5U) {
             copyText(row.value, sizeof(row.value), text::TextId::Arrow);
         }
     } else if (page == SettingsPage::Screensaver) {

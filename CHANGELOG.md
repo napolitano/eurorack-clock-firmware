@@ -10,6 +10,15 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Documentation and publication refresh
+
+- Refresh the main README around the current 1.1 development line, adding useful CI/manual/release/toolchain/coverage/license badges and making Grooves the primary visible 1.1 feature rather than leaving them buried in the roadmap.
+- Add real production-renderer Custom Groove Editor and live TAP Recorder screenshots to the README and User Guide.
+- Regenerate the complete deterministic OLED screenshot catalog from the current renderer, including the horizontal mode carousel, current Info screen, Custom Groove Editor/Recorder and the full-value read-only information popover.
+- Expand the GitHub User Guide and editable ODT manual with factory Grooves, Custom Groove editing, TAP recording, Count-In, One-Shot/Endless capture, the 10-slot library, Rename/Delete, the horizontal mode carousel and long read-only information handling.
+- Synchronize Architecture, Configuration, Timing, Simulator, manual-workspace and coverage documentation with schema v12, the frozen 10-slot Custom Groove layout, the Recorder timing contract and the verified r26 host baseline.
+- Preserve historical/stable 1.0.1 release documents as release-history artifacts rather than rewriting them to describe unreleased 1.1 behavior.
+
 ### Changed
 
 - Replaced the fixed 2×3 Channel Mode palette with a horizontally scrolling, center-anchored mode carousel. Only the selected mode is inverted; neighboring pictograms remain unframed and carry compact labels below them. The renderer now derives its neighbors from the mode catalog so future modes can extend the same UI without changing the layout.
@@ -34,6 +43,15 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Define `HIL-GRV-001..003` bench vectors for subtle, triplet-like and extreme signed Groove timing without misrepresenting those planned captures as host-test evidence.
 - Correct the Info product value from the compact internal identity to `Clock`.
 - Add generic read-only information overflow handling: long informational values are ellipsized with `...` in list rows and open a full-value popover on activation; editable setting values are explicitly excluded from this behavior.
+
+### Groove Engine Stage 2 - Tap recorder
+
+- Add `RECORD >` as a second Custom Groove input mode that writes the same signed 1-64-step microtiming pattern used by the graphical editor. Recorded grooves therefore use the existing save/load/rename/delete persistence path and can be refined later in `EDITOR >`.
+- Add One-Shot and Endless capture policies. One-Shot stops after one pattern pass; Endless wraps and overwrites only steps that receive a new TAP event while leaving untouched steps intact.
+- Add an independent Recorder Count-In (`OFF` or 1-64 beats, default 4), visible playhead, READY/PRECOUNT/RECORDING status, bounded FIT/32/16/8/4 zoom and the existing PLAY+TURN quick-zoom chord.
+- Make PLAY start/stop recording and rewind the recorder playhead to the beginning on stop; TAP is an exclusive recording event on this screen and never changes Tap Tempo.
+- Preserve high-resolution physical TAP timing through button debounce and convert taps against the live Q32 engine position rather than a separate UI clock. This keeps recording aligned to internal or externally locked musical time without adding a second scheduler.
+- Share the temporary Custom Groove draft between RECORD and EDITOR, including live preview, discard semantics and persistent naming/overwrite flows.
 
 ### Groove Engine Stage 2 - Custom editor
 
@@ -69,10 +87,10 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Validation
 
-- Native inventory: **491 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing **35 / 211,178**, Settings **88 / 273**, complete host firmware **38** cases across all tested display variants.
-- Complete firmware host variants: legacy I2C **38 / 4,210**, SPI default/SSD1306/SSD1315 **38 / 3,173** each, and fixed-I2C/reset **38 / 4,193**, all with zero failures.
-- Repository coverage: **8868/9232 executable lines (96.06%) / 782/795 functions (98.36%) / 5412/5967 source decision branches (90.70%)**; the 95/95/90 gates remain unchanged.
-- Full ASan/UBSan Native/firmware matrix passes on the final r25 tree, including all focused suites plus legacy I2C, SPI SSD1306, SPI SSD1315 and fixed-I2C/reset-pin firmware variants.
+- Native inventory: **496 named tests**; Input/SYNC suite **116 / 5,177**, Swing/Custom timing/Recorder **39 / 211,220**, Settings **88 / 290**, complete host firmware **39** cases across all tested display variants.
+- Complete firmware host variants: legacy I2C **39 / 4,294**, SPI default/SSD1306/SSD1315 **39 / 3,257** each, and fixed-I2C/reset **39 / 4,277**, all with zero failures.
+- Repository coverage: **9258/9665 executable lines (95.79%) / 805/819 functions (98.29%) / 5639/6246 source decision branches (90.28%)**; the 95/95/90 gates remain unchanged.
+- Full ASan/UBSan Native/firmware matrix passes on the final r26 tree, including all focused suites plus legacy I2C, SPI SSD1306, SPI SSD1315 and fixed-I2C/reset-pin firmware variants.
 - Headless simulator integration remains **2/2 PASS**, including the engine-phase-locked scope reference regression.
 
 ### Changed
@@ -85,7 +103,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Phase-lock the simulator developer-scope musical ruler to the real current engine position instead of reconstructing historical references from transport start plus the current BPM/rate. Tempo, external-SYNC, and rate changes can no longer make the ruler drift relative to already captured gate transitions.
 - Prevent selecting `RUN` in Settings from starting or stopping transport merely because the assigned comparator is already HIGH/LOW. RUN now captures a neutral baseline on boot and role reassignment; only a later physical level change may command transport, preserving the STOP-on-boot invariant.
 - Repaired release-tooling regressions after the Groove/UI test expansion: the test-inventory meta-test now validates the inventory gate contract instead of duplicating stale exact suite counts, and the V1 forward-compatibility policy test now checks the schema-v12 2,882-byte repeated-state footprint and 21-byte in-place growth ceiling.
-- Updated development and coverage documentation to the current 491-case Native inventory.
+- Updated development and coverage documentation to the current 496-case Native inventory.
 
 ### Groove Engine Stage 1
 

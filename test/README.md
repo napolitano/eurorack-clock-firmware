@@ -8,28 +8,28 @@
 pio test -e native
 ```
 
-This is the developer-facing Native entry point. Beta.4 deliberately makes timing, musical behavior and physical-control contracts visible instead of presenting only the 44-case mathematical core. PlatformIO executes eleven conventionally named suites:
+This is the developer-facing Native entry point. The suite deliberately makes timing, musical behavior, persistence, UI, and physical-control contracts visible instead of presenting only the 44-case mathematical core. PlatformIO executes eleven conventionally named suites:
 
 | Suite | Named cases | What it proves |
 | --- | ---: | --- |
 | `test_clock_core` | 44 | hardware-independent clock mathematics and exhaustive invariants |
 | `test_realtime` | 28 | deterministic scheduler/GPIO/SYNC/RST integration and stress behavior |
-| `test_sync_behavior` | 114 | exact/changing external clocks plus configurable INPUT 1/2 roles (SYNC/RESET/RUN/START/STOP/RESTART/TAP), role reassignment, jitter/glitches/loss, PPQN/edge semantics and nominal analogue-front-end behavior |
-| `test_swing` | 22 | swing pair mathematics and observable scheduler edge spacing |
+| `test_sync_behavior` | 116 | exact/changing external clocks plus configurable INPUT 1/2 roles (SYNC/RESET/RUN/START/STOP/RESTART/TAP), role reassignment, RUN baselining, jitter/glitches/loss, PPQN/edge semantics and nominal analogue-front-end behavior |
+| `test_swing` | 39 | Swing/Groove mathematics, exhaustive Custom-Groove sweeps, TAP Recorder capture/Count-In/One-Shot/Endless behavior, and observable engine timing invariants |
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
 | `test_tap_tempo` | 24 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
 | `test_controls` | 51 | TIM4 encoder quadrature, detent-phase recovery after missed/coalesced transitions and encoder-push phase shifts, first-detent and immediate direction-reversal behavior, NORMAL/REVERSED direction mapping, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
-| `test_settings` | 62 | settings boundaries, encoder/display device preferences, enum transitions, invariants and channel/mode editor contracts |
+| `test_settings` | 88 | settings boundaries, configurable inputs, grouped channel settings, Groove Editor/Recorder menus, Custom Groove slot management, Info overflow/popover, device preferences and invalid-input invariants |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | intro launch gating, reset state, output safety and game-specific controls |
-| `test_host_firmware` | 31 | complete firmware/UI/HAL/persistence behavior using deterministic host fakes |
-| **Total** | **425** | public Native inventory |
+| `test_host_firmware` | 39 | complete firmware/UI/HAL/persistence behavior, Groove Editor/Record workflows, schema migrations and framebuffer/navigation contracts using deterministic host fakes |
+| **Total** | **496** | public Native inventory |
 
-The default Native configuration executes more than **223,000 assertions**. `scripts/check_test_inventory.py` rejects a total regression below 340 cases and also enforces minimum sizes for every visible suite.
+The default Native configuration executes more than **433,000 assertions**. `scripts/check_test_inventory.py` enforces the visible-suite inventory contract so a broad test-count increase cannot hide a regression in one focused suite.
 
-### Swing and Humanize behavior
+### Swing, Groove, Recorder, and Humanize behavior
 
-`test_swing` verifies the low-level swing transform and the actual edge train produced by `ClockEngine`. Straight, 10%, 25% and 50% swing are observed at the gate-driver boundary; long/short pairs must preserve total musical duration, remain non-zero and repeat deterministically within scheduler quantization.
+`test_swing` verifies classic Swing plus the deterministic Groove layer used by Clock, Euclid, Sequencer and One Clock. It sweeps Custom Groove lengths 1-64 and Amount 0-100%, exercises representative BPM/rate/grid combinations, signed early/late offsets, rotation, bounds and Swing interaction, and covers Groove Record Count-In, One-Shot/Endless wrap, targeted overwrite and shared draft behavior. Event order and gate-off safety remain bounded by the same scheduler invariants as straight timing.
 
 `test_humanize` treats Humanize as a separate timing contract. OFF must keep all eight One Clock outputs coincident; 250/500/1000/2000 us settings must remain inside their configured scheduler-quantized windows; a fresh run must reproduce the same offsets; outputs must exhibit channel spread; and a stored One Clock Humanize value must have no timing effect in Independent mode. Humanize combined with maximum current Swing is also exercised for ordering safety.
 
@@ -59,7 +59,7 @@ The suite also contains a **host-only nominal electrical model** of the document
 
 ### Settings, screensavers and Easter eggs
 
-`test_settings` turns the Settings editor into an explicit behavioral contract rather than relying only on broad UI scenarios. It covers master tempo/min/max coupling, meter limits, persistent encoder direction and OLED orientation, SYNC source/PPQN/edge/loss/reset/filter/timeout settings, screensaver timing invariants, per-channel rate/swing/probability/gate/phase/reset/mute limits, Euclid bounds, Sequencer editing/copy/paste boundaries, One Clock Humanize choices and Divider Bank settings.
+`test_settings` turns the Settings editor into an explicit behavioral contract rather than relying only on broad UI scenarios. It covers master tempo/min/max coupling, meter and Pre-Count limits, configurable INPUT 1/2 roles and exclusivity, external timing settings, persistent encoder direction/OLED orientation, screensaver timing invariants, grouped channel settings, rate/Swing/Groove/output limits, Euclid and Sequencer bounds, Custom Groove Editor/Recorder menus, 10-slot load/rename/delete flows, long read-only Info truncation/popover behavior, One Clock Humanize choices and Divider Bank settings.
 
 `test_screensavers` executes every renderer, checks expected framebuffer activity, deterministic/rewind behavior where applicable, and sweeps frames long enough to exercise stateful animations. `test_easter_eggs` verifies the shipped BEATKNECHT compile-time default, that each boot game waits for explicit launch input, starts in a defined reset state, keeps Eurorack outputs safe in the host path, and obeys its game-specific controls, including BEATKNECHT PLAY/PAUSE/STOP transport, encoder tempo, and TAP style selection. These are state-machine tests; graphical appearance is still covered separately by framebuffer/simulator regression assets.
 
@@ -71,14 +71,16 @@ python scripts/run_host_tests.py
 
 This is the authoritative coverage gate. It compiles the complete project-owned firmware against deterministic framework fakes in I2C, SPI and fixed-address/reset-pin configurations.
 
-Current baseline:
+Current validated 1.1 development baseline (r26 production source):
 
 ```text
-Executable lines:   >=95%
-Functions:          >=95%
-Decision branches:  >=90%
-Compiler branches:  informational
+Executable lines:   9258 / 9665   95.79%
+Functions:            805 / 819    98.29%
+Decision branches:   5639 / 6246   90.28%
+Compiler branches:   5640 / 7322   77.03% (informational)
 ```
+
+The hard gates remain >=95% executable lines, >=95% functions and >=90% non-throw decision branches.
 
 The script writes `coverage/full_coverage.txt` and `coverage/full_coverage.json`. The configured coverage thresholds are hard gates; uncovered production functions, lines, and non-throw decisions remain listed in the report.
 
@@ -108,6 +110,6 @@ It executes the complete firmware above the simulator HAL and validates boot, re
 
 ## Hardware-in-the-loop
 
-Electrical gate timing, comparator behavior, real bus signaling, boot pulse safety and External Sync capture remain a separate HIL layer because those properties cannot be proven by host mocks.
+Electrical gate timing, comparator behavior, real bus signaling, boot pulse safety, External Sync capture and physical Groove-Record TAP latency/jitter remain a separate HIL layer because those properties cannot be proven by host mocks.
 
 <h6 align="center">From Munich with &#9829;</h6>

@@ -69,6 +69,9 @@ void UiController::activateCurrentSetting() {
         case SettingsPage::GrooveEditorMenu:
             activateGrooveEditorMenuSetting();
             return;
+        case SettingsPage::GrooveRecordMenu:
+            activateGrooveRecordMenuSetting();
+            return;
         case SettingsPage::DividerBank:
             activateDividerBankSetting();
             return;
@@ -251,8 +254,10 @@ void UiController::activateGrooveSetting() {
     } else if (navigation_.cursor == 4U) {
         openGrooveEditor();
     } else if (navigation_.cursor == 5U) {
-        openGrooveSlots(GrooveSlotAction::Rename);
+        openGrooveRecorder();
     } else if (navigation_.cursor == 6U) {
+        openGrooveSlots(GrooveSlotAction::Rename);
+    } else if (navigation_.cursor == 7U) {
         openGrooveSlots(GrooveSlotAction::Delete);
     } else {
         toggleCurrentSettingEditing();
@@ -279,6 +284,30 @@ void UiController::activateGrooveEditorMenuSetting() {
     } else {
         openGrooveSlots(GrooveSlotAction::LoadEditor);
     }
+}
+
+void UiController::activateGrooveRecordMenuSetting() {
+    if (navigation_.cursor <= 3U) {
+        toggleCurrentSettingEditing();
+        return;
+    }
+    if (navigation_.cursor == 4U) {
+        openGrooveSlots(GrooveSlotAction::Save);
+        return;
+    }
+    if (navigation_.cursor == 5U) {
+        grooveRecorder_.stop();
+        navigation_.grooveRecordState = GrooveRecordState::Ready;
+        navigation_.grooveRecordPlayheadStep = 0U;
+        grooveWorkspaceScreen_ = Screen::GrooveEditor;
+        navigation_.screen = Screen::GrooveEditor;
+        navigation_.cursor = 0U;
+        navigation_.scrollOffset = 0U;
+        navigation_.editing = false;
+        invalidate();
+        return;
+    }
+    clearGrooveRecording();
 }
 
 void UiController::activateDividerBankSetting() {

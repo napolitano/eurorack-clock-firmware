@@ -149,6 +149,8 @@ void UiController::backFromSettings() {
         navigation_.settingsPage = SettingsPage::UnifiedClock;
     } else if (navigation_.settingsPage == SettingsPage::GrooveEditorMenu) {
         navigation_.screen = Screen::GrooveEditor;
+    } else if (navigation_.settingsPage == SettingsPage::GrooveRecordMenu) {
+        navigation_.screen = Screen::GrooveRecorder;
     } else if (navigation_.settingsPage == SettingsPage::Groove) {
         navigation_.settingsPage = state_.operatingMode == OperatingMode::UnifiedClock
             ? SettingsPage::UnifiedTiming
@@ -169,7 +171,8 @@ void UiController::backFromSettings() {
         navigation_.settingsPage = SettingsPage::Root;
     }
 
-    if (previousPage == SettingsPage::GrooveEditorMenu && navigation_.screen == Screen::GrooveEditor) {
+    if ((previousPage == SettingsPage::GrooveEditorMenu && navigation_.screen == Screen::GrooveEditor) ||
+        (previousPage == SettingsPage::GrooveRecordMenu && navigation_.screen == Screen::GrooveRecorder)) {
         navigation_.cursor = 0U;
         navigation_.scrollOffset = 0U;
         navigation_.editing = false;

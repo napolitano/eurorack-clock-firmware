@@ -8,7 +8,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 
 | I want to… | Document |
 | --- | --- |
-| learn the module as a musician | [`USER_GUIDE.md`](USER_GUIDE.md) |
+| learn the module as a musician, including 1.1 Grooves/Record | [`USER_GUIDE.md`](USER_GUIDE.md) |
 | install or update firmware | [`FIRMWARE_UPDATE.md`](FIRMWARE_UPDATE.md) |
 | run or configure the native simulator | [`SIMULATOR.md`](SIMULATOR.md) |
 | understand the firmware architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
@@ -22,7 +22,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 | understand release/licensing constraints | [`LICENSING.md`](LICENSING.md) |
 | build and publish a release | [`RELEASE_PROCESS.md`](RELEASE_PROCESS.md) |
 | understand citation, DOI, and project identity | [`PROJECT_IDENTITY.md`](PROJECT_IDENTITY.md) |
-| review the release and feature plan | [`ROADMAP.md`](ROADMAP.md) |
+| review the 1.1 Groove/Pre-Count scope and later feature plan | [`ROADMAP.md`](ROADMAP.md) |
 | understand or maintain the generated GitHub Wiki | [`WIKI.md`](WIKI.md) |
 | maintain or publish the end-user manual | [`manual-source/README.md`](manual-source/README.md) |
 | write or review repository documentation | [`DOCUMENTATION_STYLE.md`](DOCUMENTATION_STYLE.md) |

@@ -284,7 +284,7 @@ Useful options:
 --no-developer
 ```
 
-This mode uses SDL surfaces/software rendering but **no window or video backend**. It is therefore suitable for CI-generated documentation and visual-regression artifacts. The SDL-enabled CMake build registers a `simulator_headless_screenshot` CTest for this path.
+This mode uses SDL surfaces/software rendering but **no window or video backend**. It is therefore suitable for CI-generated documentation and visual-regression artifacts. The separate manual screenshot generator uses the same production firmware/rendering library without SDL and currently includes the Custom Groove editor plus a live Groove Record frame with the engine-phase playhead; these images are regenerated as part of documentation qualification rather than maintained as hand-drawn mockups. The SDL-enabled CMake build registers a `simulator_headless_screenshot` CTest for this path.
 
 Interactive `F12` captures the current rendered frame as `clock-simulator-screenshot.bmp`.
 

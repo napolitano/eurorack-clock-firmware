@@ -48,6 +48,7 @@ void UiController::serviceRendering(const std::uint32_t nowMs) {
     }
 
     const engine::EngineSnapshot snapshot = engine_.snapshot();
+    serviceGrooveRecorder(snapshot);
 
     if (navigation_.screen == Screen::Performance) {
         const ChannelMode mode = state_.operatingMode == OperatingMode::Independent

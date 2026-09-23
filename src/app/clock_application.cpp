@@ -166,7 +166,7 @@ void ClockApplication::runOnce() {
 
     const hal::ControlSample controls = controlPanel_.sample(nowMs);
     const TransportState transportBeforeControls = state_.transport;
-    uiController_.processControls(controls, nowMs);
+    uiController_.processControls(controls, nowMs, hal::SystemClock::microseconds());
     if (state_.transport != transportBeforeControls) {
         externalSyncController_.notifyManualTransportState(state_.transport);
     }

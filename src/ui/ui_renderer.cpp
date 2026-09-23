@@ -114,6 +114,9 @@ void UiRenderer::render(
         case Screen::GrooveEditor:
             grooveEditorRenderer_.renderEditor(navigation);
             break;
+        case Screen::GrooveRecorder:
+            grooveEditorRenderer_.renderRecorder(navigation);
+            break;
         case Screen::GrooveSlots:
             if (customGrooveStore_ != nullptr) {
                 grooveEditorRenderer_.renderSlots(navigation, *customGrooveStore_);

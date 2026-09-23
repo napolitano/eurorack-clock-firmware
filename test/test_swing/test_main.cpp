@@ -21,6 +21,7 @@
 #include "engine/clock_engine.h"
 #include "hal/gate_output_driver.h"
 #include "pin_map.h"
+#include "services/groove_recorder.h"
 
 using namespace clockfw;
 
@@ -451,6 +452,131 @@ void testCustomGrooveDefensiveAndRescheduleBranches() {
     TEST_ASSERT_FALSE(isCustomGroovePatternValid(invalid));
 }
 
+void testGrooveRecorderCountInAndOneShotCapture() {
+    services::GrooveRecorder recorder;
+    CustomGroovePattern pattern{};
+    pattern.length = 4U;
+    constexpr std::uint64_t step = core::kQ32One / 4ULL;
+
+    recorder.reset(services::GrooveRecordMode::OneShot, 2U);
+    recorder.start(10ULL * core::kQ32One, step, pattern.length);
+    auto view = recorder.view();
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::PreCount, view.state);
+    TEST_ASSERT_EQUAL_UINT8(2U, view.countInRemaining);
+    TEST_ASSERT_FALSE(recorder.capture(10ULL * core::kQ32One, pattern));
+
+    TEST_ASSERT_TRUE(recorder.service(11ULL * core::kQ32One, pattern.length));
+    TEST_ASSERT_EQUAL_UINT8(1U, recorder.view().countInRemaining);
+    TEST_ASSERT_TRUE(recorder.service(12ULL * core::kQ32One, pattern.length));
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::Recording, recorder.view().state);
+
+    TEST_ASSERT_TRUE(recorder.capture(12ULL * core::kQ32One, pattern));
+    TEST_ASSERT_EQUAL(0, pattern.offsets256[0]);
+    TEST_ASSERT_TRUE((recorder.view().capturedMask & 0x1ULL) != 0ULL);
+
+    // A tap one eighth of a step late becomes +32 / 256 of the nominal step.
+    TEST_ASSERT_TRUE(recorder.capture(12ULL * core::kQ32One + step + step / 8ULL, pattern));
+    TEST_ASSERT_EQUAL(32, pattern.offsets256[1]);
+    TEST_ASSERT_TRUE((recorder.view().capturedMask & 0x2ULL) != 0ULL);
+
+    TEST_ASSERT_TRUE(recorder.service(12ULL * core::kQ32One + 4ULL * step, pattern.length));
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::Ready, recorder.view().state);
+    TEST_ASSERT_EQUAL_UINT8(0U, recorder.view().playheadStep);
+}
+
+void testGrooveRecorderEndlessWrapsAndOverwritesTappedStepOnly() {
+    services::GrooveRecorder recorder;
+    CustomGroovePattern pattern{};
+    pattern.length = 4U;
+    pattern.offsets256[2] = 17;
+    constexpr std::uint64_t step = core::kQ32One / 4ULL;
+    constexpr std::uint64_t start = 3ULL * core::kQ32One;
+
+    recorder.reset(services::GrooveRecordMode::Endless, 0U);
+    recorder.start(start, step, pattern.length);
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::Recording, recorder.view().state);
+
+    TEST_ASSERT_TRUE(recorder.capture(start + step / 8ULL, pattern));
+    TEST_ASSERT_EQUAL(32, pattern.offsets256[0]);
+    TEST_ASSERT_EQUAL(17, pattern.offsets256[2]);
+
+    // The next loop targets step 0 again and replaces only that step.
+    TEST_ASSERT_TRUE(recorder.capture(start + 4ULL * step - step / 8ULL, pattern));
+    TEST_ASSERT_EQUAL(-32, pattern.offsets256[0]);
+    TEST_ASSERT_EQUAL(17, pattern.offsets256[2]);
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::Recording, recorder.view().state);
+
+    recorder.service(start + 5ULL * step + step / 2ULL, pattern.length);
+    TEST_ASSERT_EQUAL_UINT8(1U, recorder.view().playheadStep);
+    TEST_ASSERT_TRUE(recorder.view().playheadPhase256 >= 127U);
+    recorder.stop();
+    TEST_ASSERT_EQUAL_UINT8(0U, recorder.view().playheadStep);
+}
+
+void testGrooveRecorderGuardsClampAndClearCaptureState() {
+    services::GrooveRecorder recorder;
+    CustomGroovePattern pattern{};
+    pattern.length = 1U;
+    recorder.reset(services::GrooveRecordMode::OneShot, 255U, UINT64_MAX);
+    TEST_ASSERT_EQUAL_UINT8(64U, recorder.view().countInBeats);
+    recorder.setCountInBeats(255U);
+    TEST_ASSERT_EQUAL_UINT8(64U, recorder.view().countInBeats);
+
+    recorder.start(0U, 0U, pattern.length);
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::Ready, recorder.view().state);
+    recorder.start(0U, core::kQ32One, 0U);
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::Ready, recorder.view().state);
+    recorder.reset(services::GrooveRecordMode::OneShot, 0U);
+    recorder.start(core::kQ32One, core::kQ32One, pattern.length);
+    TEST_ASSERT_FALSE(recorder.capture(0U, pattern));
+
+    CustomGroovePattern invalid{};
+    invalid.length = 0U;
+    TEST_ASSERT_FALSE(recorder.capture(core::kQ32One, invalid));
+    TEST_ASSERT_TRUE(recorder.capture(core::kQ32One, pattern));
+    TEST_ASSERT_TRUE(recorder.view().capturedMask != 0ULL);
+    recorder.clearCaptured();
+    TEST_ASSERT_EQUAL_UINT64(0ULL, recorder.view().capturedMask);
+}
+
+void testGrooveRecordEngineCaptureHelpersUseSchedulerResolution() {
+    ClockState state{};
+    initializeFactoryDefaults(state);
+    state.operatingMode = OperatingMode::Independent;
+    state.source = ClockSource::Internal;
+    state.bpm = 120U;
+    for (auto& channel : state.channels) channel.common.mode = ChannelMode::Off;
+    state.channels[0].common.mode = ChannelMode::Clock;
+    state.channels[0].common.rate = {ClockRatioMode::Multiply, 1U, 1U, 1U};
+
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    engine::ClockEngine engine(gates);
+    engine.begin(state);
+    engine.play();
+    for (std::uint32_t tick = 0U; tick < 10'000U; ++tick) {
+        engine.processSchedulerTick();
+    }
+
+    const auto snapshot = engine.snapshot();
+    TEST_ASSERT_TRUE(snapshot.masterPositionQ32 > 0U);
+    TEST_ASSERT_TRUE(engine.nominalIntervalQ32(0U) > 0U);
+    TEST_ASSERT_EQUAL_UINT64(0U, engine.nominalIntervalQ32(kChannelCount));
+
+    constexpr std::uint32_t nowUs = 500'000U;
+    TEST_ASSERT_EQUAL_UINT64(
+        snapshot.masterPositionQ32,
+        engine.estimateMasterPositionAtUs(nowUs, nowUs));
+    const std::uint64_t compensated25ms = engine.estimateMasterPositionAtUs(nowUs - 25'000U, nowUs);
+    TEST_ASSERT_TRUE(compensated25ms < snapshot.masterPositionQ32);
+
+    // Stale timestamps are deliberately capped at 100 ms rather than being
+    // interpreted as an arbitrarily large musical rewind.
+    const std::uint64_t compensated100ms = engine.estimateMasterPositionAtUs(nowUs - 100'000U, nowUs);
+    const std::uint64_t compensated200ms = engine.estimateMasterPositionAtUs(nowUs - 200'000U, nowUs);
+    TEST_ASSERT_EQUAL_UINT64(compensated100ms, compensated200ms);
+}
+
 }  // namespace
 
 int main() {
@@ -490,5 +616,9 @@ int main() {
     RUN_TEST(testCustomGrooveLookupSweepsAllLengthsStepsAndAmounts);
     RUN_TEST(testCustomGrooveEngineMatrixAcrossBpmRatesGridsAndAmounts);
     RUN_TEST(testCustomGrooveDefensiveAndRescheduleBranches);
+    RUN_TEST(testGrooveRecorderCountInAndOneShotCapture);
+    RUN_TEST(testGrooveRecorderEndlessWrapsAndOverwritesTappedStepOnly);
+    RUN_TEST(testGrooveRecorderGuardsClampAndClearCaptureState);
+    RUN_TEST(testGrooveRecordEngineCaptureHelpersUseSchedulerResolution);
     return UNITY_END();
 }

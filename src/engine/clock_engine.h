@@ -171,6 +171,20 @@ public:
     /** @brief Returns interrupt-safe snapshot of the timing state used by the UI. */
     EngineSnapshot snapshot() const;
 
+    /** @brief Returns the selected output's nominal event interval in Q32 master-beat units. */
+    std::uint64_t nominalIntervalQ32(std::size_t channelIndex) const;
+
+    /**
+     * @brief Estimates the engine position at an earlier microsecond timestamp.
+     *
+     * This compensates front-panel debounce latency for Groove Record without
+     * changing normal button debounce semantics. The estimate is quantized to
+     * the 20 kHz scheduler cadence and bounded to recent timestamps.
+     */
+    std::uint64_t estimateMasterPositionAtUs(
+        std::uint32_t eventTimestampUs,
+        std::uint32_t nowUs) const;
+
 #ifdef CLOCK_HOST_TEST
     /** @brief Returns how many full runtime resets were executed in deterministic host tests. */
     std::uint32_t resetRuntimeCountForTest() const;

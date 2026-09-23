@@ -18,6 +18,7 @@
 #include "hal/gate_output_driver.h"
 #include "services/persistent_state_service.h"
 #include "services/custom_groove_store.h"
+#include "services/groove_recorder.h"
 #include "services/tap_tempo.h"
 #include "ui/settings_editor.h"
 #include "ui/ui_renderer.h"
@@ -80,7 +81,10 @@ public:
      * @param controls Current HAL control sample.
      * @param nowMs Current monotonic time in milliseconds.
      */
-    void processControls(const hal::ControlSample& controls, std::uint32_t nowMs);
+    void processControls(
+        const hal::ControlSample& controls,
+        std::uint32_t nowMs,
+        std::uint32_t nowUs = 0U);
 
     /**
      * @brief Services render invalidation and sends a frame when the refresh limit allows it.
@@ -108,7 +112,10 @@ private:
     void handleTransportButton(const hal::ButtonSample& button, std::uint32_t nowMs);
 
     /** @brief Handles tap tempo, overview TAP-Turn mode selection, and sequencer page-back action. */
-    void handleTapButton(const hal::ButtonSample& button, std::uint32_t nowMs);
+    void handleTapButton(
+        const hal::ButtonSample& button,
+        std::uint32_t nowMs,
+        std::uint32_t nowUs);
 
     /** @brief Handles stop/reset and generic back navigation. */
     void handleResetButton(const hal::ButtonSample& button, std::uint32_t nowMs);
@@ -188,6 +195,9 @@ private:
     /** @brief Activates one command or value on the Groove Editor menu. */
     void activateGrooveEditorMenuSetting();
 
+    /** @brief Activates one command or value on the Groove Record menu. */
+    void activateGrooveRecordMenuSetting();
+
     /** @brief Activates one row on the Divider Bank page. */
     void activateDividerBankSetting();
 
@@ -224,6 +234,21 @@ private:
 
     /** @brief Opens the graphical Custom Groove editor with a runtime-only live preview. */
     void openGrooveEditor();
+
+    /** @brief Opens the live TAP-driven Custom Groove recorder on the same draft format. */
+    void openGrooveRecorder();
+
+    /** @brief Starts or stops the Groove recorder without changing the draft on stop. */
+    void toggleGrooveRecording(std::uint32_t nowMs);
+
+    /** @brief Advances Pre-Count/playhead state from the live ClockEngine position. */
+    void serviceGrooveRecorder(const engine::EngineSnapshot& snapshot);
+
+    /** @brief Captures one high-resolution front-panel TAP into the nearest Groove step. */
+    void captureGrooveTap(const hal::ButtonSample& button, std::uint32_t nowUs);
+
+    /** @brief Clears all recorded offsets while keeping current length/recorder settings. */
+    void clearGrooveRecording();
 
     /** @brief Applies the draft to the runtime-only preview channels without persisting it. */
     void updateGroovePreview();
@@ -292,6 +317,7 @@ private:
     const hal::GateOutputDriver* gateOutputs_ = nullptr;
     SettingsEditor settingsEditor_;
     services::TapTempo tapTempo_{};
+    services::GrooveRecorder grooveRecorder_{};
     NavigationState navigation_{};
 
     bool tapVisualSequenceActive_ = false;
@@ -326,6 +352,7 @@ private:
     bool grooveEditorDirty_ = false;
     bool grooveLoadPendingAfterDiscard_ = false;
     bool transportPressConsumedByGrooveZoom_ = false;
+    Screen grooveWorkspaceScreen_ = Screen::GrooveEditor;
     std::uint32_t generatedNameSeed_ = 0xC10C2026U;
     std::uint32_t generatedNameSequence_ = 0U;
 };

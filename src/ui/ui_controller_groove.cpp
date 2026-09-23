@@ -38,6 +38,7 @@ void UiController::openGrooveEditor() {
     navigation_.grooveCursor = 0U;
     navigation_.grooveZoomSteps = 0U;
     navigation_.screen = Screen::GrooveEditor;
+    grooveWorkspaceScreen_ = Screen::GrooveEditor;
     navigation_.editing = false;
     grooveEditorDirty_ = false;
     grooveLoadPendingAfterDiscard_ = false;
@@ -117,7 +118,7 @@ void UiController::adjustGrooveZoom(const std::int8_t direction) {
 
 void UiController::openGrooveSlots(const GrooveSlotAction action) {
     if (customGrooveStore_ == nullptr) {
-        navigation_.screen = Screen::GrooveEditor;
+        navigation_.screen = grooveWorkspaceScreen_;
         invalidate();
         return;
     }
@@ -130,7 +131,7 @@ void UiController::openGrooveSlots(const GrooveSlotAction action) {
 
 void UiController::loadSelectedGroove() {
     if (customGrooveStore_ == nullptr) {
-        navigation_.screen = Screen::GrooveEditor;
+        navigation_.screen = grooveWorkspaceScreen_;
         invalidate();
         return;
     }
@@ -148,7 +149,18 @@ void UiController::loadSelectedGroove() {
     grooveEditorDirty_ = false;
     grooveEditorOriginalSettings_ = activeGrooveSettings(state_, navigation_.selectedChannel);
     updateGroovePreview();
-    navigation_.screen = Screen::GrooveEditor;
+    if (grooveWorkspaceScreen_ == Screen::GrooveRecorder) {
+        navigation_.grooveRecordCapturedMask = pattern.length >= 64U
+            ? UINT64_MAX
+            : ((1ULL << pattern.length) - 1ULL);
+        grooveRecorder_.reset(
+            navigation_.grooveRecordMode == GrooveRecordMode::OneShot
+                ? services::GrooveRecordMode::OneShot
+                : services::GrooveRecordMode::Endless,
+            navigation_.grooveRecordCountInBeats,
+            navigation_.grooveRecordCapturedMask);
+    }
+    navigation_.screen = grooveWorkspaceScreen_;
     invalidate();
 }
 
@@ -232,7 +244,7 @@ void UiController::saveCustomGroove(
     const std::uint32_t nowMs,
     const bool keepExistingName) {
     if (customGrooveStore_ == nullptr) {
-        navigation_.screen = Screen::GrooveEditor;
+        navigation_.screen = grooveWorkspaceScreen_;
         invalidate();
         return;
     }
@@ -250,7 +262,7 @@ void UiController::saveCustomGroove(
             navigation_.selectedGrooveSlot,
             name,
             navigation_.grooveDraft)) {
-        navigation_.screen = Screen::GrooveEditor;
+        navigation_.screen = grooveWorkspaceScreen_;
         invalidate();
         return;
     }
@@ -341,10 +353,18 @@ void UiController::activateSavedCustomGroove(const std::uint32_t nowMs) {
     grooveEditorOriginalSettings_ = settings;
     grooveEditorDirty_ = false;
     navigation_.settingsExitScreen = Screen::Performance;
-    openSettingsPage(SettingsPage::Groove, 4U);
+    openSettingsPage(
+        SettingsPage::Groove,
+        grooveWorkspaceScreen_ == Screen::GrooveRecorder ? 5U : 4U);
 }
 
 void UiController::leaveGrooveEditor(const bool discardChanges) {
+    if (grooveWorkspaceScreen_ == Screen::GrooveRecorder) {
+        grooveRecorder_.stop();
+        navigation_.grooveRecordState = GrooveRecordState::Ready;
+        navigation_.grooveRecordPlayheadStep = 0U;
+        navigation_.grooveRecordPlayheadPhase256 = 0U;
+    }
     clearGroovePreview();
     if (discardChanges) {
         GrooveSettings& settings = activeGrooveSettings(state_, navigation_.selectedChannel);
@@ -357,7 +377,9 @@ void UiController::leaveGrooveEditor(const bool discardChanges) {
     }
     grooveEditorDirty_ = false;
     navigation_.settingsExitScreen = Screen::Performance;
-    openSettingsPage(SettingsPage::Groove, 4U);
+    openSettingsPage(
+        SettingsPage::Groove,
+        grooveWorkspaceScreen_ == Screen::GrooveRecorder ? 5U : 4U);
 }
 
 }  // namespace clockfw::ui

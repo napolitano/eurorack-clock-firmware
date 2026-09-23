@@ -96,9 +96,10 @@ The catalog currently covers:
 - boot at 0/25/50/75/100 percent and power-off;
 - PLAY, PAUSE, STOP, Off, Clock, Euclid, Sequencer, One Clock, and Divider Bank;
 - Internal, External and Auto source states including locked/unlocked external timing;
-- channel/global overviews, all six mode-palette selections, mode confirmation, and Sequencer editor;
-- every Settings page plus an active edit state;
+- channel/global overviews, all six current positions of the horizontal mode carousel, mode confirmation, and Sequencer editor;
+- every Settings page plus an active edit state and the full-value read-only Info popover;
 - templates, preset load/save/name/overwrite flows;
+- Custom Groove editor and live TAP-record views, including the engine-phase playhead;
 - Clock, Plug, Heartbeat, Acid, Spectrum, Field, Blox, Matrix, Cube Cover, Fractal, Orbit, Make Music, Labyrinth, Starfield, and Fireworks screensavers;
 - individual retro intros for Pixel Raid, Formula 1, Breakout, Egg Journey, and BEATKNECHT; shared initials-entry/Top-100 arcade screens; Pixel Raid, Formula 1 (including curve/crash states), Breakout (including modifier state), Egg Journey (action, broken-shell, and flattened-egg states), and BEATKNECHT gameplay.
 
@@ -112,24 +113,31 @@ The ODT publication manual contains generated **two-across** mini-galleries for 
 
 The maintained manual follows this user-oriented publication structure:
 
-1. Safety and installation
-2. Front-panel tour
-3. Transport and master clock
-4. Independent channels
-5. One Clock and Humanize
-6. Divider Bank
-7. Euclidean patterns
-8. Gate Sequencer
-9. Swing, phase, probability, and reset semantics
-10. Configurable external inputs and Internal / External / Auto sync
-11. Presets and persistence
-12. Display and screensavers
-13. Configuration reference
-14. Troubleshooting
-15. Hidden boot features and BEATKNECHT
-16. Practical recipes
-17. Firmware installation / update / recovery
-18. Technical appendix
+1. Start here
+2. Panel, power and boot
+3. Two-minute quick start
+4. The control language
+5. Read the Performance screen
+6. Select channels and change functions
+7. Transport and tempo
+8. Independent channels
+9. Clock mode
+10. Euclid mode
+11. Sequencer mode
+12. One Clock
+13. Grooves and Custom Groove Record
+14. Divider Bank
+15. Settings map
+16. Configurable external inputs
+17. Presets, autosave and templates
+18. Screensaver and display protection
+19. Gate outputs and LEDs
+20. Hidden boot features
+21. Practical recipes
+22. Troubleshooting
+23. Firmware installation and updates
+24. Technical status and specifications
+
 
 The editable manual follows development continuously. A release-frozen manual must not be treated as final hardware documentation until External Sync comparator/Input-Capture HIL, SPI timing HIL, and the final scheduler implementation are validated.
 

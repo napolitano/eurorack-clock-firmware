@@ -30,6 +30,7 @@ enum class Screen : std::uint8_t {
     FactoryResetConfirm,
     NameEntry,
     GrooveEditor,
+    GrooveRecorder,
     GrooveSlots,
     GrooveOverwriteConfirm,
     GrooveDeleteConfirm,
@@ -66,6 +67,7 @@ enum class SettingsPage : std::uint8_t {
     UnifiedOutput,
     Groove,
     GrooveEditorMenu,
+    GrooveRecordMenu,
     DividerBank
 };
 
@@ -84,6 +86,12 @@ enum class PresetSlotAction : std::uint8_t { Load, Save };
 
 /** @brief Operation being performed on Custom Groove slots. */
 enum class GrooveSlotAction : std::uint8_t { LoadEditor, Activate, Save, Rename, Delete };
+
+/** @brief Loop policy used by the live Custom Groove recorder. */
+enum class GrooveRecordMode : std::uint8_t { OneShot, Endless };
+
+/** @brief Front-panel recording state shown by the graphical Groove recorder. */
+enum class GrooveRecordState : std::uint8_t { Ready, PreCount, Recording };
 
 /** @brief Live digital levels shown by the hardware diagnostics pages. */
 struct DiagnosticSnapshot {
@@ -126,6 +134,13 @@ struct NavigationState {
     /** 0 = FIT; otherwise visible window size in four-step increments. */
     std::uint8_t grooveZoomSteps = 0U;
     CustomGroovePattern grooveDraft{};
+    GrooveRecordMode grooveRecordMode = GrooveRecordMode::OneShot;
+    GrooveRecordState grooveRecordState = GrooveRecordState::Ready;
+    std::uint8_t grooveRecordCountInBeats = 4U;
+    std::uint8_t grooveRecordCountInRemaining = 0U;
+    std::uint8_t grooveRecordPlayheadStep = 0U;
+    std::uint8_t grooveRecordPlayheadPhase256 = 0U;
+    std::uint64_t grooveRecordCapturedMask = 0U;
     std::array<char, 17U> grooveNameBuffer{};
     /** Title/value copied from one read-only settings row while its detail popover is open. */
     std::array<char, 18U> informationPopoverTitle{};

@@ -79,6 +79,42 @@ void drawDiamond(hal::OledDisplay& display, const std::int16_t x, const bool sel
     }
 }
 
+void drawTimingGrid(
+    hal::OledDisplay& display,
+    const std::uint8_t visible,
+    const std::uint8_t start) {
+    for (std::uint8_t local = 0U; local < visible; ++local) {
+        const std::uint8_t step = static_cast<std::uint8_t>(start + local);
+        const std::int16_t x = nominalX(local, visible);
+        if ((step % 4U) == 0U) {
+            display.drawVerticalLine(x, kGridTop, kGridBottom - kGridTop + 1);
+            char beat[4]{};
+            std::snprintf(beat, sizeof(beat), "%u", static_cast<unsigned>(step / 4U + 1U));
+            const hal::TextBounds bounds = display.measureText(beat, 0, 0);
+            display.drawText(
+                static_cast<std::int16_t>(x - static_cast<std::int16_t>(bounds.width / 2U)),
+                kBeatLabelY,
+                beat);
+        } else {
+            for (std::int16_t y = kGridTop; y <= kGridBottom; y += 2) {
+                display.setPixel(x, y);
+            }
+        }
+    }
+}
+
+std::int16_t markerX(
+    const NavigationState& navigation,
+    const std::uint8_t step,
+    const std::uint8_t local,
+    const std::uint8_t visible) {
+    const std::int16_t baseX = nominalX(local, visible);
+    const int spacing = visible > 1U ? (kRight - kLeft) / static_cast<int>(visible - 1U) : 0;
+    const int shifted = static_cast<int>(baseX) +
+        (spacing * static_cast<int>(navigation.grooveDraft.offsets256[step])) / 256;
+    return static_cast<std::int16_t>(std::clamp(shifted, 2, 125));
+}
+
 void drawChoices(hal::OledDisplay& display, const NavigationState& navigation) {
     const char* const choices[2] = {text::get(text::TextId::No), text::get(text::TextId::Yes)};
     constexpr std::int16_t centers[2] = {35, 91};
@@ -113,33 +149,11 @@ void GrooveEditorRenderer::renderEditor(const NavigationState& navigation) {
     const std::uint8_t visible = visibleSteps(navigation);
     const std::uint8_t start = windowStart(navigation, visible);
 
-    for (std::uint8_t local = 0U; local < visible; ++local) {
-        const std::uint8_t step = static_cast<std::uint8_t>(start + local);
-        const std::int16_t x = nominalX(local, visible);
-        if ((step % 4U) == 0U) {
-            display_.drawVerticalLine(x, kGridTop, kGridBottom - kGridTop + 1);
-            char beat[4]{};
-            std::snprintf(beat, sizeof(beat), "%u", static_cast<unsigned>(step / 4U + 1U));
-            const hal::TextBounds bounds = display_.measureText(beat, 0, 0);
-            display_.drawText(
-                static_cast<std::int16_t>(x - static_cast<std::int16_t>(bounds.width / 2U)),
-                kBeatLabelY,
-                beat);
-        } else {
-            for (std::int16_t y = kGridTop; y <= kGridBottom; y += 2) {
-                display_.setPixel(x, y);
-            }
-        }
-    }
+    drawTimingGrid(display_, visible, start);
 
-    const int spacing = visible > 1U ? (kRight - kLeft) / static_cast<int>(visible - 1U) : 0;
     for (std::uint8_t local = 0U; local < visible; ++local) {
         const std::uint8_t step = static_cast<std::uint8_t>(start + local);
-        const std::int16_t baseX = nominalX(local, visible);
-        const int shifted = static_cast<int>(baseX) +
-            (spacing * static_cast<int>(navigation.grooveDraft.offsets256[step])) / 256;
-        const std::int16_t x = static_cast<std::int16_t>(std::clamp(shifted, 2, 125));
-        drawDiamond(display_, x, step == navigation.grooveCursor);
+        drawDiamond(display_, markerX(navigation, step, local, visible), step == navigation.grooveCursor);
     }
 
     char status[24]{};
@@ -157,6 +171,64 @@ void GrooveEditorRenderer::renderEditor(const NavigationState& navigation) {
     } else {
         char zoom[5]{};
         std::snprintf(zoom, sizeof(zoom), text::get(text::TextId::ZoomFormat), static_cast<unsigned>(navigation.grooveZoomSteps));
+        display_.drawText(102, 55, zoom);
+    }
+    display_.present();
+}
+
+void GrooveEditorRenderer::renderRecorder(const NavigationState& navigation) {
+    display_.clear();
+    display_.setFont(hal::DisplayFont::Small);
+    display_.setTextColor(hal::PixelColor::White);
+    display_.drawText(0, 0, text::get(text::TextId::GrooveRecordTitle));
+    display_.drawHorizontalLine(0, kHeaderRuleY, hal::OledDisplay::kWidth);
+
+    const std::uint8_t visible = visibleSteps(navigation);
+    const std::uint8_t start = windowStart(navigation, visible);
+    drawTimingGrid(display_, visible, start);
+
+    if (navigation.grooveRecordPlayheadStep >= start &&
+        navigation.grooveRecordPlayheadStep < static_cast<std::uint8_t>(start + visible)) {
+        const std::uint8_t local = static_cast<std::uint8_t>(
+            navigation.grooveRecordPlayheadStep - start);
+        const int spacing = visible > 1U ? (kRight - kLeft) / static_cast<int>(visible - 1U) : 0;
+        const int x = static_cast<int>(nominalX(local, visible)) +
+            (spacing * navigation.grooveRecordPlayheadPhase256) / 256;
+        display_.drawVerticalLine(
+            static_cast<std::int16_t>(std::clamp(x, static_cast<int>(kLeft), static_cast<int>(kRight))),
+            kGridTop,
+            kGridBottom - kGridTop + 1);
+    }
+
+    for (std::uint8_t local = 0U; local < visible; ++local) {
+        const std::uint8_t step = static_cast<std::uint8_t>(start + local);
+        if ((navigation.grooveRecordCapturedMask & (1ULL << step)) == 0U) continue;
+        drawDiamond(display_, markerX(navigation, step, local, visible), false);
+    }
+
+    char status[24]{};
+    if (navigation.grooveRecordState == GrooveRecordState::PreCount) {
+        std::snprintf(
+            status, sizeof(status), "%s %u",
+            text::get(text::TextId::CountIn),
+            static_cast<unsigned>(navigation.grooveRecordCountInRemaining));
+    } else if (navigation.grooveRecordState == GrooveRecordState::Recording) {
+        std::snprintf(
+            status, sizeof(status), "%s S%02u/%u",
+            text::get(text::TextId::Recording),
+            static_cast<unsigned>(navigation.grooveRecordPlayheadStep + 1U),
+            static_cast<unsigned>(navigation.grooveDraft.length));
+    } else {
+        std::snprintf(status, sizeof(status), "%s", text::get(text::TextId::Ready));
+    }
+    display_.drawText(0, 55, status);
+    if (navigation.grooveZoomSteps == 0U) {
+        display_.drawText(102, 55, text::get(text::TextId::Fit));
+    } else {
+        char zoom[5]{};
+        std::snprintf(
+            zoom, sizeof(zoom), text::get(text::TextId::ZoomFormat),
+            static_cast<unsigned>(navigation.grooveZoomSteps));
         display_.drawText(102, 55, zoom);
     }
     display_.present();

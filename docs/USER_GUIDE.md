@@ -2,9 +2,9 @@
 
 # South Signal Lab CLOCK — User Guide
 
-> **Release documentation — v1.0.1 · stable V1 maintenance line**
+> **Stable baseline: v1.0.1 · current development: 1.1.0**
 >
-> CLOCK 1.0.1 is the current stable V1 maintenance release. The clock engine, UI, persistence, simulator, final GPIO routing, interrupt-driven SYNC/RST capture path, and production SPI display path are implemented. Physical comparator thresholds, jack-level timing, gate jitter, and other bench measurements remain tracked HIL qualification evidence; they do not change the documented firmware behavior.
+> CLOCK 1.0.1 remains the current stable release. This maintained guide also documents the active 1.1.0 development line, including Pre-Count, configurable digital-input roles, Groove Engine Stage 1/2, Custom Groove editing/recording and the horizontal Channel Mode carousel. These sections describe implemented development behavior; they are not a claim that 1.1.0 has already been released. Physical comparator thresholds, jack-level timing, gate jitter and Groove/TAP-record timing remain tracked HIL evidence.
 
 This guide is the GitHub-readable operating reference for CLOCK. OLED screenshots are generated from the **production renderer and the real 128×64 framebuffer**, then enlarged with nearest-neighbor scaling. They are not hand-drawn UI mockups.
 
@@ -72,7 +72,7 @@ The boot sequence initializes the scheduler in STOP and keeps all eight gate sou
 
 ![Boot screen halfway through its one-second progress sequence, showing the CLOCK wordmark and the two-pixel progress bar at the bottom.](manual-source/assets/boot-500.png)
 
-The normal boot screen lasts about one second. Holding the encoder push continuously through the complete boot sequence enters the compile-time selected Easter egg; see [Section 20](#20-hidden-boot-easter-eggs).
+The normal boot screen lasts about one second. Holding the encoder push continuously through the complete boot sequence enters the compile-time selected Easter egg; see [Section 21](#21-hidden-boot-easter-eggs).
 
 ## 6. Performance screen
 
@@ -89,7 +89,7 @@ The header shows:
 - master meter in the center;
 - transport state at the right.
 
-The BPM numerals are mathematically centered. Non-zero Swing appears at the left of the tempo area and a non-`×1` rate appears at the right. Default values are omitted rather than filling the screen with redundant status.
+The BPM numerals are mathematically centered. Non-zero Swing appears at the left of the tempo area and a non-`×1` rate appears at the right. When Groove is active, `G:<name>` appears lower-left for Clock/One Clock and directly above the live pattern strip for Euclid/Sequencer. Factory presets show their preset name; Custom Grooves show the actual stored user name. Default or ineffective values are omitted rather than filling the screen with redundant status.
 
 Clock uses the larger BPM role. Euclid and Sequencer use a smaller tempo role because the lower display area is reserved for live pattern feedback.
 
@@ -128,7 +128,7 @@ Only the value currently being edited is inverted. Whole-row inversion is avoide
 | Encoder short press | Open overview | Confirm selection / return | Enter / confirm / toggle step |
 | Encoder long press | Open current channel/global settings | Open highlighted settings | Context-dependent |
 | TAP + encoder press | Open Settings tree | — | — |
-| Hold TAP + encoder turn | — | Open/scroll six-function palette | — |
+| Hold TAP + encoder turn | — | Open/scroll horizontal mode carousel | — |
 | PLAY/PAUSE | Play / pause | — | Sequencer: next 16-step page |
 | TAP short | Tap Tempo | Modifier | Sequencer: previous 16-step page |
 | STOP/BACK | Stop + global reset | Back / cancel | Back / cancel |
@@ -154,22 +154,17 @@ Short press returns from a global overview. Long press opens that topology's set
 
 ## 9. Changing function or topology
 
-Hold **TAP** and turn the encoder. CLOCK opens a 2×3 graphical palette in this order:
+Hold **TAP** and turn the encoder. CLOCK opens a horizontal mode carousel. The selected function stays centered and is the only item drawn on an inverted background; its immediate neighbors remain unframed, with a pictogram and label underneath. Turning moves the band rather than moving a highlight through a fixed 2×3 tile grid.
 
-1. **One Clock**
-2. **Divider Bank**
-3. **Clock**
-4. **Euclid**
-5. **Sequencer**
-6. **Off**
+The current catalog order is **One Clock → Divider Bank → Clock → Euclid → Sequencer → Off**. The renderer and navigation use this catalog directly, so future channel modes can be added without inventing another fixed palette layout.
 
 One Clock and Divider Bank change the global output topology. Clock, Euclid, Sequencer, and Off select Independent topology for the highlighted channel.
 
 <table>
 <tr>
-<td align="center"><img src="manual-source/assets/mode-select-one-clock.png" alt="Six-function mode palette with One Clock selected." width="220"><br><sub>One Clock selected</sub></td>
-<td align="center"><img src="manual-source/assets/mode-select-euclid.png" alt="Six-function mode palette with Euclid selected." width="220"><br><sub>Euclid selected</sub></td>
-<td align="center"><img src="manual-source/assets/mode-select-divider-bank.png" alt="Six-function mode palette with Divider Bank selected." width="220"><br><sub>Divider Bank selected</sub></td>
+<td align="center"><img src="manual-source/assets/mode-select-one-clock.png" alt="Horizontal mode carousel with One Clock centered and selected." width="220"><br><sub>One Clock centered</sub></td>
+<td align="center"><img src="manual-source/assets/mode-select-euclid.png" alt="Horizontal mode carousel with Euclid centered and selected." width="220"><br><sub>Euclid centered</sub></td>
+<td align="center"><img src="manual-source/assets/mode-select-divider-bank.png" alt="Horizontal mode carousel with Divider Bank centered and selected." width="220"><br><sub>Divider Bank centered</sub></td>
 </tr>
 </table>
 
@@ -180,6 +175,8 @@ Releasing TAP does not silently mutate the running setup. If the highlighted fun
 After confirmation CLOCK opens the most useful destination: Euclid goes to algorithm settings, Sequencer to its editor, One Clock to shared settings, Divider Bank to divider-family settings, while Clock and Off return to Performance.
 
 ## 10. Independent Clock
+
+A Clock channel can also use the same deterministic Groove layer as Euclid and Sequencer. Factory or Custom Grooves shift event timing without changing the channel rate or master timeline.
 
 Clock produces a regular derived trigger/clock on one output. Its channel owns:
 
@@ -241,7 +238,7 @@ A Euclid channel distributes a selected number of hits as evenly as possible acr
 - **HITS** — 0–STEPS
 - **ROTATE** — circular rotation from 0 to STEPS−1
 
-Common channel timing — rate, Swing, Probability, gate length, Phase, reset policy, and Mute — remains outside the Euclid algorithm page.
+Common channel timing — rate, Swing, Groove, Probability, gate length, Phase, reset policy, and Mute — remains outside the Euclid algorithm page.
 
 At `×1`, Euclid advances on a **sixteenth-note grid**. In 4/4, 16 steps therefore span exactly one bar. The channel rate scales that step grid; `×1` does not mean one Euclid step per quarter note.
 
@@ -267,7 +264,7 @@ Inside the editor:
 - TAP moves to the previous 16-step page;
 - STOP/BACK returns to Sequencer parameters.
 
-Sequencer tools include **Length, Rotate, Invert, Clear, Fill Alternate, Copy, and Paste**. As with Euclid, `×1` is a sixteenth-note grid, so a 16-step sequence occupies one 4/4 bar.
+Sequencer tools include **Length, Rotate, Invert, Clear, Fill Alternate, Copy, and Paste**. Rate, Swing and Groove remain shared channel-timing controls. As with Euclid, `×1` is a sixteenth-note grid, so a 16-step sequence occupies one 4/4 bar.
 
 ## 15. Swing, Probability, Phase, gates, and reset
 
@@ -287,7 +284,54 @@ The Settings-root **PHASE RESET** command applies that global musical reset imme
 
 ![Timing reference diagram comparing the ideal grid with Swing and Phase offsets and showing One Clock Humanize as small per-output displacement around the common reference.](manual-source/assets/timing-swing-phase.svg)
 
-## 16. Transport and Tap Tempo
+## 16. Grooves and Custom Groove Record
+
+Groove is deterministic microtiming applied to the same master timeline as Clock, Euclid and Sequencer. It is separate from One Clock **Humanize**, which is a bounded deterministic per-output displacement. Divider Bank deliberately remains Groove-free.
+
+### Factory Grooves
+
+`TIMING → GROOVE` offers `OFF`, `SWING 54`, `SWING 58`, `SWING 62`, `SWING 66`, and `POCKET A / B / C`. **AMOUNT** scales the selected pattern from straight (`0%`) through its stored shape (`100%`), while **ROTATE** changes where that pattern starts against the channel timeline. One Clock owns one global Groove; Independent stores Groove per channel and applies it equally to Clock, Euclid and Sequencer event timing.
+
+### Custom Groove Editor
+
+`GROOVE → EDITOR` opens the graphical 128×64 Custom Groove editor. A Groove can contain **1–64 steps**. Solid beat guides and dotted step guides show the nominal grid; diamond markers show the actual timing position of each step. The selected diamond is filled. Marker positions may move early or late but are bounded so events remain monotonic and cannot overtake neighboring steps.
+
+<p align="center"><img src="manual-source/assets/groove-editor-custom.png" alt="Custom Groove editor with beat and step guides plus diamond microtiming markers." width="360"><br><sub>Custom Groove editor — the grid is nominal time; diamonds are the stored microtiming positions.</sub></p>
+
+Editor controls:
+
+- **TAP** — select the next marker;
+- **encoder turn** — move the selected marker finely;
+- **TAP + turn** — coarse marker movement;
+- **PLAY + turn** — quick zoom through `FIT / 32 / 16 / 8 / 4` without issuing a transport command;
+- **encoder long press** — open the Groove editor menu;
+- **BACK** — leave immediately when clean, or open `DISCARD CHANGES?` when the draft has changed.
+
+Changes are previewed live while transport runs but remain temporary until saved. BACK/DISCARD restores the pre-entry Groove state. New Custom Grooves receive an editable generated two-word default name so the save workflow never starts from a blank label.
+
+### TAP Record
+
+`GROOVE → RECORD` is a second input mode over the **same Custom Groove draft**. It uses the same grid and recorded diamond markers, plus a moving playhead driven by the real engine phase. A recorded Groove can therefore be opened immediately in `EDITOR` for manual cleanup and is stored in exactly the same Custom Groove format.
+
+<p align="center"><img src="manual-source/assets/groove-record-live.png" alt="Custom Groove recorder showing recorded diamond markers and the live playhead." width="360"><br><sub>Groove Record — TAP events become signed microtiming offsets on the running grid.</sub></p>
+
+Recorder controls:
+
+- **PLAY** — start/stop capture; stopping rewinds the recorder to the beginning;
+- **TAP** — record one timing event; TAP does not run Tap Tempo while the recorder is active;
+- **PLAY + turn** — quick zoom;
+- **encoder long press** — open the Record menu;
+- **BACK** — leave/confirm discard using the same shared-draft rules as the editor.
+
+The Record menu provides **MODE** (`ONE SHOT / ENDLESS`), recorder **COUNT IN** (`OFF / 1–64`, default `4`), **LENGTH** (`1–64`), **ZOOM**, **SAVE**, `EDITOR >`, and **CLEAR**. `ONE SHOT` stops at the end of one pattern pass. `ENDLESS` wraps and continues; only steps that receive a new TAP are overwritten, so an existing Groove can be refined over repeated passes.
+
+Front-panel TAP capture preserves the high-resolution physical press timestamp through button debounce before converting it to a signed per-step offset. Host tests verify that software contract; absolute physical switch latency/jitter remains a HIL measurement.
+
+### Custom Groove library
+
+The frozen 1.1.0 storage scope is **10 named Custom Groove slots**. The normal Groove page exposes `LOAD >`; saved Grooves can also be overwritten, renamed, or deleted with explicit safe confirmations. The Performance screen uses the stored name rather than a generic `CUSTOM` label. The earlier 99-slot idea remains a later storage target and is not part of the 1.1.0 release contract.
+
+## 17. Transport and Tap Tempo
 
 Transport has three states: **PLAY, PAUSE, STOP**.
 
@@ -305,7 +349,7 @@ CLOCK persists the working configuration but never restores PLAY on power-up. Fl
 
 While Pre-Count is active, the Performance screen keeps the normal context visible around a centered square popover. The popover is black with a one-pixel white border and shows the remaining beat count without any phase animation. Along its lower edge, one cell per master-meter beat visualizes the current step: exactly the active beat is filled and all other beats remain outlined. In 4/4 the four fixed positions therefore read as Tick–Tack–Tack–Tack, with the filled marker moving through the bar and returning to the first position on the next bar. When the count reaches zero the popover disappears and normal gate generation starts from the shared phase-zero boundary. With a locked external clock, Pre-Count remains edge-owned and converts accepted SYNC pulses into the configured **master-meter beat unit** using PPQN. A quarter note is therefore one count beat in `/4`, two beats in `/8`, four beats in `/16`, and half a beat in `/2`; the scheduler does not double-advance the count between accepted external edges.
 
-## 17. Configurable external inputs
+## 18. Configurable external inputs
 
 Open `SETTINGS → GENERAL SETTINGS → INPUTS` to assign the two conditioned comparator inputs. The current board still has physical/net identities **SYNC/PA8** and **RST/PA9**; the firmware presents them as **INPUT 1** and **INPUT 2** so either electrical path can perform any supported digital input role. Factory assignment is `INPUT 1 = SYNC`, `INPUT 2 = RESET`.
 
@@ -350,7 +394,7 @@ After external clock loss, `LOSS = STOP` stops transport; `LOSS = FREE` continue
 
 Both physical comparator paths are captured by GPIO EXTI with TIM5 microsecond timestamps and are consumed by the deterministic scheduler. Host tests prove this digital role/state-machine contract. Actual LM393 thresholds, propagation, jack-level timing and output jitter remain HIL evidence.
 
-## 18. Presets, CURRENT, and templates
+## 19. Presets, CURRENT, and templates
 
 `SETTINGS → PRESETS` contains three different concepts:
 
@@ -369,7 +413,7 @@ Preset names can contain up to 16 characters. Saving over an occupied slot requi
 
 Factory templates currently include `ALL MASTER`, `CLOCK TREE`, `DIVIDERS`, `POLYRHYTHM`, `EUCLID KIT`, and `HYBRID`. Loading a template changes CURRENT; it does not silently create or overwrite a named user preset.
 
-## 19. Device orientation, screensaver, and display protection
+## 20. Device orientation, screensaver, and display protection
 
 `SETTINGS → GENERAL SETTINGS → HARDWARE` contains the two persistent installation preferences:
 
@@ -433,7 +477,7 @@ Four additional visual modes are available: **MAKE MUSIC** builds `MAKE·MUSIC·
 </tr>
 </table>
 
-## 20. Hidden boot Easter eggs
+## 21. Hidden boot Easter eggs
 
 Hold the encoder push continuously from power-up until the boot screen finishes to enter the compile-time selected Easter egg. `CLOCK_EASTER_EGG` selects one of five implementations; the shipped/default build selects **BEATKNECHT**.
 
@@ -475,7 +519,7 @@ After a ranked Easter egg has been launched at least once, the Settings root gai
 
 Pixel Raid, Formula 1, Breakout, and Egg Journey keep all gate source GPIOs muted. BEATKNECHT is the deliberate exception: its intro is started with PLAY, it allows gate HIGH requests only while transport is PLAYING, drives the rhythm gates, forces all channels LOW on PAUSE, and returns all channels LOW plus mutes gate output on STOP or confirmed exit. Opening the exit confirmation also silences the gates; cancelling restores the prior PLAY/PAUSE/STOP state. Normal firmware resumes in STOP.
 
-## 21. INFO, version, and updates
+## 22. INFO, version, and updates
 
 `SETTINGS → INFO` groups identity, maintenance information, and the deliberately buried factory-reset action:
 
@@ -486,17 +530,24 @@ Pixel Raid, Formula 1, Breakout, and Egg Journey keep all gate source GPIOs mute
 - **UPDATES** — full-screen QR code for the current project update URL (`https://github.com/napolitano`)
 
 
+Long read-only information values use a separate overflow rule from editable Settings values. If a value does not fit its row, CLOCK shortens only that informational value with `...`; pressing the row opens a full-value popover. Editable values are never redirected through this mechanism because pressing them must retain its normal edit/confirm meaning. The AUTHOR row is the primary current example.
+
 **FACTORY RESET** is the final INFO entry so it is not exposed as a routine performance control. Selecting it opens a separate confirmation screen with **NO** selected by default. Confirming **YES** stops transport, clears CURRENT, all eight named presets, legacy score data, and all Top-100 leaderboards, then restores the documented factory configuration.
 
 <table>
 <tr>
-<td align="center"><img src="manual-source/assets/settings-info.png" alt="INFO page showing the CLOCK product identity, version, and author entries." width="220"><br><sub>Identity</sub></td>
+<td align="center"><img src="manual-source/assets/settings-info.png" alt="INFO page showing the CLOCK product identity, version, and truncated author entry." width="220"><br><sub>Identity with bounded read-only values</sub></td>
+<td align="center"><img src="manual-source/assets/settings-info-author-popover.png" alt="Full-value read-only information popover showing the complete author name." width="220"><br><sub>Full value after pressing the truncated AUTHOR row</sub></td>
 <td align="center"><img src="manual-source/assets/settings-licenses.png" alt="Licenses page listing the firmware and bundled third-party license information." width="220"><br><sub>Licenses</sub></td>
+</tr>
+<tr>
 <td align="center"><img src="manual-source/assets/settings-updates.png" alt="Updates page showing the full-screen QR code used to reach the project update location." width="220"><br><sub>Updates</sub></td>
+<td></td>
+<td></td>
 </tr>
 </table>
 
-## 22. Firmware installation and updates
+## 23. Firmware installation and updates
 
 CLOCK supports two firmware-programming paths: **ST-LINK / SWD** for first installation, recovery and debugging, and **USB DFU via PlatformIO** for routine updates.
 
@@ -513,7 +564,7 @@ The project upload helper writes the application and vector-table regions separa
 
 The complete step-by-step procedure, including ST-LINK wiring, STM32CubeProgrammer, alternate Easter-egg variants, PlatformIO installation links, USB-only post-update testing and troubleshooting, is maintained in [`FIRMWARE_UPDATE.md`](FIRMWARE_UPDATE.md).
 
-## 23. Current technical limits
+## 24. Current technical limits
 
 The current firmware uses a deterministic **20 kHz scheduler**, giving a 50 µs service quantum. UI rendering and I/O transport do not decide musical gate timing. SPI remains the preferred/reference display path; I2C uses deferred, bounded foreground transactions so display work is deliberately subordinate to musical timing. The physical encoder uses PB6/PB7 in STM32 TIM4 encoder mode; SYNC/RST remain interrupt-captured inputs.
 
@@ -521,7 +572,7 @@ Persistence uses internal STM32 Flash A/B records. Large persistence staging buf
 
 These software safeguards do not replace physical validation. Representative hardware still needs oscilloscope/logic-analyzer proof for gate jitter and pulse widths, boot/reset behavior, SYNC/RST comparator behavior, EXTI capture timing, and SPI display stress. Until 1.5.0 this evidence is tracked but does not block the automated release build. See [`HIL_TEST_PLAN.md`](HIL_TEST_PLAN.md).
 
-## 24. License
+## 25. License
 
 Firmware source is licensed under the **PolyForm Noncommercial License 1.0.0**. The Required Notice is `Required Notice: Copyright © 2026 Axel Napolitano.` See [`../LICENSE.md`](../LICENSE.md), [`../NOTICE.txt`](../NOTICE.txt), and [`LICENSING.md`](LICENSING.md). The publication manual and documentation artwork use the documentation license described in [`manual-source/LICENSE.md`](manual-source/LICENSE.md). Third-party components retain their upstream licenses and notices.
 

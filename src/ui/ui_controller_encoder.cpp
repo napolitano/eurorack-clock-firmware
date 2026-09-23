@@ -34,6 +34,7 @@ void UiController::handleEncoderButton(
         (navigation_.screen == Screen::Performance ||
          navigation_.screen == Screen::ChannelQuickSelect ||
          navigation_.screen == Screen::GrooveEditor ||
+         navigation_.screen == Screen::GrooveRecorder ||
          navigation_.screen == Screen::NameEntry ||
          navigation_.screen == Screen::GrooveNameEntry)) {
         encoderLongPressHandled_ = true;
@@ -187,7 +188,7 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
 
         case Screen::GrooveDiscardConfirm:
             if (navigation_.cursor == 0U) {
-                navigation_.screen = Screen::GrooveEditor;
+                navigation_.screen = grooveWorkspaceScreen_;
                 grooveLoadPendingAfterDiscard_ = false;
                 invalidate();
             } else if (grooveLoadPendingAfterDiscard_) {
@@ -230,8 +231,9 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
         }
 
         case Screen::GrooveEditor:
-            // Short press has no direct editor action; TAP selects markers and
-            // long press opens the Groove Editor menu.
+        case Screen::GrooveRecorder:
+            // Short press has no direct workspace action. Long press opens the
+            // context menu; TAP/PLAY own musical interaction in each workspace.
             return;
     }
 }
@@ -254,6 +256,15 @@ void UiController::handleLongEncoderPress(const std::uint32_t nowMs) {
     if (origin == Screen::GrooveEditor) {
         navigation_.settingsExitScreen = Screen::GrooveEditor;
         openSettingsPage(SettingsPage::GrooveEditorMenu);
+        return;
+    }
+    if (origin == Screen::GrooveRecorder) {
+        grooveRecorder_.stop();
+        navigation_.grooveRecordState = GrooveRecordState::Ready;
+        navigation_.grooveRecordPlayheadStep = 0U;
+        navigation_.grooveRecordPlayheadPhase256 = 0U;
+        navigation_.settingsExitScreen = Screen::GrooveRecorder;
+        openSettingsPage(SettingsPage::GrooveRecordMenu);
         return;
     }
     if (origin == Screen::ChannelQuickSelect &&

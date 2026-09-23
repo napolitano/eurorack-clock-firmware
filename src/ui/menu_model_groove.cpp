@@ -44,9 +44,12 @@ MenuRow buildGrooveMenuRow(
         std::snprintf(row.label, sizeof(row.label), "%s", text::get(text::TextId::Editor));
         std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Arrow));
     } else if (rowIndex == 5U) {
-        std::snprintf(row.label, sizeof(row.label), "%s", text::get(text::TextId::Rename));
+        std::snprintf(row.label, sizeof(row.label), "%s", text::get(text::TextId::Record));
         std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Arrow));
     } else if (rowIndex == 6U) {
+        std::snprintf(row.label, sizeof(row.label), "%s", text::get(text::TextId::Rename));
+        std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Arrow));
+    } else if (rowIndex == 7U) {
         std::snprintf(row.label, sizeof(row.label), "%s", text::get(text::TextId::Delete));
         std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Arrow));
     }

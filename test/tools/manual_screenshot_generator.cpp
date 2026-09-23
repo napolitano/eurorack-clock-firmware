@@ -7,6 +7,7 @@
  */
 
 #include <array>
+#include <cstdio>
 #include <cstdint>
 #include <filesystem>
 #include <fstream>
@@ -115,6 +116,7 @@ public:
         renderBootStates();
         renderPerformanceStates();
         renderNavigationStates();
+        renderGrooveStates();
         renderSettingsStates();
         renderPresetStates();
         renderScreensavers();
@@ -141,6 +143,33 @@ private:
         const char* const description) {
         renderer_.render(state_, navigation_, snapshot_);
         capture(name, description);
+    }
+
+
+    void renderGrooveStates() {
+        reset();
+        navigation_.screen = ui::Screen::GrooveEditor;
+        navigation_.grooveDraft.length = 16U;
+        navigation_.grooveDraft.offsets256[1] = 36;
+        navigation_.grooveDraft.offsets256[3] = -28;
+        navigation_.grooveDraft.offsets256[5] = 64;
+        navigation_.grooveDraft.offsets256[7] = -52;
+        navigation_.grooveCursor = 5U;
+        navigation_.grooveZoomSteps = 16U;
+        renderCurrent("groove-editor-custom", "Custom Groove graphical editor");
+
+        reset();
+        navigation_.screen = ui::Screen::GrooveRecorder;
+        navigation_.grooveDraft.length = 16U;
+        navigation_.grooveDraft.offsets256[0] = 0;
+        navigation_.grooveDraft.offsets256[1] = 40;
+        navigation_.grooveDraft.offsets256[2] = -32;
+        navigation_.grooveRecordCapturedMask = 0x7ULL;
+        navigation_.grooveRecordState = ui::GrooveRecordState::Recording;
+        navigation_.grooveRecordPlayheadStep = 4U;
+        navigation_.grooveRecordPlayheadPhase256 = 96U;
+        navigation_.grooveZoomSteps = 16U;
+        renderCurrent("groove-record-live", "Custom Groove tap recorder while recording");
     }
 
     void renderBootStates() {
@@ -413,6 +442,22 @@ private:
             }
             renderCurrent(kNames[index], kDescriptions[index]);
         }
+
+        reset();
+        navigation_.screen = ui::Screen::InformationPopover;
+        std::snprintf(
+            navigation_.informationPopoverTitle.data(),
+            navigation_.informationPopoverTitle.size(),
+            "%s",
+            "AUTHOR");
+        std::snprintf(
+            navigation_.informationPopoverValue.data(),
+            navigation_.informationPopoverValue.size(),
+            "%s",
+            "AXEL NAPOLITANO");
+        renderCurrent(
+            "settings-info-author-popover",
+            "Full read-only author value opened from the truncated Info row");
 
         reset();
         navigation_.screen = ui::Screen::Settings;

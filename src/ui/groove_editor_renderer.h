@@ -22,6 +22,9 @@ public:
     /** @brief Renders the current draft with beat/step grid and signed microtiming markers. */
     void renderEditor(const NavigationState& navigation);
 
+    /** @brief Renders the TAP recorder with captured markers, playhead, and Pre-Count status. */
+    void renderRecorder(const NavigationState& navigation);
+
     /** @brief Renders the ten-slot fixed-record Custom Groove library. */
     void renderSlots(
         const NavigationState& navigation,

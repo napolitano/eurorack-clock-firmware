@@ -19,6 +19,8 @@ enum class ButtonEdge : std::uint8_t { None, Pressed, Released };
 struct ButtonSample {
     ButtonEdge edge = ButtonEdge::None;
     bool pressed = false;
+    /** Raw physical transition timestamp associated with this validated edge. */
+    std::uint32_t edgeTimestampUs = 0U;
 };
 
 /** @brief Complete control-panel sample produced once per application loop. */
@@ -71,6 +73,7 @@ private:
         bool rawPressed_ = false;
         bool stablePressed_ = false;
         std::uint32_t rawChangedAtMs_ = 0U;
+        std::uint32_t rawChangedAtUs_ = 0U;
     };
 
     /** @brief Converts the wrapping quadrature transition counter into complete detents. */

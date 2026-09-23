@@ -250,6 +250,28 @@ void SettingsRenderer::renderSettings(
                 std::snprintf(row.value, sizeof(row.value), "%u", navigation.grooveDraft.length);
             }
         }
+        if (navigation.settingsPage == SettingsPage::GrooveRecordMenu) {
+            if (rowIndex == 0U) {
+                std::snprintf(
+                    row.value, sizeof(row.value), "%s",
+                    text::get(navigation.grooveRecordMode == GrooveRecordMode::OneShot
+                        ? text::TextId::OneShot : text::TextId::Endless));
+            } else if (rowIndex == 1U) {
+                if (navigation.grooveRecordCountInBeats == 0U) {
+                    std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Off));
+                } else {
+                    std::snprintf(row.value, sizeof(row.value), "%u", navigation.grooveRecordCountInBeats);
+                }
+            } else if (rowIndex == 2U) {
+                std::snprintf(row.value, sizeof(row.value), "%u", navigation.grooveDraft.length);
+            } else if (rowIndex == 3U) {
+                if (navigation.grooveZoomSteps == 0U) {
+                    std::snprintf(row.value, sizeof(row.value), "%s", text::get(text::TextId::Fit));
+                } else {
+                    std::snprintf(row.value, sizeof(row.value), "%u", navigation.grooveZoomSteps);
+                }
+            }
+        }
         const bool selected = rowIndex == navigation.cursor;
         if (selected) {
             display_.fillRectangle(0, y - 1, 124, 9, hal::PixelColor::White);
