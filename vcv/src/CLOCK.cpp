@@ -119,12 +119,17 @@ struct ClockModule final : Module {
     std::unique_ptr<clockfw::vcv::ClockVcvRuntime> runtime{};
     std::filesystem::path statePath{};
     std::array<std::atomic<std::uint8_t>, clockfw::hal::OledDisplay::kFramebufferSize> display{};
+    enum class EncoderGestureMode : std::uint8_t {
+        Idle,
+        Pending,
+        Press,
+        Rotate
+    };
+
     std::atomic<int> queuedEncoderDetents{0};
-    std::atomic<bool> encoderPointerDown{false};
-    std::atomic<bool> encoderPointerDragging{false};
-    std::atomic<bool> encoderClickReleased{false};
-    bool encoderPressForwarded = false;
-    double encoderStationarySeconds = 0.0;
+    std::atomic<EncoderGestureMode> encoderGestureMode{EncoderGestureMode::Idle};
+    std::atomic<bool> encoderShortClickReleased{false};
+    double encoderPendingSeconds = 0.0;
     double encoderClickPulseSeconds = 0.0;
     std::uint32_t displayDivider = 0U;
     bool ownsHostRuntime = false;
@@ -180,17 +185,28 @@ struct ClockModule final : Module {
         }
     }
 
-    void setEncoderPointerState(const bool down, const bool dragging) noexcept {
-        encoderPointerDragging.store(dragging, std::memory_order_relaxed);
-        encoderPointerDown.store(down, std::memory_order_release);
+    void beginEncoderGesture() noexcept {
+        encoderGestureMode.store(EncoderGestureMode::Pending, std::memory_order_release);
     }
 
-    void releaseEncoderPointer(const bool wasDrag) noexcept {
-        if (!wasDrag) {
-            encoderClickReleased.store(true, std::memory_order_release);
+    bool beginEncoderRotation() noexcept {
+        EncoderGestureMode expected = EncoderGestureMode::Pending;
+        if (encoderGestureMode.compare_exchange_strong(
+                expected,
+                EncoderGestureMode::Rotate,
+                std::memory_order_acq_rel,
+                std::memory_order_acquire)) {
+            return true;
         }
-        encoderPointerDragging.store(false, std::memory_order_relaxed);
-        encoderPointerDown.store(false, std::memory_order_release);
+        return expected == EncoderGestureMode::Rotate;
+    }
+
+    void endEncoderGesture() noexcept {
+        const EncoderGestureMode finished = encoderGestureMode.exchange(
+            EncoderGestureMode::Idle, std::memory_order_acq_rel);
+        if (finished == EncoderGestureMode::Pending) {
+            encoderShortClickReleased.store(true, std::memory_order_release);
+        }
     }
 
     void process(const ProcessArgs& args) override {
@@ -206,40 +222,40 @@ struct ClockModule final : Module {
             runtime->rotateEncoder(encoderDetents);
         }
 
-        // One physical control must support two distinct gestures without overlapping Rack
-        // widgets: vertical drag is endless rotation; a stationary hold is encoder push. A short
-        // click that ends before the push arm delay is replayed as a debounced 40-ms press.
-        constexpr double kEncoderPushArmSeconds = 0.060;
+        // One physical control supports two mutually exclusive gestures. A newly pressed encoder
+        // stays pending while the UI determines whether the user starts a vertical drag. Movement
+        // classifies the complete gesture as rotation; a stationary hold becomes push only after a
+        // deliberate grace period. Once classified, a gesture never changes type until release.
+        constexpr double kEncoderPushArmSeconds = 0.180;
         constexpr double kEncoderClickPulseSeconds = 0.040;
-        const bool encoderDown = encoderPointerDown.load(std::memory_order_acquire);
-        const bool encoderDragging = encoderPointerDragging.load(std::memory_order_relaxed);
-        const bool encoderClickEnded = encoderClickReleased.exchange(
-            false, std::memory_order_acq_rel);
-        if (encoderDown && !encoderDragging) {
-            encoderStationarySeconds += static_cast<double>(args.sampleTime);
-            if (encoderStationarySeconds >= kEncoderPushArmSeconds) {
-                encoderPressForwarded = true;
+        EncoderGestureMode encoderMode = encoderGestureMode.load(std::memory_order_acquire);
+        if (encoderMode == EncoderGestureMode::Pending) {
+            encoderPendingSeconds += static_cast<double>(args.sampleTime);
+            if (encoderPendingSeconds >= kEncoderPushArmSeconds) {
+                EncoderGestureMode expected = EncoderGestureMode::Pending;
+                if (encoderGestureMode.compare_exchange_strong(
+                        expected,
+                        EncoderGestureMode::Press,
+                        std::memory_order_acq_rel,
+                        std::memory_order_acquire)) {
+                    encoderMode = EncoderGestureMode::Press;
+                } else {
+                    encoderMode = expected;
+                }
             }
-        } else if (encoderDragging) {
-            encoderStationarySeconds = 0.0;
-            encoderPressForwarded = false;
+        } else {
+            encoderPendingSeconds = 0.0;
         }
 
-        if (!encoderDown) {
-            if (encoderClickEnded && !encoderPressForwarded) {
-                encoderClickPulseSeconds = kEncoderClickPulseSeconds;
-            }
-            encoderStationarySeconds = 0.0;
+        if (encoderShortClickReleased.exchange(false, std::memory_order_acq_rel)) {
+            encoderClickPulseSeconds = kEncoderClickPulseSeconds;
         }
 
-        bool encoderPressed = encoderDown && !encoderDragging && encoderPressForwarded;
+        bool encoderPressed = encoderMode == EncoderGestureMode::Press;
         if (encoderClickPulseSeconds > 0.0) {
             encoderPressed = true;
             encoderClickPulseSeconds = std::max(
                 0.0, encoderClickPulseSeconds - static_cast<double>(args.sampleTime));
-        }
-        if (!encoderDown && encoderClickPulseSeconds <= 0.0) {
-            encoderPressForwarded = false;
         }
 
         clockfw::vcv::PanelControls controls{};
@@ -420,13 +436,13 @@ struct ClockPanelLabels final : Widget {
         drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY), "STOP", 7.2F, primary);
         drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY + labelLineGapMm), "BACK", 6.5F, secondary);
 
-        const float inputLabelY = kSyncCenter.y + kJackNutDiameterMm * 0.5F + 1.4F;
+        const float inputLabelY = kSyncCenter.y + kJackNutDiameterMm * 0.5F + 2.4F;
         drawLabel(args.vg, panelPoint(kSyncCenter.x, inputLabelY), "IN 1", 7.2F, primary);
         drawLabel(args.vg, panelPoint(kResetCenter.x, inputLabelY), "IN 2", 7.2F, primary);
 
         for (std::size_t index = 0U; index < kOutputCenters.size(); ++index) {
             const auto& center = kOutputCenters[index];
-            const float labelY = center.y + kJackNutDiameterMm * 0.5F + 1.5F;
+            const float labelY = center.y + kJackNutDiameterMm * 0.5F + 2.5F;
             const std::string label = std::to_string(index + 1U);
             drawLabel(args.vg, panelPoint(center.x, labelY), label.c_str(), 7.6F, primary);
         }
@@ -438,22 +454,22 @@ struct ClockPanelLabels final : Widget {
 /**
  * @brief Endless push encoder with conflict-free Rack gestures.
  *
- * Click-dragging vertically rotates the encoder in discrete detents, matching normal Rack knob
- * interaction while preserving the hardware's endless nature. A stationary click/hold is the
- * physical encoder push. Because both gestures are resolved by this one widget, there is no
- * overlapping centre switch to steal drags and no bounded parameter whose indicator can jump.
+ * Press-and-drag vertically rotates the encoder in discrete detents, matching normal Rack knob
+ * interaction while preserving the hardware's endless nature. A quick stationary click becomes a
+ * short push on release; a stationary hold becomes a live push only after a grace period. Gesture
+ * classification is exclusive for the full mouse-down interval, so rotation cannot also click.
  */
 struct ClockEncoderWidget final : widget::OpaqueWidget {
     ClockModule* clockModule = nullptr;
     float visibleDiameterPx = 0.0F;
     float dragAccumulatorPx = 0.0F;
-    float dragDistancePx = 0.0F;
+    float verticalTravelPx = 0.0F;
     float indicatorAngle = -1.57079632679489661923F;
     bool pointerDown = false;
-    bool dragging = false;
+    bool rotating = false;
 
     static constexpr float kPi = 3.14159265358979323846F;
-    static constexpr float kDragThresholdPx = 3.0F;
+    static constexpr float kDragThresholdPx = 2.0F;
     static constexpr float kPixelsPerDetent = 5.0F;
     static constexpr float kAnglePerDetent = 2.0F * kPi / 20.0F;
 
@@ -504,11 +520,11 @@ struct ClockEncoderWidget final : widget::OpaqueWidget {
         }
         if (event.action == GLFW_PRESS) {
             pointerDown = true;
-            dragging = false;
+            rotating = false;
             dragAccumulatorPx = 0.0F;
-            dragDistancePx = 0.0F;
+            verticalTravelPx = 0.0F;
             if (clockModule != nullptr) {
-                clockModule->setEncoderPointerState(true, false);
+                clockModule->beginEncoderGesture();
             }
             event.consume(this);
         }
@@ -524,14 +540,11 @@ struct ClockEncoderWidget final : widget::OpaqueWidget {
         if (event.button != GLFW_MOUSE_BUTTON_LEFT || !pointerDown) {
             return;
         }
-        dragDistancePx += event.mouseDelta.norm();
-        if (!dragging && dragDistancePx >= kDragThresholdPx) {
-            dragging = true;
-            if (clockModule != nullptr) {
-                clockModule->setEncoderPointerState(true, true);
-            }
+        verticalTravelPx += std::abs(event.mouseDelta.y);
+        if (!rotating && verticalTravelPx >= kDragThresholdPx && clockModule != nullptr) {
+            rotating = clockModule->beginEncoderRotation();
         }
-        if (dragging) {
+        if (rotating) {
             dragAccumulatorPx += -event.mouseDelta.y;
             const int detents = static_cast<int>(dragAccumulatorPx / kPixelsPerDetent);
             if (detents != 0) {
@@ -549,11 +562,11 @@ struct ClockEncoderWidget final : widget::OpaqueWidget {
         APP->window->cursorUnlock();
         pointerDown = false;
         if (clockModule != nullptr) {
-            clockModule->releaseEncoderPointer(dragging);
+            clockModule->endEncoderGesture();
         }
-        dragging = false;
+        rotating = false;
         dragAccumulatorPx = 0.0F;
-        dragDistancePx = 0.0F;
+        verticalTravelPx = 0.0F;
     }
 
     void onHoverScroll(const HoverScrollEvent& event) override {
@@ -612,8 +625,8 @@ struct ClockWidget final : ModuleWidget {
         addChild(display);
 
         // The physical encoder is an endless relative control, not a bounded Rack parameter.
-        // One combined widget resolves vertical drag versus stationary push so the gestures cannot
-        // overlap or steal events from each other.
+        // One combined widget classifies each mouse-down as either vertical rotation or push and
+        // keeps that classification until release, so the two gestures cannot overlap.
         constexpr float kEncoderHitDiameterMm = 12.0F;
         const Vec encoderCenter = panelPoint(kEncoderCenter);
         const Vec encoderSize = mm2px(Vec(kEncoderHitDiameterMm, kEncoderHitDiameterMm));

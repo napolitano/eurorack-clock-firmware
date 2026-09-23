@@ -209,11 +209,11 @@ def generated_panel_svg(parser: configparser.ConfigParser) -> str:
     panel_center_x = ox + pw * 0.5
     brand_y = oy + to_px(123.15)
     button_label_y = play.y + button_r + to_px(1.25)
-    input_label_y = sync.y + jack_nut_r + to_px(1.4)
+    input_label_y = sync.y + jack_nut_r + to_px(2.4)
     label_line_gap = to_px(2.25)
 
     # Reuse the canonical project-owned CLOCK wordmark instead of a text approximation.
-    logo_width = to_px(36.5)
+    logo_width = to_px(33.0)
     logo_scale = logo_width / 128.0
     logo_height = 41.0 * logo_scale
     logo_x = panel_center_x - logo_width * 0.5
@@ -261,7 +261,7 @@ def generated_panel_svg(parser: configparser.ConfigParser) -> str:
     for index, center, led in outputs:
         a(f'  <circle class="led" cx="{fmt(led.x)}" cy="{fmt(led.y)}" r="{fmt(led_r)}"/>')
         jack(center)
-        label_y = center.y + jack_nut_r + to_px(1.5)
+        label_y = center.y + jack_nut_r + to_px(2.5)
         a(f'  <text class="label output" x="{fmt(center.x)}" y="{fmt(label_y)}" text-anchor="middle">{index}</text>')
 
     a(f'  <text class="label brand" x="{fmt(panel_center_x)}" y="{fmt(brand_y)}" text-anchor="middle">SOUTH SIGNAL LAB</text>')

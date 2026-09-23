@@ -8,7 +8,7 @@
   </style></defs>
   <rect width="150" height="380" fill="#050506"/>
   <rect x="0.4429" y="0.2854" width="149.1142" height="379.4291" fill="#0a0a0b" stroke="#343438" stroke-width="0.8"/>
-  <g transform="translate(21.1122 2.6476) scale(0.842)" fill="none" stroke="#f4f4f4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+  <g transform="translate(26.2795 2.6476) scale(0.7613)" fill="none" stroke="#f4f4f4" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
     <path d="M28 12 C25 10 22 9 18 9 C11 10 8 15 8 20 C8 25 11 30 18 31 C22 31 25 30 28 28"/>
     <path d="M38 10 L38 31 L49 31"/>
     <path d="M60 9 C65 9 70 14 70 20 C70 26 65 31 60 31 C55 31 50 26 50 20 C50 14 55 9 60 9 Z"/>
@@ -36,47 +36,47 @@
   <circle class="jackNut" cx="55.5322" cy="207.4738" r="11.5896"/>
   <circle class="jackBush" cx="55.5322" cy="207.4738" r="8.8583"/>
   <circle class="jackHole" cx="55.5322" cy="207.4738" r="5.315"/>
-  <text class="label input" x="21.9815" y="223.1972" text-anchor="middle">IN 1</text>
-  <text class="label input" x="55.5322" y="223.1972" text-anchor="middle">IN 2</text>
+  <text class="label input" x="21.9815" y="226.15" text-anchor="middle">IN 1</text>
+  <text class="label input" x="55.5322" y="226.15" text-anchor="middle">IN 2</text>
   <circle class="led" cx="19.9107" cy="265.7193" r="4.4291"/>
   <circle class="jackNut" cx="19.9107" cy="283.1931" r="11.5896"/>
   <circle class="jackBush" cx="19.9107" cy="283.1931" r="8.8583"/>
   <circle class="jackHole" cx="19.9107" cy="283.1931" r="5.315"/>
-  <text class="label output" x="19.9107" y="299.2118" text-anchor="middle">1</text>
+  <text class="label output" x="19.9107" y="302.1646" text-anchor="middle">1</text>
   <circle class="led" cx="53.4614" cy="265.7193" r="4.4291"/>
   <circle class="jackNut" cx="53.4614" cy="283.1931" r="11.5896"/>
   <circle class="jackBush" cx="53.4614" cy="283.1931" r="8.8583"/>
   <circle class="jackHole" cx="53.4614" cy="283.1931" r="5.315"/>
-  <text class="label output" x="53.4614" y="299.2118" text-anchor="middle">2</text>
+  <text class="label output" x="53.4614" y="302.1646" text-anchor="middle">2</text>
   <circle class="led" cx="87.0121" cy="265.7193" r="4.4291"/>
   <circle class="jackNut" cx="87.0121" cy="283.1931" r="11.5896"/>
   <circle class="jackBush" cx="87.0121" cy="283.1931" r="8.8583"/>
   <circle class="jackHole" cx="87.0121" cy="283.1931" r="5.315"/>
-  <text class="label output" x="87.0121" y="299.2118" text-anchor="middle">3</text>
+  <text class="label output" x="87.0121" y="302.1646" text-anchor="middle">3</text>
   <circle class="led" cx="120.5628" cy="265.7193" r="4.4291"/>
   <circle class="jackNut" cx="120.5628" cy="283.1931" r="11.5896"/>
   <circle class="jackBush" cx="120.5628" cy="283.1931" r="8.8583"/>
   <circle class="jackHole" cx="120.5628" cy="283.1931" r="5.315"/>
-  <text class="label output" x="120.5628" y="299.2118" text-anchor="middle">4</text>
+  <text class="label output" x="120.5628" y="302.1646" text-anchor="middle">4</text>
   <circle class="led" cx="19.9107" cy="314.8121" r="4.4291"/>
   <circle class="jackNut" cx="19.9107" cy="332.2859" r="11.5896"/>
   <circle class="jackBush" cx="19.9107" cy="332.2859" r="8.8583"/>
   <circle class="jackHole" cx="19.9107" cy="332.2859" r="5.315"/>
-  <text class="label output" x="19.9107" y="348.3046" text-anchor="middle">5</text>
+  <text class="label output" x="19.9107" y="351.2574" text-anchor="middle">5</text>
   <circle class="led" cx="53.4614" cy="314.8121" r="4.4291"/>
   <circle class="jackNut" cx="53.4614" cy="332.2859" r="11.5896"/>
   <circle class="jackBush" cx="53.4614" cy="332.2859" r="8.8583"/>
   <circle class="jackHole" cx="53.4614" cy="332.2859" r="5.315"/>
-  <text class="label output" x="53.4614" y="348.3046" text-anchor="middle">6</text>
+  <text class="label output" x="53.4614" y="351.2574" text-anchor="middle">6</text>
   <circle class="led" cx="87.0121" cy="314.8121" r="4.4291"/>
   <circle class="jackNut" cx="87.0121" cy="332.2859" r="11.5896"/>
   <circle class="jackBush" cx="87.0121" cy="332.2859" r="8.8583"/>
   <circle class="jackHole" cx="87.0121" cy="332.2859" r="5.315"/>
-  <text class="label output" x="87.0121" y="348.3046" text-anchor="middle">7</text>
+  <text class="label output" x="87.0121" y="351.2574" text-anchor="middle">7</text>
   <circle class="led" cx="120.5628" cy="314.8121" r="4.4291"/>
   <circle class="jackNut" cx="120.5628" cy="332.2859" r="11.5896"/>
   <circle class="jackBush" cx="120.5628" cy="332.2859" r="8.8583"/>
   <circle class="jackHole" cx="120.5628" cy="332.2859" r="5.315"/>
-  <text class="label output" x="120.5628" y="348.3046" text-anchor="middle">8</text>
+  <text class="label output" x="120.5628" y="351.2574" text-anchor="middle">8</text>
   <text class="label brand" x="75" y="363.9173" text-anchor="middle">SOUTH SIGNAL LAB</text>
 </svg>

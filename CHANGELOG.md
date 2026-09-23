@@ -31,6 +31,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Draw Rack panel lettering through a NanoVG overlay using Rack's bundled UI font because Rack's NanoSVG loader does not render SVG `<text>` nodes; keep the SVG text only for standalone previews/documentation.
 - Refine the functional VCV panel hierarchy: reuse the canonical CLOCK vector wordmark at larger scale, enlarge SOUTH SIGNAL LAB, enlarge all control/port labels, render button secondary functions in grey without slash separators, keep input jack labels to IN 1 / IN 2, keep every label below its hardware, and leave the encoder intentionally unlabelled.
 - Replace the bounded overlapping Rack knob/push pair with one endless relative encoder widget: vertical click-drag produces hardware-style detents, stationary click/hold remains encoder push, mouse wheel remains relative, and the indicator rotates continuously without parameter-boundary jumps.
+- Make Rack encoder gesture classification exclusive: early vertical movement locks a mouse-down to rotation, stationary short clicks are replayed only on release, and stationary holds arm push after a grace period so drag and click cannot fire together.
+- Reduce the VCV CLOCK wordmark scale slightly and increase jack-label clearance while preserving simulator-derived control geometry.
 - Replace the manual 75 ms VCV activity-latch timer with Rack's bounded light smoothing and dark inactive panel apertures, while leaving the real 0/+5-V gate outputs instantaneous and unchanged.
 - Add adapter regressions that verify factory One Clock rising-edge periodicity and eight-output phase coherence at 44.1, 48 and 96 kHz Rack sample rates.
 
