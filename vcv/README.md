@@ -17,9 +17,21 @@ Implemented in this first slice:
 - SYNC and RST feed the real external-input and synchronization services after a small Rack-voltage hysteresis boundary;
 - OUT 1..8 expose the actual logical gate states as **0/+5 V**, matching the hardware contract;
 - Rack patch state embeds CLOCK's complete logical persistence image instead of inventing a second preset/schema format;
-- a deliberately plain 10 HP functional panel is included until the physical front-panel artwork exists.
+- the functional 10 HP Rack panel is generated from `../sim/panel_layout.ini`, so OLED, encoder, transport buttons, SYNC/RST, eight 3 mm activity LEDs and the 4x2 output matrix use the same millimetre geometry as the native simulator; no independent Rack layout is maintained.
 
 Current limitation: the existing host HAL and `ClockApplication` callback boundary own process-global state. The experimental Rack shell therefore permits **one CLOCK instance per Rack process** and visibly disables additional instances rather than allowing silent cross-instance corruption. Multi-instance support requires a later host-HAL instance-context refactor; it is not papered over in this initial port.
+
+## Front-panel geometry
+
+`sim/panel_layout.ini` is the single geometry source for the native simulator, the manual front-panel illustration and the VCV Rack shell. Run:
+
+```bash
+python scripts/generate_vcv_panel.py
+```
+
+after changing panel geometry. This regenerates the Rack panel SVG, the C++ millimetre coordinate header, the encoder artwork and the three transport-button frame pairs. CI runs the same command in `--check` mode and rejects stale Rack panel assets.
+
+The Rack module deliberately keeps the current functional appearance rather than inventing final front-panel artwork. The physical arrangement is not provisional: it follows the simulator specification — OLED upper left, push encoder upper right, PLAY/TAP/STOP in one row, SYNC/RST below them on the left, and OUT 1–8 as two rows of four with one 3 mm red activity LED above each jack. Clicking the encoder without dragging produces the encoder-push gesture; dragging or scrolling it turns the same encoder parameter.
 
 ## Source sharing
 

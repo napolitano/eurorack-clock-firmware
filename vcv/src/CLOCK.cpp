@@ -17,6 +17,7 @@
 #include <string>
 
 #include "clock_vcv_runtime.h"
+#include "generated_panel_layout.hpp"
 
 namespace {
 
@@ -103,6 +104,14 @@ struct ClockModule final : Module {
     };
 
     enum LightId {
+        OUT1_LIGHT,
+        OUT2_LIGHT,
+        OUT3_LIGHT,
+        OUT4_LIGHT,
+        OUT5_LIGHT,
+        OUT6_LIGHT,
+        OUT7_LIGHT,
+        OUT8_LIGHT,
         LIGHTS_LEN
     };
 
@@ -111,6 +120,8 @@ struct ClockModule final : Module {
     std::array<std::atomic<std::uint8_t>, clockfw::hal::OledDisplay::kFramebufferSize> display{};
     int lastEncoderDetent = 0;
     std::uint32_t displayDivider = 0U;
+    std::atomic<bool> encoderPushRequested{false};
+    std::uint32_t encoderPushSamplesRemaining = 0U;
     bool ownsHostRuntime = false;
 
     ClockModule() {
@@ -145,6 +156,10 @@ struct ClockModule final : Module {
         }
     }
 
+    void requestEncoderPush() noexcept {
+        encoderPushRequested.store(true, std::memory_order_release);
+    }
+
     ~ClockModule() override {
         runtime.reset();
         if (!statePath.empty()) {
@@ -174,8 +189,17 @@ struct ClockModule final : Module {
             lastEncoderDetent = 0;
         }
 
+        if (encoderPushRequested.exchange(false, std::memory_order_acq_rel)) {
+            encoderPushSamplesRemaining = static_cast<std::uint32_t>(
+                std::max(1.0F, args.sampleRate * 0.050F));
+        }
+
         clockfw::vcv::PanelControls controls{};
-        controls.encoderPressed = params[ENCODER_PUSH_PARAM].getValue() >= 0.5F;
+        controls.encoderPressed = params[ENCODER_PUSH_PARAM].getValue() >= 0.5F ||
+            encoderPushSamplesRemaining > 0U;
+        if (encoderPushSamplesRemaining > 0U) {
+            --encoderPushSamplesRemaining;
+        }
         controls.playPressed = params[PLAY_PARAM].getValue() >= 0.5F;
         controls.tapPressed = params[TAP_PARAM].getValue() >= 0.5F;
         controls.stopPressed = params[STOP_PARAM].getValue() >= 0.5F;
@@ -191,8 +215,9 @@ struct ClockModule final : Module {
             resetConnected ? inputs[RESET_INPUT].getVoltage() : 0.0F);
 
         for (int index = 0; index < 8; ++index) {
-            outputs[OUT1_OUTPUT + index].setVoltage(
-                runtime->gateVoltage(static_cast<std::size_t>(index)));
+            const float gateVoltage = runtime->gateVoltage(static_cast<std::size_t>(index));
+            outputs[OUT1_OUTPUT + index].setVoltage(gateVoltage);
+            lights[OUT1_LIGHT + index].setBrightness(gateVoltage > 0.0F ? 1.0F : 0.0F);
         }
 
         ++displayDivider;
@@ -290,36 +315,89 @@ struct ClockDisplayWidget final : Widget {
     }
 };
 
+struct ClockEncoderKnob final : app::SvgKnob {
+    ClockModule* clockModule = nullptr;
+
+    ClockEncoderKnob() {
+        constexpr float kPi = 3.14159265358979323846F;
+        minAngle = -0.83F * kPi;
+        maxAngle = 0.83F * kPi;
+        snap = true;
+        setSvg(window::Svg::load(asset::plugin(pluginInstance, "res/encoder.svg")));
+    }
+
+    void onAction(const ActionEvent& e) override {
+        (void)e;
+        if (clockModule != nullptr) {
+            clockModule->requestEncoderPush();
+        }
+    }
+};
+
+struct ClockPlayButton final : app::SvgSwitch {
+    ClockPlayButton() {
+        momentary = true;
+        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/button-play-0.svg")));
+        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/button-play-1.svg")));
+    }
+};
+
+struct ClockTapButton final : app::SvgSwitch {
+    ClockTapButton() {
+        momentary = true;
+        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/button-tap-0.svg")));
+        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/button-tap-1.svg")));
+    }
+};
+
+struct ClockStopButton final : app::SvgSwitch {
+    ClockStopButton() {
+        momentary = true;
+        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/button-stop-0.svg")));
+        addFrame(window::Svg::load(asset::plugin(pluginInstance, "res/button-stop-1.svg")));
+    }
+};
+
 struct ClockWidget final : ModuleWidget {
+    static Vec panelPoint(const clockfw::vcv::panel::PointMm& point) {
+        using namespace clockfw::vcv::panel;
+        return mm2px(Vec(point.x + kPanelOffsetXmm, point.y + kPanelOffsetYmm));
+    }
+
     explicit ClockWidget(ClockModule* module) {
+        using namespace clockfw::vcv::panel;
+
         setModule(module);
         setPanel(createPanel(asset::plugin(pluginInstance, "res/CLOCK.svg")));
 
-        auto* display = createWidget<ClockDisplayWidget>(Vec(11.0F, 31.0F));
-        display->box.size = Vec(128.0F, 64.0F);
+        auto* display = createWidget<ClockDisplayWidget>(
+            mm2px(Vec(kDisplay.x + kPanelOffsetXmm, kDisplay.y + kPanelOffsetYmm)));
+        display->box.size = mm2px(Vec(kDisplay.width, kDisplay.height));
         display->module = module;
         addChild(display);
 
-        addParam(createParamCentered<RoundBlackKnob>(Vec(75.0F, 129.0F), module, ClockModule::ENCODER_PARAM));
-        addParam(createParamCentered<LEDButton>(Vec(75.0F, 154.0F), module, ClockModule::ENCODER_PUSH_PARAM));
+        auto* encoder = createParamCentered<ClockEncoderKnob>(
+            panelPoint(kEncoderCenter), module, ClockModule::ENCODER_PARAM);
+        encoder->clockModule = module;
+        addParam(encoder);
 
-        addParam(createParamCentered<LEDButton>(Vec(35.0F, 190.0F), module, ClockModule::PLAY_PARAM));
-        addParam(createParamCentered<LEDButton>(Vec(75.0F, 190.0F), module, ClockModule::TAP_PARAM));
-        addParam(createParamCentered<LEDButton>(Vec(115.0F, 190.0F), module, ClockModule::STOP_PARAM));
+        addParam(createParamCentered<ClockPlayButton>(panelPoint(kPlayCenter), module, ClockModule::PLAY_PARAM));
+        addParam(createParamCentered<ClockTapButton>(panelPoint(kTapCenter), module, ClockModule::TAP_PARAM));
+        addParam(createParamCentered<ClockStopButton>(panelPoint(kStopCenter), module, ClockModule::STOP_PARAM));
 
-        addInput(createInputCentered<PJ301MPort>(Vec(38.0F, 229.0F), module, ClockModule::SYNC_INPUT));
-        addInput(createInputCentered<PJ301MPort>(Vec(112.0F, 229.0F), module, ClockModule::RESET_INPUT));
+        addInput(createInputCentered<PJ301MPort>(panelPoint(kSyncCenter), module, ClockModule::SYNC_INPUT));
+        addInput(createInputCentered<PJ301MPort>(panelPoint(kResetCenter), module, ClockModule::RESET_INPUT));
 
-        constexpr float kOutputX[2] = {38.0F, 112.0F};
-        constexpr float kOutputY[4] = {265.0F, 298.0F, 331.0F, 364.0F};
-        int outputIndex = 0;
-        for (int row = 0; row < 4; ++row) {
-            for (int column = 0; column < 2; ++column) {
-                addOutput(createOutputCentered<PJ301MPort>(
-                    Vec(kOutputX[column], kOutputY[row]), module,
-                    ClockModule::OUT1_OUTPUT + outputIndex));
-                ++outputIndex;
-            }
+        for (int index = 0; index < 8; ++index) {
+            const std::size_t position = static_cast<std::size_t>(index);
+            addChild(createLightCentered<MediumLight<RedLight>>(
+                panelPoint(kLedCenters[position]), module, ClockModule::OUT1_LIGHT + index));
+            addOutput(createOutputCentered<PJ301MPort>(
+                panelPoint(kOutputCenters[position]), module, ClockModule::OUT1_OUTPUT + index));
+        }
+
+        for (const PointMm& screw : kScrewCenters) {
+            addChild(createWidgetCentered<ScrewSilver>(panelPoint(screw)));
         }
     }
 };

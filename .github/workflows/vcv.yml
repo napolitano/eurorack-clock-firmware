@@ -45,6 +45,9 @@ jobs:
           unzip -q "$RUNNER_TEMP/Rack-SDK.zip" -d "$RUNNER_TEMP"
           test -f "$RUNNER_TEMP/Rack-SDK/plugin.mk"
 
+      - name: Verify VCV panel is generated from simulator geometry
+        run: python scripts/generate_vcv_panel.py --check
+
       - name: Build CLOCK VCV plugin
         run: make -C vcv -j2 RACK_DIR="$RUNNER_TEMP/Rack-SDK"
 

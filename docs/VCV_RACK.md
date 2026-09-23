@@ -6,7 +6,13 @@ Status: **EXPERIMENTAL / post-1.1.0**.
 
 The VCV Rack track exists so prospective builders can try CLOCK before committing to the hardware build. Its product requirement is therefore unusually strict: it should behave like CLOCK, not merely reproduce a similar feature list.
 
-The initial implementation lives in [`../vcv/`](../vcv/). It builds the production CLOCK sources and uses the same host runtime boundary already exercised by the native simulator. The Rack-specific code is responsible for Rack sample-time adaptation, Rack ports/controls, the functional Rack panel, framebuffer presentation and Rack patch serialization. Musical timing, Groove/Euclid/Sequencer behavior, transport, settings and rendering stay in the production code.
+The initial implementation lives in [`../vcv/`](../vcv/). It builds the production CLOCK sources and uses the same host runtime boundary already exercised by the native simulator. The Rack-specific code is responsible for Rack sample-time adaptation, Rack ports/controls, framebuffer presentation and Rack patch serialization. Musical timing, Groove/Euclid/Sequencer behavior, transport, settings and rendering stay in the production code. Front-panel geometry is not Rack-specific: `sim/panel_layout.ini` is the shared millimetre source for the simulator, manual illustration and generated Rack panel.
+
+## Functional panel contract
+
+The Trial-First module must teach the hardware layout rather than merely expose the same feature list. `scripts/generate_vcv_panel.py` therefore derives the Rack panel and C++ widget coordinates directly from `sim/panel_layout.ini`. The current geometry is the same 10 HP / 3U arrangement used by the simulator: OLED at the upper left, push encoder at the upper right, PLAY/TAP/STOP across one row, SYNC/RST below, and eight output jacks in a 4x2 matrix with 3 mm activity LEDs immediately above their matching outputs.
+
+The appearance is intentionally functional until final hardware artwork exists. Geometry changes belong in the simulator INI and are then regenerated into Rack; hand-editing an independent VCV placement is a regression.
 
 ## Current verified boundary
 

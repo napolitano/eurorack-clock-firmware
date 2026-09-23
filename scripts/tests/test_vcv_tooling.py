@@ -7,7 +7,10 @@ License: PolyForm-Noncommercial-1.0.0
 from __future__ import annotations
 
 import json
+import configparser
 import re
+import subprocess
+import sys
 import unittest
 from pathlib import Path
 
@@ -41,12 +44,37 @@ class VcvManifestTests(unittest.TestCase):
         self.assertNotRegex(shell, r"bpm|euclid|grooveAmount|sequencerStep")
 
 
+
+    def test_panel_is_generated_from_native_simulator_geometry(self) -> None:
+        subprocess.run(
+            [sys.executable, str(ROOT / "scripts/generate_vcv_panel.py"), "--check"],
+            cwd=ROOT,
+            check=True,
+        )
+        parser = configparser.ConfigParser(interpolation=None)
+        parser.read(ROOT / "sim/panel_layout.ini", encoding="utf-8")
+        generated = (ROOT / "vcv/generated_panel_layout.hpp").read_text(encoding="utf-8")
+        shell = (ROOT / "vcv/src/CLOCK.cpp").read_text(encoding="utf-8")
+        panel = (ROOT / "vcv/res/CLOCK.svg").read_text(encoding="utf-8")
+
+        self.assertIn(f"kPanelWidthMm = {parser.getfloat('panel', 'width_mm'):g}F", generated)
+        self.assertIn(f"kPanelHeightMm = {parser.getfloat('panel', 'height_mm'):g}F", generated)
+        self.assertIn("kOutputCenters", shell)
+        self.assertIn("kLedCenters", shell)
+        self.assertIn("MediumLight<RedLight>", shell)
+        self.assertIn("requestEncoderPush", shell)
+        self.assertNotIn("constexpr float kOutputX[2]", shell)
+        self.assertNotIn("Vec(75.0F, 129.0F)", shell)
+        self.assertIn("GENERATED from sim/panel_layout.ini", panel)
+        self.assertIn("4x2", (ROOT / "vcv/README.md").read_text(encoding="utf-8"))
+
 class VcvWorkflowTests(unittest.TestCase):
     def test_workflow_uses_node24_generation_actions_and_pinned_sdk(self) -> None:
         workflow = (ROOT / ".github/workflows/vcv.yml").read_text(encoding="utf-8")
         self.assertIn("actions/checkout@v5", workflow)
         self.assertIn("actions/upload-artifact@v7", workflow)
         self.assertIn("RACK_SDK_VERSION: '2.6.6'", workflow)
+        self.assertIn("python scripts/generate_vcv_panel.py --check", workflow)
         self.assertIn("make -C vcv", workflow)
         self.assertIn("tar --zstd -tf", workflow)
         self.assertIn("make -C vcv install", workflow)

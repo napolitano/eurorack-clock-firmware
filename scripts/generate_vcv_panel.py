@@ -1,0 +1,289 @@
+#!/usr/bin/env python3
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+"""Generate the functional VCV Rack panel directly from sim/panel_layout.ini.
+
+The native simulator's millimetre layout is the single front-panel geometry source.
+This generator maps those physical coordinates to Rack's 75-DPI panel coordinate
+system without inventing a second placement model.
+"""
+from __future__ import annotations
+
+import argparse
+import configparser
+from dataclasses import dataclass
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[1]
+DEFAULT_LAYOUT = ROOT / "sim" / "panel_layout.ini"
+VCV_DIR = ROOT / "vcv"
+DEFAULT_PANEL = VCV_DIR / "res" / "CLOCK.svg"
+DEFAULT_HEADER = VCV_DIR / "generated_panel_layout.hpp"
+
+RACK_DPI = 75.0
+MM_PER_INCH = 25.4
+PX_PER_MM = RACK_DPI / MM_PER_INCH
+RACK_WIDTH_PX = 150.0  # 10 HP
+RACK_HEIGHT_PX = 380.0
+
+
+@dataclass(frozen=True)
+class Point:
+    x: float
+    y: float
+
+
+def fmt(value: float) -> str:
+    return f"{value:.4f}".rstrip("0").rstrip(".")
+
+
+def read_layout(path: Path) -> configparser.ConfigParser:
+    parser = configparser.ConfigParser(interpolation=None)
+    with path.open("r", encoding="utf-8") as stream:
+        parser.read_file(stream)
+    return parser
+
+
+def panel_offsets(parser: configparser.ConfigParser) -> tuple[float, float]:
+    panel_width_px = parser.getfloat("panel", "width_mm") * PX_PER_MM
+    panel_height_px = parser.getfloat("panel", "height_mm") * PX_PER_MM
+    return ((RACK_WIDTH_PX - panel_width_px) * 0.5, (RACK_HEIGHT_PX - panel_height_px) * 0.5)
+
+
+def point_mm(parser: configparser.ConfigParser, section: str) -> Point:
+    return Point(parser.getfloat(section, "x_mm"), parser.getfloat(section, "y_mm"))
+
+
+def to_px(value_mm: float) -> float:
+    return value_mm * PX_PER_MM
+
+
+def point_px(parser: configparser.ConfigParser, section: str) -> Point:
+    ox, oy = panel_offsets(parser)
+    p = point_mm(parser, section)
+    return Point(ox + to_px(p.x), oy + to_px(p.y))
+
+
+def generated_header(parser: configparser.ConfigParser) -> str:
+    display = (
+        parser.getfloat("display", "x_mm"),
+        parser.getfloat("display", "y_mm"),
+        parser.getfloat("display", "width_mm"),
+        parser.getfloat("display", "height_mm"),
+    )
+    outputs = [point_mm(parser, f"output_{i}") for i in range(1, 9)]
+    leds = [
+        Point(
+            parser.getfloat(f"output_{i}", "led_x_mm"),
+            parser.getfloat(f"output_{i}", "led_y_mm"),
+        )
+        for i in range(1, 9)
+    ]
+    screws = [point_mm(parser, f"screw_{i}") for i in range(1, 5)]
+
+    def p(point: Point) -> str:
+        return f"{{{fmt(point.x)}F, {fmt(point.y)}F}}"
+
+    return f'''/**
+ * @file generated_panel_layout.hpp
+ * @brief Generated VCV Rack front-panel geometry sourced from sim/panel_layout.ini.
+ * @author Axel Napolitano
+ * @copyright 2026 Axel Napolitano
+ * @license PolyForm-Noncommercial-1.0.0
+ *
+ * GENERATED FILE. Run scripts/generate_vcv_panel.py after changing simulator geometry.
+ */
+#pragma once
+
+#include <array>
+
+namespace clockfw::vcv::panel {{
+
+struct PointMm final {{
+    float x;
+    float y;
+}};
+
+struct RectMm final {{
+    float x;
+    float y;
+    float width;
+    float height;
+}};
+
+inline constexpr float kPanelWidthMm = {fmt(parser.getfloat("panel", "width_mm"))}F;
+inline constexpr float kPanelHeightMm = {fmt(parser.getfloat("panel", "height_mm"))}F;
+inline constexpr float kPanelOffsetXmm = {fmt((RACK_WIDTH_PX / PX_PER_MM - parser.getfloat("panel", "width_mm")) * 0.5)}F;
+inline constexpr float kPanelOffsetYmm = {fmt((RACK_HEIGHT_PX / PX_PER_MM - parser.getfloat("panel", "height_mm")) * 0.5)}F;
+inline constexpr RectMm kDisplay{{{fmt(display[0])}F, {fmt(display[1])}F, {fmt(display[2])}F, {fmt(display[3])}F}};
+inline constexpr PointMm kEncoderCenter{p(point_mm(parser, "encoder"))};
+inline constexpr float kEncoderDiameterMm = {fmt(parser.getfloat("encoder", "knob_diameter_mm"))}F;
+inline constexpr PointMm kPlayCenter{p(point_mm(parser, "play"))};
+inline constexpr PointMm kTapCenter{p(point_mm(parser, "tap"))};
+inline constexpr PointMm kStopCenter{p(point_mm(parser, "stop"))};
+inline constexpr float kButtonActuatorDiameterMm = {fmt(parser.getfloat("play", "actuator_diameter_mm"))}F;
+inline constexpr PointMm kSyncCenter{p(point_mm(parser, "sync"))};
+inline constexpr PointMm kResetCenter{p(point_mm(parser, "reset"))};
+inline constexpr float kJackNutDiameterMm = {fmt(parser.getfloat("jack_ts", "nut_diameter_mm"))}F;
+inline constexpr float kLedDiameterMm = {fmt(parser.getfloat("leds", "diameter_mm"))}F;
+inline constexpr std::array<PointMm, 8U> kOutputCenters{{{{
+    {', '.join(p(x) for x in outputs)}
+}}}};
+inline constexpr std::array<PointMm, 8U> kLedCenters{{{{
+    {', '.join(p(x) for x in leds)}
+}}}};
+inline constexpr std::array<PointMm, 4U> kScrewCenters{{{{
+    {', '.join(p(x) for x in screws)}
+}}}};
+
+}}  // namespace clockfw::vcv::panel
+'''
+
+
+def circle_svg(size_px: float, fill: str, pressed: bool = False) -> str:
+    center = size_px * 0.5
+    radius = max(1.0, center - 1.0)
+    highlight = 0.24 if pressed else 0.48
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{fmt(size_px)}" height="{fmt(size_px)}" viewBox="0 0 {fmt(size_px)} {fmt(size_px)}">
+  <circle cx="{fmt(center)}" cy="{fmt(center)}" r="{fmt(radius)}" fill="{fill}" stroke="#191a1c" stroke-width="1.4"/>
+  <circle cx="{fmt(center - radius * 0.32)}" cy="{fmt(center - radius * 0.32)}" r="{fmt(max(0.8, radius * 0.10))}" fill="#ffffff" fill-opacity="{highlight}"/>
+</svg>
+'''
+
+
+def knob_svg(parser: configparser.ConfigParser) -> str:
+    size = to_px(parser.getfloat("encoder", "knob_diameter_mm"))
+    c = size * 0.5
+    r = c - 0.9
+    return f'''<svg xmlns="http://www.w3.org/2000/svg" width="{fmt(size)}" height="{fmt(size)}" viewBox="0 0 {fmt(size)} {fmt(size)}">
+  <circle cx="{fmt(c)}" cy="{fmt(c)}" r="{fmt(r)}" fill="#3a3b3e" stroke="#151618" stroke-width="1.2"/>
+  <circle cx="{fmt(c)}" cy="{fmt(c)}" r="{fmt(max(1.0, r - 2.0))}" fill="#2b2c2e"/>
+  <line x1="{fmt(c)}" y1="{fmt(c - r + 2.1)}" x2="{fmt(c)}" y2="{fmt(c - 2.0)}" stroke="#f0f1f2" stroke-width="1.3" stroke-linecap="round"/>
+</svg>
+'''
+
+
+def generated_panel_svg(parser: configparser.ConfigParser) -> str:
+    ox, oy = panel_offsets(parser)
+    pw = to_px(parser.getfloat("panel", "width_mm"))
+    ph = to_px(parser.getfloat("panel", "height_mm"))
+
+    def pp(section: str) -> Point:
+        return point_px(parser, section)
+
+    display_x = ox + to_px(parser.getfloat("display", "x_mm"))
+    display_y = oy + to_px(parser.getfloat("display", "y_mm"))
+    display_w = to_px(parser.getfloat("display", "width_mm"))
+    display_h = to_px(parser.getfloat("display", "height_mm"))
+    encoder = pp("encoder")
+    play, tap, stop = pp("play"), pp("tap"), pp("stop")
+    sync, reset = pp("sync"), pp("reset")
+    button_r = to_px(parser.getfloat("play", "actuator_diameter_mm")) * 0.5
+    jack_nut_r = to_px(parser.getfloat("jack_ts", "nut_diameter_mm")) * 0.5
+    jack_bush_r = to_px(parser.getfloat("jack_ts", "bushing_diameter_mm")) * 0.5
+    jack_hole_r = to_px(parser.getfloat("jack_ts", "opening_diameter_mm")) * 0.5
+    led_r = to_px(parser.getfloat("leds", "diameter_mm")) * 0.5
+    knob_r = to_px(parser.getfloat("encoder", "knob_diameter_mm")) * 0.5
+
+    outputs: list[tuple[int, Point, Point]] = []
+    for index in range(1, 9):
+        center = pp(f"output_{index}")
+        led = Point(
+            ox + to_px(parser.getfloat(f"output_{index}", "led_x_mm")),
+            oy + to_px(parser.getfloat(f"output_{index}", "led_y_mm")),
+        )
+        outputs.append((index, center, led))
+
+    screws = [pp(f"screw_{i}") for i in range(1, 5)]
+
+    title_x = ox + to_px(3.15)
+    title_y = oy + to_px(3.45)
+    subtitle_y = oy + to_px(6.60)
+    encoder_label_y = encoder.y + knob_r + to_px(1.7)
+    button_label_y = play.y + button_r + to_px(1.5)
+    input_label_y = sync.y - to_px(6.85)
+
+    lines: list[str] = []
+    a = lines.append
+    a('<svg xmlns="http://www.w3.org/2000/svg" width="150" height="380" viewBox="0 0 150 380" role="img" aria-labelledby="title desc">')
+    a('  <title id="title">South Signal Lab CLOCK functional VCV Rack panel</title>')
+    a('  <desc id="desc">Functional 10 HP panel generated from sim/panel_layout.ini. Positions and physical sizes follow the native simulator geometry.</desc>')
+    a('  <!-- GENERATED from sim/panel_layout.ini by scripts/generate_vcv_panel.py. -->')
+    a('  <defs><style>')
+    a('    .label{font-family:DejaVu Sans,Arial,sans-serif;fill:#26272a;font-size:5px;font-weight:600}.small{font-size:4.2px;font-weight:500}.tiny{font-size:3.8px;font-weight:500}.title{font-size:7px;font-weight:700}.sub{font-size:3.4px;font-weight:500;letter-spacing:.18px}')
+    a('    .jackNut{fill:#d8d9db;stroke:#66686b;stroke-width:.8}.jackBush{fill:#afb1b4;stroke:#707276;stroke-width:.55}.jackHole{fill:#17181a}.led{fill:#5a3434;stroke:#7c3636;stroke-width:.45}.screw{fill:#a8aaad;stroke:#696b6e;stroke-width:.5}')
+    a('  </style></defs>')
+    a('  <rect width="150" height="380" fill="#121315"/>')
+    a(f'  <rect x="{fmt(ox)}" y="{fmt(oy)}" width="{fmt(pw)}" height="{fmt(ph)}" fill="#cdCfd1" stroke="#4b4d50" stroke-width="0.8"/>')
+    a(f'  <text class="label title" x="{fmt(title_x)}" y="{fmt(title_y)}">CLOCK</text>')
+    a(f'  <text class="label sub" x="{fmt(title_x)}" y="{fmt(subtitle_y)}">8-CHANNEL CLOCK · VCV RACK TRIAL</text>')
+    a(f'  <rect x="{fmt(display_x)}" y="{fmt(display_y)}" width="{fmt(display_w)}" height="{fmt(display_h)}" rx="1.2" fill="#050607" stroke="#525457" stroke-width="0.8"/>')
+
+    for screw in screws:
+        a(f'  <circle class="screw" cx="{fmt(screw.x)}" cy="{fmt(screw.y)}" r="2.0"/>')
+
+    # Ghosted control silhouettes make the standalone SVG readable; real Rack widgets cover them.
+    a(f'  <circle cx="{fmt(encoder.x)}" cy="{fmt(encoder.y)}" r="{fmt(knob_r)}" fill="#3a3b3e" stroke="#17181a" stroke-width="0.8"/>')
+    a(f'  <text class="label tiny" x="{fmt(encoder.x)}" y="{fmt(encoder_label_y)}" text-anchor="middle">ENC</text>')
+    for label, center, color in (("PLAY", play, parser["play"]["color"]), ("TAP", tap, parser["tap"]["color"]), ("STOP", stop, parser["stop"]["color"])):
+        a(f'  <circle cx="{fmt(center.x)}" cy="{fmt(center.y)}" r="{fmt(button_r)}" fill="{color}" stroke="#191a1c" stroke-width="0.8"/>')
+        a(f'  <text class="label small" x="{fmt(center.x)}" y="{fmt(button_label_y)}" text-anchor="middle">{label}</text>')
+
+    def jack(center: Point) -> None:
+        a(f'  <circle class="jackNut" cx="{fmt(center.x)}" cy="{fmt(center.y)}" r="{fmt(jack_nut_r)}"/>')
+        a(f'  <circle class="jackBush" cx="{fmt(center.x)}" cy="{fmt(center.y)}" r="{fmt(jack_bush_r)}"/>')
+        a(f'  <circle class="jackHole" cx="{fmt(center.x)}" cy="{fmt(center.y)}" r="{fmt(jack_hole_r)}"/>')
+
+    jack(sync)
+    jack(reset)
+    a(f'  <text class="label small" x="{fmt(sync.x)}" y="{fmt(input_label_y)}" text-anchor="middle">SYNC IN</text>')
+    a(f'  <text class="label small" x="{fmt(reset.x)}" y="{fmt(input_label_y)}" text-anchor="middle">RST IN</text>')
+
+    for index, center, led in outputs:
+        a(f'  <circle class="led" cx="{fmt(led.x)}" cy="{fmt(led.y)}" r="{fmt(led_r)}"/>')
+        jack(center)
+        label_y = center.y + jack_nut_r + to_px(1.2)
+        a(f'  <text class="label tiny" x="{fmt(center.x)}" y="{fmt(label_y)}" text-anchor="middle">OUT{index}</text>')
+
+    a('</svg>')
+    return "\n".join(lines) + "\n"
+
+
+def outputs(parser: configparser.ConfigParser) -> dict[Path, str]:
+    button_size = to_px(parser.getfloat("play", "actuator_diameter_mm"))
+    return {
+        DEFAULT_PANEL: generated_panel_svg(parser),
+        DEFAULT_HEADER: generated_header(parser),
+        VCV_DIR / "res" / "encoder.svg": knob_svg(parser),
+        VCV_DIR / "res" / "button-play-0.svg": circle_svg(button_size, parser["play"]["color"], False),
+        VCV_DIR / "res" / "button-play-1.svg": circle_svg(button_size, "#7A1616", True),
+        VCV_DIR / "res" / "button-tap-0.svg": circle_svg(button_size, parser["tap"]["color"], False),
+        VCV_DIR / "res" / "button-tap-1.svg": circle_svg(button_size, "#4F4F4F", True),
+        VCV_DIR / "res" / "button-stop-0.svg": circle_svg(button_size, parser["stop"]["color"], False),
+        VCV_DIR / "res" / "button-stop-1.svg": circle_svg(button_size, "#090909", True),
+    }
+
+
+def main() -> int:
+    argp = argparse.ArgumentParser()
+    argp.add_argument("--layout", type=Path, default=DEFAULT_LAYOUT)
+    argp.add_argument("--check", action="store_true")
+    args = argp.parse_args()
+
+    parser = read_layout(args.layout)
+    generated = outputs(parser)
+    if args.check:
+        stale = [path for path, content in generated.items() if not path.exists() or path.read_text(encoding="utf-8") != content]
+        if stale:
+            raise SystemExit("stale generated VCV panel files: " + ", ".join(str(p.relative_to(ROOT)) for p in stale))
+        return 0
+
+    for path, content in generated.items():
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(content, encoding="utf-8")
+        print(path.relative_to(ROOT))
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

@@ -16,7 +16,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Compile the real CLOCK application, engine, services, UI renderer and `clock_core` into the Rack plugin instead of maintaining a second musical implementation.
 - Add a Rack-independent `ClockVcvRuntime` adapter that advances the existing 20 kHz/50-us scheduler from Rack sample time, forwards physical panel gestures, drives conditioned SYNC/RST levels and exposes the real 128x64 framebuffer plus 0/+5-V gate states.
 - Embed the complete logical CLOCK persistence image in Rack patch JSON so presets/settings/Custom Grooves reuse the existing schema and migration path.
-- Add a deliberately plain functional 10-HP panel shell pending the real hardware front-panel design.
+- Generate the functional 10-HP Rack panel from `sim/panel_layout.ini` instead of maintaining an independent VCV placement: OLED upper left, push encoder upper right, PLAY/TAP/STOP row, left-aligned SYNC/RST and the hardware 4x2 output/LED matrix now match the native simulator geometry.
+- Generate Rack widget coordinates and control artwork from the same millimetre source, add the eight 3 mm output activity LEDs, and make a click on the encoder emit the real encoder-push gesture while drag/scroll retains encoder rotation.
 - Enforce an explicit one-active-instance limit for the first alpha because the current host HAL/application callback boundary is process-global; additional instances stay muted rather than corrupting shared state.
 - Add `vcv_runtime_adapter_tests` to CMake/CTest and a dedicated GitHub Actions workflow that builds/packages the plugin against pinned Rack SDK 2.6.6 on Linux x64.
 - Verify the generated `.vcvplugin` payload structure and Rack SDK `make install` target in CI before exposing the package as a workflow artifact.
