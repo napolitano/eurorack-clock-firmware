@@ -10,7 +10,14 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
-No unreleased changes.
+### Documentation
+
+- Refine the maintained post-1.1.0 user-manual layout without rewriting the frozen 1.1.0 release manual.
+- Left-align all chapter headings while preserving semantic PDF navigation.
+- Normalize intermediate headings to one consistent blue/bold style with no accidental outline indentation.
+- Move the Contents page directly behind the cover and rebuild it as a compact full-width title/page index.
+- Replace the oversized cover author block with a firmware-update QR area; author attribution remains in the Colophon.
+- Reserve a compact cover line for future release-version stamping so the QR/update area survives publication.
 
 ## [1.1.0] - 2026-09-23
 

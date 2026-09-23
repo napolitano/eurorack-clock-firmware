@@ -43,6 +43,28 @@ class ManualToolingTests(unittest.TestCase):
     def test_working_manual_exists(self) -> None:
         self.assertTrue(self.working.is_file())
 
+    def test_working_manual_uses_post_1_1_layout_contract(self) -> None:
+        import zipfile
+
+        with zipfile.ZipFile(self.working, "r") as archive:
+            content = archive.read("content.xml").decode("utf-8")
+            metadata = archive.read("meta.xml").decode("utf-8")
+        version = PREPARE.source_version(metadata, content)
+        CHECK.validate_odt(self.working, version)
+        self.assertTrue((ROOT / "docs/manual-source/assets/updates-qr.png").is_file())
+
+    def test_post_1_1_release_stamping_preserves_layout_contract(self) -> None:
+        with tempfile.TemporaryDirectory() as directory:
+            version = "1.1.1"
+            output = Path(directory) / f"clock-user-manual.{version}.odt"
+            PREPARE.stamp_odt(
+                self.working,
+                output,
+                version,
+                allow_font_substitution=True,
+            )
+            CHECK.validate_odt(output, version)
+
     def test_existing_frozen_manuals_match_their_version_scope(self) -> None:
         archive = ROOT / "docs" / "manual"
         frozen_manuals = sorted(archive.glob("clock-user-manual.*.odt"))

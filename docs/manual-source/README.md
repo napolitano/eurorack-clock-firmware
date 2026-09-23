@@ -26,6 +26,8 @@ This stamps the current `CLOCK_FIRMWARE_VERSION` into firmware-bearing ODT body 
 
 The release workflow converts the frozen ODT with LibreOffice and publishes **both ODT and PDF** as GitHub Release assets. The release PDF is checked for a non-zero page count, the expected firmware version, and Ubuntu-family font embedding. A separate `Manual publication smoke test` workflow exercises the same publication path for documentation changes.
 
+The maintained source also carries an explicit layout contract. `Contents` is a dedicated page directly behind the cover with one readable chapter/page pair per row, chapter headings remain left-aligned while retaining semantic outline levels, and intermediate headings use one consistent blue/bold style without outline indentation. The cover keeps author attribution in the Colophon and uses the former author block for a firmware-update QR (`assets/updates-qr.png`) pointing to the GitHub Releases page. Release stamping writes only the compact reserved firmware-version line beside that QR.
+
 Before the Colophon, the release manual contains a dedicated **Licenses and source** section with the PolyForm firmware license notice, third-party runtime notices, and the canonical repository QR code from [`assets/repository-qr.png`](assets/repository-qr.png). `scripts/check_user_manual.py` verifies that the embedded QR payload exactly matches the canonical asset and points readers to `https://github.com/napolitano/eurorack-clock-firmware`.
 
 The generated GitHub Wiki also exposes the matching version-frozen ODT directly from its Home and **Manual & Downloads** pages. `scripts/build_wiki.py` refuses to generate a Wiki for a firmware version whose frozen ODT is missing.

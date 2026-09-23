@@ -126,9 +126,11 @@ def release_stage_label(version: str) -> str:
 def stamp_cover(image_bytes: bytes, version: str, font_path: str) -> bytes:
     image = Image.open(io.BytesIO(image_bytes)).convert("RGBA")
     draw = ImageDraw.Draw(image)
-    draw.rectangle((45, 1905, 780, 1965), fill=BLUE)
-    font = ImageFont.truetype(font_path, 33)
-    draw.text((58, 1909), f"{release_stage_label(version)} · firmware {version}", font=font, fill=WHITE)
+    # The maintained cover reserves this line beside the firmware-update QR code.
+    # Keep release stamping compact so author attribution stays in the Colophon.
+    draw.rectangle((275, 1882, 900, 1932), fill=BLUE)
+    font = ImageFont.truetype(font_path, 27)
+    draw.text((285, 1887), f"{release_stage_label(version)} · firmware {version}", font=font, fill=WHITE)
     metadata = PngImagePlugin.PngInfo()
     metadata.add_text(PNG_VERSION_KEY, version)
     out = io.BytesIO()

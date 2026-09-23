@@ -68,6 +68,19 @@ void scheduleChannel(std::size_t channelIndex, bool includeCurrentBoundary);
 
 Document parameters, return semantics, units, ownership/lifetime, thread/ISR restrictions, and non-obvious side effects where they matter. Do not duplicate header API prose above the implementation definition; implementation comments should explain algorithms and invariants instead.
 
+## Typeset manual layout
+
+The maintained ODT under `docs/manual-source/` follows a publication-layout contract in addition to the Markdown content rules:
+
+- the cover prioritizes product identity and the firmware-update QR; author attribution belongs in the Colophon rather than as a dominant cover element;
+- `Contents` is a dedicated page immediately after the cover and uses a compact single-column chapter-title/page-number index;
+- chapter headings are left-aligned, carry the blue chapter number and black title, and retain semantic outline levels for PDF navigation;
+- intermediate headings are left-aligned, blue and bold, with no inherited list/outline indentation;
+- manually numbered headings must not rely on LibreOffice's implicit outline list-tab positioning;
+- release stamping may update the reserved firmware-version line on the cover but must not overwrite the update QR or manual-license line.
+
+The frozen files in `docs/manual/` are release-history artifacts. Layout improvements after a release apply to the maintained source and future manuals; published historical ODTs are not silently rewritten.
+
 ## Version-sensitive statements
 
 The active alpha version may be stated in landing pages, test baselines, and release instructions. Historical changelog sections remain immutable except for factual corrections.

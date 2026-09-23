@@ -25,6 +25,7 @@ VERSION_TEXT_RE = re.compile(r"\b[0-9]+\.[0-9]+\.[0-9]+(?:-[0-9A-Za-z.-]+)?\b")
 ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_URL = "https://github.com/napolitano/eurorack-clock-firmware"
 REPOSITORY_QR = ROOT / "docs" / "manual-source" / "assets" / "repository-qr.png"
+UPDATES_QR = ROOT / "docs" / "manual-source" / "assets" / "updates-qr.png"
 
 PRERELEASE_VERSION_RE = re.compile(
     r"\b[0-9]+\.[0-9]+\.[0-9]+-(?:alpha|beta|rc)\.[0-9]+\b",
@@ -67,6 +68,107 @@ def page_images(content_xml: str, archive: zipfile.ZipFile) -> list[str]:
     return result
 
 
+
+def requires_layout_v2(path: Path, version: str) -> bool:
+    """Return whether the post-1.1.0 publication-layout contract applies."""
+    if path.name == "clock-user-manual.odt":
+        return True
+    base = version.split("-", 1)[0]
+    try:
+        parts = tuple(int(part) for part in base.split("."))
+    except ValueError:
+        return False
+    return parts > (1, 1, 0)
+
+
+def validate_layout_v2(content_xml: str, styles_xml: str) -> None:
+    """Validate the maintained manual's post-1.1.0 layout contract."""
+    ns = {
+        "office": "urn:oasis:names:tc:opendocument:xmlns:office:1.0",
+        "text": "urn:oasis:names:tc:opendocument:xmlns:text:1.0",
+        "table": "urn:oasis:names:tc:opendocument:xmlns:table:1.0",
+        "style": "urn:oasis:names:tc:opendocument:xmlns:style:1.0",
+        "fo": "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0",
+    }
+    content_root = ET.fromstring(content_xml)
+    styles_root = ET.fromstring(styles_xml)
+
+    # LibreOffice's default outline label alignment can visually center manually
+    # numbered text:h paragraphs. The manual deliberately disables that label tab.
+    alignments = styles_root.findall(
+        ".//text:outline-style/text:outline-level-style/style:list-level-properties/style:list-level-label-alignment",
+        ns,
+    )
+    if not alignments:
+        raise RuntimeError("Manual outline alignment contract is missing")
+    for alignment in alignments:
+        if alignment.attrib.get(f"{{{ns['text']}}}label-followed-by") != "nothing":
+            raise RuntimeError("Manual chapter headings must use left-aligned outline labels")
+        if alignment.attrib.get(f"{{{ns['fo']}}}margin-left") != "0in":
+            raise RuntimeError("Manual outline headings must not carry a left margin")
+        if alignment.attrib.get(f"{{{ns['fo']}}}text-indent") != "0in":
+            raise RuntimeError("Manual outline headings must not carry a text indent")
+
+    body = content_root.find(".//office:body/office:text", ns)
+    if body is None:
+        raise RuntimeError("Manual body is missing")
+    children = list(body)
+
+    def flat_text(element: ET.Element) -> str:
+        return " ".join("".join(element.itertext()).split())
+
+    contents_index = next(
+        (i for i, element in enumerate(children) if flat_text(element) == "Contents"),
+        None,
+    )
+    chapter_one_index = next(
+        (i for i, element in enumerate(children) if flat_text(element) == "1 Start here"),
+        None,
+    )
+    if contents_index is None or chapter_one_index is None or contents_index >= chapter_one_index:
+        raise RuntimeError("Manual Contents page must precede chapter 1")
+
+    toc = next(
+        (
+            element
+            for element in content_root.findall(".//table:table", ns)
+            if element.attrib.get(f"{{{ns['table']}}}name") == "ManualContents"
+        ),
+        None,
+    )
+    if toc is None:
+        raise RuntimeError("Manual Contents table is missing")
+    columns = toc.findall("table:table-column", ns)
+    if len(columns) != 2:
+        raise RuntimeError(f"Manual Contents must use one title/page pair in two columns; found {len(columns)}")
+    page_values = []
+    for paragraph in toc.findall(".//text:p", ns):
+        if paragraph.attrib.get(f"{{{ns['text']}}}style-name") == "ManualContentsPageP":
+            value = flat_text(paragraph)
+            if value:
+                page_values.append(value)
+    if len(page_values) != 24 or any(value == "00" for value in page_values):
+        raise RuntimeError("Manual Contents must contain 24 resolved chapter page numbers")
+
+    # P17 is the maintained intermediate-heading paragraph style. Every such
+    # heading must carry the blue/bold T2 text style instead of inheriting body text.
+    for element in content_root.iter():
+        if element.attrib.get(f"{{{ns['text']}}}style-name") != "P17":
+            continue
+        if flat_text(element) == "Contents":
+            continue
+        spans = element.findall("text:span", ns)
+        if not spans or any(
+            span.attrib.get(f"{{{ns['text']}}}style-name") != "T2" for span in spans
+        ):
+            raise RuntimeError(f"Manual intermediate heading is not normalized: {flat_text(element)!r}")
+
+    if not UPDATES_QR.is_file():
+        raise RuntimeError(f"Canonical firmware-update QR asset missing: {UPDATES_QR}")
+    with Image.open(UPDATES_QR) as image:
+        if image.width < 100 or image.height < 100:
+            raise RuntimeError("Firmware-update QR asset is unexpectedly small")
+
 def validate_odt(path: Path, version: str) -> None:
     if path.name != f"clock-user-manual.{version}.odt" and path.name != "clock-user-manual.odt":
         raise RuntimeError(f"Unexpected manual ODT filename: {path.name}")
@@ -78,6 +180,8 @@ def validate_odt(path: Path, version: str) -> None:
         styles_xml = archive.read("styles.xml").decode("utf-8")
         if "Ubuntu Light" not in styles_xml or "Ubuntu" not in styles_xml:
             raise RuntimeError("Manual style contract must request Ubuntu and Ubuntu Light")
+        if requires_layout_v2(path, version):
+            validate_layout_v2(content_xml, styles_xml)
         if version not in content_xml:
             raise RuntimeError(f"Manual body does not identify firmware {version}")
         if version not in meta_xml:
