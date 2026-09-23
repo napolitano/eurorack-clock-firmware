@@ -615,6 +615,14 @@ class RepositoryPolicyTests(unittest.TestCase):
         self.assertIn("actions/cache@v6", workflows["ci.yml"])
         self.assertIn("actions/cache@v6", workflows["release.yml"])
         self.assertIn("actions/upload-artifact@v7", workflows["release.yml"])
+        for name in ("ci.yml", "manual-publication.yml", "vcv.yml"):
+            self.assertIn("permissions:\n  contents: read", workflows[name], name)
+        self.assertIn("actions/checkout@v7", workflows["ci.yml"])
+        self.assertIn("actions/checkout@v7", workflows["vcv.yml"])
+        self.assertIn("actions/setup-python@v7", workflows["ci.yml"])
+        self.assertIn("actions/setup-python@v7", workflows["vcv.yml"])
+        for name in ("ci.yml", "release.yml", "vcv.yml"):
+            self.assertIn("python scripts/check_vcv_runtime_coverage.py", workflows[name], name)
 
     def test_polyform_license_is_present_and_identified(self) -> None:
         license_text = (ROOT / "LICENSE.md").read_text(encoding="utf-8")

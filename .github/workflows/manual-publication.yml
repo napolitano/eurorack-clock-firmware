@@ -20,6 +20,9 @@ on:
       - ".github/workflows/manual-publication.yml"
       - "src/version.h"
 
+permissions:
+  contents: read
+
 jobs:
   manual:
     runs-on: ubuntu-latest

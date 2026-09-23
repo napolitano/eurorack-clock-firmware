@@ -187,9 +187,10 @@ ctest --preset simulator-headless --output-on-failure
 python scripts/check_architecture.py
 python scripts/check_documentation.py
 python -m unittest discover -s scripts/tests -p 'test_*.py' -v
+python scripts/check_vcv_runtime_coverage.py
 ```
 
-The CTest suite includes `vcv_runtime_adapter_tests`. These tests exercise the real CLOCK boot path, scheduler, controls, gate outputs, persistence image and external-input bridge without requiring Rack itself.
+The CTest suite includes `vcv_runtime_adapter_tests`. These tests exercise the real CLOCK boot path, scheduler, controls, gate outputs, persistence image and external-input bridge without requiring Rack itself. `check_vcv_runtime_coverage.py` rebuilds that adapter with GCC coverage and enforces 95% line, 95% function and 90% non-throw decision-branch coverage.
 
 ### 1.7 Verify generated panel assets
 
@@ -471,19 +472,21 @@ Rack can also be launched with an explicit user directory using `-u`, and it sup
 
 ## 9. CI parity
 
-`.github/workflows/vcv.yml` deliberately does **not** commit or cache the SDK in the repository. The job:
+`.github/workflows/vcv.yml` deliberately does **not** commit or cache the SDK in the repository. The current dedicated Rack job is **Linux x64** and:
 
-1. checks out CLOCK;
-2. downloads the pinned official Rack SDK archive to `$RUNNER_TEMP`;
-3. validates generated panel assets;
-4. builds the plugin with `RACK_DIR=$RUNNER_TEMP/Rack-SDK`;
-5. runs `make dist`;
-6. inspects the `.vcvplugin` payload and Linux dynamic dependency metadata;
-7. rejects bundled Rack SDK/Rack runtime content;
-8. runs `make install` against an isolated Rack user directory;
-9. uploads only the resulting CLOCK `.vcvplugin` as the workflow artifact.
+1. checks out CLOCK with the current GitHub-maintained checkout action and read-only repository permissions;
+2. installs the explicit host build/package tools used by the job;
+3. runs the VCV tooling contract tests and the focused `clock_vcv_runtime.cpp` coverage gate;
+4. downloads the pinned official Rack SDK archive to `$RUNNER_TEMP`;
+5. validates generated panel assets;
+6. builds the plugin with `RACK_DIR=$RUNNER_TEMP/Rack-SDK`;
+7. runs `make dist`;
+8. inspects the `.vcvplugin` payload and Linux dynamic dependency metadata;
+9. rejects bundled Rack SDK/Rack runtime content;
+10. runs `make install` against an isolated Rack user directory;
+11. uploads only the resulting CLOCK Linux `.vcvplugin` as the workflow artifact.
 
-The runner and downloaded SDK disappear after the job.
+The runner and downloaded SDK disappear after the job. This workflow proves the Rack API shell against the pinned Linux SDK; it does **not** currently build a Windows `.vcvplugin`. Windows remains the primary local development path and is verified with the official MinGW64/Rack-SDK procedure above. A Windows Rack CI job is therefore still an explicit portability gap, not something inferred from the Linux build.
 
 ## 10. Licensing boundary
 

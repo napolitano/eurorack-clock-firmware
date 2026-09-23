@@ -12,6 +12,7 @@
 #include <cmath>
 #include <filesystem>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -124,14 +125,47 @@ int main() {
     clockfw::vcv::ClockVcvRuntime runtime(statePath);
     runtime.begin();
 
+    // The adapter must expose its host-running state. begin() powers the virtual module
+    // immediately; the one-second boot animation is part of that powered runtime.
+    assert(runtime.running());
+
+    // Invalid/non-positive Rack sample times are ignored rather than perturbing scheduler state.
+    runtime.processSample(0.0, false, 0.0F, false, 0.0F);
+    runtime.processSample(-1.0, false, 0.0F, false, 0.0F);
+    runtime.processSample(std::numeric_limits<double>::quiet_NaN(), false, 0.0F, false, 0.0F);
+
     // Real CLOCK boot duration is exercised rather than bypassed.
     advance(runtime, 1.100, kSampleRate);
+    assert(runtime.running());
     const auto& frame = runtime.framebuffer();
     bool anyPixel = false;
     for (const std::uint8_t byte : frame) {
         anyPixel = anyPixel || byte != 0U;
     }
     assert(anyPixel);
+    assert(runtime.gateVoltage(8U) == 0.0F);
+
+    // Cover all physical momentary controls before entering menus.
+    click(runtime, &clockfw::vcv::PanelControls::tapPressed, kSampleRate);
+    click(runtime, &clockfw::vcv::PanelControls::stopPressed, kSampleRate);
+
+    // Relative encoder rotation is a real detent path; zero is explicitly a no-op.
+    const auto beforeRotate = runtime.framebuffer();
+    runtime.rotateEncoder(0);
+    runtime.rotateEncoder(1);
+    advance(runtime, 0.050, kSampleRate);
+    assert(runtime.framebuffer() != beforeRotate);
+    runtime.rotateEncoder(-1);
+    advance(runtime, 0.050, kSampleRate);
+
+    // Force more Rack-sample input transitions than the fixed bridge can queue before one
+    // scheduler quantum. Overflow must collapse to the latest sampled level without allocation.
+    for (int transition = 0; transition < 24; ++transition) {
+        const float volts = (transition % 2 == 0) ? 5.0F : 0.0F;
+        runtime.processSample(0.000001, true, volts, false, 0.0F);
+    }
+    runtime.processSample(0.000050, true, 0.0F, false, 0.0F);
+    runtime.processSample(0.000050, false, 0.0F, false, 0.0F);
 
     // Host shortcuts must enter the existing production General Settings page, not a parallel
     // Rack-specific settings model.

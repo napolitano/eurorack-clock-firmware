@@ -189,12 +189,18 @@ class VcvManifestTests(unittest.TestCase):
 class VcvWorkflowTests(unittest.TestCase):
     def test_workflow_uses_node24_generation_actions_and_pinned_sdk(self) -> None:
         workflow = (ROOT / ".github/workflows/vcv.yml").read_text(encoding="utf-8")
-        self.assertIn("actions/checkout@v5", workflow)
+        self.assertIn("actions/checkout@v7", workflow)
         self.assertIn("actions/upload-artifact@v7", workflow)
+        self.assertIn("actions/setup-python@v7", workflow)
+        self.assertIn("build-essential cmake curl binutils jq zstd unzip", workflow)
+        self.assertIn("permissions:\n  contents: read", workflow)
         self.assertIn("RACK_SDK_VERSION: '2.6.6'", workflow)
         self.assertIn("RACK_SDK_PLATFORM: 'lin-x64'", workflow)
         self.assertIn("https://vcvrack.com/downloads/Rack-SDK-${RACK_SDK_VERSION}-${RACK_SDK_PLATFORM}.zip", workflow)
         self.assertIn("python scripts/generate_vcv_panel.py --check", workflow)
+        self.assertIn("python -m unittest scripts.tests.test_vcv_tooling -v", workflow)
+        self.assertIn("CMakePresets.json", workflow)
+        self.assertIn("scripts/check_vcv_runtime_coverage.py", workflow)
         self.assertIn("make -C vcv", workflow)
         self.assertIn("tar --zstd -tf", workflow)
         self.assertIn("make -C vcv install", workflow)
@@ -219,6 +225,7 @@ class VcvWorkflowTests(unittest.TestCase):
             "Rack-SDK-2.6.6-lin-x64.zip",
             "cmake --preset simulator-headless",
             "vcv_runtime_adapter_tests",
+            "check_vcv_runtime_coverage.py",
             "make -C vcv dist",
             "make -C vcv install",
             "RACK_USER_DIR",

@@ -34,6 +34,26 @@ Compiler branches:   5640/7322 (77.03%, informational only)
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.
 
+## VCV Rack adapter coverage
+
+The VCV Rack port is a separate host-platform shell, so `vcv/` is intentionally not folded into the production-firmware aggregate above. Its Rack-independent runtime bridge has its own hard coverage gate:
+
+```bash
+python scripts/check_vcv_runtime_coverage.py
+```
+
+The gate builds and runs `vcv_runtime_adapter_tests` with GCC coverage and applies the same quality floors used for project-owned production code: **>=95% executable lines, >=95% functions, and >=90% non-throw decision branches**. The report is written to `coverage/vcv_runtime_coverage.txt` and `.json`, so CI retains it together with the full firmware coverage artifacts.
+
+Current post-1.1 VCV adapter baseline after the focused edge/control coverage expansion:
+
+```text
+Executable lines:    106/106 (100.00%)
+Functions:             18/18  (100.00%)
+Decision branches:     52/54  (96.30%)
+```
+
+This focused result covers `vcv/clock_vcv_runtime.cpp`: scheduler/sample-rate bridging, controls, persistence transfer, General Settings dispatch, gate mapping and external-input transition buffering. The Rack API/widget shell in `vcv/src/` is not executable without the Rack SDK; it is compile/package-checked by the dedicated VCV workflow instead of being misrepresented as host gcov coverage.
+
 ## Full host matrix
 
 `scripts/run_host_tests.py` builds and executes seventeen coverage inputs:

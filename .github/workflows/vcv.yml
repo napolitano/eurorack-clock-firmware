@@ -12,6 +12,10 @@ on:
       - 'lib/clock_core/**'
       - 'sim/**'
       - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'scripts/generate_vcv_panel.py'
+      - 'scripts/check_vcv_runtime_coverage.py'
+      - 'scripts/tests/test_vcv_tooling.py'
       - '.github/workflows/vcv.yml'
   pull_request:
     paths:
@@ -20,6 +24,10 @@ on:
       - 'lib/clock_core/**'
       - 'sim/**'
       - 'CMakeLists.txt'
+      - 'CMakePresets.json'
+      - 'scripts/generate_vcv_panel.py'
+      - 'scripts/check_vcv_runtime_coverage.py'
+      - 'scripts/tests/test_vcv_tooling.py'
       - '.github/workflows/vcv.yml'
 
 permissions:
@@ -34,10 +42,21 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
+
+      - name: Set up Python
+        uses: actions/setup-python@v7
+        with:
+          python-version: '3.11'
 
       - name: Install package tools
-        run: sudo apt-get update && sudo apt-get install -y jq zstd unzip
+        run: sudo apt-get update && sudo apt-get install -y build-essential cmake curl binutils jq zstd unzip
+
+      - name: Run VCV tooling contract tests
+        run: python -m unittest scripts.tests.test_vcv_tooling -v
+
+      - name: Enforce Rack-independent VCV adapter coverage
+        run: python scripts/check_vcv_runtime_coverage.py
 
       - name: Download Rack SDK
         run: |

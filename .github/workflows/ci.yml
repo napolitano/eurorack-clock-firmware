@@ -9,6 +9,9 @@ on:
   pull_request:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
@@ -60,6 +63,9 @@ jobs:
 
       - name: Run release-tooling tests
         run: python -m unittest discover -s scripts/tests -p 'test_*.py' -v
+
+      - name: Enforce VCV runtime adapter coverage
+        run: python scripts/check_vcv_runtime_coverage.py
 
       - name: Validate native test inventory
         run: python scripts/check_test_inventory.py
