@@ -10,6 +10,19 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Experimental VCV Rack Trial-First port
+
+- Add `vcv/` as a peer platform shell beside `sim/` for prospective builders who want to try CLOCK before building the hardware.
+- Compile the real CLOCK application, engine, services, UI renderer and `clock_core` into the Rack plugin instead of maintaining a second musical implementation.
+- Add a Rack-independent `ClockVcvRuntime` adapter that advances the existing 20 kHz/50-us scheduler from Rack sample time, forwards physical panel gestures, drives conditioned SYNC/RST levels and exposes the real 128x64 framebuffer plus 0/+5-V gate states.
+- Embed the complete logical CLOCK persistence image in Rack patch JSON so presets/settings/Custom Grooves reuse the existing schema and migration path.
+- Add a deliberately plain functional 10-HP panel shell pending the real hardware front-panel design.
+- Enforce an explicit one-active-instance limit for the first alpha because the current host HAL/application callback boundary is process-global; additional instances stay muted rather than corrupting shared state.
+- Add `vcv_runtime_adapter_tests` to CMake/CTest and a dedicated GitHub Actions workflow that builds/packages the plugin against pinned Rack SDK 2.6.6 on Linux x64.
+- Verify the generated `.vcvplugin` payload structure and Rack SDK `make install` target in CI before exposing the package as a workflow artifact.
+- Add direct host-input driving for SYNC/RST, including explicit HIGH release when a virtual cable is removed, with simulator regression coverage.
+- Document the Trial-First deployment path from adapter tests to `.vcvplugin` CI artifacts and later tagged-release integration.
+
 ### Documentation
 
 - Refine the maintained post-1.1.0 user-manual layout without rewriting the frozen 1.1.0 release manual.

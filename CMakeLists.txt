@@ -77,6 +77,27 @@ add_executable(clock-simulator-headless sim/headless_main.cpp)
 target_link_libraries(clock-simulator-headless PRIVATE clock-simulator-runtime)
 target_compile_options(clock-simulator-headless PRIVATE ${CLOCK_WARNING_FLAGS})
 
+add_library(clock-vcv-runtime-adapter STATIC
+    vcv/clock_vcv_runtime.cpp
+)
+target_link_libraries(clock-vcv-runtime-adapter PUBLIC clock-simulator-runtime)
+target_compile_definitions(clock-vcv-runtime-adapter PUBLIC
+    CLOCK_HOST_TEST=1
+    CLOCK_SIMULATOR=1
+)
+target_include_directories(clock-vcv-runtime-adapter PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/vcv"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim"
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim/framework"
+)
+target_compile_options(clock-vcv-runtime-adapter PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_executable(clock-vcv-runtime-tests
+    vcv/tests/clock_vcv_runtime_tests.cpp
+)
+target_link_libraries(clock-vcv-runtime-tests PRIVATE clock-vcv-runtime-adapter)
+target_compile_options(clock-vcv-runtime-tests PRIVATE ${CLOCK_WARNING_FLAGS})
+
 add_executable(clock-manual-screenshot-generator test/tools/manual_screenshot_generator.cpp)
 target_link_libraries(clock-manual-screenshot-generator PRIVATE clock-simulator-firmware)
 target_compile_options(clock-manual-screenshot-generator PRIVATE ${CLOCK_WARNING_FLAGS})
@@ -145,3 +166,4 @@ endif()
 enable_testing()
 add_test(NAME simulator_headless_smoke COMMAND clock-simulator-headless)
 add_test(NAME simulator_runtime_tests COMMAND clock-simulator-tests)
+add_test(NAME vcv_runtime_adapter_tests COMMAND clock-vcv-runtime-tests)

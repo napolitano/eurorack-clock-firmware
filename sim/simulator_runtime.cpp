@@ -120,6 +120,20 @@ void SimulatorRuntime::flushPersistence() {
     persistence_.flushIfChanged();
 }
 
+std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes>
+SimulatorRuntime::persistenceImage() const {
+    return persistence_.exportImage();
+}
+
+void SimulatorRuntime::restorePersistenceImage(
+    const std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes>& image) {
+    persistence_.importImage(image);
+    if (poweredOn_) {
+        setPower(false);
+        setPower(true);
+    }
+}
+
 const std::array<std::uint8_t, hal::OledDisplay::kFramebufferSize>&
 SimulatorRuntime::framebuffer() const {
     if (!poweredOn_ || application_ == nullptr) {

@@ -90,6 +90,23 @@ const std::filesystem::path& SimulatorPersistence::path() const {
 }
 
 std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes>
+SimulatorPersistence::exportImage() const {
+    return readImage();
+}
+
+void SimulatorPersistence::importImage(
+    const std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes>& image) {
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    if (!storage.writeBytes(0U, image.data(), image.size())) {
+        throw std::runtime_error("Could not import simulator persistence image");
+    }
+    lastFlushedImage_ = readImage();
+    hasLastImage_ = true;
+    flush();
+}
+
+std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes>
 SimulatorPersistence::readImage() const {
     std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> image{};
     hal::PersistentStorage storage;

@@ -178,6 +178,19 @@ public:
     /** @brief Returns current virtual reset-input state for rendering/developer tools. */
     ResetInputTelemetry resetInputTelemetry() const;
 
+    /** @brief Drives the conditioned SYNC input from an external host container. */
+    void setExternalSyncInput(bool connected, bool high);
+
+    /** @brief Drives the conditioned RST input from an external host container. */
+    void setExternalResetInput(bool connected, bool high);
+
+    /** @brief Exports the complete logical persistence image for embedding in a host patch. */
+    std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> persistenceImage() const;
+
+    /** @brief Replaces the logical persistence image and reboots from it like real power-up. */
+    void restorePersistenceImage(
+        const std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes>& image);
+
 private:
     /** @brief Applies one queued quadrature phase before the next foreground input poll. */
     void serviceEncoderSequence();
@@ -234,6 +247,8 @@ private:
 
     bool syncCableConnected_ = false;
     bool syncGeneratorRunning_ = false;
+    bool syncDirectDriven_ = false;
+    bool syncDirectLevelHigh_ = false;
     bool syncComparatorHigh_ = false;
     bool syncLocked_ = false;
     SignalWaveform syncWaveform_ = SignalWaveform::Square;
@@ -245,6 +260,8 @@ private:
 
     bool resetCableConnected_ = false;
     bool resetGeneratorRunning_ = false;
+    bool resetDirectDriven_ = false;
+    bool resetDirectLevelHigh_ = false;
     bool resetComparatorHigh_ = false;
     SignalWaveform resetWaveform_ = SignalWaveform::Square;
     std::uint32_t resetPeriodMs_ = 2000U;

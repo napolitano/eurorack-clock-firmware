@@ -23,12 +23,14 @@ constexpr std::uint32_t kResetMaximumPeriodMs = 60000U;
 }  // namespace
 
 void SimulatorRuntime::setSyncCableConnected(const bool connected) {
+    syncDirectDriven_ = false;
     syncCableConnected_ = connected;
     if (connected) syncGeneratorRunning_ = true;
     resetExternalSyncAcquisition();
 }
 
 void SimulatorRuntime::setSyncGeneratorRunning(const bool running) {
+    syncDirectDriven_ = false;
     if (syncGeneratorRunning_ == running) return;
     syncGeneratorRunning_ = running;
     if (running) {
@@ -83,12 +85,14 @@ SyncInputTelemetry SimulatorRuntime::syncInputTelemetry() const {
 }
 
 void SimulatorRuntime::setResetCableConnected(const bool connected) {
+    resetDirectDriven_ = false;
     resetCableConnected_ = connected;
     if (connected) resetGeneratorRunning_ = true;
     resetExternalResetAcquisition();
 }
 
 void SimulatorRuntime::setResetGeneratorRunning(const bool running) {
+    resetDirectDriven_ = false;
     resetGeneratorRunning_ = running;
     if (running && !resetCableConnected_) resetCableConnected_ = true;
     resetExternalResetAcquisition();
@@ -119,10 +123,47 @@ ResetInputTelemetry SimulatorRuntime::resetInputTelemetry() const {
         resetWaveform_, resetPeriodMs_, resetCount_};
 }
 
+void SimulatorRuntime::setExternalSyncInput(const bool connected, const bool high) {
+    syncDirectDriven_ = true;
+    syncDirectLevelHigh_ = connected && high;
+    if (!connected && syncComparatorHigh_ && application_ != nullptr &&
+        application_->runningForSimulator()) {
+        application_->injectExternalSyncLevelForSimulator(false);
+        syncComparatorHigh_ = false;
+    }
+    syncCableConnected_ = connected;
+    syncGeneratorRunning_ = false;
+}
+
+void SimulatorRuntime::setExternalResetInput(const bool connected, const bool high) {
+    resetDirectDriven_ = true;
+    resetDirectLevelHigh_ = connected && high;
+    if (!connected && resetComparatorHigh_ && application_ != nullptr &&
+        application_->runningForSimulator()) {
+        application_->injectExternalResetLevelForSimulator(false);
+        resetComparatorHigh_ = false;
+    }
+    resetCableConnected_ = connected;
+    resetGeneratorRunning_ = false;
+}
+
 void SimulatorRuntime::serviceExternalSync() {
     if (!syncCableConnected_ || !poweredOn_ || application_ == nullptr ||
         !application_->runningForSimulator()) {
         syncComparatorHigh_ = false;
+        return;
+    }
+
+    if (syncDirectDriven_) {
+        if (syncComparatorHigh_ != syncDirectLevelHigh_) {
+            application_->injectExternalSyncLevelForSimulator(syncDirectLevelHigh_);
+            if (syncDirectLevelHigh_) {
+                syncLastPulseUs_ = nowMicroseconds();
+                ++syncPulseCount_;
+            }
+            syncComparatorHigh_ = syncDirectLevelHigh_;
+        }
+        syncLocked_ = application_->engineSnapshotForSimulator().externalLocked;
         return;
     }
 
@@ -149,8 +190,22 @@ void SimulatorRuntime::serviceExternalSync() {
 }
 
 void SimulatorRuntime::serviceExternalReset() {
-    if (!resetCableConnected_ || !resetGeneratorRunning_ || !poweredOn_ ||
-        application_ == nullptr || !application_->runningForSimulator()) {
+    if (!resetCableConnected_ || !poweredOn_ || application_ == nullptr ||
+        !application_->runningForSimulator()) {
+        resetComparatorHigh_ = false;
+        return;
+    }
+    if (resetDirectDriven_) {
+        if (resetComparatorHigh_ != resetDirectLevelHigh_) {
+            application_->injectExternalResetLevelForSimulator(resetDirectLevelHigh_);
+            if (resetDirectLevelHigh_) {
+                ++resetCount_;
+            }
+            resetComparatorHigh_ = resetDirectLevelHigh_;
+        }
+        return;
+    }
+    if (!resetGeneratorRunning_) {
         resetComparatorHigh_ = false;
         return;
     }

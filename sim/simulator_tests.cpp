@@ -138,6 +138,19 @@ int main() {
     }
     runtime.setSyncCableConnected(false);
 
+    // VCV and other host adapters can drive the conditioned input boundary directly.
+    // Disconnecting a cable while HIGH must release the captured level instead of
+    // leaving a synthetic permanent gate inside the firmware-facing input state.
+    runtime.setExternalSyncInput(true, true);
+    runtime.advanceMicroseconds(100ULL);
+    if (!runtime.syncInputTelemetry().signalHigh) {
+        return fail("direct SYNC input must drive the conditioned HIGH level");
+    }
+    runtime.setExternalSyncInput(false, false);
+    if (runtime.syncInputTelemetry().signalHigh) {
+        return fail("disconnecting direct SYNC while HIGH must release the conditioned level");
+    }
+
     const SignalWaveform initialSyncWaveform = runtime.syncInputTelemetry().waveform;
     runtime.cycleSyncWaveform();
     if (runtime.syncInputTelemetry().waveform == initialSyncWaveform) {
@@ -158,6 +171,16 @@ int main() {
         return fail("single RST injection must reach the real engine boundary");
     }
     runtime.setResetCableConnected(false);
+
+    runtime.setExternalResetInput(true, true);
+    runtime.advanceMicroseconds(100ULL);
+    if (!runtime.resetInputTelemetry().signalHigh) {
+        return fail("direct RST input must drive the conditioned HIGH level");
+    }
+    runtime.setExternalResetInput(false, false);
+    if (runtime.resetInputTelemetry().signalHigh) {
+        return fail("disconnecting direct RST while HIGH must release the conditioned level");
+    }
 
     const std::uint16_t initialBpm = runtime.state().bpm;
     const std::int64_t initialEncoderVisualPosition = runtime.encoderVisualPosition();

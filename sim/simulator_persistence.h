@@ -33,6 +33,12 @@ public:
     /** @brief Returns path used for durable simulator state. */
     const std::filesystem::path& path() const;
 
+    /** @brief Exports the complete logical persistence image for host containers such as VCV Rack. */
+    std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> exportImage() const;
+
+    /** @brief Replaces the complete logical persistence image and its durable host mirror. */
+    void importImage(const std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes>& image);
+
 private:
     /** @brief Reads the complete host-storage image through the real persistence HAL API. */
     std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> readImage() const;

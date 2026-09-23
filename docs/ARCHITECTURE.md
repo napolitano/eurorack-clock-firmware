@@ -278,7 +278,7 @@ The current firmware timestamps both conditioned physical input paths from GPIO 
 
 ## Native simulator architecture
 
-The simulator compiles production application/engine/UI/services/HAL-facing code and substitutes only the MCU/framework layer.
+The simulator compiles production application/engine/UI/services/HAL-facing code and substitutes only the MCU/framework layer. The experimental `vcv/` Trial-First port deliberately reuses this same host boundary: Rack is another container around the production CLOCK code, not a separate engine implementation.
 
 ```mermaid
 flowchart TB
@@ -291,7 +291,7 @@ flowchart TB
     Telemetry --> Scope[developer oscilloscope]
 ```
 
-The SDL frontend must never implement its own musical scheduler or duplicate UI state.
+The SDL frontend must never implement its own musical scheduler or duplicate UI state. The same rule applies to `vcv/`: Rack sample time is converted into exact CLOCK scheduler quanta by `ClockVcvRuntime`, while transport, external sync, Groove/Euclid/Sequencer timing and OLED rendering stay in production code. The first VCV alpha is intentionally single-instance until the current process-global host HAL/application callback ownership is refactored.
 
 ## Configuration ownership
 

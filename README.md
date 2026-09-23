@@ -74,7 +74,7 @@ CLOCK reached **1.0** by stabilizing and qualifying the product that already exi
 ```mermaid
 flowchart LR
     V1["1.0.1<br/>Stable baseline"] --> G["NOW<br/>1.1.0<br/>Grooves + Pre-Count"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
-    V1 -. separate track .-> VCV["VCV Rack<br/>Reference port"]
+    V1 -. separate track .-> VCV["VCV Rack<br/>Experimental Trial First"]
 
     classDef current fill:#0B4FC0,color:#ffffff,stroke:#062F75,stroke-width:2px;
     classDef stable fill:#197A5A,color:#ffffff,stroke:#0B513A,stroke-width:2px;
@@ -90,6 +90,10 @@ flowchart LR
 ```
 
 The hard physical-HIL release gate deliberately starts at **1.5.0**; before then HIL remains visible and evidence-checked but advisory to release automation. The detailed roadmap documents scope, dependencies, constraints and exit criteria for each milestone: **[`docs/ROADMAP.md`](docs/ROADMAP.md)**.
+
+### Try CLOCK in VCV Rack — experimental
+
+The post-1.1 development tree now contains an experimental **Trial First** Rack port under [`vcv/`](vcv/). It compiles the production CLOCK application/engine/UI rather than reimplementing the musical behavior, drives the same 20 kHz scheduler from Rack sample time, renders the real 128x64 framebuffer, exposes eight hardware-faithful 0/+5-V gates, and embeds CLOCK's logical persistence image in the Rack patch. The first alpha deliberately permits only one active CLOCK instance because the current host HAL/application callback boundary is process-global. See [`docs/VCV_RACK.md`](docs/VCV_RACK.md).
 
 ## What CLOCK does
 
@@ -112,6 +116,7 @@ The hard physical-HIL release gate deliberately starts at **1.5.0**; before then
 | Persistence | CURRENT auto-save + 8 named presets + factory templates, CRC/schema protected |
 | Timing service | 20 kHz deterministic scheduler, 50 µs service quantum |
 | Simulator | SDL3 interactive front panel + headless integration target |
+| VCV Rack | Experimental Trial-First port in `vcv/`, using the real CLOCK runtime; one active instance in the first alpha |
 | Firmware language | C++17 |
 
 CLOCK always boots in **STOP**. Stored state can restore configuration, but it never silently resumes gate output after power-up.
@@ -329,6 +334,7 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | [Architecture](docs/ARCHITECTURE.md) | Firmware boundaries and responsibilities |
 | [Configuration](docs/CONFIGURATION.md) | Build-time and runtime configuration |
 | [Simulator](docs/SIMULATOR.md) | Desktop simulator and headless usage |
+| [VCV Rack Trial First](docs/VCV_RACK.md) | Experimental digital-twin port, build/install and current limitations |
 | [HIL Test Plan](docs/HIL_TEST_PLAN.md) | Physical qualification evidence; advisory to release automation through 1.4.x, enforced from 1.5.0 |
 | [Roadmap](docs/ROADMAP.md) | Released 1.1 Groove/Pre-Count scope, later 1.x milestones, and the VCV track |
 | [GitHub Wiki publication](docs/WIKI.md) | Generated Wiki structure, automatic sync and ODT manual download |

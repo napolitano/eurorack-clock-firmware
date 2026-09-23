@@ -15,7 +15,7 @@ flowchart LR
     R --> N["1.5.x<br/>Structured Random<br/>Hard HIL gate"]
     N --> I["1.6.x<br/>Channel Interaction<br/>Utility events"]
     I --> P["1.7.x<br/>Scenes<br/>Phase tools"]
-    V1 -. separate track .-> VCV["VCV Rack<br/>Reference port"]
+    V1 -. separate track .-> VCV["VCV Rack<br/>Experimental Trial First"]
     P -. research .-> X["Later<br/>Groove Learn · Elastic Sync<br/>Phase Drift · Euclid Morph"]
 
     classDef current fill:#0B4FC0,color:#ffffff,stroke:#062F75,stroke-width:2px;
@@ -261,15 +261,15 @@ Every post-1.0 feature must preserve these project rules:
 
 ## VCV Rack track
 
-A VCV Rack version is planned as a **separate post-1.0 track**, not as firmware `1.x` feature numbering. Its purpose is threefold:
+Status: **EXPERIMENTAL / implementation started after 1.1.0**. VCV Rack remains a separate product/platform track rather than firmware `1.x` feature numbering. Its primary product purpose is **Trial First**: prospective builders should be able to experience CLOCK's actual operating model before deciding to build the hardware.
 
-- provide a useful virtual CLOCK for VCV users;
-- exercise the same musical core through another platform adapter;
-- act as a rapid musical test bed for later timing/rhythm ideas before they are promoted into hardware firmware.
+The first implementation slice lives in `vcv/` and compiles the production CLOCK application, engine, services, UI and `clock_core`. Rack sample time only advances the existing 20 kHz CLOCK scheduler; the VCV shell does not own a second musical scheduler. The real 128x64 renderer is used, the eight outputs are exposed as 0/+5-V logical gates, and Rack patch persistence embeds the existing CLOCK logical persistence image.
 
-Initial scope should mirror the physical CLOCK: eight gate outputs, SYNC/RST semantics, the same timing modes, the same state model where applicable, and no virtual-only general CV sockets simply because they are cheap in software. If a larger virtual instrument is ever desirable, it should be named and scoped separately rather than silently diverging from the hardware reference.
+Initial scope mirrors the physical CLOCK: eight gate outputs, configurable SYNC/RST input semantics, the same transport/topologies/modes/Grooves and the same state model. No virtual-only general CV sockets are added merely because they are cheap in software.
 
-A key acceptance target for the port is **event equivalence**: given the same musical configuration, seed and input-edge sequence, the embedded core, native simulator and VCV adapter should produce equivalent logical event streams within their platform timing representations.
+Current alpha limitation: the native host HAL and application callback thunks still contain process-global active-instance state. Until that is refactored into an instance context shared by `sim/` and `vcv/`, the Rack shell permits one active CLOCK instance per Rack process and disables additional instances explicitly.
+
+A key acceptance target remains **event equivalence**: given the same musical configuration, seed and input-edge sequence, the embedded core, native simulator and VCV adapter should produce equivalent logical event streams within their platform timing representations. See [`VCV_RACK.md`](VCV_RACK.md).
 
 ## Later research pool
 
