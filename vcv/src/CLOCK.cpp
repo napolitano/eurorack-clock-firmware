@@ -351,30 +351,37 @@ struct ClockPanelLabels final : Widget {
 
     void draw(const DrawArgs& args) override {
         using namespace clockfw::vcv::panel;
-        drawLabel(args.vg, panelPoint(3.15F, 3.10F), "SOUTH SIGNAL LAB", 4.8F,
-            NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
-        drawLabel(args.vg, panelPoint(3.15F, 6.55F), "CLOCK", 8.0F,
-            NVG_ALIGN_LEFT | NVG_ALIGN_MIDDLE);
+        constexpr float panelCenterX = kPanelWidthMm * 0.5F;
 
-        drawLabel(args.vg,
-            panelPoint(kEncoderCenter.x, kEncoderCenter.y + kEncoderDiameterMm * 0.5F + 1.7F),
-            "ENC / PUSH", 4.6F);
+        // Keep the product name visually dominant and independent from control geometry.
+        drawLabel(args.vg, panelPoint(panelCenterX, 5.10F), "CLOCK", 12.0F);
 
-        const float buttonLabelY = kPlayCenter.y + kButtonActuatorDiameterMm * 0.5F + 1.5F;
-        drawLabel(args.vg, panelPoint(kPlayCenter.x, buttonLabelY), "PLAY / PAUSE", 4.7F);
-        drawLabel(args.vg, panelPoint(kTapCenter.x, buttonLabelY), "TAP / SHIFT", 4.7F);
-        drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY), "STOP / BACK", 4.7F);
+        // Control and jack labels always sit below the corresponding physical element.
+        // The encoder deliberately carries no label: its push/turn behavior is self-evident
+        // from the control and the OLED UI, and the space is better left visually quiet.
+        const float buttonLabelY = kPlayCenter.y + kButtonActuatorDiameterMm * 0.5F + 1.3F;
+        constexpr float labelLineGapMm = 2.15F;
+        drawLabel(args.vg, panelPoint(kPlayCenter.x, buttonLabelY), "PLAY", 6.2F);
+        drawLabel(args.vg, panelPoint(kPlayCenter.x, buttonLabelY + labelLineGapMm), "/ PAUSE", 6.2F);
+        drawLabel(args.vg, panelPoint(kTapCenter.x, buttonLabelY), "TAP", 6.2F);
+        drawLabel(args.vg, panelPoint(kTapCenter.x, buttonLabelY + labelLineGapMm), "/ SHIFT", 6.2F);
+        drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY), "STOP", 6.2F);
+        drawLabel(args.vg, panelPoint(kStopCenter.x, buttonLabelY + labelLineGapMm), "/ BACK", 6.2F);
 
-        const float inputLabelY = kSyncCenter.y - 6.85F;
-        drawLabel(args.vg, panelPoint(kSyncCenter.x, inputLabelY), "IN 1 / SYNC", 4.8F);
-        drawLabel(args.vg, panelPoint(kResetCenter.x, inputLabelY), "IN 2 / RST", 4.8F);
+        const float inputLabelY = kSyncCenter.y + kJackNutDiameterMm * 0.5F + 1.25F;
+        drawLabel(args.vg, panelPoint(kSyncCenter.x, inputLabelY), "IN 1", 6.0F);
+        drawLabel(args.vg, panelPoint(kSyncCenter.x, inputLabelY + labelLineGapMm), "/ SYNC", 6.0F);
+        drawLabel(args.vg, panelPoint(kResetCenter.x, inputLabelY), "IN 2", 6.0F);
+        drawLabel(args.vg, panelPoint(kResetCenter.x, inputLabelY + labelLineGapMm), "/ RST", 6.0F);
 
         for (std::size_t index = 0U; index < kOutputCenters.size(); ++index) {
             const auto& center = kOutputCenters[index];
-            const float labelY = center.y + kJackNutDiameterMm * 0.5F + 1.2F;
+            const float labelY = center.y + kJackNutDiameterMm * 0.5F + 1.5F;
             const std::string label = std::to_string(index + 1U);
-            drawLabel(args.vg, panelPoint(center.x, labelY), label.c_str(), 5.8F);
+            drawLabel(args.vg, panelPoint(center.x, labelY), label.c_str(), 6.8F);
         }
+
+        drawLabel(args.vg, panelPoint(panelCenterX, 123.15F), "SOUTH SIGNAL LAB", 5.4F);
     }
 };
 

@@ -29,6 +29,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Formalize the Rack licensing/dependency boundary: keep the SDK external, confine Rack API use to `vcv/`, reject bundled SDK/`libRack` payloads, and document the free-of-charge plugin exception assumption.
 - Fix generated VCV C++ geometry literals so integral millimetre values are emitted as standard `9.0F`/`3.0F` literals instead of invalid GNU `9F`/`3F` tokens, and add a regression that rejects integer-plus-`F` output.
 - Draw Rack panel lettering through a NanoVG overlay using Rack's bundled UI font because Rack's NanoSVG loader does not render SVG `<text>` nodes; keep the SVG text only for standalone previews/documentation.
+- Refine the functional VCV panel hierarchy: center a larger CLOCK title at the top, center SOUTH SIGNAL LAB at the bottom, enlarge all control/port labels, keep every button/jack label below its hardware, and leave the encoder intentionally unlabelled.
 - Make the virtual encoder easier to turn by enlarging only its Rack interaction viewport, shrinking the dedicated push-centre hit target, forcing predictable linear drag behavior and mapping mouse-wheel events directly to relative encoder detents.
 - Keep VCV activity LEDs visible for 75 ms after short gates, matching the native simulator's perceptual LED policy without stretching the real 0/+5-V gate outputs.
 - Add adapter regressions that verify factory One Clock rising-edge periodicity and eight-output phase coherence at 44.1, 48 and 96 kHz Rack sample rates.
