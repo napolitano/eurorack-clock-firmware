@@ -18,6 +18,14 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Move the Contents page directly behind the cover and rebuild it as a compact full-width title/page index.
 - Replace the oversized cover author block with a firmware-update QR area; author attribution remains in the Colophon.
 - Reserve a compact cover line for future release-version stamping so the QR/update area survives publication.
+- Constrain the Contents table to the normal publication text frame and synchronize its page numbers from the actual exported PDF before the final build.
+- Normalize direct and gallery screenshot spacing and unify ordinary data-table header/body typography.
+- Repair the remaining chapter-heading style drift, including the Settings Map chapter.
+- Rework General Settings into a scoped settings map with dedicated master-meter, gate-length, input-role, clock-source, loss-policy and reset explanations.
+- Replace the AUTHOR overflow example with the functional `CORE LIC` license row and its current production-renderer screenshot.
+- Turn Groove recording into a real six-step procedure and give the source repository URL/QR its own page.
+- Split the GitHub-readable User Guide into 24 manual-aligned chapter files and publish the same chapter hierarchy into the generated Wiki.
+- Re-stamp the maintained post-1.1 manual cover/back-cover raster so the working source visibly identifies firmware 1.1.0 instead of carrying the stale 1.0.1 back-cover label.
 
 ## [1.1.0] - 2026-09-23
 

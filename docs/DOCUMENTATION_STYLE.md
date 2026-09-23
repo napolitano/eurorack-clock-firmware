@@ -73,10 +73,15 @@ Document parameters, return semantics, units, ownership/lifetime, thread/ISR res
 The maintained ODT under `docs/manual-source/` follows a publication-layout contract in addition to the Markdown content rules:
 
 - the cover prioritizes product identity and the firmware-update QR; author attribution belongs in the Colophon rather than as a dominant cover element;
-- `Contents` is a dedicated page immediately after the cover and uses a compact single-column chapter-title/page-number index;
+- `Contents` is a dedicated page immediately after the cover, uses the normal content-page frame, and keeps its table inside the same horizontal text bounds as the body;
+- Contents page numbers are resolved from the actual exported PDF and written back to the ODT before the final publication export;
 - chapter headings are left-aligned, carry the blue chapter number and black title, and retain semantic outline levels for PDF navigation;
 - intermediate headings are left-aligned, blue and bold, with no inherited list/outline indentation;
 - manually numbered headings must not rely on LibreOffice's implicit outline list-tab positioning;
+- direct screenshots and gallery screenshots use explicit, consistent top/bottom spacing styles; captions and neighboring body text must not collapse against the image edge;
+- ordinary data tables use a blue/bold header and consistent dark body typography; special callout/gallery/Contents tables are exempt;
+- long read-only UI overflow is illustrated with a functional/legal value such as `CORE LIC`, not by making personal attribution visually dominant;
+- the source-repository URL/QR receives its own page near the end of the manual;
 - release stamping may update the reserved firmware-version line on the cover but must not overwrite the update QR or manual-license line.
 
 The frozen files in `docs/manual/` are release-history artifacts. Layout improvements after a release apply to the maintained source and future manuals; published historical ODTs are not silently rewritten.

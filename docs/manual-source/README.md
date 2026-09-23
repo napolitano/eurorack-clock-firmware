@@ -2,12 +2,12 @@
 
 # CLOCK Manual Workspace
 
-This directory contains the maintained, publication-layout CLOCK end-user manual together with its reusable diagrams and deterministic UI screenshots. The repository User Guide is the canonical GitHub-readable operating reference; the ODT is the editable source for the typeset release manual.
+This directory contains the maintained, publication-layout CLOCK end-user manual together with its reusable diagrams and deterministic UI screenshots. The chapter-oriented repository User Guide under `docs/user-guide/` is the canonical GitHub/Wiki-readable operating structure; the ODT is the editable source for the typeset publication manual. `docs/USER_GUIDE.md` remains the consolidated reference view.
 
 
 ## Maintained user manual source
 
-The editable end-user manual is maintained as [`clock-user-manual.odt`](clock-user-manual.odt). The browser-readable content baseline is [`../USER_GUIDE.md`](../USER_GUIDE.md); user-visible facts must remain synchronized between both forms. Its manual-specific license is documented in [`LICENSE.md`](LICENSE.md). The ODT represents the maintained working source. Final-release preparation freezes a version-matched copy as `../manual/clock-user-manual.<firmware-version>.odt`. The sibling `docs/manual/` directory is reserved exclusively for manuals of final stable releases (`X.Y.Z`); Alpha, Beta and RC manuals are publication artifacts and are not retained in that archive.
+The editable end-user manual is maintained as [`clock-user-manual.odt`](clock-user-manual.odt). The browser-readable operating guide is split under [`../user-guide/`](../user-guide/README.md) along the same 24-chapter structure as the publication manual. [`../USER_GUIDE.md`](../USER_GUIDE.md) remains the consolidated compatibility/reference view; user-visible facts must remain synchronized across the chapter set, consolidated guide, and ODT. Its manual-specific license is documented in [`LICENSE.md`](LICENSE.md). The ODT represents the maintained working source. Final-release preparation freezes a version-matched copy as `../manual/clock-user-manual.<firmware-version>.odt`. The sibling `docs/manual/` directory is reserved exclusively for manuals of final stable releases (`X.Y.Z`); Alpha, Beta and RC manuals are publication artifacts and are not retained in that archive.
 
 The release artifact naming contract follows the Quantizer/Drift convention:
 
@@ -26,7 +26,9 @@ This stamps the current `CLOCK_FIRMWARE_VERSION` into firmware-bearing ODT body 
 
 The release workflow converts the frozen ODT with LibreOffice and publishes **both ODT and PDF** as GitHub Release assets. The release PDF is checked for a non-zero page count, the expected firmware version, and Ubuntu-family font embedding. A separate `Manual publication smoke test` workflow exercises the same publication path for documentation changes.
 
-The maintained source also carries an explicit layout contract. `Contents` is a dedicated page directly behind the cover with one readable chapter/page pair per row, chapter headings remain left-aligned while retaining semantic outline levels, and intermediate headings use one consistent blue/bold style without outline indentation. The cover keeps author attribution in the Colophon and uses the former author block for a firmware-update QR (`assets/updates-qr.png`) pointing to the GitHub Releases page. Release stamping writes only the compact reserved firmware-version line beside that QR.
+The maintained source also carries an explicit layout contract. `Contents` is a dedicated page directly behind the cover, uses the normal framed content-page master, and keeps one chapter/page pair per row inside the publication text frame. The page values are synchronized from the **actual exported PDF** by `scripts/update_manual_contents.py`, and `build_user_manual.py` performs that synchronize-and-rebuild pass automatically for post-1.1 publication manuals. Chapter headings remain left-aligned while retaining semantic outline levels; intermediate headings use one consistent blue/bold style without outline indentation. Direct screenshots and gallery thumbnails use explicit top/bottom spacing styles rather than inheriting zero-margin body/image paragraphs, and ordinary data tables use one blue-header/dark-body typography contract. `Source repository` begins on its own page.
+
+The cover keeps author attribution in the Colophon and uses the former author block for a firmware-update QR (`assets/updates-qr.png`) pointing to the GitHub Releases page. Release stamping writes only the compact reserved firmware-version line beside that QR. Within the device documentation, the `LICENSES` / `CORE LIC` overflow is the canonical long-read-only-value example; the author name is not used as a visually dominant instructional example.
 
 Before the Colophon, the release manual contains a dedicated **Licenses and source** section with the PolyForm firmware license notice, third-party runtime notices, and the canonical repository QR code from [`assets/repository-qr.png`](assets/repository-qr.png). `scripts/check_user_manual.py` verifies that the embedded QR payload exactly matches the canonical asset and points readers to `https://github.com/napolitano/eurorack-clock-firmware`.
 
@@ -37,6 +39,7 @@ Local helpers:
 ```bash
 python scripts/prepare_release_manual.py
 python scripts/build_user_manual.py
+python scripts/update_manual_contents.py <odt> <rendered-pdf>  # normally invoked by build_user_manual.py
 ```
 
 `prepare_release_manual.py` requires the Ubuntu font family for release-quality cover stamping. `--allow-font-substitution` exists only for local non-release previews.

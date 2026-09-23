@@ -14,6 +14,7 @@ import re
 from pathlib import Path
 
 import check_user_manual
+import update_manual_contents
 
 ROOT = Path(__file__).resolve().parents[1]
 STABLE_VERSION_RE = re.compile(r"^[0-9]+\.[0-9]+\.[0-9]+$")
@@ -64,6 +65,27 @@ def build(source: Path, output_dir: Path, version: str, *, require_ubuntu_fonts:
 
     if not pdf_out.is_file() or pdf_out.stat().st_size == 0:
         raise RuntimeError(f"LibreOffice did not produce {pdf_out}")
+
+    # The post-1.1 publication manual uses a styled static chapter index rather
+    # than LibreOffice's generated TOC. Resolve page numbers from the actual
+    # exported artifact (and therefore the actual release fonts), patch the ODT,
+    # then export once more. Page-number text itself does not alter pagination.
+    if check_user_manual.requires_layout_v2(odt_out, version):
+        update_manual_contents.update(odt_out, pdf_out)
+        with tempfile.TemporaryDirectory(prefix="clock-lo-profile-toc-") as profile:
+            command = [
+                libreoffice_binary(),
+                "--headless",
+                f"-env:UserInstallation=file://{Path(profile).resolve()}",
+                "--convert-to",
+                "pdf",
+                "--outdir",
+                str(output_dir),
+                str(odt_out),
+            ]
+            subprocess.run(command, check=True)
+
+    check_user_manual.validate_odt(odt_out, version)
     check_user_manual.validate_pdf(pdf_out, version, require_ubuntu_fonts=require_ubuntu_fonts)
     return odt_out, pdf_out
 

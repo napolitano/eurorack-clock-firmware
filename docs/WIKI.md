@@ -8,11 +8,14 @@ The GitHub Wiki is a **generated publication surface**, not a second documentati
 
 The generator publishes a curated hierarchy instead of blindly copying every Markdown file:
 
-- Home, User Guide, User Manual, and Roadmap;
+- Home, User Guide index, User Manual, and Roadmap;
+- a **24-page Using CLOCK section that mirrors the publication manual chapter-for-chapter**, from Start here through Technical status and specifications;
 - Architecture, Timing, Configuration, and Simulator;
 - Native Tests, Test Coverage, HIL Qualification, and V1 Forward Compatibility;
 - Developer Setup, Development Workflow, Dependencies, and Documentation Index;
 - Licensing, Project Identity, Contributing, and Security.
+
+The chapter-oriented repository source lives in `docs/user-guide/`. `docs/USER_GUIDE.md` remains the consolidated operating-reference view, but the generated Wiki uses the split chapter set so its navigation follows the same mental model as the ODT/PDF manual instead of presenting one very long page.
 
 `_Sidebar.md` is generated from the same page manifest so navigation cannot silently drift away from the page set. Repository-relative Markdown links are rewritten either to the corresponding Wiki page or to the exact source commit in the main repository. Direct edits in the GitHub Wiki are intentionally overwritten on the next successful publication.
 

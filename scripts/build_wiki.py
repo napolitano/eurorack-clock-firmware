@@ -40,9 +40,35 @@ class WikiPage:
 
 PAGES = (
     WikiPage('README.md', 'Home', 'Home', 'Start here'),
-    WikiPage('docs/USER_GUIDE.md', 'User-Guide', 'User Guide', 'Start here'),
+    WikiPage('docs/user-guide/README.md', 'User-Guide', 'User Guide', 'Start here'),
     WikiPage('docs/manual-source/README.md', 'Manual-and-Downloads', 'Manual & Downloads', 'Start here'),
     WikiPage('docs/ROADMAP.md', 'Roadmap', 'Roadmap', 'Start here'),
+
+    WikiPage('docs/user-guide/01-start-here.md', '01-Start-Here', '01 Start here', 'Using CLOCK'),
+    WikiPage('docs/user-guide/02-panel-power-and-boot.md', '02-Panel-Power-and-Boot', '02 Panel, power and boot', 'Using CLOCK'),
+    WikiPage('docs/user-guide/03-two-minute-quick-start.md', '03-Two-Minute-Quick-Start', '03 Two-minute quick start', 'Using CLOCK'),
+    WikiPage('docs/user-guide/04-control-language.md', '04-Control-Language', '04 The control language', 'Using CLOCK'),
+    WikiPage('docs/user-guide/05-performance-screen.md', '05-Performance-Screen', '05 Read the Performance screen', 'Using CLOCK'),
+    WikiPage('docs/user-guide/06-select-channels-and-functions.md', '06-Select-Channels-and-Functions', '06 Select channels and change functions', 'Using CLOCK'),
+    WikiPage('docs/user-guide/07-transport-and-tempo.md', '07-Transport-and-Tempo', '07 Transport and tempo', 'Using CLOCK'),
+    WikiPage('docs/user-guide/08-independent-channels.md', '08-Independent-Channels', '08 Independent channels', 'Using CLOCK'),
+    WikiPage('docs/user-guide/09-clock-mode.md', '09-Clock-Mode', '09 Clock mode', 'Using CLOCK'),
+    WikiPage('docs/user-guide/10-euclid-mode.md', '10-Euclid-Mode', '10 Euclid mode', 'Using CLOCK'),
+    WikiPage('docs/user-guide/11-sequencer-mode.md', '11-Sequencer-Mode', '11 Sequencer mode', 'Using CLOCK'),
+    WikiPage('docs/user-guide/12-one-clock.md', '12-One-Clock', '12 One Clock', 'Using CLOCK'),
+    WikiPage('docs/user-guide/13-grooves-and-record.md', '13-Grooves-and-Custom-Groove-Record', '13 Grooves and Custom Groove Record', 'Using CLOCK'),
+    WikiPage('docs/user-guide/14-divider-bank.md', '14-Divider-Bank', '14 Divider Bank', 'Using CLOCK'),
+    WikiPage('docs/user-guide/15-settings-map.md', '15-Settings-Map', '15 Settings map', 'Using CLOCK'),
+    WikiPage('docs/user-guide/16-configurable-external-inputs.md', '16-Configurable-External-Inputs', '16 Configurable external inputs', 'Using CLOCK'),
+    WikiPage('docs/user-guide/17-presets-autosave-templates.md', '17-Presets-Autosave-and-Templates', '17 Presets, autosave and templates', 'Using CLOCK'),
+    WikiPage('docs/user-guide/18-screensaver-display-protection.md', '18-Screensaver-and-Display-Protection', '18 Screensaver and display protection', 'Using CLOCK'),
+    WikiPage('docs/user-guide/19-gate-outputs-and-leds.md', '19-Gate-Outputs-and-LEDs', '19 Gate outputs and LEDs', 'Using CLOCK'),
+    WikiPage('docs/user-guide/20-hidden-boot-features.md', '20-Hidden-Boot-Features', '20 Hidden boot features', 'Using CLOCK'),
+    WikiPage('docs/user-guide/21-practical-recipes.md', '21-Practical-Recipes', '21 Practical recipes', 'Using CLOCK'),
+    WikiPage('docs/user-guide/22-troubleshooting.md', '22-Troubleshooting', '22 Troubleshooting', 'Using CLOCK'),
+    WikiPage('docs/user-guide/23-firmware-installation-and-updates.md', '23-Firmware-Installation-and-Updates', '23 Firmware installation and updates', 'Using CLOCK'),
+    WikiPage('docs/user-guide/24-technical-status-and-specifications.md', '24-Technical-Status-and-Specifications', '24 Technical status and specifications', 'Using CLOCK'),
+
     WikiPage('docs/ARCHITECTURE.md', 'Architecture', 'Architecture', 'Engineering'),
     WikiPage('docs/TIMING.md', 'Timing', 'Timing', 'Engineering'),
     WikiPage('docs/CONFIGURATION.md', 'Configuration', 'Configuration', 'Engineering'),
@@ -216,7 +242,7 @@ def render_sidebar(version: str) -> str:
         f'**CLOCK {version}**',
         '',
     ]
-    group_order = ('Start here', 'Engineering', 'Quality', 'Development', 'Project')
+    group_order = ('Start here', 'Using CLOCK', 'Engineering', 'Quality', 'Development', 'Project')
     for group in group_order:
         lines.extend((f'### {group}', ''))
         for page in PAGES:

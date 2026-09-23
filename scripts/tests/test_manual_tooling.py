@@ -30,6 +30,7 @@ PREPARE = load("prepare_release_manual", ROOT / "scripts" / "prepare_release_man
 CHECK = load("check_user_manual", ROOT / "scripts" / "check_user_manual.py")
 BUILD = load("build_user_manual", ROOT / "scripts" / "build_user_manual.py")
 REFRESH = load("refresh_manual_screenshots", ROOT / "scripts" / "refresh_manual_screenshots.py")
+UPDATE_CONTENTS = load("update_manual_contents", ROOT / "scripts" / "update_manual_contents.py")
 
 
 class ManualToolingTests(unittest.TestCase):
@@ -229,6 +230,9 @@ class ManualToolingTests(unittest.TestCase):
         self.assertEqual(len(targets), len(REFRESH.DIRECT_SCREENSHOTS))
         self.assertIn("ManualImage15", targets)
         self.assertEqual(REFRESH.DIRECT_SCREENSHOTS["ManualImage15"], "settings-input-config.png")
+        self.assertEqual(REFRESH.DIRECT_SCREENSHOTS["ManualImage23"], "settings-licenses.png")
+        self.assertEqual(REFRESH.DIRECT_SCREENSHOTS["ManualImage24"], "settings-general.png")
+        self.assertEqual(REFRESH.DIRECT_SCREENSHOTS["ManualImage25"], "settings-master.png")
 
     def test_refresh_replaces_direct_frames_and_galleries(self) -> None:
         import zipfile
@@ -256,6 +260,30 @@ class ManualToolingTests(unittest.TestCase):
                     archive.read("Pictures/gallery_manualgalleryscreensavers_01_01.png"),
                     (ROOT / "docs" / "manual-source" / "assets" / "screensaver-clock.png").read_bytes(),
                 )
+                licenses = root.xpath(
+                    '//draw:frame[@draw:name="ManualImage23"]/draw:image', namespaces=ns
+                )[0]
+                licenses_href = licenses.get(f"{{{ns['xlink']}}}href")
+                self.assertEqual(
+                    archive.read(licenses_href),
+                    (ROOT / "docs" / "manual-source" / "assets" / "settings-licenses.png").read_bytes(),
+                )
+
+    def test_contents_updater_sees_24_semantic_chapters(self) -> None:
+        import zipfile
+        from lxml import etree
+
+        with zipfile.ZipFile(self.working, "r") as archive:
+            root = etree.fromstring(archive.read("content.xml"))
+        headings = UPDATE_CONTENTS.chapter_headings(root)
+        self.assertEqual(24, len(headings))
+        self.assertEqual("1 Start here", headings[0])
+        self.assertEqual("24 Technical status and specifications", headings[-1])
+
+    def test_manual_builder_refreshes_static_contents_after_first_pdf_export(self) -> None:
+        source = (ROOT / "scripts" / "build_user_manual.py").read_text(encoding="utf-8")
+        self.assertIn("update_manual_contents.update(odt_out, pdf_out)", source)
+        self.assertIn("clock-lo-profile-toc-", source)
 
     def test_manual_screenshot_generator_recovers_from_generator_mismatch(self) -> None:
         generator = load(

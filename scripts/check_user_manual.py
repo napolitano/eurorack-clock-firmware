@@ -82,19 +82,28 @@ def requires_layout_v2(path: Path, version: str) -> bool:
 
 
 def validate_layout_v2(content_xml: str, styles_xml: str) -> None:
-    """Validate the maintained manual's post-1.1.0 layout contract."""
+    """Validate the maintained manual's post-1.1.0 publication-layout contract."""
     ns = {
         "office": "urn:oasis:names:tc:opendocument:xmlns:office:1.0",
         "text": "urn:oasis:names:tc:opendocument:xmlns:text:1.0",
         "table": "urn:oasis:names:tc:opendocument:xmlns:table:1.0",
         "style": "urn:oasis:names:tc:opendocument:xmlns:style:1.0",
         "fo": "urn:oasis:names:tc:opendocument:xmlns:xsl-fo-compatible:1.0",
+        "draw": "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0",
     }
     content_root = ET.fromstring(content_xml)
     styles_root = ET.fromstring(styles_xml)
 
-    # LibreOffice's default outline label alignment can visually center manually
-    # numbered text:h paragraphs. The manual deliberately disables that label tab.
+    def flat_text(element: ET.Element) -> str:
+        return " ".join("".join(element.itertext()).split())
+
+    def inches(value: str | None) -> float:
+        if value is None or not value.endswith("in"):
+            raise RuntimeError(f"Expected inch-valued layout property, got {value!r}")
+        return float(value[:-2])
+
+    # LibreOffice's outline label alignment must not shift manually numbered
+    # semantic text:h headings away from the common left edge.
     alignments = styles_root.findall(
         ".//text:outline-style/text:outline-level-style/style:list-level-properties/style:list-level-label-alignment",
         ns,
@@ -114,9 +123,8 @@ def validate_layout_v2(content_xml: str, styles_xml: str) -> None:
         raise RuntimeError("Manual body is missing")
     children = list(body)
 
-    def flat_text(element: ET.Element) -> str:
-        return " ".join("".join(element.itertext()).split())
-
+    # Contents must use the normal framed page master and remain inside the
+    # 3.125-inch publication text frame rather than inheriting the full-bleed cover.
     contents_index = next(
         (i for i, element in enumerate(children) if flat_text(element) == "Contents"),
         None,
@@ -127,6 +135,14 @@ def validate_layout_v2(content_xml: str, styles_xml: str) -> None:
     )
     if contents_index is None or chapter_one_index is None or contents_index >= chapter_one_index:
         raise RuntimeError("Manual Contents page must precede chapter 1")
+    contents_heading = children[contents_index]
+    if contents_heading.attrib.get(f"{{{ns['text']}}}style-name") != "ManualContentsHeading":
+        raise RuntimeError("Manual Contents heading must use the framed-page publication style")
+    contents_style = content_root.find(
+        './/style:style[@style:name="ManualContentsHeading"]', ns
+    )
+    if contents_style is None or contents_style.attrib.get(f"{{{ns['style']}}}master-page-name") != "Converted1":
+        raise RuntimeError("Manual Contents must use the normal framed content-page master")
 
     toc = next(
         (
@@ -141,27 +157,115 @@ def validate_layout_v2(content_xml: str, styles_xml: str) -> None:
     columns = toc.findall("table:table-column", ns)
     if len(columns) != 2:
         raise RuntimeError(f"Manual Contents must use one title/page pair in two columns; found {len(columns)}")
+    toc_style = content_root.find('.//style:style[@style:name="ManualContentsWide"]', ns)
+    if toc_style is None:
+        raise RuntimeError("Manual Contents table style is missing")
+    toc_props = toc_style.find("style:table-properties", ns)
+    if toc_props is None or inches(toc_props.attrib.get(f"{{{ns['style']}}}width")) > 3.125:
+        raise RuntimeError("Manual Contents table exceeds the publication text frame")
+
     page_values = []
     for paragraph in toc.findall(".//text:p", ns):
         if paragraph.attrib.get(f"{{{ns['text']}}}style-name") == "ManualContentsPageP":
             value = flat_text(paragraph)
             if value:
                 page_values.append(value)
-    if len(page_values) != 24 or any(value == "00" for value in page_values):
-        raise RuntimeError("Manual Contents must contain 24 resolved chapter page numbers")
+    if len(page_values) != 24 or any(not value.isdigit() or value == "00" for value in page_values):
+        raise RuntimeError("Manual Contents must contain 24 resolved numeric chapter page values")
 
-    # P17 is the maintained intermediate-heading paragraph style. Every such
-    # heading must carry the blue/bold T2 text style instead of inheriting body text.
+    # Every top-level chapter uses the same semantic + visual contract: one
+    # outline-level-1 heading, blue numeric span T1 and black title span T3.
+    chapters = [
+        element for element in content_root.findall(".//text:h", ns)
+        if element.attrib.get(f"{{{ns['text']}}}outline-level") == "1"
+    ]
+    if len(chapters) != 24:
+        raise RuntimeError(f"Manual must expose exactly 24 semantic chapter headings; found {len(chapters)}")
+    for chapter in chapters:
+        spans = chapter.findall("text:span", ns)
+        styles = [span.attrib.get(f"{{{ns['text']}}}style-name") for span in spans]
+        if styles != ["T1", "T3"]:
+            raise RuntimeError(f"Manual chapter heading is not normalized: {flat_text(chapter)!r}")
+        if chapter.attrib.get(f"{{{ns['text']}}}style-name") not in {"P15", "P19"}:
+            raise RuntimeError(f"Manual chapter heading uses unexpected paragraph style: {flat_text(chapter)!r}")
+
+    # P17 is the maintained intermediate-heading style. Every such heading uses
+    # the blue/bold T2 text style and no inherited body-text formatting.
     for element in content_root.iter():
         if element.attrib.get(f"{{{ns['text']}}}style-name") != "P17":
-            continue
-        if flat_text(element) == "Contents":
             continue
         spans = element.findall("text:span", ns)
         if not spans or any(
             span.attrib.get(f"{{{ns['text']}}}style-name") != "T2" for span in spans
         ):
             raise RuntimeError(f"Manual intermediate heading is not normalized: {flat_text(element)!r}")
+
+    # Direct screenshots and gallery images use separate explicit paragraph
+    # spacing contracts so figures cannot accidentally inherit zero-margin P8.
+    direct_count = gallery_count = 0
+    for paragraph in content_root.findall(".//text:p", ns):
+        frames = paragraph.findall(".//draw:frame", ns)
+        for frame in frames:
+            name = frame.attrib.get(f"{{{ns['draw']}}}name", "")
+            if name.startswith("ManualImage"):
+                direct_count += 1
+                if paragraph.attrib.get(f"{{{ns['text']}}}style-name") != "ManualScreenshotP":
+                    raise RuntimeError(f"Direct screenshot does not use ManualScreenshotP: {name}")
+            elif name.startswith("ManualGallery"):
+                gallery_count += 1
+                if paragraph.attrib.get(f"{{{ns['text']}}}style-name") != "ManualGalleryScreenshotP":
+                    raise RuntimeError(f"Gallery screenshot does not use ManualGalleryScreenshotP: {name}")
+    if direct_count < 25 or gallery_count != 22:
+        raise RuntimeError(
+            f"Unexpected manual screenshot inventory: direct={direct_count}, gallery={gallery_count}"
+        )
+
+    # All ordinary data tables share the same blue header / dark body typography.
+    # Callouts, galleries and the custom Contents table are intentionally exempt.
+    for table in content_root.findall(".//table:table", ns):
+        name = table.attrib.get(f"{{{ns['table']}}}name", "")
+        if name == "ManualContents" or name.startswith("ManualCallout") or name.startswith("ManualGallery"):
+            continue
+        for paragraph in table.findall("./table:table-header-rows//text:p", ns):
+            spans = paragraph.findall("text:span", ns)
+            if paragraph.attrib.get(f"{{{ns['text']}}}style-name") != "P20" or not spans or any(
+                span.attrib.get(f"{{{ns['text']}}}style-name") != "T12" for span in spans
+            ):
+                raise RuntimeError(f"Manual table header typography drifted in {name}")
+        for paragraph in table.findall("./table:table-row/table:table-cell/text:p", ns):
+            spans = paragraph.findall("text:span", ns)
+            if paragraph.attrib.get(f"{{{ns['text']}}}style-name") != "P2" or not spans or any(
+                span.attrib.get(f"{{{ns['text']}}}style-name") != "T8" for span in spans
+            ):
+                raise RuntimeError(f"Manual table body typography drifted in {name}")
+
+    required_text = (
+        "Swing, Groove and Humanize — what is the difference?",
+        "Timing layer",
+        "Record a Groove by feel",
+        "How the meter changes musical time",
+        "Gate length — fixed pulse time, not duty cycle",
+        "Roles, SOURCE and LOSS are separate decisions",
+        "AUTO — lock in four steps",
+        "RESET — TRIGGER versus GATE",
+        "CORE LIC",
+        "Source repository",
+    )
+    for required in required_text:
+        if required not in content_xml:
+            raise RuntimeError(f"Manual post-1.1 didactic/layout contract is missing: {required}")
+    for forbidden in (
+        "The AUTHOR row is the primary current example",
+        "settings-info-author-popover",
+    ):
+        if forbidden in content_xml:
+            raise RuntimeError(f"Manual contains obsolete author-overflow presentation: {forbidden}")
+
+    source_heading = next(
+        (element for element in children if flat_text(element) == "Source repository"), None
+    )
+    if source_heading is None or source_heading.attrib.get(f"{{{ns['text']}}}style-name") != "ManualSubsectionPageHeading":
+        raise RuntimeError("Source repository must begin on its own page")
 
     if not UPDATES_QR.is_file():
         raise RuntimeError(f"Canonical firmware-update QR asset missing: {UPDATES_QR}")

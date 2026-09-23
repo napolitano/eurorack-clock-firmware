@@ -6,6 +6,9 @@
 >
 > CLOCK 1.1.0 is the current stable release. This guide covers Pre-Count, configurable digital-input roles, Groove Engine Stage 1/2, Custom Groove editing/recording and the horizontal Channel Mode carousel together with the established 1.0 functionality. Physical comparator thresholds, jack-level timing, gate jitter and Groove/TAP-record timing remain tracked HIL evidence rather than host-test claims.
 
+> [!NOTE]
+> The chapter-oriented version of this guide lives under [`docs/user-guide/`](user-guide/README.md) and follows the same 24-chapter navigation as the ODT/PDF manual and generated Wiki. This file remains the consolidated reference view.
+
 This guide is the GitHub-readable operating reference for CLOCK. OLED screenshots are generated from the **production renderer and the real 128×64 framebuffer**, then enlarged with nearest-neighbor scaling. They are not hand-drawn UI mockups.
 
 ## 1. What CLOCK is
@@ -276,7 +279,20 @@ These parameters are shared by Independent Clock/Euclid/Sequencer channels unles
 
 **Phase** offsets a channel relative to the common timeline without creating a separate free-running transport.
 
-**Gate length** selects a trigger duration of 1, 2, 5, 10, 20, 50, or 100 ms. The scheduler also bounds gate-off timing against the actual event interval so a configured long pulse cannot consume the next rising edge.
+**Gate length** selects a fixed HIGH duration of **1, 2, 5, 10, 20, 50, or 100 ms**. It is an absolute time value, not a duty-cycle percentage. At slow rates the selected duration can be emitted directly; on a fast multiplied channel the engine shortens an otherwise-too-long pulse before the next scheduled rising edge so one gate can never consume the following event. Gate scheduling uses the 20 kHz timing service, so edge requests are resolved on the 50 µs scheduler quantum.
+
+### Master meter: `METER BEATS` and `METER UNIT`
+
+The global CLOCK page keeps tempo and meter separate. The **BPM number is the quarter-note tempo reference**. `METER UNIT` chooses the note value represented by one master beat, and `METER BEATS` chooses how many of those beats form one bar. At 120 BPM this means, for example:
+
+| Meter | Master beat | Bar duration |
+| --- | --- | --- |
+| `4/4` | 500 ms quarter-note beat | 2.0 s |
+| `3/4` | 500 ms quarter-note beat | 1.5 s |
+| `6/8` | 250 ms eighth-note beat | 1.5 s |
+| `2/2` | 1000 ms half-note beat | 2.0 s |
+
+The same meter definition drives the bar/beat counter and Pre-Count. With external SYNC, PPQN remains pulses per **quarter note**; CLOCK converts accepted pulses into the configured master-beat unit.
 
 **Reset policy** controls how an Independent channel reacts to a global reset: `GLOBAL` re-anchors it; `FREE` preserves its local cycle position.
 
@@ -341,6 +357,17 @@ The Record menu provides **MODE** (`ONE SHOT / ENDLESS`), recorder **COUNT IN** 
 
 Front-panel TAP capture preserves the high-resolution physical press timestamp through button debounce before converting it to a signed per-step offset. Host tests verify that software contract; absolute physical switch latency/jitter remains a HIL measurement.
 
+### Record a Groove by feel — step by step
+
+1. Open `TIMING → GROOVE → RECORD`. RECORD and EDITOR work on the same temporary Custom Groove draft.
+2. Long-press the encoder and set **LENGTH** (`1–64`), recorder **COUNT IN** (`OFF / 1–64`, default `4`) and **MODE** (`ONE SHOT / ENDLESS`). Choose a useful **ZOOM** if needed.
+3. Press **PLAY**. If recorder Count-In is enabled, it runs first; capture begins only after that local count reaches zero.
+4. Tap the rhythm on **TAP**. Every press records one high-resolution timing event against the live Q32 engine position. Tap Tempo is disabled while the recorder is active.
+5. Press **PLAY** again to stop. The recorder rewinds to the beginning and the recorded draft stays available.
+6. Choose `EDITOR >` for precise marker cleanup, then **SAVE** to a named Custom Groove slot when the result is ready.
+
+`ENDLESS` is deliberately non-destructive to untouched steps: later passes replace only steps that receive a new TAP. `ONE SHOT` stops automatically after one pattern cycle.
+
 ### Custom Groove library
 
 The frozen 1.1.0 storage scope is **10 named Custom Groove slots**. The normal Groove page exposes `LOAD >`; saved Grooves can also be overwritten, renamed, or deleted with explicit safe confirmations. The Performance screen uses the stored name rather than a generic `CUSTOM` label. The earlier 99-slot idea remains a later storage target and is not part of the 1.1.0 release contract.
@@ -365,48 +392,87 @@ While Pre-Count is active, the Performance screen keeps the normal context visib
 
 ## 18. Configurable external inputs
 
-Open `SETTINGS → GENERAL SETTINGS → INPUTS` to assign the two conditioned comparator inputs. The current board still has physical/net identities **SYNC/PA8** and **RST/PA9**; the firmware presents them as **INPUT 1** and **INPUT 2** so either electrical path can perform any supported digital input role. Factory assignment is `INPUT 1 = SYNC`, `INPUT 2 = RESET`.
+Open `SETTINGS → GENERAL SETTINGS → INPUTS` to assign the two conditioned comparator inputs. The board still has the physical/net identities **SYNC/PA8** and **RST/PA9**; firmware presents them as **INPUT 1** and **INPUT 2** so either electrical path can own any supported digital-input role. Factory assignment is `INPUT 1 = SYNC`, `INPUT 2 = RESET`.
 
-Current selectable roles are:
+Three controls answer three different questions and should not be conflated:
 
-- **OFF** — ignore the input;
-- **SYNC** — external clock acquisition;
-- **RESET** — phase reset using the configured `TRIGGER / GATE` semantics;
-- **RUN** — conditioned `HIGH = PLAY`, `LOW = STOP`;
-- **START** — positive edge starts transport;
-- **STOP** — positive edge stops transport;
-- **RESTART** — positive edge stops/restarts from phase zero;
-- **TAP** — positive edge enters the existing Tap Tempo estimator with the captured input timestamp.
+| Control | Question it answers |
+| --- | --- |
+| **INPUT role** | What does this jack mean right now — SYNC, RESET, RUN, START, STOP, RESTART, TAP or OFF? |
+| **SOURCE** | Who owns musical time — CLOCK itself (`INTERNAL`), the assigned SYNC input (`EXTERNAL`), or automatic handover (`AUTO`)? |
+| **LOSS** | After an external clock had lock, what happens if that clock disappears — `STOP`, `FREE`, or `INTERNAL`? |
 
-`FILL` is reserved for later Fill functionality and is not selectable in the current development firmware. Active roles are exclusive: a non-`OFF` role assigned to one input is skipped while editing the other. `OFF` may be assigned to both inputs.
+A jack assigned to **SYNC** does not by itself force external timing ownership. The role makes that jack available as the clock input; `SOURCE` decides whether the timing engine follows it.
+
+### Input roles
+
+| Role | Behavior |
+| --- | --- |
+| `OFF` | Ignore the conditioned input. `OFF` may be assigned to both inputs. |
+| `SYNC` | Use selected edges for external period measurement, lock and phase alignment. |
+| `RESET` | Apply global phase reset; `RESET INPUT` selects `TRIGGER` or `GATE` semantics. |
+| `RUN` | After arming, conditioned `HIGH = PLAY`, `LOW = STOP`. Assigning/restoring RUN first baselines the present level and waits for a later physical change. |
+| `START` | A positive edge requests PLAY. |
+| `STOP` | A positive edge requests STOP. |
+| `RESTART` | A positive edge performs deterministic STOP→PLAY from phase zero. |
+| `TAP` | A positive edge is passed to the normal Tap-Tempo estimator with its captured input timestamp. |
+
+`FILL` is reserved and is not selectable in 1.1.0. Active non-`OFF` roles are exclusive across the two inputs. Changing a role drains queued edges from the old meaning before the new role becomes active, so one electrical transition cannot later be reinterpreted as a different command.
 
 <table>
 <tr>
 <td align="center"><img src="manual-source/assets/settings-inputs.png" alt="INPUTS settings page with INPUT 1 assigned to SYNC and INPUT 2 assigned to RESET." width="220"><br><sub>Input-role assignments</sub></td>
-<td align="center"><img src="manual-source/assets/settings-input-config.png" alt="CONFIG page showing external timing and reset configuration." width="220"><br><sub>Shared input configuration</sub></td>
+<td align="center"><img src="manual-source/assets/settings-input-config.png" alt="CONFIG page showing external timing and reset configuration." width="220"><br><sub>Shared clock/reset configuration</sub></td>
 </tr>
 </table>
 
-Choose `CONFIG >` from the INPUTS page for the shared timing/reset parameters:
+### SOURCE — who owns musical time?
 
-- **SOURCE** — `INTERNAL / EXTERNAL / AUTO` (factory default: `AUTO`)
-- **PPQN** — `1 / 2 / 4 / 24`
-- **EDGE** — rising / falling for `SYNC`
-- **LOSS** — `STOP / FREE / INTERNAL`
-- **RST MODE** — `TRIGGER / GATE`
-- **FILTER** — 0–5000 µs in 250 µs steps
-- **SMOOTHING** — `OFF / LOW / MEDIUM / FULL` (factory default: `LOW`)
-- **TIMEOUT** — 200–5000 ms in 100 ms steps
+| SOURCE | Behavior |
+| --- | --- |
+| `INTERNAL` | CLOCK is the master. Configured internal BPM and meter drive musical time. |
+| `EXTERNAL` | CLOCK follows a valid assigned SYNC input. The first accepted selected edge starts acquisition; the second establishes the first measurable period, BPM and lock. |
+| `AUTO` | CLOCK runs internally until a valid external period is acquired, then hands timing ownership to external SYNC. Loss is handled by `LOSS`. |
 
-For a role assigned to `RESET`, `TRIGGER` generates one global phase reset for an accepted active edge; holding the input HIGH does not repeat it. `GATE` uses the current conditioned level: while HIGH, the timing engine is held in reset and all generated gates remain LOW; release restarts from phase zero. A channel configured with local `RESET = FREE` keeps its independent cycle position as defined by the existing reset policy.
+`AUTO` acquisition is deliberately staged:
 
-For a role assigned to `SYNC`, `AUTO` remains the factory clock source. Without a valid external lock, CLOCK runs from the configured internal BPM. The first accepted selected SYNC edge starts acquisition but does not advertise lock because no period can yet be measured. The second valid selected edge establishes period/BPM, acquires lock, resets external phase to zero and may start transport unless manual transport state takes precedence. While locked in `EXTERNAL` or `AUTO`, the Performance BPM display shows measured external tempo.
+1. Without a valid external period, CLOCK runs at the internal/fallback BPM.
+2. The first accepted selected SYNC edge starts acquisition but cannot establish lock because there is no period yet.
+3. The second valid selected edge establishes period and external BPM, acquires lock and re-anchors external phase to zero. Transport may auto-start only while external auto-transport is armed.
+4. If external edges later disappear for the effective timeout, lock is lost and `LOSS` decides what happens next.
 
-`FILTER` and `SMOOTHING` solve different problems. `FILTER` rejects implausibly short electrical/glitch intervals. `SMOOTHING` controls how quickly measured tempo follows genuine period changes: `OFF` uses 100% of the newest period, `LOW` 75% new / 25% previous, `MEDIUM` 50% / 50%, and `FULL` 25% new / 75% previous. `LOW` remains the factory default.
+An explicit user STOP or PAUSE has priority; incoming clock cannot silently undo a manual transport decision.
 
-After external clock loss, `LOSS = STOP` stops transport; `LOSS = FREE` continues at the last measured external BPM and keeps that BPM on the Performance display; `LOSS = INTERNAL` returns to the configured fallback BPM. A role change discards queued edges captured under the previous assignment, so a pending clock edge cannot later be reinterpreted as START, STOP, RESTART or TAP. `RUN` is level-authoritative once armed, but assigning RUN is deliberately transport-neutral: CLOCK records the present comparator level as the baseline and waits for a later physical level change before issuing PLAY or STOP. The same baseline rule applies at boot, so a persisted RUN assignment cannot bypass the normal STOP-on-boot contract.
+### LOSS — after external lock disappears
 
-Both physical comparator paths are captured by GPIO EXTI with TIM5 microsecond timestamps and are consumed by the deterministic scheduler. Host tests prove this digital role/state-machine contract. Actual LM393 thresholds, propagation, jack-level timing and output jitter remain HIL evidence.
+| LOSS | Behavior |
+| --- | --- |
+| `STOP` | Stop transport. A later valid reacquisition may restart only if the stop was caused by sync loss; a manual STOP remains authoritative. |
+| `FREE` | Continue at the last measured external tempo and keep that BPM as the effective/visible tempo after lock loss. |
+| `INTERNAL` | Continue using the configured internal/fallback BPM. |
+
+### PPQN, EDGE, FILTER, SMOOTHING and TIMEOUT
+
+| Setting | Meaning |
+| --- | --- |
+| **PPQN** | `1 / 2 / 4 / 24` pulses per quarter note. It must match the source because period-to-BPM conversion uses it. |
+| **EDGE** | Rising or falling. Only the selected transition is a timing pulse; pulse width is not the clock period. |
+| **FILTER** | `0…5000 µs` minimum inter-edge rejection floor in 250 µs steps. Implausibly short selected-edge intervals are rejected as glitches and do not become the next period reference. |
+| **SMOOTHING** | `OFF = 100%` newest period; `LOW = 75% new / 25% previous`; `MEDIUM = 50/50`; `FULL = 25% new / 75% previous`. Factory default is `LOW`. |
+| **TIMEOUT** | `200…5000 ms` configured lock-loss floor. The effective timeout is never shorter than roughly two expected pulse periods, so a valid slow clock does not time out between pulses. |
+
+`FILTER` and `SMOOTHING` solve different problems. FILTER rejects implausibly short edge spacing **before** it can become a new period reference. SMOOTHING decides how quickly **valid** period changes alter the measured tempo. A large FILTER can reject legitimate very-fast clock edges; heavy SMOOTHING deliberately follows real tempo moves more slowly.
+
+### RESET — `TRIGGER` versus `GATE`
+
+| RESET INPUT | Behavior |
+| --- | --- |
+| `TRIGGER` | One accepted active/high edge requests one global phase reset. Holding the input HIGH does not repeatedly reset and RESET does not itself PLAY, PAUSE or STOP transport. |
+| `GATE` | The conditioned input level becomes a held reset state. HIGH resets phase and holds musical progression; LOW releases the hold and re-anchors runtime at the transition. |
+
+Global reset still respects each Independent channel's local `RESET` policy: `GLOBAL` channels re-anchor; `FREE` channels preserve their local cycle relationship according to the channel reset contract. Transport roles (`RUN / START / STOP / RESTART`) remain separate from the RESET role.
+
+Both physical comparator paths are captured by GPIO EXTI with TIM5 microsecond timestamps and consumed by the deterministic scheduler. Host tests cover this digital role/state-machine contract; actual LM393 thresholds, propagation, jack-level timing and output jitter remain HIL evidence.
 
 ## 19. Presets, CURRENT, and templates
 
@@ -533,33 +599,27 @@ After a ranked Easter egg has been launched at least once, the Settings root gai
 
 Pixel Raid, Formula 1, Breakout, and Egg Journey keep all gate source GPIOs muted. BEATKNECHT is the deliberate exception: its intro is started with PLAY, it allows gate HIGH requests only while transport is PLAYING, drives the rhythm gates, forces all channels LOW on PAUSE, and returns all channels LOW plus mutes gate output on STOP or confirmed exit. Opening the exit confirmation also silences the gates; cancelling restores the prior PLAY/PAUSE/STOP state. Normal firmware resumes in STOP.
 
-## 22. INFO, version, and updates
+## 22. INFO, version, licenses, and updates
 
-`SETTINGS → INFO` groups identity, maintenance information, and the deliberately buried factory-reset action:
+`SETTINGS → INFO` groups identity, maintenance information and the deliberately buried factory-reset action:
 
-- **NAME** — `CLOCK`
-- **VERSION** — currently running firmware version
-- **AUTHOR** — Axel Napolitano
-- **LICENSES** — firmware and bundled third-party license identifiers/attributions
-- **UPDATES** — full-screen QR code for the current project update URL (`https://github.com/napolitano`)
+- **PRODUCT** — CLOCK product identity
+- **FIRMWARE** — currently running firmware version
+- **AUTHOR** — project attribution; deliberately not treated as primary UI content
+- **LICENSES** — firmware/framework/core/HAL/CMSIS license identifiers
+- **UPDATES** — full-screen QR code for the firmware's canonical project-update URL (`https://github.com/napolitano`)
 
-
-Long read-only information values use a separate overflow rule from editable Settings values. If a value does not fit its row, CLOCK shortens only that informational value with `...`; pressing the row opens a full-value popover. Editable values are never redirected through this mechanism because pressing them must retain its normal edit/confirm meaning. The AUTHOR row is the primary current example.
-
-**FACTORY RESET** is the final INFO entry so it is not exposed as a routine performance control. Selecting it opens a separate confirmation screen with **NO** selected by default. Confirming **YES** stops transport, clears CURRENT, all eight named presets, legacy score data, and all Top-100 leaderboards, then restores the documented factory configuration.
+Long read-only values use a separate overflow rule from editable Settings values. If a value does not fit its row, CLOCK shortens only that informational value with `...`; pressing the row opens the complete value. Editable values keep their normal edit/confirm behavior. The **CORE LIC** row is the canonical example because `BSD-3-Clause` does not fit comfortably in the compact license list.
 
 <table>
 <tr>
-<td align="center"><img src="manual-source/assets/settings-info.png" alt="INFO page showing the CLOCK product identity, version, and truncated author entry." width="220"><br><sub>Identity with bounded read-only values</sub></td>
-<td align="center"><img src="manual-source/assets/settings-info-author-popover.png" alt="Full-value read-only information popover showing the complete author name." width="220"><br><sub>Full value after pressing the truncated AUTHOR row</sub></td>
-<td align="center"><img src="manual-source/assets/settings-licenses.png" alt="Licenses page listing the firmware and bundled third-party license information." width="220"><br><sub>Licenses</sub></td>
-</tr>
-<tr>
-<td align="center"><img src="manual-source/assets/settings-updates.png" alt="Updates page showing the full-screen QR code used to reach the project update location." width="220"><br><sub>Updates</sub></td>
-<td></td>
-<td></td>
+<td align="center"><img src="manual-source/assets/settings-info.png" alt="INFO page showing product, firmware and compact identity information." width="220"><br><sub>INFO</sub></td>
+<td align="center"><img src="manual-source/assets/settings-licenses.png" alt="Licenses page showing firmware and bundled framework/core license rows, including truncated CORE LIC." width="220"><br><sub>License identifiers and overflow</sub></td>
+<td align="center"><img src="manual-source/assets/settings-updates.png" alt="Updates page showing the full-screen QR code for the firmware project-update location." width="220"><br><sub>Updates</sub></td>
 </tr>
 </table>
+
+**FACTORY RESET** is the final INFO entry so it is not exposed as a routine performance control. Selecting it opens a separate confirmation screen with **NO** selected by default. Confirming **YES** stops transport, clears CURRENT, all eight named presets, legacy score data and all Top-100 leaderboards, then restores the documented factory configuration.
 
 ## 23. Firmware installation and updates
 

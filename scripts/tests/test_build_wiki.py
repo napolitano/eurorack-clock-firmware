@@ -33,6 +33,18 @@ class WikiGenerationTests(unittest.TestCase):
             self.assertEqual(expected, {path.name for path in output.glob('*.md')})
             self.assertIn(version, (output / '_Sidebar.md').read_text(encoding='utf-8'))
 
+    def test_wiki_exposes_all_24_manual_aligned_user_chapters(self) -> None:
+        chapters = [page for page in build_wiki.PAGES if page.group == 'Using CLOCK']
+        self.assertEqual(24, len(chapters))
+        self.assertEqual('01 Start here', chapters[0].title)
+        self.assertEqual('24 Technical status and specifications', chapters[-1].title)
+        self.assertTrue(all(page.source.startswith('docs/user-guide/') for page in chapters))
+
+    def test_sidebar_keeps_manual_aligned_user_chapters_in_order(self) -> None:
+        sidebar = build_wiki.render_sidebar(build_wiki.firmware_version())
+        self.assertLess(sidebar.index('01 Start here'), sidebar.index('15 Settings map'))
+        self.assertLess(sidebar.index('15 Settings map'), sidebar.index('24 Technical status and specifications'))
+
     def test_every_content_page_has_exactly_one_munich_footer(self) -> None:
         with tempfile.TemporaryDirectory() as tmp:
             output = Path(tmp) / 'wiki'
@@ -67,14 +79,14 @@ class WikiGenerationTests(unittest.TestCase):
 
     def test_mapped_markdown_links_become_wiki_links(self) -> None:
         rendered = build_wiki.rewrite_links(
-            '[Timing](docs/TIMING.md) and [User Guide](docs/USER_GUIDE.md#controls)',
+            '[Timing](docs/TIMING.md) and [User Guide](docs/user-guide/README.md)',
             Path('README.md'),
             'owner/clock',
             'deadbeef',
             'https://github.com',
         )
         self.assertIn('[Timing](Timing)', rendered)
-        self.assertIn('[User Guide](User-Guide#controls)', rendered)
+        self.assertIn('[User Guide](User-Guide)', rendered)
 
     def test_html_asset_links_are_rewritten(self) -> None:
         rendered = build_wiki.rewrite_links(

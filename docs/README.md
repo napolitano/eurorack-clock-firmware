@@ -2,13 +2,13 @@
 
 # South Signal Lab CLOCK Documentation
 
-This directory is the documentation entry point for CLOCK. Documents are grouped by task and audience; the root [`README.md`](../README.md) is the project landing page, while [`USER_GUIDE.md`](USER_GUIDE.md) is the canonical GitHub-readable operating reference.
+This directory is the documentation entry point for CLOCK. Documents are grouped by task and audience; the root [`README.md`](../README.md) is the project landing page, while [`user-guide/README.md`](user-guide/README.md) is the chapter-oriented GitHub-readable operating reference. [`USER_GUIDE.md`](USER_GUIDE.md) remains the consolidated reference view used by documentation consistency checks.
 
 ## Start here
 
 | I want to… | Document |
 | --- | --- |
-| learn the module as a musician, including 1.1 Grooves/Record | [`USER_GUIDE.md`](USER_GUIDE.md) |
+| learn the module as a musician, including 1.1 Grooves/Record | [`user-guide/README.md`](user-guide/README.md) — 24 manual-aligned chapters |
 | install or update firmware | [`FIRMWARE_UPDATE.md`](FIRMWARE_UPDATE.md) |
 | run or configure the native simulator | [`SIMULATOR.md`](SIMULATOR.md) |
 | understand the firmware architecture | [`ARCHITECTURE.md`](ARCHITECTURE.md) |
@@ -33,7 +33,7 @@ This directory is the documentation entry point for CLOCK. Documents are grouped
 
 ```mermaid
 flowchart LR
-    Root[README.md\nproject overview] --> User[USER_GUIDE.md\noperation]
+    Root[README.md\nproject overview] --> User[user-guide/\n24 operating chapters]
     User --> Update[FIRMWARE_UPDATE.md\ninstall / update / recovery]
     Root --> Dev[DEVELOPER_README.md\nworkstation]
     Root --> Arch[ARCHITECTURE.md\ndesign]

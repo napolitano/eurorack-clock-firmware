@@ -324,7 +324,7 @@ The project enforces a 90% decision-branch gate. Production-source architecture 
 | Document | Purpose |
 | --- | --- |
 | [User Manual](docs/manual-source/README.md) | Publication manual, generated UI assets, ODT/PDF release workflow |
-| [User Guide](docs/USER_GUIDE.md) | Repository-native operating reference |
+| [User Guide](docs/user-guide/README.md) | Chapter-oriented operating reference aligned with the publication manual |
 | [Timing](docs/TIMING.md) | Normative scheduler and timing contract |
 | [Architecture](docs/ARCHITECTURE.md) | Firmware boundaries and responsibilities |
 | [Configuration](docs/CONFIGURATION.md) | Build-time and runtime configuration |

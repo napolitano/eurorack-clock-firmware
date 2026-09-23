@@ -270,6 +270,37 @@ def check_project_metadata(errors: list[str]) -> None:
 
 
 
+
+def check_user_guide_chapter_contract(errors: list[str]) -> None:
+    """Keep the browser/Wiki guide aligned with the 24-chapter publication manual."""
+    chapter_dir = ROOT / 'docs' / 'user-guide'
+    if not chapter_dir.is_dir():
+        errors.append('docs/user-guide: chapter-oriented user guide is missing')
+        return
+    chapters = sorted(chapter_dir.glob('[0-9][0-9]-*.md'))
+    if len(chapters) != 24:
+        errors.append(f'docs/user-guide: expected 24 manual-aligned chapter files, found {len(chapters)}')
+        return
+    for index, path in enumerate(chapters, start=1):
+        text = path.read_text(encoding='utf-8')
+        expected_prefix = f'# {index} '
+        title_line = next((line for line in text.splitlines() if line.startswith('# ')), '')
+        if not title_line.startswith(expected_prefix):
+            errors.append(
+                f'{path.relative_to(ROOT)}: chapter title must begin with {expected_prefix!r}'
+            )
+        if 'Author: Axel Napolitano' not in text or 'License: PolyForm-Noncommercial-1.0.0' not in text:
+            errors.append(f'{path.relative_to(ROOT)}: author/license metadata missing')
+    index_path = chapter_dir / 'README.md'
+    if not index_path.is_file():
+        errors.append('docs/user-guide/README.md: chapter index missing')
+    else:
+        index_text = index_path.read_text(encoding='utf-8')
+        for path in chapters:
+            if f']({path.name})' not in index_text:
+                errors.append(f'docs/user-guide/README.md: missing chapter link {path.name}')
+
+
 def check_wiki_publication_contract(errors: list[str]) -> None:
     """Keep the generated GitHub Wiki and ODT-download publication path buildable."""
     required = (
@@ -355,6 +386,7 @@ def main() -> int:
     check_hil_qualification_contract(errors)
     check_project_metadata(errors)
     check_manual_archive_contract(errors)
+    check_user_guide_chapter_contract(errors)
     check_wiki_publication_contract(errors)
     if errors:
         print('Documentation check failed:', file=sys.stderr)
