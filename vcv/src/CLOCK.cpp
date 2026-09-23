@@ -129,6 +129,13 @@ struct ClockModule final : Module {
     std::atomic<int> queuedEncoderDetents{0};
     std::atomic<EncoderGestureMode> encoderGestureMode{EncoderGestureMode::Idle};
     std::atomic<bool> encoderShortClickReleased{false};
+    std::atomic<bool> generalSettingsRequested{false};
+    std::atomic<bool> keyboardLeftShiftHeld{false};
+    std::atomic<bool> keyboardRightShiftHeld{false};
+    std::atomic<bool> keyboardTapHeld{false};
+    std::atomic<bool> keyboardEncoderHeld{false};
+    std::atomic<bool> keyboardPlayHeld{false};
+    std::atomic<bool> keyboardStopHeld{false};
     double encoderPendingSeconds = 0.0;
     double encoderClickPulseSeconds = 0.0;
     std::uint32_t displayDivider = 0U;
@@ -201,6 +208,34 @@ struct ClockModule final : Module {
         return expected == EncoderGestureMode::Rotate;
     }
 
+    void requestGeneralSettings() noexcept {
+        generalSettingsRequested.store(true, std::memory_order_release);
+    }
+
+    void setKeyboardShiftHeld(const int key, const bool held) noexcept {
+        if (key == GLFW_KEY_LEFT_SHIFT) {
+            keyboardLeftShiftHeld.store(held, std::memory_order_release);
+        } else if (key == GLFW_KEY_RIGHT_SHIFT) {
+            keyboardRightShiftHeld.store(held, std::memory_order_release);
+        }
+    }
+
+    void setKeyboardTapHeld(const bool held) noexcept {
+        keyboardTapHeld.store(held, std::memory_order_release);
+    }
+
+    void setKeyboardEncoderHeld(const bool held) noexcept {
+        keyboardEncoderHeld.store(held, std::memory_order_release);
+    }
+
+    void setKeyboardPlayHeld(const bool held) noexcept {
+        keyboardPlayHeld.store(held, std::memory_order_release);
+    }
+
+    void setKeyboardStopHeld(const bool held) noexcept {
+        keyboardStopHeld.store(held, std::memory_order_release);
+    }
+
     void endEncoderGesture() noexcept {
         const EncoderGestureMode finished = encoderGestureMode.exchange(
             EncoderGestureMode::Idle, std::memory_order_acq_rel);
@@ -215,6 +250,14 @@ struct ClockModule final : Module {
                 outputs[OUT1_OUTPUT + index].setVoltage(0.0F);
             }
             return;
+        }
+
+        if (generalSettingsRequested.exchange(false, std::memory_order_acq_rel)) {
+            if (!runtime->openGeneralSettings()) {
+                // A menu command issued during the one-second boot remains pending until the
+                // normal CLOCK application reaches its running UI state.
+                generalSettingsRequested.store(true, std::memory_order_release);
+            }
         }
 
         const int encoderDetents = queuedEncoderDetents.exchange(0, std::memory_order_acq_rel);
@@ -251,7 +294,8 @@ struct ClockModule final : Module {
             encoderClickPulseSeconds = kEncoderClickPulseSeconds;
         }
 
-        bool encoderPressed = encoderMode == EncoderGestureMode::Press;
+        bool encoderPressed = encoderMode == EncoderGestureMode::Press ||
+            keyboardEncoderHeld.load(std::memory_order_acquire);
         if (encoderClickPulseSeconds > 0.0) {
             encoderPressed = true;
             encoderClickPulseSeconds = std::max(
@@ -260,9 +304,14 @@ struct ClockModule final : Module {
 
         clockfw::vcv::PanelControls controls{};
         controls.encoderPressed = encoderPressed;
-        controls.playPressed = params[PLAY_PARAM].getValue() >= 0.5F;
-        controls.tapPressed = params[TAP_PARAM].getValue() >= 0.5F;
-        controls.stopPressed = params[STOP_PARAM].getValue() >= 0.5F;
+        controls.playPressed = params[PLAY_PARAM].getValue() >= 0.5F ||
+            keyboardPlayHeld.load(std::memory_order_acquire);
+        controls.tapPressed = params[TAP_PARAM].getValue() >= 0.5F ||
+            keyboardLeftShiftHeld.load(std::memory_order_acquire) ||
+            keyboardRightShiftHeld.load(std::memory_order_acquire) ||
+            keyboardTapHeld.load(std::memory_order_acquire);
+        controls.stopPressed = params[STOP_PARAM].getValue() >= 0.5F ||
+            keyboardStopHeld.load(std::memory_order_acquire);
         runtime->setPanelControls(controls);
 
         const bool syncConnected = inputs[SYNC_INPUT].isConnected();
@@ -606,6 +655,102 @@ struct ClockWidget final : ModuleWidget {
     static Vec panelPoint(const clockfw::vcv::panel::PointMm& point) {
         using namespace clockfw::vcv::panel;
         return mm2px(Vec(point.x + kPanelOffsetXmm, point.y + kPanelOffsetYmm));
+    }
+
+    ClockModule* clockModule() const {
+        return dynamic_cast<ClockModule*>(module);
+    }
+
+    void onHoverKey(const HoverKeyEvent& event) override {
+        ClockModule* const clock = clockModule();
+        if (clock == nullptr) {
+            ModuleWidget::onHoverKey(event);
+            return;
+        }
+
+        const bool pressed = event.action == GLFW_PRESS || event.action == GLFW_REPEAT;
+        const bool released = event.action == GLFW_RELEASE;
+        const int nonShiftMods = event.mods & (GLFW_MOD_CONTROL | GLFW_MOD_ALT | GLFW_MOD_SUPER);
+
+        // Shift is CLOCK's virtual second hand: while held, it is the physical TAP/SHIFT button.
+        if (event.key == GLFW_KEY_LEFT_SHIFT || event.key == GLFW_KEY_RIGHT_SHIFT) {
+            if (pressed || released) {
+                clock->setKeyboardShiftHeld(event.key, pressed);
+                event.consume(this);
+            }
+            return;
+        }
+
+        // Preserve Rack's own Ctrl/Alt/Super shortcuts. Shift remains available as a physical
+        // TAP/SHIFT hold so Shift+Enter and Shift+Up/Down reproduce two-control hardware chords.
+        if (nonShiftMods != 0) {
+            ModuleWidget::onHoverKey(event);
+            return;
+        }
+
+        if (event.key == GLFW_KEY_UP || event.key == GLFW_KEY_DOWN) {
+            if (pressed) {
+                clock->queueEncoderDetents(event.key == GLFW_KEY_UP ? 1 : -1);
+            }
+            event.consume(this);
+            return;
+        }
+
+        if (event.key == GLFW_KEY_ENTER || event.key == GLFW_KEY_E) {
+            if (pressed || released) {
+                clock->setKeyboardEncoderHeld(pressed);
+            }
+            event.consume(this);
+            return;
+        }
+
+        if (event.key == GLFW_KEY_P) {
+            if (pressed || released) {
+                clock->setKeyboardPlayHeld(pressed);
+            }
+            event.consume(this);
+            return;
+        }
+
+        if (event.key == GLFW_KEY_T) {
+            if (pressed || released) {
+                clock->setKeyboardTapHeld(pressed);
+            }
+            event.consume(this);
+            return;
+        }
+
+        if (event.key == GLFW_KEY_S || event.key == GLFW_KEY_BACKSPACE) {
+            if (pressed || released) {
+                clock->setKeyboardStopHeld(pressed);
+            }
+            event.consume(this);
+            return;
+        }
+
+        ModuleWidget::onHoverKey(event);
+    }
+
+    void appendContextMenu(Menu* menu) override {
+        ClockModule* const clock = clockModule();
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("South Signal Lab CLOCK"));
+        menu->addChild(createMenuItem(
+            "General Settings...",
+            "",
+            [clock]() {
+                if (clock != nullptr) {
+                    clock->requestGeneralSettings();
+                }
+            }));
+        menu->addChild(new MenuSeparator);
+        menu->addChild(createMenuLabel("VCV controls"));
+        menu->addChild(createMenuLabel("Shift: hold TAP / SHIFT"));
+        menu->addChild(createMenuLabel("Enter / E: encoder push"));
+        menu->addChild(createMenuLabel("Up / Down: encoder turn"));
+        menu->addChild(createMenuLabel("P: PLAY / PAUSE"));
+        menu->addChild(createMenuLabel("T: TAP"));
+        menu->addChild(createMenuLabel("S / Backspace: STOP / BACK"));
     }
 
     explicit ClockWidget(ClockModule* module) {

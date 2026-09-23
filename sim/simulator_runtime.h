@@ -106,6 +106,12 @@ public:
     /** @brief Returns current real firmware application state, or the last safe state while off. */
     const ClockState& state() const;
 
+    /** @brief Opens the existing production General Settings page for a desktop host. */
+    bool openGeneralSettings();
+
+    /** @brief Reports whether the production UI is currently on General Settings. */
+    bool generalSettingsOpen() const;
+
     /** @brief Returns current rolling gate telemetry for all eight physical outputs. */
     const std::array<ChannelTelemetry, kChannelCount>& telemetry() const;
 

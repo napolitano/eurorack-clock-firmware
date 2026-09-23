@@ -232,6 +232,19 @@ void ClockApplication::powerOffForSimulator() {
     simulatorLifecycle_ = SimulatorLifecycle::PoweredOff;
     activeInstance_ = nullptr;
 }
+
+
+bool ClockApplication::openGeneralSettingsForSimulator() {
+    if (simulatorLifecycle_ != SimulatorLifecycle::Running) {
+        return false;
+    }
+    uiController_.openGeneralSettingsForHost();
+    return true;
+}
+
+const ui::NavigationState& ClockApplication::navigationForSimulator() const {
+    return uiController_.navigation();
+}
 #endif
 
 #ifdef CLOCK_SIMULATOR

@@ -140,6 +140,10 @@ void ClockVcvRuntime::rotateEncoder(const int detents) {
     }
 }
 
+bool ClockVcvRuntime::openGeneralSettings() {
+    return runtime_.openGeneralSettings();
+}
+
 float ClockVcvRuntime::gateVoltage(const std::size_t channelIndex) const {
     if (channelIndex >= runtime_.telemetry().size()) {
         return 0.0F;
@@ -173,6 +177,10 @@ std::uint64_t ClockVcvRuntime::syncPulseCountForTest() const {
 
 std::uint64_t ClockVcvRuntime::resetPulseCountForTest() const {
     return runtime_.resetInputTelemetry().resetCount;
+}
+
+bool ClockVcvRuntime::generalSettingsOpenForTest() const {
+    return runtime_.generalSettingsOpen();
 }
 
 bool ClockVcvRuntime::updateInputLevel(const float voltage, const bool previousLevel) {

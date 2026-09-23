@@ -35,6 +35,10 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Reduce the VCV CLOCK wordmark scale slightly and increase jack-label clearance while preserving simulator-derived control geometry.
 - Replace the manual 75 ms VCV activity-latch timer with Rack's bounded light smoothing and dark inactive panel apertures, while leaving the real 0/+5-V gate outputs instantaneous and unchanged.
 - Add adapter regressions that verify factory One Clock rising-edge periodicity and eight-output phase coherence at 44.1, 48 and 96 kHz Rack sample rates.
+- Add Rack-hover keyboard controls so Shift acts as held TAP/SHIFT, Enter/E as encoder push, Up/Down as encoder detents, and P/T/S-or-Backspace as the three physical buttons; this makes hardware two-control chords usable without a latch mode.
+- Add a Rack context-menu **General Settings...** command that enters the existing production `GENERAL SETTINGS` page through the shared host runtime instead of duplicating settings in Rack.
+- Add a repository-root `README_VCV.md` end-user guide and surface the Trial-First port in the main README with a tightly cropped in-Rack screenshot.
+- Restyle the native simulator's built-in panel to the same black/white/grey functional hierarchy as the VCV panel while retaining the shared millimetre geometry and simulator instrumentation.
 
 ### Documentation
 

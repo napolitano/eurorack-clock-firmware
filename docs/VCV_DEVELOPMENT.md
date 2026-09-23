@@ -278,14 +278,16 @@ Minimum Trial-First smoke test:
 
 1. Add one CLOCK module to an empty patch and observe the normal CLOCK boot sequence.
 2. Press **PLAY / PAUSE**. Patch output **1** to a scope or gate-visible destination and verify 0/+5-V behavior; in factory One Clock mode, outputs 1–8 must fire coherently.
-3. Drag/scroll the encoder outer area to turn it. Click its centre for a short push, then hold the centre for more than 650 ms and verify that the production long-press action occurs.
-4. Exercise **PLAY / PAUSE**, **TAP / SHIFT** and **STOP / BACK** and compare OLED transitions with the simulator.
-5. Patch a clock into **IN 1 / SYNC** and verify acquisition, lock, source behavior and loss handling. Also try a one-sample/very-short Rack trigger source; accepted edges must not depend sporadically on alignment with the 50 us CLOCK scheduler tick.
-6. Patch a trigger/gate into **IN 2 / RST** and verify the configured RESET role/behavior.
-7. Exercise One Clock, Independent, Divider Bank, Clock, Euclid, Sequencer, Swing, Groove, Humanize and Pre-Count as applicable.
-8. Save the Rack patch, close/reopen Rack, reload it and verify that CLOCK settings/presets/Custom Grooves restore while transport still boots in STOP.
-9. Add a second CLOCK instance. Until the host-HAL refactor lands, it must show `ONE INSTANCE` and keep all outputs LOW.
-10. Remove and reinsert SYNC/RST cables while HIGH and verify that no stale asserted input survives cable removal.
+3. Drag/scroll the encoder to turn it. Use a stationary short click for encoder push, then hold it for more than 650 ms and verify that the production long-press action occurs.
+4. Hover CLOCK and verify the keyboard bridge: `Shift` holds TAP/SHIFT, `Enter/E` holds encoder push, `Up/Down` turns the encoder, `P` drives PLAY/PAUSE, `T` drives TAP, and `S/Backspace` drives STOP/BACK. Verify `Shift+Enter` and `Shift+Up/Down` as the two-control chords.
+5. Right-click CLOCK, choose **General Settings...**, and verify that the OLED opens the production `GENERAL SETTINGS` page rather than a separate Rack settings panel.
+6. Exercise **PLAY / PAUSE**, **TAP / SHIFT** and **STOP / BACK** and compare OLED transitions with the simulator.
+7. Patch a clock into **IN 1 / SYNC** and verify acquisition, lock, source behavior and loss handling. Also try a one-sample/very-short Rack trigger source; accepted edges must not depend sporadically on alignment with the 50 us CLOCK scheduler tick.
+8. Patch a trigger/gate into **IN 2 / RST** and verify the configured RESET role/behavior.
+9. Exercise One Clock, Independent, Divider Bank, Clock, Euclid, Sequencer, Swing, Groove, Humanize and Pre-Count as applicable.
+10. Save the Rack patch, close/reopen Rack, reload it and verify that CLOCK settings/presets/Custom Grooves restore while transport still boots in STOP.
+11. Add a second CLOCK instance. Until the host-HAL refactor lands, it must show `ONE INSTANCE` and keep all outputs LOW.
+12. Remove and reinsert SYNC/RST cables while HIGH and verify that no stale asserted input survives cable removal.
 
 If the plugin does not appear or fails to load, inspect:
 

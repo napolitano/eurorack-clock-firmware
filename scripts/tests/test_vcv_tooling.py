@@ -57,6 +57,9 @@ class VcvManifestTests(unittest.TestCase):
         self.assertIn("nextSchedulerLevel()", bridge)
         self.assertIn("syncPulseCountForTest", header)
         self.assertIn("resetPulseCountForTest", header)
+        self.assertIn("openGeneralSettings", header)
+        self.assertIn("generalSettingsOpenForTest", header)
+        self.assertIn("runtime_.openGeneralSettings()", bridge)
 
 
     def test_panel_is_generated_from_native_simulator_geometry(self) -> None:
@@ -104,6 +107,17 @@ class VcvManifestTests(unittest.TestCase):
         self.assertIn('"IN 1", 7.2F', shell)
         self.assertNotIn('"SYNC",', shell)
         self.assertIn("setBrightnessSmooth", shell)
+        self.assertIn("appendContextMenu", shell)
+        self.assertIn('"General Settings..."', shell)
+        self.assertIn("requestGeneralSettings", shell)
+        self.assertIn("onHoverKey", shell)
+        self.assertIn("GLFW_KEY_LEFT_SHIFT", shell)
+        self.assertIn("GLFW_KEY_ENTER", shell)
+        self.assertIn("GLFW_KEY_UP", shell)
+        self.assertIn("keyboardLeftShiftHeld", shell)
+        self.assertIn("keyboardRightShiftHeld", shell)
+        self.assertIn("keyboardTapHeld", shell)
+        self.assertIn("setKeyboardShiftHeld", shell)
         self.assertNotIn("activityHoldSeconds", shell)
         self.assertNotIn("0.075F", shell)
         self.assertIn("std::abs(event.mouseDelta.y)", shell)
@@ -142,6 +156,35 @@ class VcvManifestTests(unittest.TestCase):
         self.assertFalse((ROOT / "vcv/res/encoder-push-1.svg").exists())
         self.assertFalse((ROOT / "vcv/res/encoder.svg").exists())
         self.assertIn("4x2", (ROOT / "vcv/README.md").read_text(encoding="utf-8"))
+        end_user = (ROOT / "README_VCV.md").read_text(encoding="utf-8")
+        self.assertIn("General Settings...", end_user)
+        self.assertIn("Shift", end_user)
+        self.assertIn("docs/assets/vcv-rack-clock.png", end_user)
+        self.assertTrue((ROOT / "docs/assets/vcv-rack-clock.png").exists())
+        main_readme = (ROOT / "README.md").read_text(encoding="utf-8")
+        self.assertIn("README_VCV.md", main_readme)
+        self.assertIn("docs/assets/vcv-rack-clock.png", main_readme)
+
+
+    def test_native_simulator_builtin_panel_matches_vcv_label_style(self) -> None:
+        renderer = (ROOT / "sim/panel_renderer.cpp").read_text(encoding="utf-8")
+        layout = (ROOT / "sim/panel_layout.ini").read_text(encoding="utf-8")
+        docs = (ROOT / "docs/SIMULATOR.md").read_text(encoding="utf-8")
+
+        self.assertIn('"PLAY"', renderer)
+        self.assertIn('"PAUSE"', renderer)
+        self.assertIn('"TAP"', renderer)
+        self.assertIn('"SHIFT"', renderer)
+        self.assertIn('"STOP"', renderer)
+        self.assertIn('"BACK"', renderer)
+        self.assertIn('"IN 1"', renderer)
+        self.assertIn('"IN 2"', renderer)
+        self.assertIn('"SOUTH SIGNAL LAB"', renderer)
+        self.assertNotIn('"SYNC IN"', renderer)
+        self.assertNotIn('"RST IN"', renderer)
+        self.assertNotIn('"HI" : "LO"', renderer)
+        self.assertIn("off_color = #111113", layout)
+        self.assertIn("black background, white primary labels", docs)
 
 class VcvWorkflowTests(unittest.TestCase):
     def test_workflow_uses_node24_generation_actions_and_pinned_sdk(self) -> None:
@@ -181,6 +224,8 @@ class VcvWorkflowTests(unittest.TestCase):
             "RACK_USER_DIR",
             "log.txt",
             "VCV Rack Non-Commercial Plugin License Exception",
+            "General Settings...",
+            "Shift+Enter",
             "Rack API use: confined to `vcv/`",
         ):
             self.assertIn(required, guide)

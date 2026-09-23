@@ -4,6 +4,8 @@
 
 This directory contains the first **Trial First** VCV Rack port of CLOCK. The goal is not a separate software interpretation of the module. The Rack shell compiles the real CLOCK application, engine, services, UI renderer and `clock_core`, then replaces only the physical STM32/front-panel boundary.
 
+For normal Rack use, start with the repository-root **[`README_VCV.md`](../README_VCV.md)**. This file focuses on the implementation/build boundary.
+
 ## Current status
 
 `EXPERIMENTAL` — post-1.1.0 development.
@@ -33,6 +35,8 @@ python scripts/generate_vcv_panel.py
 after changing panel geometry. This regenerates the Rack panel SVG, the C++ millimetre coordinate header and the three transport-button frame pairs. CI runs the same command in `--check` mode and rejects stale Rack panel assets.
 
 The Rack encoder is intentionally implemented as an endless relative control rather than a bounded Rack parameter. **Press and drag vertically** to produce discrete hardware-style detents; mouse-wheel movement still produces one detent per step. Each mouse-down is classified once: early vertical movement locks the gesture to rotation, while a stationary click becomes a short push on release and a stationary hold becomes encoder push after a short grace period. A rotation gesture can therefore never also fire a click.
+
+While the module is hovered, Rack keyboard input can act as the second hand for physical combinations: hold **Shift** for TAP/SHIFT, use **Enter/E** for encoder push, and **Up/Down** for encoder detents. `Shift+Enter` and `Shift+Up/Down` therefore reproduce the two important TAP/SHIFT chords. **P**, **T**, and **S/Backspace** map to PLAY/PAUSE, TAP, and STOP/BACK respectively. Right-clicking the module also exposes **General Settings...**, which opens the existing production CLOCK General Settings page rather than a parallel Rack configuration UI.
 
 The Rack module uses a black functional front plate while retaining the simulator-defined geometry. The Rack-visible identity is **South Signal Lab Clock**. The top uses the canonical project-owned **CLOCK vector wordmark** rather than a text approximation, at a slightly reduced scale; **SOUTH SIGNAL LAB** is centred more prominently at the bottom. Primary button functions **PLAY**, **TAP**, and **STOP** are white; secondary functions **PAUSE**, **SHIFT**, and **BACK** sit below them in grey without slash separators. Input jacks use only **IN 1** and **IN 2** on the panel, while their Rack tooltips retain the `SYNC` and `RST` function names. Outputs are numbered **1–8** below the jacks with additional clearance from the jack hardware. The encoder remains intentionally unlabelled. Rack's NanoSVG loader does not render SVG `<text>` nodes, so the actual module draws lettering as a NanoVG overlay with Rack's bundled UI font; the generated SVG keeps matching text for standalone previews.
 

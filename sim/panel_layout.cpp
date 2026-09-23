@@ -74,7 +74,7 @@ struct LayoutDefinition {
 
     float ledDiameterMm = 3.0F;
     Color ledOnColor{235U, 52U, 52U};
-    Color ledOffColor{90U, 52U, 52U};
+    Color ledOffColor{17U, 17U, 19U};
 
     std::array<PhysicalPoint, 8U> outputs{{
         {6.5931F, 95.8114F}, {17.9556F, 95.8114F}, {29.3181F, 95.8114F}, {40.6806F, 95.8114F},

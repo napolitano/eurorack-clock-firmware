@@ -118,6 +118,19 @@ const NavigationState& UiController::navigation() const {
     return navigation_;
 }
 
+#ifdef CLOCK_SIMULATOR
+void UiController::openGeneralSettingsForHost() {
+    // Desktop hosts may expose convenience entry points, but they still land in the
+    // production settings state machine. No VCV/simulator-specific settings model exists.
+    settingsChordActive_ = false;
+    modeTapTurnActive_ = false;
+    encoderPressTracking_ = false;
+    encoderLongPressHandled_ = false;
+    navigation_.settingsExitScreen = Screen::Performance;
+    openSettingsPage(SettingsPage::General);
+}
+#endif
+
 void UiController::handleTransportButton(
     const hal::ButtonSample& button,
     const std::uint32_t nowMs) {

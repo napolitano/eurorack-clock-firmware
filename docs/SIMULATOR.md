@@ -71,11 +71,13 @@ These limitations are explicit so the simulator never claims to validate behavio
 The simulator follows the intended **10 HP / 3U** physical hierarchy:
 
 - eight output jacks at the bottom in two tight rows of four;
-- SYNC IN and RST IN above them, left aligned;
-- PLAY, TAP, STOP in one row above the input;
+- two digital inputs above them, left aligned and labeled **IN 1** / **IN 2** on the panel;
+- PLAY, TAP, STOP in one row above the inputs, with PAUSE / SHIFT / BACK as grey secondary labels;
 - OLED above the buttons, left aligned;
 - encoder beside the OLED;
 - one activity LED associated with each output.
+
+The built-in simulator panel deliberately follows the current VCV presentation: black background, white primary labels, grey secondary button functions, output numbers `1`–`8`, and `SOUTH SIGNAL LAB` branding. The VCV and simulator shells still share the same physical coordinates from `sim/panel_layout.ini`; visual styling does not alter firmware behavior.
 
 The panel geometry is isolated in `sim/panel_layout.h`. Exact PCB/front-panel millimetre coordinates can therefore replace the current design coordinates later without touching firmware or simulator behavior.
 
@@ -258,7 +260,7 @@ The right side of the simulator window is instrumentation, not part of the modul
 - an interactive `FREEZE ON STOP` checkbox (enabled by default) that holds the reference time and retained waveform after STOP; disabling it lets the already-started scope continue scrolling;
 - rising-edge counts.
 
-Each output jack also carries an immediate logic annotation on the front-panel view: `HI` or `LO`, matching the gate source level currently written by firmware. Those annotations and the waveform remain logically exact at the MCU boundary. The separate LED above each jack adds a 75 ms perceptual hold at 1× virtual time (scaled with simulator speed) so a real 1–10 ms trigger cannot disappear between desktop render frames. The developer row also reports the most recently completed pulse width in milliseconds.
+The front panel keeps the physical-style output area uncluttered: jacks are labeled `1`–`8`, while instantaneous logic state remains available in the developer timing view and waveform. The separate LED above each jack retains the simulator's perceptual activity treatment so short triggers remain visible between desktop render frames. The developer row also reports the most recently completed pulse width in milliseconds.
 
 This makes phase/synchronization bugs directly visible. Before the first PLAY the scope is ARMED and does not advance. PLAY from STOP defines the waveform epoch; the musical ruler is then phase-locked to the engine snapshot at the current scope reference time. The grid period still follows effective internal/external BPM, but a later tempo, rate, or sync change does not retroactively slide the ruler away from already captured pulse timing. A CLOCK/EUCLID/SEQ alignment regression, Swing displacement, phase offset, or One Clock Humanize offset can therefore be inspected against the unswung musical reference lattice rather than a decorative or fixed-millisecond ruler.
 
@@ -402,7 +404,7 @@ The following physical elements are configurable without touching C++:
 - encoder centre and knob/cap diameter;
 - D6R button centres, visible actuator diameter, behind-panel body diameter, and individual color;
 - TS and TRS Thonkiconn bushing/opening diameters;
-- SYNC IN and RST IN jack types and centres;
+- IN 1 / IN 2 jack types and centres (the underlying simulator source roles remain SYNC/RST for host instrumentation);
 - all eight output-jack centres and jack types;
 - all eight LED centres plus a shared 3 mm default diameter and on/off colors;
 - four mounting-screw centres;

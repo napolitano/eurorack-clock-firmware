@@ -94,7 +94,7 @@ struct PanelLayout {
 
     float ledRadius = 10.5F;
     Color ledOnColor{235U, 52U, 52U};
-    Color ledOffColor{90U, 52U, 52U};
+    Color ledOffColor{17U, 17U, 19U};
 
     std::array<Point, 8U> outputCenters{{
         {66.1517F, 690.6798F}, {145.6892F, 690.6798F}, {225.2267F, 690.6798F}, {304.7642F, 690.6798F},

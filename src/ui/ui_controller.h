@@ -101,6 +101,11 @@ public:
     /** @brief Seeds pseudo-random human-readable default names for this boot session. */
     void seedGeneratedNames(std::uint32_t seed);
 
+#ifdef CLOCK_SIMULATOR
+    /** @brief Opens the existing General Settings page for a desktop host shell. */
+    void openGeneralSettingsForHost();
+#endif
+
 private:
     /** @brief Routes one encoder detent according to the active screen and edit state. */
     void handleEncoderDelta(std::int8_t delta, bool tapPressed, bool transportPressed);

@@ -13,6 +13,7 @@
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <cstring>
 #include <stdexcept>
 #include <string>
 
@@ -39,6 +40,11 @@ void fillRect(SDL_Renderer* renderer, const layout::Rect& rect) {
 void strokeRect(SDL_Renderer* renderer, const layout::Rect& rect) {
     const SDL_FRect sdlRect{rect.x, rect.y, rect.width, rect.height};
     (void)SDL_RenderRect(renderer, &sdlRect);
+}
+
+void drawCenteredDebugText(SDL_Renderer* renderer, const float centerX, const float y, const char* text) {
+    const float width = static_cast<float>(std::strlen(text)) * 8.0F;
+    (void)SDL_RenderDebugText(renderer, centerX - width * 0.5F, y, text);
 }
 
 }  // namespace
@@ -104,16 +110,19 @@ void PanelRenderer::renderFrontPanel(
             panelLayout_.panel.x, panelLayout_.panel.y, panelLayout_.panel.width, panelLayout_.panel.height};
         (void)SDL_RenderTexture(renderer, panelBackgroundTexture_, nullptr, &target);
     } else {
-        setColor(renderer, 205U, 207U, 209U);
+        setColor(renderer, 10U, 10U, 11U);
         fillRect(renderer, panelLayout_.panel);
     }
-    setColor(renderer, 75U, 77U, 80U);
+    setColor(renderer, 52U, 52U, 56U);
     strokeRect(renderer, panelLayout_.panel);
 
     if (panelLayout_.drawBuiltinLabels) {
-        setColor(renderer, 38U, 39U, 41U);
-        drawText(renderer, panelLayout_.panel.x + 22.0F, panelLayout_.panel.y + 24.0F, "CLOCK");
-        drawText(renderer, panelLayout_.panel.x + 22.0F, panelLayout_.panel.y + 46.0F, "8-CHANNEL CLOCK  -  NATIVE SIMULATOR");
+        setColor(renderer, 244U, 244U, 244U);
+        drawCenteredDebugText(
+            renderer,
+            panelLayout_.panel.x + panelLayout_.panel.width * 0.5F,
+            panelLayout_.panel.y + 10.0F,
+            "CLOCK");
     }
 
     renderOled(renderer, runtime);
@@ -138,38 +147,45 @@ void PanelRenderer::renderFrontPanel(
         panelLayout_.encoderCenter.y,
         panelLayout_.encoderCenter.x + std::cos(encoderAngle) * encoderIndicator,
         panelLayout_.encoderCenter.y + std::sin(encoderAngle) * encoderIndicator);
-    if (panelLayout_.drawBuiltinLabels) {
-        setColor(renderer, 38U, 39U, 41U);
-        drawText(
-            renderer,
-            panelLayout_.encoderCenter.x - 16.0F,
-            panelLayout_.encoderCenter.y + panelLayout_.encoderRadius + 12.0F,
-            "ENC");
-    }
 
-    const std::array<std::pair<const layout::CircleControl*, const char*>, 3U> buttons{{
-        {&panelLayout_.playButton, "PLAY"},
-        {&panelLayout_.tapButton, "TAP"},
-        {&panelLayout_.stopButton, "STOP"}
+    struct ButtonLabel final {
+        const layout::CircleControl* control;
+        const char* primary;
+        const char* secondary;
+    };
+    const std::array<ButtonLabel, 3U> buttons{{
+        {&panelLayout_.playButton, "PLAY", "PAUSE"},
+        {&panelLayout_.tapButton, "TAP", "SHIFT"},
+        {&panelLayout_.stopButton, "STOP", "BACK"}
     }};
-    for (const auto& item : buttons) {
-        const layout::CircleControl& button = *item.first;
+    for (const ButtonLabel& item : buttons) {
+        const layout::CircleControl& button = *item.control;
         setColor(renderer, button.color);
         drawCircle(renderer, button.center.x, button.center.y, button.radius, true);
         setColor(renderer, 25U, 26U, 28U);
         drawCircle(renderer, button.center.x, button.center.y, button.radius, false);
         if (panelLayout_.drawBuiltinLabels) {
-            const float labelOffset = button.radius + 1.5F * panelLayout_.pixelsPerMm;
-            drawText(renderer, button.center.x - 16.0F, button.center.y + labelOffset, item.second);
+            const float primaryY = button.center.y + button.radius + 1.25F * panelLayout_.pixelsPerMm;
+            setColor(renderer, 244U, 244U, 244U);
+            drawCenteredDebugText(renderer, button.center.x, primaryY, item.primary);
+            setColor(renderer, 142U, 144U, 148U);
+            drawCenteredDebugText(
+                renderer,
+                button.center.x,
+                primaryY + 2.25F * panelLayout_.pixelsPerMm,
+                item.secondary);
         }
     }
 
     const SyncInputTelemetry sync = runtime.syncInputTelemetry();
     const ResetInputTelemetry reset = runtime.resetInputTelemetry();
     if (panelLayout_.drawBuiltinLabels) {
-        setColor(renderer, 36U, 37U, 39U);
-        drawText(renderer, panelLayout_.syncInputCenter.x - 27.0F, panelLayout_.syncInputCenter.y - 48.0F, "SYNC IN");
-        drawText(renderer, panelLayout_.resetInputCenter.x - 23.0F, panelLayout_.resetInputCenter.y - 48.0F, "RST IN");
+        const float inputLabelY = panelLayout_.syncInputCenter.y +
+            panelLayout_.jackGeometry(panelLayout_.syncJackType).nutRadius +
+            2.4F * panelLayout_.pixelsPerMm;
+        setColor(renderer, 244U, 244U, 244U);
+        drawCenteredDebugText(renderer, panelLayout_.syncInputCenter.x, inputLabelY, "IN 1");
+        drawCenteredDebugText(renderer, panelLayout_.resetInputCenter.x, inputLabelY, "IN 2");
     }
     const auto drawInputJack = [&](
         const layout::Point& center, const layout::JackType jackType,
@@ -181,8 +197,6 @@ void PanelRenderer::renderFrontPanel(
         drawCircle(renderer, center.x, center.y, jack.bushingRadius, true);
         setColor(renderer, high ? 200U : 25U, high ? 230U : 26U, high ? 180U : 28U);
         drawCircle(renderer, center.x, center.y, jack.openingRadius, true);
-        setColor(renderer, high ? 25U : 220U, high ? 26U : 222U, high ? 28U : 224U);
-        drawText(renderer, center.x - 7.0F, center.y - 4.0F, high ? "HI" : "LO");
     };
     drawInputJack(panelLayout_.syncInputCenter, panelLayout_.syncJackType, sync.cableConnected, sync.signalHigh);
     drawInputJack(panelLayout_.resetInputCenter, panelLayout_.resetJackType, reset.cableConnected, reset.signalHigh);
@@ -210,17 +224,26 @@ void PanelRenderer::renderFrontPanel(
         setColor(renderer, 25U, 26U, 28U);
         drawCircle(renderer, center.x, center.y, jack.openingRadius, true);
 
-        const char* const levelText = channels[index].logicHigh ? "HI" : "LO";
-        setColor(renderer, channels[index].logicHigh ? 225U : 170U, 225U, channels[index].logicHigh ? 170U : 180U);
-        drawText(renderer, center.x - 7.0F, center.y - 4.0F, levelText);
-
-        char label[8]{};
-        std::snprintf(label, sizeof(label), "OUT%u", static_cast<unsigned>(index + 1U));
+        char label[4]{};
+        std::snprintf(label, sizeof(label), "%u", static_cast<unsigned>(index + 1U));
         if (panelLayout_.drawBuiltinLabels) {
-            setColor(renderer, 38U, 39U, 41U);
+            setColor(renderer, 244U, 244U, 244U);
             const layout::JackGeometry& labelJack = panelLayout_.jackGeometry(panelLayout_.outputJackTypes[index]);
-            drawText(renderer, center.x - 17.0F, center.y + labelJack.nutRadius + 1.2F * panelLayout_.pixelsPerMm, label);
+            drawCenteredDebugText(
+                renderer,
+                center.x,
+                center.y + labelJack.nutRadius + 2.5F * panelLayout_.pixelsPerMm,
+                label);
         }
+    }
+
+    if (panelLayout_.drawBuiltinLabels) {
+        setColor(renderer, 244U, 244U, 244U);
+        drawCenteredDebugText(
+            renderer,
+            panelLayout_.panel.x + panelLayout_.panel.width * 0.5F,
+            panelLayout_.panel.y + panelLayout_.panel.height - 19.0F,
+            "SOUTH SIGNAL LAB");
     }
 
     if (panelLayout_.drawScrews) {

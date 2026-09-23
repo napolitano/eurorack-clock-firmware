@@ -93,7 +93,11 @@ The hard physical-HIL release gate deliberately starts at **1.5.0**; before then
 
 ### Try CLOCK in VCV Rack — experimental
 
-The post-1.1 development tree now contains an experimental **Trial First** Rack port under [`vcv/`](vcv/). It compiles the production CLOCK application/engine/UI rather than reimplementing the musical behavior, drives the same 20 kHz scheduler from Rack sample time, renders the real 128x64 framebuffer, exposes eight hardware-faithful 0/+5-V gates, and embeds CLOCK's logical persistence image in the Rack patch. The first alpha deliberately permits only one active CLOCK instance because the current host HAL/application callback boundary is process-global. See [`docs/VCV_RACK.md`](docs/VCV_RACK.md).
+The post-1.1 development tree now contains an experimental **Trial First** Rack port under [`vcv/`](vcv/). It compiles the production CLOCK application/engine/UI rather than reimplementing the musical behavior, drives the same 20 kHz scheduler from Rack sample time, renders the real 128x64 framebuffer, exposes eight hardware-faithful 0/+5-V gates, and embeds CLOCK's logical persistence image in the Rack patch. The first alpha deliberately permits only one active CLOCK instance because the current host HAL/application callback boundary is process-global. See the **[VCV Rack end-user guide](README_VCV.md)** and the engineering status in [`docs/VCV_RACK.md`](docs/VCV_RACK.md).
+
+<p align="center">
+  <img src="docs/assets/vcv-rack-clock.png" alt="South Signal Lab CLOCK running as a black 10 HP module in VCV Rack." width="360">
+</p>
 
 ## What CLOCK does
 

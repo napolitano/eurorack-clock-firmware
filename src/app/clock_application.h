@@ -87,6 +87,12 @@ public:
 
     /** @brief Places the simulated module into its electrically safe powered-off state. */
     void powerOffForSimulator();
+
+    /** @brief Opens the production General Settings page from a desktop host shell. */
+    bool openGeneralSettingsForSimulator();
+
+    /** @brief Returns current UI navigation state for host integration tests. */
+    const ui::NavigationState& navigationForSimulator() const;
 #endif
 
 private:

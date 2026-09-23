@@ -16,6 +16,10 @@ The VCV functional plate is black with high-contrast labelling and identifies th
 
 The encoder uses one Rack-specific endless interaction surface without changing physical geometry. On mouse-down the gesture starts in a neutral pending state. Early **vertical** movement locks that entire gesture to rotation and produces discrete hardware-style detents; horizontal jitter is ignored for classification. If the pointer remains stationary, a short click is emitted only on release, while a held gesture becomes encoder push after a short grace period so the production long-press path still works. Once a gesture is classified as rotate or push, it cannot change type until release. Mouse-wheel events remain direct relative detents.
 
+Rack keyboard input supplies the second hand needed for hardware chords: while the module is hovered, **Shift** holds TAP/SHIFT, **Enter/E** holds encoder push, **Up/Down** generates encoder detents, **P** drives PLAY/PAUSE, **T** drives TAP, and **S/Backspace** drives STOP/BACK. This makes `Shift+Enter` equivalent to TAP/SHIFT + encoder push and `Shift+Up/Down` equivalent to TAP/SHIFT + encoder turn without introducing a latch mode.
+
+The module context menu also exposes **General Settings...**. That command is marshalled onto the Rack audio/runtime thread and opens the production CLOCK `GENERAL SETTINGS` page through a simulator-only host navigation hook. It does not create a Rack-specific settings model; BACK returns through the normal CLOCK UI hierarchy.
+
 Rack's NanoSVG loader does not render SVG `<text>` nodes. The generated `CLOCK.svg` therefore remains useful as a standalone preview, but all actual in-Rack panel lettering is redrawn by a NanoVG overlay using Rack's own UI font. This avoids bundling an additional font while keeping the black/white functional panel legible.
 
 Output LEDs are presentation only: Rack's normal light smoothing gives short gates visible persistence without a manually latched hold timer. OUT 1–8 themselves remain tied to the instantaneous production gate state and are not pulse-stretched.

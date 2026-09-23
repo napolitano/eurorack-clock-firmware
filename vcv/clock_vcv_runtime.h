@@ -65,6 +65,9 @@ public:
     /** @brief Injects signed physical encoder detents. */
     void rotateEncoder(int detents);
 
+    /** @brief Opens the production General Settings page from the Rack host shell. */
+    bool openGeneralSettings();
+
     /** @brief Returns one hardware-faithful 0/+5-V gate output. */
     float gateVoltage(std::size_t channelIndex) const;
 
@@ -86,6 +89,9 @@ public:
 
     /** @brief Returns RST comparator rising edges observed by the shared simulator boundary. */
     std::uint64_t resetPulseCountForTest() const;
+
+    /** @brief Reports General Settings visibility for host adapter regression tests. */
+    bool generalSettingsOpenForTest() const;
 
 private:
     /**

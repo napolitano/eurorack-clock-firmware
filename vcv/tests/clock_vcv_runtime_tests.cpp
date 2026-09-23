@@ -133,6 +133,17 @@ int main() {
     }
     assert(anyPixel);
 
+    // Host shortcuts must enter the existing production General Settings page, not a parallel
+    // Rack-specific settings model.
+    assert(runtime.openGeneralSettings());
+    advance(runtime, 0.020, kSampleRate);
+    assert(runtime.generalSettingsOpenForTest());
+
+    // Return to Performance before testing the physical long-press path.
+    const auto generalSettingsImage = runtime.persistenceImage();
+    runtime.restorePersistenceImage(generalSettingsImage);
+    advance(runtime, 1.100, kSampleRate);
+
     // Holding encoder push must reach the production long-press threshold and change UI context.
     const auto performanceFrame = runtime.framebuffer();
     clockfw::vcv::PanelControls heldControls{};

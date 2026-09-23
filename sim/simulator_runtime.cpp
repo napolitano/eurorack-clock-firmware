@@ -146,6 +146,19 @@ const ClockState& SimulatorRuntime::state() const {
     return application_ != nullptr ? application_->stateForSimulator() : poweredOffState_;
 }
 
+bool SimulatorRuntime::openGeneralSettings() {
+    return poweredOn_ && application_ != nullptr && application_->openGeneralSettingsForSimulator();
+}
+
+bool SimulatorRuntime::generalSettingsOpen() const {
+    if (!poweredOn_ || application_ == nullptr) {
+        return false;
+    }
+    const auto& navigation = application_->navigationForSimulator();
+    return navigation.screen == ui::Screen::Settings &&
+        navigation.settingsPage == ui::SettingsPage::General;
+}
+
 const std::array<ChannelTelemetry, kChannelCount>& SimulatorRuntime::telemetry() const {
     return telemetry_;
 }
