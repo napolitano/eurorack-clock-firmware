@@ -10,7 +10,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
-### Experimental VCV Rack Trial-First port
+### VCV Rack edition
 
 - Add `vcv/` as a peer platform shell beside `sim/` for prospective builders who want to try CLOCK before building the hardware.
 - Compile the real CLOCK application, engine, services, UI renderer and `clock_core` into the Rack plugin instead of maintaining a second musical implementation.
@@ -24,7 +24,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add direct host-input driving for SYNC/RST, including explicit HIGH release when a virtual cable is removed, with simulator regression coverage.
 - Capture SYNC/RST level transitions at Rack sample rate in a fixed allocation-free queue before replaying them into the 20 kHz CLOCK scheduler, preventing one-sample Rack trigger pulses from being lost between adjacent 50-us firmware ticks.
 - Rename the Rack-visible module to **South Signal Lab Clock** and switch the generated functional panel to a black high-contrast plate with button, input and output labelling derived from the physical layout.
-- Document the Trial-First deployment path from adapter tests to `.vcvplugin` CI artifacts and later tagged-release integration.
+- Document the VCV development-preview deployment path from adapter tests to `.vcvplugin` CI artifacts and later tagged-release integration.
 - Add a dedicated cross-platform VCV developer guide covering external SDK setup, adapter tests, panel generation, local build/package/install, isolated Rack profiles, package inspection, logs and manual smoke testing.
 - Formalize the Rack licensing/dependency boundary: keep the SDK external, confine Rack API use to `vcv/`, reject bundled SDK/`libRack` payloads, and document the free-of-charge plugin exception assumption.
 - Fix generated VCV C++ geometry literals so integral millimetre values are emitted as standard `9.0F`/`3.0F` literals instead of invalid GNU `9F`/`3F` tokens, and add a regression that rejects integer-plus-`F` output.
@@ -39,6 +39,17 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add a Rack context-menu **General Settings...** command that enters the existing production `GENERAL SETTINGS` page through the shared host runtime instead of duplicating settings in Rack.
 - Add a repository-root `README_VCV.md` end-user guide and surface the Trial-First port in the main README with a tightly cropped in-Rack screenshot.
 - Restyle the native simulator's built-in panel to the same black/white/grey functional hierarchy as the VCV panel while retaining the shared millimetre geometry and simulator instrumentation.
+- Verify One Clock 25% Swing end-to-end through the Rack-independent runtime at 44.1, 48 and 96 kHz: alternating 625/375 ms gate intervals remain phase-coherent and preserve a 1 s pair period at 120 BPM.
+- Harden VCV regeneration by removing obsolete encoder SVG assets instead of allowing stale checkout overlays to survive silently.
+- Expand `.gitignore` for Rack SDKs, local VCV build/package output and Rack user-profile leftovers without hiding tracked VCV source/assets.
+- Keep dedicated VCV adapter coverage at 100% lines, 100% functions and 96.30% decision branches.
+
+### Test architecture and focused coverage
+
+- Split the largest Native suites into thematic local case fragments while retaining one deterministic translation unit per PlatformIO suite; the named Native inventory is now 497 tests.
+- Add focused host-coverage modes for core, realtime, sync, swing, settings, controls, screensavers and Easter eggs, with optional production-source narrowing for change-local diagnosis.
+- Keep focused reports diagnostic only: the repository-wide 95/95/90 coverage gate remains authoritative.
+- Extend Groove Recorder defensive-path coverage and raise full firmware host coverage to 95.82% lines, 98.29% functions and 90.39% decision branches.
 
 ### Documentation
 

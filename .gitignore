@@ -64,6 +64,18 @@ Rack-SDK/
 Rack-SDK-*/
 .rack-sdk/
 
+# VCV Rack local build/package output and host-user leftovers
+vcv/build/
+vcv/dep/
+vcv/dist/
+vcv/plugin.so
+vcv/plugin.dylib
+vcv/plugin.dll
+vcv/*.vcvplugin
+AppDataLocalRack2*/
+AppDataLocalRack2*
+Rack2/
+
 # Native simulator local state and user-specific CMake overrides
 .clock-simulator-state.bin
 .clock-simulator-*.bin

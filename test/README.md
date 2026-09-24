@@ -15,7 +15,7 @@ This is the developer-facing Native entry point. The suite deliberately makes ti
 | `test_clock_core` | 44 | hardware-independent clock mathematics and exhaustive invariants |
 | `test_realtime` | 28 | deterministic scheduler/GPIO/SYNC/RST integration and stress behavior |
 | `test_sync_behavior` | 116 | exact/changing external clocks plus configurable INPUT 1/2 roles (SYNC/RESET/RUN/START/STOP/RESTART/TAP), role reassignment, RUN baselining, jitter/glitches/loss, PPQN/edge semantics and nominal analogue-front-end behavior |
-| `test_swing` | 39 | Swing/Groove mathematics, exhaustive Custom-Groove sweeps, TAP Recorder capture/Count-In/One-Shot/Endless behavior, and observable engine timing invariants |
+| `test_swing` | 40 | Swing/Groove mathematics, exhaustive Custom-Groove sweeps, TAP Recorder capture/Count-In/One-Shot/Endless behavior, and observable engine timing invariants |
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
 | `test_tap_tempo` | 24 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
 | `test_controls` | 51 | TIM4 encoder quadrature, detent-phase recovery after missed/coalesced transitions and encoder-push phase shifts, first-detent and immediate direction-reversal behavior, NORMAL/REVERSED direction mapping, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
@@ -23,7 +23,7 @@ This is the developer-facing Native entry point. The suite deliberately makes ti
 | `test_screensavers` | 19 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | intro launch gating, reset state, output safety and game-specific controls |
 | `test_host_firmware` | 39 | complete firmware/UI/HAL/persistence behavior, Groove Editor/Record workflows, schema migrations and framebuffer/navigation contracts using deterministic host fakes |
-| **Total** | **496** | public Native inventory |
+| **Total** | **497** | public Native inventory |
 
 The default Native configuration executes more than **433,000 assertions**. `scripts/check_test_inventory.py` enforces the visible-suite inventory contract so a broad test-count increase cannot hide a regression in one focused suite.
 
@@ -81,6 +81,18 @@ Compiler branches:   5640 / 7322   77.03% (informational)
 ```
 
 The hard gates remain >=95% executable lines, >=95% functions and >=90% non-throw decision branches.
+
+For change-local analysis, the same runner also exposes focused coverage slices without pretending that a partial run replaces the repository-wide gate:
+
+```bash
+python scripts/run_host_tests.py --focus swing
+python scripts/run_host_tests.py --focus sync
+python scripts/run_host_tests.py --focus swing --source src/engine/clock_engine_timing.cpp
+```
+
+Available focuses are `core`, `realtime`, `sync`, `swing`, `settings`, `controls`, `screensavers`, and `easter-eggs`. Focus reports are diagnostic only and are written as `coverage/focus_<name>_coverage.{txt,json}`. `--source` can be repeated to restrict the report to the exact production files changed in a patch. Full CI/release quality gates continue to use the unfiltered repository-wide run.
+
+The three largest Native suites are physically split into themed include fragments under their local `cases/` directories. The suite runner and `RUN_TEST` registration remain centralized, preserving one deterministic translation unit per PlatformIO suite while keeping persistence, timing, rendering, UI/game and input-role cases in readable files.
 
 The script writes `coverage/full_coverage.txt` and `coverage/full_coverage.json`. The configured coverage thresholds are hard gates; uncovered production functions, lines, and non-throw decisions remain listed in the report.
 

@@ -242,8 +242,24 @@ class VcvWorkflowTests(unittest.TestCase):
         self.assertFalse((ROOT / ".rack-sdk").exists())
         self.assertFalse(any(ROOT.glob("Rack-SDK-*")))
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
-        self.assertIn("Rack-SDK/", gitignore)
-        self.assertIn("Rack-SDK-*/", gitignore)
+        for ignored in (
+            "Rack-SDK/",
+            "Rack-SDK-*/",
+            "vcv/build/",
+            "vcv/dep/",
+            "vcv/dist/",
+            "vcv/plugin.so",
+            "vcv/plugin.dylib",
+            "vcv/plugin.dll",
+            "vcv/*.vcvplugin",
+            "AppDataLocalRack2*/",
+            "Rack2/",
+        ):
+            self.assertIn(ignored, gitignore)
+        self.assertNotIn("vcv/res/encoder", gitignore)
+        generator = (ROOT / "scripts/generate_vcv_panel.py").read_text(encoding="utf-8")
+        self.assertIn("LEGACY_ENCODER_ASSETS", generator)
+        self.assertIn("path.unlink()", generator)
         architecture = (ROOT / "scripts/check_architecture.py").read_text(encoding="utf-8")
         self.assertIn("check_vcv_api_boundary", architecture)
         self.assertIn("Rack API references are only permitted under vcv/", architecture)

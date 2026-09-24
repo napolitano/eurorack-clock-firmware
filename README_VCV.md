@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK for VCV Rack
 
-> **Experimental Trial-First port — post-1.1.0 development**
+> **VCV Rack edition — post-1.1.0 development preview**
 
 The VCV Rack version exists so you can try **South Signal Lab CLOCK** before building the Eurorack hardware. It is not a separate clock implementation: the plugin compiles the production CLOCK application, timing engine, UI, persistence and 128×64 renderer, then adapts only the Rack-facing controls, ports, sample timing and patch storage.
 

@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — stable v1.1.0
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 496 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 497 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -33,6 +33,21 @@ Compiler branches:   5640/7322 (77.03%, informational only)
 ```
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.
+
+
+## Focused change-local coverage
+
+The repository-wide coverage gate remains authoritative. For local work, `scripts/run_host_tests.py --focus <area>` can build only the relevant atomic suite and report coverage only for the production files owned by that area. `--source <project-relative.cpp>` narrows the diagnostic further to one or more changed files. These focused reports are intentionally not hard release gates because a partial suite cannot prove repository-wide coverage.
+
+Examples:
+
+```bash
+python scripts/run_host_tests.py --focus swing
+python scripts/run_host_tests.py --focus sync
+python scripts/run_host_tests.py --focus swing --source src/services/groove_recorder.cpp
+```
+
+This is complementary to the separate hard VCV runtime-adapter coverage gate.
 
 ## VCV Rack adapter coverage
 

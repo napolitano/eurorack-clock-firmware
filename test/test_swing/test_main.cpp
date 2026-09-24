@@ -549,6 +549,49 @@ void testGrooveRecorderGuardsClampAndClearCaptureState() {
     TEST_ASSERT_EQUAL_UINT64(0ULL, recorder.view().capturedMask);
 }
 
+
+void testGrooveRecorderDefensiveServiceBranches() {
+    services::GrooveRecorder recorder;
+    CustomGroovePattern pattern{};
+    pattern.length = 4U;
+    constexpr std::uint64_t step = core::kQ32One / 4ULL;
+
+    // While active, changing count-in configuration must not rewrite the live countdown.
+    recorder.reset(services::GrooveRecordMode::Endless, 0U);
+    recorder.start(4ULL * core::kQ32One, step, pattern.length);
+    recorder.setCountInBeats(3U);
+    TEST_ASSERT_EQUAL_UINT8(0U, recorder.view().countInRemaining);
+
+    // A service timestamp before the recording epoch is tolerated and rewinds the visible head.
+    TEST_ASSERT_FALSE(recorder.service(3ULL * core::kQ32One, pattern.length));
+    TEST_ASSERT_EQUAL_UINT8(0U, recorder.view().playheadStep);
+    TEST_ASSERT_EQUAL_UINT8(0U, recorder.view().playheadPhase256);
+
+    // Invalid runtime length suppresses playhead math instead of dividing by zero.
+    TEST_ASSERT_FALSE(recorder.service(4ULL * core::kQ32One, 0U));
+
+    // Exercise the third start guard independently from zero interval/zero length.
+    recorder.start(
+        0U,
+        step,
+        static_cast<std::uint8_t>(kCustomGrooveMaximumSteps + 1U));
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::Ready, recorder.view().state);
+
+    // Saturating count-in target protects UINT64 wrap at the end of the master timeline.
+    recorder.reset(services::GrooveRecordMode::OneShot, 2U);
+    recorder.start(UINT64_MAX - core::kQ32One, step, pattern.length);
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::PreCount, recorder.view().state);
+    TEST_ASSERT_TRUE(recorder.service(UINT64_MAX, pattern.length));
+    TEST_ASSERT_EQUAL(services::GrooveRecordState::Recording, recorder.view().state);
+
+    // One-shot capture beyond the final pattern step is rejected without mutating capture state.
+    recorder.reset(services::GrooveRecordMode::OneShot, 0U);
+    recorder.start(0U, step, pattern.length);
+    const auto before = recorder.view().capturedMask;
+    TEST_ASSERT_FALSE(recorder.capture(5ULL * step, pattern));
+    TEST_ASSERT_EQUAL_UINT64(before, recorder.view().capturedMask);
+}
+
 void testGrooveRecordEngineCaptureHelpersUseSchedulerResolution() {
     ClockState state{};
     initializeFactoryDefaults(state);
@@ -629,6 +672,7 @@ int main() {
     RUN_TEST(testGrooveRecorderCountInAndOneShotCapture);
     RUN_TEST(testGrooveRecorderEndlessWrapsAndOverwritesTappedStepOnly);
     RUN_TEST(testGrooveRecorderGuardsClampAndClearCaptureState);
+    RUN_TEST(testGrooveRecorderDefensiveServiceBranches);
     RUN_TEST(testGrooveRecordEngineCaptureHelpersUseSchedulerResolution);
     return UNITY_END();
 }

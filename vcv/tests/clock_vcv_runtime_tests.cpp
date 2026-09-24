@@ -17,6 +17,10 @@
 #include <vector>
 
 #include "clock_vcv_runtime.h"
+#include "config.h"
+#include "domain/default_configuration.h"
+#include "hal/persistent_storage.h"
+#include "services/persistent_state_service.h"
 
 namespace {
 
@@ -64,6 +68,81 @@ void oneSampleResetPulse(clockfw::vcv::ClockVcvRuntime& runtime, const double sa
     const double sampleTime = 1.0 / sampleRate;
     runtime.processSample(sampleTime, false, 0.0F, true, 5.0F);
     runtime.processSample(sampleTime, false, 0.0F, true, 0.0F);
+}
+
+
+std::array<std::uint8_t, clockfw::hal::PersistentStorage::kCapacityBytes>
+makeUnifiedSwingPersistenceImage(const std::uint8_t swingPercent) {
+    using namespace clockfw;
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    services::PersistentStateService persistent(storage);
+    persistent.begin();
+
+    ClockState state{};
+    initializeFactoryDefaults(state);
+    state.operatingMode = OperatingMode::UnifiedClock;
+    state.source = ClockSource::Internal;
+    state.bpm = 120U;
+    state.unifiedClock.swingPercent = swingPercent;
+    state.transport = TransportState::Stopped;
+    persistent.requestCurrentState(state, 0U);
+    persistent.service(config::kPersistenceCommitDelayMs, true);
+    assert(persistent.hasStoredCurrentState());
+
+    std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> image{};
+    assert(storage.readBytes(0U, image.data(), image.size()));
+    return image;
+}
+
+void assertSwingOneClockGates(const double sampleRate, const char* suffix) {
+    const auto statePath = std::filesystem::temp_directory_path() /
+        (std::string("ssl-clock-vcv-swing-test-") + suffix + ".bin");
+    std::error_code ignored;
+    std::filesystem::remove(statePath, ignored);
+
+    const auto swingImage = makeUnifiedSwingPersistenceImage(25U);
+    clockfw::vcv::ClockVcvRuntime runtime(statePath);
+    runtime.begin();
+    runtime.restorePersistenceImage(swingImage);
+    advance(runtime, 1.100, sampleRate);
+    click(runtime, &clockfw::vcv::PanelControls::playPressed, sampleRate);
+
+    std::vector<std::size_t> risingSamples{};
+    bool previousHigh = false;
+    const std::size_t sampleCount = static_cast<std::size_t>(3.100 * sampleRate);
+    for (std::size_t sample = 0U; sample < sampleCount && risingSamples.size() < 6U; ++sample) {
+        runtime.processSample(1.0 / sampleRate, false, 0.0F, false, 0.0F);
+        const bool high = runtime.gateVoltage(0U) == 5.0F;
+        if (high && !previousHigh) {
+            risingSamples.push_back(sample);
+        }
+        previousHigh = high;
+    }
+
+    assert(risingSamples.size() >= 5U);
+    const double expectedLongSamples = sampleRate * 0.625;
+    const double expectedShortSamples = sampleRate * 0.375;
+    const double toleranceSamples = std::max(4.0, sampleRate * 0.00015);
+    std::array<double, 4U> intervals{};
+    for (std::size_t index = 0U; index < intervals.size(); ++index) {
+        intervals[index] = static_cast<double>(
+            risingSamples[index + 1U] - risingSamples[index]);
+    }
+
+    const bool startsLong = std::abs(intervals[0] - expectedLongSamples) <= toleranceSamples;
+    const bool startsShort = std::abs(intervals[0] - expectedShortSamples) <= toleranceSamples;
+    assert(startsLong || startsShort);
+    for (std::size_t index = 0U; index < intervals.size(); ++index) {
+        const double expected = ((index % 2U) == 0U)
+            ? (startsLong ? expectedLongSamples : expectedShortSamples)
+            : (startsLong ? expectedShortSamples : expectedLongSamples);
+        assert(std::abs(intervals[index] - expected) <= toleranceSamples);
+    }
+
+    const double pairSamples = intervals[0] + intervals[1];
+    assert(std::abs(pairSamples - sampleRate) <= toleranceSamples * 2.0);
+    std::filesystem::remove(statePath, ignored);
 }
 
 void assertRegularOneClockGates(const double sampleRate, const char* suffix) {
@@ -118,6 +197,9 @@ int main() {
     assertRegularOneClockGates(44100.0, "44100");
     assertRegularOneClockGates(48000.0, "48000");
     assertRegularOneClockGates(96000.0, "96000");
+    assertSwingOneClockGates(44100.0, "44100");
+    assertSwingOneClockGates(48000.0, "48000");
+    assertSwingOneClockGates(96000.0, "96000");
     const auto statePath = std::filesystem::temp_directory_path() / "ssl-clock-vcv-runtime-test.bin";
     std::error_code ignored;
     std::filesystem::remove(statePath, ignored);

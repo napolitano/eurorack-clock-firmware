@@ -476,8 +476,11 @@ def normalize_source_path(filename: str) -> str | None:
     return None
 
 
-def collect_coverage(build_dirs: list[Path]) -> dict[str, object]:
-    """Aggregate GCC JSON coverage across I2C, SPI, reset-pin, core, and smoke variants."""
+def collect_coverage(
+    build_dirs: list[Path],
+    source_filter: set[str] | None = None,
+) -> dict[str, object]:
+    """Aggregate GCC JSON coverage, optionally restricted to selected production sources."""
     line_counts: dict[tuple[str, int], int] = {}
     function_counts: dict[tuple[str, str, int], int] = {}
     branch_counts: dict[tuple[str, int, int, bool, bool], int] = {}
@@ -499,7 +502,7 @@ def collect_coverage(build_dirs: list[Path]) -> dict[str, object]:
                 report = json.load(handle)
             for file_report in report.get("files", []):
                 source = normalize_source_path(file_report["file"])
-                if source is None:
+                if source is None or (source_filter is not None and source not in source_filter):
                     continue
                 for line in file_report.get("lines", []):
                     line_key = (source, int(line["line_number"]))
@@ -578,10 +581,14 @@ def collect_coverage(build_dirs: list[Path]) -> dict[str, object]:
     }
 
 
-def write_coverage_report(report: dict[str, object]) -> None:
+def write_coverage_report(
+    report: dict[str, object],
+    report_name: str = "full",
+    title: str = "Full firmware host coverage",
+) -> None:
     """Write machine-readable JSON and concise text reports for CI artifacts."""
     COVERAGE_DIR.mkdir(parents=True, exist_ok=True)
-    (COVERAGE_DIR / "full_coverage.json").write_text(
+    (COVERAGE_DIR / f"{report_name}_coverage.json").write_text(
         json.dumps(report, indent=2) + "\n", encoding="utf-8"
     )
     lines = report["lines"]
@@ -589,7 +596,7 @@ def write_coverage_report(report: dict[str, object]) -> None:
     decision_branches = report["decision_branches"]
     compiler_branches = report["compiler_branches"]
     text = (
-        "Full firmware host coverage\n"
+        f"{title}\n"
         f"Lines:              {lines['covered']}/{lines['total']} ({lines['percent']:.2f}%)\n"
         f"Functions:          {functions['covered']}/{functions['total']} ({functions['percent']:.2f}%)\n"
         f"Decision branches:  {decision_branches['covered']}/{decision_branches['total']} "
@@ -597,7 +604,7 @@ def write_coverage_report(report: dict[str, object]) -> None:
         f"Compiler branches:  {compiler_branches['covered']}/{compiler_branches['total']} "
         f"({compiler_branches['percent']:.2f}%, informational)\n"
     )
-    (COVERAGE_DIR / "full_coverage.txt").write_text(text, encoding="utf-8")
+    (COVERAGE_DIR / f"{report_name}_coverage.txt").write_text(text, encoding="utf-8")
     print(text, end="")
 
 
@@ -642,6 +649,81 @@ def enforce_thresholds(
         raise RuntimeError("; ".join(failures))
 
 
+
+def focused_coverage(focus: str) -> tuple[list[Path], set[str]]:
+    """Build one targeted suite and return its build dirs plus production-source scope."""
+    if focus == "core":
+        sources = {"lib/clock_core/src/clock_core.cpp"}
+        return [compile_core_suite()], sources
+    if focus == "realtime":
+        paths = realtime_sources()
+        return [compile_realtime_suite()], {path.relative_to(ROOT).as_posix() for path in paths}
+    if focus == "sync":
+        paths = realtime_sources()
+        selected = {
+            path.relative_to(ROOT).as_posix()
+            for path in paths
+            if path.name in {
+                "clock_engine.cpp",
+                "clock_engine_sync.cpp",
+                "clock_engine_timing.cpp",
+                "external_input_capture.cpp",
+                "external_sync_controller.cpp",
+                "external_sync_controller_inputs.cpp",
+            }
+        }
+        return [compile_sync_behavior_suite()], selected
+    if focus == "swing":
+        paths = realtime_sources()
+        selected = {
+            path.relative_to(ROOT).as_posix()
+            for path in paths
+            if path.name in {
+                "clock_core.cpp",
+                "custom_groove.cpp",
+                "groove_catalog.cpp",
+                "clock_engine.cpp",
+                "clock_engine_custom_groove.cpp",
+                "clock_engine_timing.cpp",
+                "output_mode_resolver.cpp",
+                "groove_recorder.cpp",
+            }
+        }
+        return [
+            compile_behavior_suite("swing", paths, ROOT / "test/test_swing/test_main.cpp")
+        ], selected
+    if focus == "settings":
+        paths = settings_sources()
+        selected = {
+            path.relative_to(ROOT).as_posix()
+            for path in paths
+            if path.as_posix().startswith((ROOT / "src/ui").as_posix())
+        }
+        return [
+            compile_behavior_suite("settings", paths, ROOT / "test/test_settings/test_main.cpp")
+        ], selected
+    if focus == "controls":
+        paths = control_sources()
+        return [
+            compile_behavior_suite("controls", paths, ROOT / "test/test_controls/test_main.cpp")
+        ], {path.relative_to(ROOT).as_posix() for path in paths}
+    if focus == "screensavers":
+        paths = screensaver_sources()
+        return [
+            compile_behavior_suite(
+                "screensavers", paths, ROOT / "test/test_screensavers/test_main.cpp"
+            )
+        ], {path.relative_to(ROOT).as_posix() for path in paths}
+    if focus == "easter-eggs":
+        paths = easter_egg_sources()
+        return [
+            compile_behavior_suite(
+                "easter_eggs", paths, ROOT / "test/test_easter_eggs/test_main.cpp"
+            )
+        ], {path.relative_to(ROOT).as_posix() for path in paths}
+    raise ValueError(f"unsupported coverage focus: {focus}")
+
+
 def main() -> int:
     """Execute all host suites and enforce repository coverage/sanitizer policy."""
     parser = argparse.ArgumentParser()
@@ -673,10 +755,45 @@ def main() -> int:
         action="store_true",
         help="Run only the ASan/UBSan matrix and skip coverage collection.",
     )
+    parser.add_argument(
+        "--focus",
+        choices=("core", "realtime", "sync", "swing", "settings", "controls", "screensavers", "easter-eggs"),
+        help=(
+            "Run one focused coverage slice only. The report is scoped to production "
+            "sources owned by that slice; full repository gates are not enforced."
+        ),
+    )
+    parser.add_argument(
+        "--source",
+        action="append",
+        default=[],
+        help=(
+            "Further restrict a --focus report to one project-relative production source. "
+            "Repeat for multiple files, for example --source src/engine/clock_engine_timing.cpp."
+        ),
+    )
     args = parser.parse_args()
 
     if BUILD_ROOT.exists():
         shutil.rmtree(BUILD_ROOT)
+    if args.focus:
+        build_dirs, source_filter = focused_coverage(args.focus)
+        if args.source:
+            requested = {Path(item).as_posix() for item in args.source}
+            unknown = requested - source_filter
+            if unknown:
+                raise RuntimeError(
+                    "requested source is outside the selected focus: " + ", ".join(sorted(unknown))
+                )
+            source_filter = requested
+        report = collect_coverage(build_dirs, source_filter)
+        write_coverage_report(
+            report,
+            report_name=f"focus_{args.focus.replace('-', '_')}",
+            title=f"Focused firmware coverage: {args.focus}",
+        )
+        return 0
+
     audit_production_stack_frames()
     if args.sanitizers_only:
         run_sanitizer_matrix()

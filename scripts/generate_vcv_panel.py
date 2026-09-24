@@ -21,6 +21,11 @@ VCV_DIR = ROOT / "vcv"
 DEFAULT_PANEL = VCV_DIR / "res" / "CLOCK.svg"
 DEFAULT_HEADER = VCV_DIR / "generated_panel_layout.hpp"
 CLOCK_LOGO = ROOT / "docs" / "manual-source" / "assets" / "clock-logo.svg"
+LEGACY_ENCODER_ASSETS = (
+    VCV_DIR / "res" / "encoder.svg",
+    VCV_DIR / "res" / "encoder-push-0.svg",
+    VCV_DIR / "res" / "encoder-push-1.svg",
+)
 
 RACK_DPI = 75.0
 MM_PER_INCH = 25.4
@@ -293,9 +298,17 @@ def main() -> int:
     generated = outputs(parser)
     if args.check:
         stale = [path for path, content in generated.items() if not path.exists() or path.read_text(encoding="utf-8") != content]
-        if stale:
-            raise SystemExit("stale generated VCV panel files: " + ", ".join(str(p.relative_to(ROOT)) for p in stale))
+        obsolete = [path for path in LEGACY_ENCODER_ASSETS if path.exists()]
+        if stale or obsolete:
+            details = [str(path.relative_to(ROOT)) for path in stale]
+            details.extend(f"obsolete:{path.relative_to(ROOT)}" for path in obsolete)
+            raise SystemExit("stale generated VCV panel files: " + ", ".join(details))
         return 0
+
+    for path in LEGACY_ENCODER_ASSETS:
+        if path.exists():
+            path.unlink()
+            print(f"removed {path.relative_to(ROOT)}")
 
     for path, content in generated.items():
         path.parent.mkdir(parents=True, exist_ok=True)
