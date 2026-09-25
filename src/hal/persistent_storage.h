@@ -26,8 +26,8 @@ namespace clockfw::hal {
  */
 class PersistentStorage final {
 public:
-    /** Current logical image size. Kept deliberately small to avoid needless RAM use. */
-    static constexpr std::size_t kCapacityBytes = persistent_layout::kV1ImageBytes;
+    /** Current logical image size. Expanded to the 12-KiB policy ceiling for Sequencer 2.0. */
+    static constexpr std::size_t kCapacityBytes = persistent_layout::kCurrentImageBytes;
 
     /** Hard architectural ceiling for future persistent images inside one 16-KiB slot. */
     static constexpr std::size_t kMaximumImageBytes = persistent_layout::kMaximumImageBytes;
@@ -98,14 +98,17 @@ public:
 
     /** @brief Seeds one valid legacy 4-KiB committed slot for migration regression tests. */
     static bool seedLegacyImageForTest(const std::uint8_t* image, std::size_t size);
+
+    /** @brief Seeds one valid historical 8-KiB committed slot for extension-migration tests. */
+    static bool seedV1ImageForTest(const std::uint8_t* image, std::size_t size);
 #endif
 
 private:
     /** @brief Returns whether one byte range fits completely inside the logical image. */
     static bool isRangeValid(std::size_t offset, std::size_t size);
 
-    // Deliberately permanent scratch storage: an 8-KiB BSS allocation is predictable
-    // and leaves substantially more worst-case stack headroom than nested 8-KiB frames.
+    // Deliberately permanent scratch storage: the 12-KiB BSS allocation is predictable
+    // and avoids multi-kilobyte stack frames during whole-image A/B commits.
     std::array<std::uint8_t, kCapacityBytes> stagingImage_{};
     std::uint32_t stagedGeneration_ = 0U;
     std::int8_t stagedActiveSlot_ = -1;

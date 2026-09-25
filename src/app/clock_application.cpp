@@ -57,6 +57,7 @@ ClockApplication::ClockApplication()
       beatknecht_(display_, controlPanel_, gateOutputs_),
       persistentState_(persistentStorage_),
       customGrooveStore_(persistentStorage_),
+      sequencerPatternStore_(persistentStorage_),
       engine_(gateOutputs_),
       externalSyncController_(externalInputs_, engine_),
       renderer_(display_, persistentState_, customGrooveStore_),
@@ -87,6 +88,10 @@ void ClockApplication::begin(const ClockState& initialState) {
     // requires an explicit user action before the clock can produce gates.
     persistentState_.begin();
     (void)persistentState_.restoreCurrentState(state_);
+    (void)sequencerPatternStore_.begin();
+    if (!sequencerPatternStore_.hasDurableBank()) {
+        (void)sequencerPatternStore_.seedLegacyPatternOnes(state_, hal::SystemClock::milliseconds());
+    }
     loadCustomGrooveLibrary();
     state_.transport = TransportState::Stopped;
     activeInstance_ = this;
@@ -183,7 +188,9 @@ void ClockApplication::runOnce() {
     // STM32F4 stalls instruction/data fetches from Flash while a sector is being
     // erased or programmed. Never start a persistence commit while PLAYING;
     // queued CURRENT/preset writes are flushed once transport is PAUSED/STOPPED.
-    persistentState_.service(nowMs, state_.transport != TransportState::Playing);
+    const bool allowFlashWrite = state_.transport != TransportState::Playing;
+    persistentState_.service(nowMs, allowFlashWrite);
+    (void)sequencerPatternStore_.service(nowMs, allowFlashWrite);
 }
 
 #ifdef CLOCK_SIMULATOR

@@ -301,6 +301,14 @@ def compile_sanitized_behavior_suite(name: str, sources: list[Path], test_path: 
     run_sanitized_executable(executable, build_dir)
 
 
+def sequencer2_sources() -> list[Path]:
+    """Return the compact Sequencer 2.0 model/store slice."""
+    return [
+        ROOT / "src/domain/sequencer_pattern.cpp",
+        ROOT / "src/hal/persistent_storage.cpp",
+        ROOT / "src/services/sequencer_pattern_store.cpp",
+    ]
+
 def tap_tempo_sources() -> list[Path]:
     return [ROOT / "src/services/tap_tempo.cpp"]
 
@@ -444,6 +452,7 @@ def run_sanitizer_matrix() -> None:
         ["-DCLOCK_EXTERNAL_SYNC_PIN=clockfw::mcu::PB3", "-DCLOCK_EXTERNAL_RESET_PIN=clockfw::mcu::PB4"],
     )
     compile_sanitized_sync_behavior_suite()
+    compile_sanitized_behavior_suite("sequencer2", sequencer2_sources(), ROOT / "test/test_sequencer2/test_main.cpp")
     compile_sanitized_behavior_suite("swing", realtime_sources(), ROOT / "test/test_swing/test_main.cpp")
     compile_sanitized_behavior_suite("humanize", realtime_sources(), ROOT / "test/test_humanize/test_main.cpp")
     compile_sanitized_behavior_suite("tap_tempo", tap_tempo_sources(), ROOT / "test/test_tap_tempo/test_main.cpp")
@@ -673,6 +682,13 @@ def focused_coverage(focus: str) -> tuple[list[Path], set[str]]:
             }
         }
         return [compile_sync_behavior_suite()], selected
+    if focus == "sequencer2":
+        paths = sequencer2_sources()
+        return [
+            compile_behavior_suite(
+                "sequencer2", paths, ROOT / "test/test_sequencer2/test_main.cpp"
+            )
+        ], {path.relative_to(ROOT).as_posix() for path in paths}
     if focus == "swing":
         paths = realtime_sources()
         selected = {
@@ -757,7 +773,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--focus",
-        choices=("core", "realtime", "sync", "swing", "settings", "controls", "screensavers", "easter-eggs"),
+        choices=("core", "realtime", "sync", "sequencer2", "swing", "settings", "controls", "screensavers", "easter-eggs"),
         help=(
             "Run one focused coverage slice only. The report is scoped to production "
             "sources owned by that slice; full repository gates are not enforced."
@@ -806,6 +822,7 @@ def main() -> int:
             ["-DCLOCK_EXTERNAL_SYNC_PIN=clockfw::mcu::PB3", "-DCLOCK_EXTERNAL_RESET_PIN=clockfw::mcu::PB4"],
         ),
         compile_sync_behavior_suite(),
+        compile_behavior_suite("sequencer2", sequencer2_sources(), ROOT / "test/test_sequencer2/test_main.cpp"),
         compile_behavior_suite("swing", realtime_sources(), ROOT / "test/test_swing/test_main.cpp"),
         compile_behavior_suite("humanize", realtime_sources(), ROOT / "test/test_humanize/test_main.cpp"),
         compile_behavior_suite("tap_tempo", tap_tempo_sources(), ROOT / "test/test_tap_tempo/test_main.cpp"),

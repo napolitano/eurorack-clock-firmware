@@ -10,6 +10,18 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Sequencer 2.0 foundation
+
+- Add a compact Sequencer 2.0 pattern model with **1-128 steps**, two fixed 64-bit gate words, eight pattern slots per physical channel, and pattern-local `FORWARD`, `REVERSE`, `PINGPONG`, and deterministic `RANDOM` traversal plus `LOOP`/`ONCE` end behavior.
+- Keep RANDOM traversal history-free and seedable so rescheduling can reproduce the same selected step without a process-global PRNG or hidden call-order dependency.
+- Add a dedicated 2-KiB persistent pattern-bank record outside the repeated `ClockState`: 64 fixed pattern slots use explicit compiler-independent records, a bank header, and CRC-32 protection.
+- Extend the development logical A/B image from the released 8 KiB layout to the existing 12-KiB architectural ceiling while continuing to accept 8-KiB and older 4-KiB generations; bytes beyond an older payload read as erased and the next durable write promotes the image without changing its historical prefix.
+- Seed pattern `P1` for every channel from its legacy 1.1 Sequencer settings on first Sequencer-2.0 initialization; `P2`-`P8` remain clean defaults.
+- Coalesce pattern-bank writes through the existing power-loss-safe A/B storage and suppress Flash commits while transport is PLAYING.
+- Add the focused `test_sequencer2` suite with 14 named tests covering 128-step bounds, traversal/ONCE behavior, deterministic RANDOM, rotation, corrupt records, legacy migration, delayed writes, interrupted commits, and 8-KiB-to-12-KiB promotion.
+- Keep this as an **initial infrastructure slice**: the production engine/UI still execute the released 1.1 Sequencer path until active-pattern selection, the 8-step viewport, step metadata, Song Mode, and Ratchets are wired in subsequent work.
+- Treat the 12-KiB source configuration as **development-only pending a real STM32F401 ELF memory-gate run**; host tests prove layout/migration behavior but do not substitute for target SRAM evidence.
+
 ### VCV Rack edition
 
 - Add `vcv/` as a peer platform shell beside `sim/` for prospective builders who want to try CLOCK before building the hardware.
@@ -46,8 +58,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Test architecture and focused coverage
 
-- Split the largest Native suites into thematic local case fragments while retaining one deterministic translation unit per PlatformIO suite; the named Native inventory is now 497 tests.
-- Add focused host-coverage modes for core, realtime, sync, swing, settings, controls, screensavers and Easter eggs, with optional production-source narrowing for change-local diagnosis.
+- Split the largest Native suites into thematic local case fragments while retaining one deterministic translation unit per PlatformIO suite; the named Native inventory is now 511 tests.
+- Add focused host-coverage modes for core, realtime, sync, Sequencer 2.0, swing, settings, controls, screensavers and Easter eggs, with optional production-source narrowing for change-local diagnosis.
 - Keep focused reports diagnostic only: the repository-wide 95/95/90 coverage gate remains authoritative.
 - Extend Groove Recorder defensive-path coverage and raise full firmware host coverage to 95.82% lines, 98.29% functions and 90.39% decision branches.
 

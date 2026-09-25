@@ -37,7 +37,7 @@ This makes the simulator useful for UI work, timing regression checks, persisten
 - logical gate-output mute state;
 - the real 20 kHz scheduler callback;
 - all CLOCK, EUCLID, SEQUENCER, OFF, One Clock, and Divider Bank logic;
-- current settings, eight preset slots, and the arcade leaderboards through the durable 8192-byte host persistence image;
+- current settings, eight preset slots, arcade leaderboards, and the post-1.1 Sequencer-2.0 pattern-bank extension through the durable 12288-byte development host image, while still accepting prior 8192-byte/4096-byte images;
 - screensaver/dim/display-off behavior;
 - accelerated virtual time at 1×, 4×, or 16×;
 - a scrolling developer oscilloscope with rising-edge counters, engine-phase-locked musical reference lines, and fixed 0.5 / 1 / 2 / 4 / 8 / 16 / 32 second visible spans;

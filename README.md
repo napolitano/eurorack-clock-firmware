@@ -294,13 +294,14 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **497 explicitly named Native test cases**. PlatformIO exposes eleven behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **511 explicitly named Native test cases**. PlatformIO exposes twelve behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
 | `test_clock_core` | 44 | deterministic rate, Q32, probability, Euclid and sequencer mathematics |
 | `test_realtime` | 28 | scheduler, physical gate driver and realtime input/timing integration |
 | `test_sync_behavior` | 116 | external clock acquisition plus configurable INPUT 1/2 role semantics, transport commands, reset/run levels, jitter/glitches/loss and nominal LM393-front-end modeling |
+| `test_sequencer2` | 14 | Sequencer 2.0 128-step pattern model, direction/loop contracts, deterministic RANDOM and persistent-bank migration/power-loss behavior |
 | `test_swing` | 40 | Swing/Groove mathematics, exhaustive Custom-Groove sweeps, Groove Record capture and engine timing invariants |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
@@ -321,9 +322,9 @@ python scripts/run_host_tests.py
 Current validated aggregate baseline:
 
 ```text
-Executable lines     9260 / 9667   95.79 %
-Functions              805 / 819    98.29 %
-Decision branches     5639 / 6246   90.28 %
+Executable lines     9534 / 9940   95.92 %
+Functions              836 / 850    98.35 %
+Decision branches     5811 / 6424   90.46 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).

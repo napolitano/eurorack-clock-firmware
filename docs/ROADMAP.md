@@ -114,30 +114,41 @@ Definition of done:
 
 ### 1.2.x — Sequencer 2.0
 
-**Goal:** turn the existing 64-step binary trigger pattern into a compact but expressive gate sequencer.
+**Goal:** turn the existing binary trigger pattern into a compact but expressive gate sequencer without turning the 128×64 UI into a miniature DAW.
 
-Planned scope:
+**Implemented foundation in post-1.1 r45 development:**
 
+- compact 1–128-step pattern model using two 64-bit gate words;
+- eight persistent pattern slots per physical channel (64 global pattern records);
+- pattern-local `FORWARD`, `REVERSE`, `PINGPONG`, and deterministic seedable `RANDOM` traversal;
+- `LOOP` and `ONCE` end behavior;
+- compiler-independent pattern-bank records with CRC, coalesced A/B commits and one-way migration of every legacy channel sequence into P1;
+- development 8-KiB → 12-KiB logical-image migration while preserving the released first 8 KiB byte-for-byte.
+
+The r45 foundation is **not yet a user-visible Sequencer 2.0**: the production engine/UI still run the released Sequencer path. Engine selection, 8-step viewport editing, pattern-slot UI, Song Mode and step metadata remain subsequent work. The 12-KiB target also remains subject to the real STM32F401 memory gate before release approval.
+
+Planned musical/UI scope:
+
+- 1–128 active steps per pattern while the OLED displays an eight-step viewport;
+- eight patterns per channel;
 - probability per step;
-- gate duration per step;
-- relative gate/duty values for tempo-independent musical lengths;
-- short trigger values for percussion-style use;
-- Tie for continuous gates across neighboring active steps;
-- `DEFAULT` inheritance so users only override exceptional steps.
+- gate duration per step, including relative duty values and short percussion-style triggers;
+- Tie for continuous gates across deterministic neighboring steps;
+- Ratchet as bounded per-step sub-events;
+- `DEFAULT` inheritance so untouched steps consume no override record;
+- Song Mode as a global topology peer to Independent / One Clock / Divider Bank, with eight channel columns and row cells selecting `-` or P1–P8;
+- polymeter through independent pattern lengths and polyrhythm through the existing rational channel-rate timeline rather than free-running clocks.
 
 Dependencies and constraints:
 
-- eight channels × 64 steps means 512 step records, so metadata must be packed and migrated deliberately;
-- large step metadata must not be copied wholesale under interrupt lock;
+- large step metadata remains outside repeated `ClockState` and outside the interrupt-masked `ChannelConfig` copy path;
+- sparse/default step metadata must fit the remaining extension budget or trigger a deliberate later storage redesign;
+- RANDOM direction is only random step traversal; 1.5 Structured Random/EVOLVE remains a separate feature family;
+- Tie is undefined for RANDOM traversal and must not manufacture continuity between unrelated selected steps;
+- Ratchets are bounded sub-events and must never create recursive event growth;
 - gate length must never consume or erase the next legal rising edge unless Tie explicitly requests continuity.
 
-Definition of done:
-
-- all 512 steps round-trip through persistence;
-- per-step probability is deterministic for fixed seed/test fixtures;
-- Tie produces no retrigger at the boundary;
-- changing BPM preserves relative gate semantics;
-- editor remains practical across all four 16-step pages.
+Definition of done for the complete 1.2 feature remains to include persistence round-trips, deterministic fixed-seed RANDOM/probability fixtures, direction/ONCE boundary vectors, Tie/no-retrigger behavior, tempo-relative gate semantics, bounded Ratchets, practical 8-step viewport navigation, pattern-bank operations, Song-mode polymeter/polyrhythm scenarios, and target-memory qualification.
 
 ### 1.3.x — Euclid Auto-Fill and Trigger Conditions
 

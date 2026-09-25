@@ -7,19 +7,16 @@
  */
 
 #include "hal/persistent_storage.h"
-
 #include <algorithm>
 #include <array>
 #include <cstdint>
 #include <cstring>
-
 #ifndef CLOCK_HOST_TEST
 #include <stm32f4xx_hal.h>
 #endif
 
 namespace clockfw::hal {
 namespace {
-
 constexpr std::uint8_t kErasedByte = 0xFFU;
 constexpr std::uint32_t kSlotMagic = 0x434C4B50UL;      // "CLKP"
 constexpr std::uint32_t kSlotFormatVersion = 1U;
@@ -31,13 +28,12 @@ constexpr std::size_t kHeaderWordCount = kSlotHeaderBytes / sizeof(std::uint32_t
 constexpr std::size_t kCommitWordIndex = kHeaderWordCount - 1U;
 constexpr std::size_t kPayloadOffset = kSlotHeaderBytes;
 constexpr std::size_t kLegacyPayloadBytes = 4096U;
-
+constexpr std::size_t kV1PayloadBytes = persistent_layout::kV1ImageBytes;
 static_assert(
     kSlotHeaderBytes + PersistentStorage::kMaximumImageBytes <=
         PersistentStorage::kPhysicalSlotBytes,
     "12-KiB persistent-image policy must fit inside one 16-KiB slot");
 static_assert((PersistentStorage::kCapacityBytes % 4U) == 0U, "Flash image must be word-aligned");
-
 struct SlotHeader final {
     std::uint32_t magic = kSlotMagic;
     std::uint32_t formatVersion = kSlotFormatVersion;
@@ -49,7 +45,6 @@ struct SlotHeader final {
     std::uint32_t commitMarker = 0xFFFFFFFFUL;
 };
 static_assert(sizeof(SlotHeader) == kSlotHeaderBytes, "Unexpected slot-header padding");
-
 std::uint32_t calculateCrc32(const std::uint8_t* const data, const std::size_t size) {
     std::uint32_t crc = kCrcInitialValue;
     for (std::size_t index = 0U; index < size; ++index) {
@@ -64,14 +59,12 @@ std::uint32_t calculateCrc32(const std::uint8_t* const data, const std::size_t s
     }
     return crc ^ kCrcInitialValue;
 }
-
 std::uint32_t headerCrc32(const SlotHeader& header) {
     // The first five words are immutable metadata. headerCrc/reserved/commit are excluded.
     return calculateCrc32(
         reinterpret_cast<const std::uint8_t*>(&header),
         5U * sizeof(std::uint32_t));
 }
-
 bool generationIsNewer(const std::uint32_t candidate, const std::uint32_t reference) {
     return static_cast<std::int32_t>(candidate - reference) > 0;
 }
@@ -88,18 +81,15 @@ std::uint32_t gHostWriteCommitCount = 0U;
 bool gFailNextRead = false;
 bool gFailNextWrite = false;
 bool gPowerLossBeforeCommit = false;
-
 const std::uint8_t* slotBase(const std::size_t slotIndex) {
     return gHostSlots[slotIndex].data();
 }
-
 std::uint8_t* mutableSlotBase(const std::size_t slotIndex) {
     return gHostSlots[slotIndex].data();
 }
 #else
 constexpr std::uintptr_t kSlotAddresses[2U] = {0x08004000UL, 0x08008000UL};
 constexpr std::uint32_t kSlotSectors[2U] = {FLASH_SECTOR_1, FLASH_SECTOR_2};
-
 const std::uint8_t* slotBase(const std::size_t slotIndex) {
     return reinterpret_cast<const std::uint8_t*>(kSlotAddresses[slotIndex]);
 }
@@ -109,12 +99,13 @@ bool readHeader(const std::size_t slotIndex, SlotHeader& header) {
     std::memcpy(&header, slotBase(slotIndex), sizeof(header));
     return true;
 }
-
 bool slotIsValid(const std::size_t slotIndex, SlotHeader& header) {
     (void)readHeader(slotIndex, header);
     if (header.magic != kSlotMagic ||
         header.formatVersion != kSlotFormatVersion ||
-        (header.payloadSize != PersistentStorage::kCapacityBytes && header.payloadSize != kLegacyPayloadBytes) ||
+        (header.payloadSize != PersistentStorage::kCapacityBytes &&
+         header.payloadSize != kV1PayloadBytes &&
+         header.payloadSize != kLegacyPayloadBytes) ||
         header.commitMarker != kCommitMarker ||
         header.headerCrc32 != headerCrc32(header)) {
         return false;
@@ -123,7 +114,6 @@ bool slotIsValid(const std::size_t slotIndex, SlotHeader& header) {
         slotBase(slotIndex) + kPayloadOffset,
         static_cast<std::size_t>(header.payloadSize));
 }
-
 int newestValidSlot(SlotHeader* const newestHeader = nullptr) {
     SlotHeader first{};
     SlotHeader second{};
@@ -132,7 +122,6 @@ int newestValidSlot(SlotHeader* const newestHeader = nullptr) {
     if (!firstValid && !secondValid) {
         return -1;
     }
-
     std::size_t newest = 0U;
     SlotHeader selected = first;
     if (!firstValid || (secondValid && generationIsNewer(second.generation, first.generation))) {
@@ -144,7 +133,6 @@ int newestValidSlot(SlotHeader* const newestHeader = nullptr) {
     }
     return static_cast<int>(newest);
 }
-
 #ifndef CLOCK_HOST_TEST
 bool eraseSlotUnlocked(const std::size_t slotIndex) {
     FLASH_EraseInitTypeDef erase{};
@@ -155,14 +143,12 @@ bool eraseSlotUnlocked(const std::size_t slotIndex) {
     std::uint32_t sectorError = 0U;
     return HAL_FLASHEx_Erase(&erase, &sectorError) == HAL_OK;
 }
-
 bool programWordUnlocked(const std::uintptr_t address, const std::uint32_t value) {
     return HAL_FLASH_Program(
         FLASH_TYPEPROGRAM_WORD,
         static_cast<std::uint32_t>(address),
         static_cast<std::uint64_t>(value)) == HAL_OK;
 }
-
 bool programWordsUnlocked(
     const std::uintptr_t address,
     const std::uint8_t* const bytes,
@@ -227,7 +213,6 @@ bool commitImage(
     SlotHeader verified{};
     return slotIsValid(targetSlot, verified) && verified.generation == generation;
 }
-
 }  // namespace
 
 bool PersistentStorage::readBytes(
@@ -262,7 +247,6 @@ bool PersistentStorage::readBytes(
     }
     return true;
 }
-
 bool PersistentStorage::beginUpdate() {
 #ifdef CLOCK_HOST_TEST
     if (gFailNextRead) {
@@ -379,23 +363,18 @@ void PersistentStorage::resetForTest() {
     gFailNextWrite = false;
     gPowerLossBeforeCommit = false;
 }
-
 std::uint32_t PersistentStorage::writeCommitCountForTest() {
     return gHostWriteCommitCount;
 }
-
 void PersistentStorage::failNextReadForTest() {
     gFailNextRead = true;
 }
-
 void PersistentStorage::failNextWriteForTest() {
     gFailNextWrite = true;
 }
-
 void PersistentStorage::powerLossBeforeCommitForTest() {
     gPowerLossBeforeCommit = true;
 }
-
 void PersistentStorage::corruptNewestPayloadByteForTest(const std::size_t offset) {
     if (offset >= kCapacityBytes) {
         return;
@@ -405,7 +384,6 @@ void PersistentStorage::corruptNewestPayloadByteForTest(const std::size_t offset
         mutableSlotBase(static_cast<std::size_t>(activeSlot))[kPayloadOffset + offset] ^= 0x01U;
     }
 }
-
 void PersistentStorage::corruptNewestHeaderWordForTest(
     const std::size_t wordIndex,
     const std::uint32_t value) {
@@ -440,11 +418,27 @@ bool PersistentStorage::seedLegacyImageForTest(const std::uint8_t* const image, 
     SlotHeader verified{};
     return slotIsValid(0U, verified) && verified.payloadSize == kLegacyPayloadBytes;
 }
-
+bool PersistentStorage::seedV1ImageForTest(const std::uint8_t* const image, const std::size_t size) {
+    if (image == nullptr || size != kV1PayloadBytes) {
+        return false;
+    }
+    resetForTest();
+    SlotHeader header{};
+    header.generation = 8U;
+    header.payloadSize = static_cast<std::uint32_t>(kV1PayloadBytes);
+    header.payloadCrc32 = calculateCrc32(image, size);
+    header.headerCrc32 = headerCrc32(header);
+    header.commitMarker = kCommitMarker;
+    auto& slot = gHostSlots[0U];
+    slot.fill(kErasedByte);
+    std::memcpy(slot.data(), &header, sizeof(header));
+    std::memcpy(slot.data() + static_cast<std::ptrdiff_t>(kPayloadOffset), image, size);
+    SlotHeader verified{};
+    return slotIsValid(0U, verified) && verified.payloadSize == kV1PayloadBytes;
+}
 #endif
 
 bool PersistentStorage::isRangeValid(const std::size_t offset, const std::size_t size) {
     return offset <= kCapacityBytes && size <= kCapacityBytes - offset;
 }
-
 }  // namespace clockfw::hal

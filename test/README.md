@@ -15,6 +15,7 @@ This is the developer-facing Native entry point. The suite deliberately makes ti
 | `test_clock_core` | 44 | hardware-independent clock mathematics and exhaustive invariants |
 | `test_realtime` | 28 | deterministic scheduler/GPIO/SYNC/RST integration and stress behavior |
 | `test_sync_behavior` | 116 | exact/changing external clocks plus configurable INPUT 1/2 roles (SYNC/RESET/RUN/START/STOP/RESTART/TAP), role reassignment, RUN baselining, jitter/glitches/loss, PPQN/edge semantics and nominal analogue-front-end behavior |
+| `test_sequencer2` | 14 | Sequencer 2.0 128-step pattern model, FORWARD/REVERSE/PINGPONG/RANDOM traversal, LOOP/ONCE, bank persistence and 8-KiB migration |
 | `test_swing` | 40 | Swing/Groove mathematics, exhaustive Custom-Groove sweeps, TAP Recorder capture/Count-In/One-Shot/Endless behavior, and observable engine timing invariants |
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
 | `test_tap_tempo` | 24 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
@@ -23,7 +24,7 @@ This is the developer-facing Native entry point. The suite deliberately makes ti
 | `test_screensavers` | 19 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | intro launch gating, reset state, output safety and game-specific controls |
 | `test_host_firmware` | 39 | complete firmware/UI/HAL/persistence behavior, Groove Editor/Record workflows, schema migrations and framebuffer/navigation contracts using deterministic host fakes |
-| **Total** | **497** | public Native inventory |
+| **Total** | **511** | public Native inventory |
 
 The default Native configuration executes more than **433,000 assertions**. `scripts/check_test_inventory.py` enforces the visible-suite inventory contract so a broad test-count increase cannot hide a regression in one focused suite.
 

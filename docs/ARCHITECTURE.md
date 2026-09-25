@@ -250,7 +250,7 @@ Layout:
 0x08020000  Sector 5  128 KiB   firmware
 ```
 
-Firmware budget: **224 KiB**. Persistence: **2 × 16 KiB**. Logical storage is 8 KiB with a hard 12 KiB future ceiling. The upper half hosts compact independent arcade Top-100 tables. In the lower 4 KiB, bytes 3136–4095 hold ten fixed 96-byte Custom Groove records without moving the historical score region at 3072–3135. Ten named slots are the frozen 1.1.0 scope; larger libraries require a separate storage revision and real target-memory proof rather than growth of the repeated `ClockState` record.
+Firmware budget: **224 KiB**. Persistence: **2 × 16 KiB**. Released 1.1.0 uses an 8-KiB logical image. The post-1.1 Sequencer-2.0 development slice exercises the already documented **12-KiB architectural ceiling**: bytes 8192–10239 hold the first 2-KiB Sequencer pattern-bank extension and 10240–12287 remain reserved for later sparse step/Song data. Valid 8-KiB and older 4-KiB generations remain readable and are promoted only on a later durable write. This 12-KiB target is not release-approved until a real STM32F401 ELF passes the existing RAM/Flash memory gate. The lower 8 KiB retain the released settings, Custom Groove, score and leaderboard layout unchanged.
 
 `PersistentStateService` serializes fields explicitly, validates ranges, checks CRC, and migrates supported prior schemas. The storage layer writes the inactive slot and programs COMMIT last.
 

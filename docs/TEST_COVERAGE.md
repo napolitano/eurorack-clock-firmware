@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — stable v1.1.0
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. `pio test -e native` exposes all 497 named Native cases, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. Stable 1.1.0 shipped with 497 named Native cases. The current post-1.1 development tree adds 14 focused `test_sequencer2` cases for a **511-case** working inventory, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -34,6 +34,21 @@ Compiler branches:   5640/7322 (77.03%, informational only)
 
 This is a host-coverage result, not HIL evidence. The 90% decision threshold is unchanged.
 
+Post-1.1 r45 development aggregate after adding the Sequencer 2.0 model/store and 8-KiB migration path:
+
+```text
+Executable lines:   9534/9940 (95.92%)
+Functions:            836/850  (98.35%)
+Decision branches:   5811/6424 (90.46%)
+Compiler branches:   5812/7517 (77.32%, informational only)
+```
+
+The r45 aggregate includes the current focused behavioral suites plus rebuilt SPI/I2C host-firmware variants. It is host evidence only; the enlarged 12-KiB target staging image still requires a real STM32F401 ELF memory-gate result before release approval.
+
+
+### Sequencer 2.0 development slice
+
+The post-1.1 Sequencer 2.0 foundation has its own `--focus sequencer2` slice. Source-narrowed r45 measurements for the new files are **98.90% lines / 100.00% functions / 93.65% decision branches** for `src/domain/sequencer_pattern.cpp` and **100.00% / 100.00% / 96.00%** for `src/services/sequencer_pattern_store.cpp`. These are change-local diagnostics; the repository-wide gate remains authoritative.
 
 ## Focused change-local coverage
 
