@@ -439,10 +439,19 @@ void testUiControllerFlows() {
     CHECK(std::strcmp(
         ui::buildSequencerV2MenuRow(0U, sequencerStore.activeSlot(selectedChannel),
                                     sequencerStore.pattern(selectedChannel, sequencerStore.activeSlot(selectedChannel))).label,
-        "PATTERN") == 0);
+        "EDITOR") == 0);
 
+    controllerTurn(controller, 1, now);     // PATTERN
     controllerShortPress(controller, now); // edit PATTERN
     controllerTurn(controller, 1, now);     // P1 -> P2
+    controllerShortPress(controller, now);
+    CHECK_EQ(sequencerStore.activeSlot(selectedChannel), 1U);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, -100, now);  // clamp to P1
+    controllerTurn(controller, -1, now);    // no-op at lower boundary
+    controllerTurn(controller, 100, now);   // clamp to P8
+    controllerTurn(controller, 1, now);     // no-op at upper boundary
+    controllerTurn(controller, -6, now);    // restore P2
     controllerShortPress(controller, now);
     CHECK_EQ(sequencerStore.activeSlot(selectedChannel), 1U);
 
@@ -451,6 +460,12 @@ void testUiControllerFlows() {
     controllerTurn(controller, 112, now);   // 16 -> 128
     controllerShortPress(controller, now);
     CHECK_EQ(sequencerStore.pattern(selectedChannel, 1U).length, 128U);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 1, now);     // no-op at 128
+    controllerTurn(controller, -127, now);  // clamp to 1
+    controllerTurn(controller, -1, now);    // no-op at 1
+    controllerTurn(controller, 127, now);   // restore 128
+    controllerShortPress(controller, now);
 
     controllerTurn(controller, 2, now);     // DIRECTION
     controllerShortPress(controller, now);
@@ -459,14 +474,27 @@ void testUiControllerFlows() {
     CHECK_EQ(
         sequencerStore.pattern(selectedChannel, 1U).direction,
         SequencerPlayDirection::PingPong);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 10, now);    // clamp to RANDOM
+    controllerTurn(controller, 1, now);     // no-op at RANDOM
+    controllerTurn(controller, -10, now);   // clamp to FORWARD
+    controllerTurn(controller, -1, now);    // no-op at FORWARD
+    controllerTurn(controller, 2, now);     // restore PINGPONG
+    controllerShortPress(controller, now);
 
     controllerTurn(controller, 1, now);     // LOOP
     controllerShortPress(controller, now);
     controllerTurn(controller, 1, now);     // LOOP -> ONCE
     controllerShortPress(controller, now);
     CHECK_EQ(sequencerStore.pattern(selectedChannel, 1U).loopMode, SequencerLoopMode::Once);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 1, now);     // no-op at ONCE
+    controllerTurn(controller, -10, now);   // clamp to LOOP
+    controllerTurn(controller, -1, now);    // no-op at LOOP
+    controllerTurn(controller, 1, now);     // restore ONCE
+    controllerShortPress(controller, now);
 
-    controllerTurn(controller, 1, now);     // EDITOR
+    controllerTurn(controller, -5, now);    // EDITOR
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::SequencerEditor);
     controllerTurn(controller, 5, now);
@@ -483,6 +511,14 @@ void testUiControllerFlows() {
     controllerTurn(controller, 75, now);    // DEFAULT -> 75%
     controllerShortPress(controller, now);
     CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).probabilityPercent, 75U);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 100, now);   // clamp at 100%
+    controllerTurn(controller, 1, now);     // no-op at upper boundary
+    controllerTurn(controller, -127, now);  // clamp at inherited/default 0%
+    controllerTurn(controller, -1, now);    // no-op at lower boundary
+    controllerTurn(controller, 75, now);    // restore representative explicit value
+    controllerShortPress(controller, now);
+    CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).probabilityPercent, 75U);
 
     controllerTurn(controller, 1, now);     // LENGTH
     controllerShortPress(controller, now);
@@ -491,12 +527,28 @@ void testUiControllerFlows() {
     CHECK_EQ(
         sequencerStepStore.metadata(selectedChannel, 1U, 5U).gateProfile,
         SequencerGateProfile::Duty50);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 40, now);    // clamp at longest gate profile
+    controllerTurn(controller, 1, now);     // no-op at upper boundary
+    controllerTurn(controller, -40, now);   // clamp back at DEFAULT
+    controllerTurn(controller, -1, now);    // no-op at lower boundary
+    controllerTurn(controller, 6, now);     // restore 50% duty
+    controllerShortPress(controller, now);
 
     controllerTurn(controller, 1, now);     // RATCHET
     controllerShortPress(controller, now);
     controllerTurn(controller, 2, now);     // 1 -> 3
     controllerShortPress(controller, now);
     CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).ratchetCount, 3U);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 20, now);    // clamp at 8 substeps
+    CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).ratchetCount, 8U);
+    controllerTurn(controller, 1, now);     // no-op at upper boundary
+    controllerTurn(controller, -20, now);   // clamp at 1
+    CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).ratchetCount, 1U);
+    controllerTurn(controller, -1, now);    // no-op at lower boundary
+    controllerTurn(controller, 2, now);     // restore 3
+    controllerShortPress(controller, now);
 
     controllerTurn(controller, 1, now);     // TIE
     controllerShortPress(controller, now);
@@ -504,6 +556,12 @@ void testUiControllerFlows() {
     controllerShortPress(controller, now);
     CHECK(sequencerStepStore.metadata(selectedChannel, 1U, 5U).tie);
     CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).ratchetCount, 1U);
+    controllerShortPress(controller, now);
+    controllerTurn(controller, -1, now);    // ON -> OFF
+    CHECK(!sequencerStepStore.metadata(selectedChannel, 1U, 5U).tie);
+    controllerTurn(controller, 1, now);     // OFF -> ON
+    CHECK(sequencerStepStore.metadata(selectedChannel, 1U, 5U).tie);
+    controllerShortPress(controller, now);
 
     controllerTurn(controller, -1, now);    // RATCHET
     controllerShortPress(controller, now);
@@ -516,21 +574,25 @@ void testUiControllerFlows() {
     CHECK_EQ(controller.navigation().screen, ui::Screen::SequencerEditor);
     CHECK_EQ(controller.navigation().sequencerCursor, 5U);
 
-    for (int page = 0; page < 15; ++page) {
-        sample = {};
-        sample.transportButton = pressedEdge();
-        controller.processControls(sample, now++);
-    }
+    // Crossing an eight-step viewport boundary with the encoder updates the
+    // editor page directly. PLAY remains transport while editing and must not
+    // steal viewport navigation.
+    controllerTurn(controller, 120, now);
     CHECK_EQ(controller.navigation().sequencerPage, 15U);
-    for (int page = 0; page < 15; ++page) {
-        sample = {};
-        sample.tapButton = pressedEdge();
-        controller.processControls(sample, now++);
-        sample = {};
-        sample.tapButton = releasedEdge();
-        controller.processControls(sample, now++);
-    }
+    CHECK_EQ(controller.navigation().sequencerCursor, 5U);
+    sample = {};
+    sample.transportButton = pressedEdge();
+    controller.processControls(sample, now++);
+    CHECK(engine.snapshot().playing);
+    CHECK_EQ(controller.navigation().sequencerPage, 15U);
+    sample = {};
+    sample.transportButton = pressedEdge();
+    controller.processControls(sample, now++);
+    CHECK(!engine.snapshot().playing);
+    CHECK_EQ(controller.navigation().sequencerPage, 15U);
+    controllerTurn(controller, -120, now);
     CHECK_EQ(controller.navigation().sequencerPage, 0U);
+    CHECK_EQ(controller.navigation().sequencerCursor, 5U);
 
     controllerLongPress(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
@@ -538,16 +600,122 @@ void testUiControllerFlows() {
     CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::SequencerPattern), "PATTERN") == 0);
     controllerShortPress(controller, now); // INVERT
     CHECK(!sequencerPatternGate(sequencerStore.pattern(selectedChannel, 1U), 5U));
+
+    controllerTurn(controller, 1, now);     // CLEAR
+    controllerShortPress(controller, now);
+    CHECK_EQ(sequencerStore.pattern(selectedChannel, 1U).gates[0], 0ULL);
+    CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).ratchetCount, 1U);
+
+    controllerTurn(controller, 1, now);     // FILL alternating
+    controllerShortPress(controller, now);
+    CHECK(sequencerPatternGate(sequencerStore.pattern(selectedChannel, 1U), 0U));
+    CHECK(!sequencerPatternGate(sequencerStore.pattern(selectedChannel, 1U), 1U));
+
+    controllerTurn(controller, 1, now);     // COPY
+    controllerShortPress(controller, now);
+    controllerTurn(controller, -2, now);    // CLEAR again
+    controllerShortPress(controller, now);
+    CHECK_EQ(sequencerStore.pattern(selectedChannel, 1U).gates[0], 0ULL);
+    controllerTurn(controller, 3, now);     // PASTE
+    controllerShortPress(controller, now);
+    CHECK(sequencerPatternGate(sequencerStore.pattern(selectedChannel, 1U), 0U));
+    CHECK(!sequencerPatternGate(sequencerStore.pattern(selectedChannel, 1U), 1U));
+
     controllerReset(controller, now);       // Pattern ops -> editor
     CHECK_EQ(controller.navigation().screen, ui::Screen::SequencerEditor);
     controllerReset(controller, now);       // Editor -> Sequencer settings
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Sequencer);
-    CHECK_EQ(controller.navigation().cursor, 5U);
+    CHECK_EQ(controller.navigation().cursor, 0U);
     controllerReset(controller, now);       // Sequencer -> Channel
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
     CHECK_EQ(controller.navigation().cursor, 1U);
     controllerReset(controller, now);       // Channel -> Root
     controllerReset(controller, now);       // Root -> Performance
+
+    // Defensive Sequencer 2.0 controller paths are part of the product contract:
+    // an unattached store, an invalid channel, or a cursor beyond pattern length
+    // must be harmless rather than dereference stale persistence state.
+    auto& sequencerNav = ui::UiControllerTestAccess::navigation(controller);
+    auto* const attachedPatternStore = ui::UiControllerTestAccess::patternStore(controller);
+    auto* const attachedStepStore = ui::UiControllerTestAccess::stepStore(controller);
+    const std::uint8_t savedChannel = sequencerNav.selectedChannel;
+
+    ui::UiControllerTestAccess::patternStore(controller) = nullptr;
+    CHECK(ui::UiControllerTestAccess::activePattern(controller) == nullptr);
+    ui::UiControllerTestAccess::synchronizePattern(controller, false);
+    ui::UiControllerTestAccess::synchronizeMetadata(controller);
+    ui::UiControllerTestAccess::openStepEditor(controller);
+    CHECK_EQ(ui::UiControllerTestAccess::activeMetadata(controller).ratchetCount, 1U);
+    ui::UiControllerTestAccess::adjustPattern(controller, 1, now++);
+    ui::UiControllerTestAccess::adjustMetadata(controller, 1, now++);
+    ui::UiControllerTestAccess::toggleStep(controller, now++);
+    CHECK(!ui::UiControllerTestAccess::command(controller, 0U, now++));
+    ui::UiControllerTestAccess::patternStore(controller) = attachedPatternStore;
+
+    ui::UiControllerTestAccess::stepStore(controller) = nullptr;
+    ui::UiControllerTestAccess::synchronizeMetadata(controller);
+    ui::UiControllerTestAccess::openStepEditor(controller);
+    CHECK_EQ(ui::UiControllerTestAccess::activeMetadata(controller).ratchetCount, 1U);
+    ui::UiControllerTestAccess::adjustMetadata(controller, 1, now++);
+    ui::UiControllerTestAccess::stepStore(controller) = attachedStepStore;
+
+    sequencerNav.selectedChannel = kChannelCount;
+    CHECK(ui::UiControllerTestAccess::activePattern(controller) == nullptr);
+    ui::UiControllerTestAccess::synchronizePattern(controller, true);
+    ui::UiControllerTestAccess::synchronizeMetadata(controller);
+    ui::UiControllerTestAccess::openStepEditor(controller);
+    CHECK_EQ(ui::UiControllerTestAccess::activeMetadata(controller).ratchetCount, 1U);
+    ui::UiControllerTestAccess::adjustPattern(controller, 1, now++);
+    ui::UiControllerTestAccess::adjustMetadata(controller, 1, now++);
+    ui::UiControllerTestAccess::toggleStep(controller, now++);
+    CHECK(!ui::UiControllerTestAccess::command(controller, 0U, now++));
+    sequencerNav.selectedChannel = savedChannel;
+
+    SequencerPatternV2 defensivePattern = sequencerStore.pattern(savedChannel, 1U);
+    defensivePattern.length = 128U;
+    defensivePattern.rotation = 127U;
+    CHECK(sequencerStore.updatePattern(savedChannel, 1U, defensivePattern, now++));
+    (void)sequencerStore.setActiveSlot(savedChannel, 1U, now++);
+    sequencerNav.cursor = 2U;
+    ui::UiControllerTestAccess::adjustPattern(controller, -127, now++);
+    CHECK_EQ(sequencerStore.pattern(savedChannel, 1U).length, 1U);
+    CHECK_EQ(sequencerStore.pattern(savedChannel, 1U).rotation, 0U);
+    sequencerNav.cursor = 3U;
+    ui::UiControllerTestAccess::adjustPattern(controller, 1, now++);
+    sequencerNav.cursor = 6U;
+    ui::UiControllerTestAccess::adjustPattern(controller, 1, now++);
+    ui::UiControllerTestAccess::adjustPattern(controller, 0, now++);
+
+    sequencerNav.sequencerPage = 1U;
+    sequencerNav.sequencerCursor = 0U;
+    ui::UiControllerTestAccess::openStepEditor(controller);
+    ui::UiControllerTestAccess::adjustMetadata(controller, 1, now++);
+    ui::UiControllerTestAccess::toggleStep(controller, now++);
+    sequencerNav.sequencerPage = 0U;
+    sequencerNav.sequencerCursor = 0U;
+    sequencerNav.cursor = 0U;
+    ui::UiControllerTestAccess::adjustMetadata(controller, 1, now++);
+    sequencerNav.cursor = 5U;
+    ui::UiControllerTestAccess::adjustMetadata(controller, 1, now++);
+
+    defensivePattern = sequencerStore.pattern(savedChannel, 1U);
+    defensivePattern.direction = SequencerPlayDirection::Random;
+    CHECK(sequencerStore.updatePattern(savedChannel, 1U, defensivePattern, now++));
+    sequencerNav.cursor = 4U;
+    ui::UiControllerTestAccess::adjustMetadata(controller, 1, now++);
+
+    ui::UiControllerTestAccess::clearSequencerClipboard(controller);
+    CHECK(!ui::UiControllerTestAccess::command(controller, 4U, now++));
+    CHECK(!ui::UiControllerTestAccess::command(controller, 99U, now++));
+
+    // Restore a regular long pattern for the rest of the UI-flow regression.
+    defensivePattern = sequencerStore.pattern(savedChannel, 1U);
+    defensivePattern.length = 128U;
+    defensivePattern.rotation = 0U;
+    defensivePattern.direction = SequencerPlayDirection::PingPong;
+    CHECK(sequencerStore.updatePattern(savedChannel, 1U, defensivePattern, now++));
+    ui::UiControllerTestAccess::synchronizePattern(controller, true);
+    sequencerNav.cursor = 0U;
 
     // TAP no longer has a long-press shortcut. Holding it without turning must
     // never leave Performance; mode-specific parameters are reached through menus.

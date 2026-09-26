@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — stable v1.1.0
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. Stable 1.1.0 shipped with 497 named Native cases. The current post-1.1 development tree adds the focused `test_sequencer2` suite plus current settings/support regressions for a **512-case** working inventory, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. Stable 1.1.0 shipped with 497 named Native cases. The current post-1.1 development tree adds the focused `test_sequencer2` suite plus current Sequencer expression/UI and realtime gate regressions for a **525-case** working inventory, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -56,10 +56,22 @@ Compiler branches:   5993/7795 (76.88%, informational only)
 
 The r46 aggregate passes the unchanged 95/95/90 host gate. The decision-branch margin is deliberately visible and must not be treated as permission to reduce the threshold. Target SRAM/Flash approval for the 12-KiB persistence staging image remains pending a real STM32F401 ELF memory-gate run.
 
+Post-1.1 r47 development adds persistent step expression, live Tie-edit safety and the Sequencer editor redesign. The focused r47d step-store hardening slice brought `sequencer_step_store.cpp` to **99.15% lines / 100.00% functions / 91.62% decision branches**. These are source-narrowed diagnostics, not a replacement for the repository-wide 95/95/90 gate.
+
+The complete r47e aggregate after the editor-grid/playhead redesign, Ratchet 1-8 production regression and additional UI/expression branch coverage is:
+
+```text
+Executable lines:  10479/10980 (95.44%)
+Functions:            898/915   (98.14%)
+Decision branches:   6486/7200 (90.08%)
+Compiler branches:   6487/8456 (76.71%, informational only)
+```
+
+The r47e aggregate passes the unchanged 95/95/90 gate. ASan/UBSan, simulator and VCV adapter qualification remain separate gates; none of these host results substitute for the still-open STM32F401 ELF/RAM memory-gate evidence for the 12-KiB development persistence image.
 
 ### Sequencer 2.0 development slice
 
-The post-1.1 Sequencer 2.0 foundation has its own `--focus sequencer2` slice. Source-narrowed r45 measurements for the new files are **98.90% lines / 100.00% functions / 93.65% decision branches** for `src/domain/sequencer_pattern.cpp` and **100.00% / 100.00% / 96.00%** for `src/services/sequencer_pattern_store.cpp`. These are change-local diagnostics; the repository-wide gate remains authoritative.
+The post-1.1 Sequencer 2.0 work has its own `--focus sequencer2` slice. The current suite contains 20 named cases; the r45 figures below remain the historical foundation measurements. Source-narrowed r45 measurements for the new files are **98.90% lines / 100.00% functions / 93.65% decision branches** for `src/domain/sequencer_pattern.cpp` and **100.00% / 100.00% / 96.00%** for `src/services/sequencer_pattern_store.cpp`. These are change-local diagnostics; the repository-wide gate remains authoritative.
 
 ## Focused change-local coverage
 

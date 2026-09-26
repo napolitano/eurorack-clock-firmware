@@ -116,39 +116,39 @@ Definition of done:
 
 **Goal:** turn the existing binary trigger pattern into a compact but expressive gate sequencer without turning the 128×64 UI into a miniature DAW.
 
-**Implemented foundation in post-1.1 r45 development:**
+**Implemented in current post-1.1 development (through r47e):**
 
 - compact 1–128-step pattern model using two 64-bit gate words;
-- eight persistent pattern slots per physical channel (64 global pattern records);
-- pattern-local `FORWARD`, `REVERSE`, `PINGPONG`, and deterministic seedable `RANDOM` traversal;
-- `LOOP` and `ONCE` end behavior;
+- eight persistent pattern slots per physical channel (64 global pattern records) plus persistent active-slot selection;
+- production-engine playback for `FORWARD`, `REVERSE`, `PINGPONG`, deterministic `RANDOM`, `LOOP` and `ONCE`;
 - compiler-independent pattern-bank records with CRC, coalesced A/B commits and one-way migration of every legacy channel sequence into P1;
+- sparse per-step Probability, Gate/relative Duty, Tie and Ratchet metadata outside repeated `ClockState`;
+- Ratchet 1–8 as bounded sub-events, Probability+Ratchet coexistence, and Tie/Ratchet mutual exclusion;
+- live-edit Tie safety: replacing pattern or metadata releases any currently held tied gate first;
+- eight-step editor viewport across all 128 steps with `EDITOR` as the first Sequencer menu action;
+- timing-grid presentation with solid beat boundaries, dotted step boundaries, independent edit cursor and live playback-head triangle;
+- compact `%`, Tie, Ratchet, direction and LOOP/ONCE visual language plus an edit-page indicator independent from playback position;
+- Pattern Operations and persistent step-expression defensive/corruption tests;
 - development 8-KiB → 12-KiB logical-image migration while preserving the released first 8 KiB byte-for-byte.
 
-The r45 foundation is **not yet a user-visible Sequencer 2.0**: the production engine/UI still run the released Sequencer path. Engine selection, 8-step viewport editing, pattern-slot UI, Song Mode and step metadata remain subsequent work. The 12-KiB target also remains subject to the real STM32F401 memory gate before release approval.
-
-Planned musical/UI scope:
-
-- 1–128 active steps per pattern while the OLED displays an eight-step viewport;
-- eight patterns per channel;
-- probability per step;
-- gate duration per step, including relative duty values and short percussion-style triggers;
-- Tie for continuous gates across deterministic neighboring steps;
-- Ratchet as bounded per-step sub-events;
-- `DEFAULT` inheritance so untouched steps consume no override record;
-- Song Mode as a global topology peer to Independent / One Clock / Divider Bank, with eight channel columns and row cells selecting `-` or P1–P8;
-- polymeter through independent pattern lengths and polyrhythm through the existing rational channel-rate timeline rather than free-running clocks.
-
-Dependencies and constraints:
+Design constraints:
 
 - large step metadata remains outside repeated `ClockState` and outside the interrupt-masked `ChannelConfig` copy path;
-- sparse/default step metadata must fit the remaining extension budget or trigger a deliberate later storage redesign;
+- sparse/default step metadata uses fixed four-byte override records; untouched steps consume no record;
 - RANDOM direction is only random step traversal; 1.5 Structured Random/EVOLVE remains a separate feature family;
-- Tie is undefined for RANDOM traversal and must not manufacture continuity between unrelated selected steps;
-- Ratchets are bounded sub-events and must never create recursive event growth;
-- gate length must never consume or erase the next legal rising edge unless Tie explicitly requests continuity.
+- Tie is unavailable for RANDOM traversal and cannot be combined with Ratchet;
+- Ratchets are bounded sub-events and never create recursive event growth;
+- gate length cannot consume or erase the next legal rising edge unless Tie explicitly requests continuity;
+- per-step microtiming is intentionally excluded: deterministic displacement belongs to Swing/Groove, while Humanize remains the separate One Clock stochastic layer.
 
-Definition of done for the complete 1.2 feature remains to include persistence round-trips, deterministic fixed-seed RANDOM/probability fixtures, direction/ONCE boundary vectors, Tie/no-retrigger behavior, tempo-relative gate semantics, bounded Ratchets, practical 8-step viewport navigation, pattern-bank operations, Song-mode polymeter/polyrhythm scenarios, and target-memory qualification.
+**Still open for the complete 1.2 milestone:**
+
+- Song Mode as a global topology peer to Independent / One Clock / Divider Bank, with eight channel columns and row cells selecting `-` or P1–P8;
+- Song arrangement persistence and final CONTINUE/RESTART transition semantics;
+- USB full-device backup/restore transport;
+- real STM32F401 ELF/RAM memory-gate qualification for the 12-KiB logical persistence image.
+
+The completed Sequencer expression/UI path still requires the normal repository-wide coverage/sanitizer gates and, before release approval of the enlarged persistence layout, the target memory proof. Host tests do not substitute for the latter.
 
 ### 1.3.x — Euclid Auto-Fill and Trigger Conditions
 

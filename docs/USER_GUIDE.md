@@ -57,8 +57,8 @@ For the frozen V1/post-1.0 boundary, see [`ROADMAP.md`](ROADMAP.md).
 | ---: | --- | --- |
 | 1 | OLED | Performance view, menus, editors, prompts, and status feedback |
 | 2 | Push encoder | Turn to select/change values; short press to select/confirm; long press (~650 ms) opens the current context settings |
-| 3 | PLAY | Start/pause master transport; next page in the Sequencer editor |
-| 4 | TAP | Tap Tempo; modifier for Settings and mode selection; previous page in the Sequencer editor |
+| 3 | PLAY | Start/pause master transport, including while the Sequencer editor is open |
+| 4 | TAP | Tap Tempo; modifier for Settings/mode selection; previous eight-step viewport in the Sequencer editor |
 | 5 | STOP / BACK | Stop and reset global phase from Performance; back/cancel elsewhere |
 | 6 | SYNC IN | Conditioned external timing input |
 | 7 | RST IN | Conditioned external reset/phase input |
@@ -104,9 +104,9 @@ The strip is rendered from the same Euclidean pattern data used by the scheduler
 
 ### Sequencer performance view
 
-![Independent 64-step Sequencer performance screen while playing, with the active 16-step gate block and a lower block indicator showing which 16-step segment of the longer pattern is active.](manual-source/assets/performance-independent-sequencer-play.png)
+![Independent Sequencer 2.0 performance screen while playing, with the active 16-step playback block and lower block indicator for the longer active pattern.](manual-source/assets/performance-independent-sequencer-play.png)
 
-For lengths above 16 steps, the lowest display rows show the active 16-step block. A 64-step sequence therefore exposes four logical display segments.
+For lengths above 16 steps, the Performance screen continues to show a compact 16-step playback block. Sequencer 2.0 patterns may extend to 128 steps, so the lower indicator can represent up to eight playback blocks independently from the editor's eight-step viewport indicator.
 
 ### STOP
 
@@ -132,8 +132,8 @@ Only the value currently being edited is inverted. Whole-row inversion is avoide
 | Encoder long press | Open current channel/global settings | Open highlighted settings | Context-dependent |
 | TAP + encoder press | Open Settings tree | — | — |
 | Hold TAP + encoder turn | — | Open/scroll horizontal mode carousel | — |
-| PLAY/PAUSE | Play / pause | — | Sequencer: next 16-step page |
-| TAP short | Tap Tempo | Modifier | Sequencer: previous 16-step page |
+| PLAY/PAUSE | Play / pause | — | Sequencer editor: play / pause |
+| TAP short | Tap Tempo | Modifier | Sequencer editor: previous 8-step viewport |
 | STOP/BACK | Stop + global reset | Back / cancel | Back / cancel |
 
 ## 8. Channel and global overview
@@ -249,25 +249,19 @@ A simple 16-step / 4-hit pattern gives four evenly distributed hits. Rotation mo
 
 ## 14. Gate Sequencer
 
-Each Sequencer channel stores a binary gate pattern of up to 64 steps. The active sequence length is 1–64 steps.
+The current post-1.1 Sequencer 2.0 development path stores **P1–P8 per channel**, with **1–128 active steps** per pattern and an eight-step OLED viewport.
 
-![Sequencer editor showing one 16-step page of the 64-step binary gate pattern with a movable cursor and gate/rest states.](manual-source/assets/sequencer-editor.png)
+![Sequencer 2.0 editor showing the eight-step viewport, timing grid, expression symbols, independent edit cursor and playback head.](manual-source/assets/sequencer-editor.png)
 
-The editor is divided into four possible pages:
+`EDITOR` is the first Sequencer-menu item. Pattern selection, Length, Rotate, play Mode (`FORWARD / REVERSE / PINGPONG / RANDOM`) and `LOOP / ONCE` follow below it.
 
-```text
-1–16     17–32     33–48     49–64
-```
+Turning the encoder moves continuously through the pattern and changes viewport automatically at each eight-step boundary. The bottom indicator follows this **edit viewport**. PLAY/PAUSE remains transport in the editor; when running, a small bottom triangle follows the production playback step without moving the rectangular edit cursor. TAP moves to the previous viewport, TAP + encoder press opens the selected step's expression editor, encoder long-press opens Pattern Operations, and BACK returns to Sequencer parameters.
 
-Inside the editor:
+The editor replaces per-step numbers with a timing grid: four-step beat boundaries are solid and use longer ticks, while intermediate step boundaries are dotted. Step expression is shown compactly: `%` indicates an explicit Probability override, Tie keeps the connection line between adjacent gate cells, and Ratchet uses one row of dots for 2–4 substeps or two rows for 5–8. Only the selected step shows the numeric Probability value so eight columns remain readable. Probability and Ratchet may coexist; Tie and Ratchet are mutually exclusive, and Tie is unavailable for RANDOM traversal.
 
-- encoder turn moves the step cursor;
-- encoder press toggles the selected gate;
-- PLAY/PAUSE moves to the next 16-step page;
-- TAP moves to the previous 16-step page;
-- STOP/BACK returns to Sequencer parameters.
+Per-step Gate/Duty can override the channel gate setting with short triggers, relative duty or fixed gate lengths. Untouched fields remain DEFAULT and inherit the channel settings. Per-step microtiming is deliberately not duplicated here: Swing/Groove already owns deterministic timing displacement.
 
-Sequencer tools include **Length, Rotate, Invert, Clear, Fill Alternate, Copy, and Paste**. Rate, Swing and Groove remain shared channel-timing controls. As with Euclid, `×1` is a sixteenth-note grid, so a 16-step sequence occupies one 4/4 bar.
+At `×1`, the Sequencer uses the established sixteenth-note step grid, so 16 steps occupy one 4/4 bar.
 
 ## 15. Swing, Probability, Phase, gates, and reset
 

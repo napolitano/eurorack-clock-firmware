@@ -74,6 +74,28 @@ void testSequencerEvenRatchetEmitsBoundedDistinctSubEvents() {
     CHECK_EQ(countGateWrites(HIGH), 3U);
 }
 
+
+void testSequencerEightWayRatchetEmitsEightBoundedSubEvents() {
+    Fixture fixture;
+    SequencerPatternV2 pattern{};
+    pattern.length = 2U;
+    pattern.gates = {{1ULL, 0ULL}};
+    configureSequencerFixture(fixture, pattern);
+
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> metadata{};
+    SequencerStepMetadata step{};
+    step.gateProfile = SequencerGateProfile::Trigger1Ms;
+    step.ratchetCount = kSequencerMaximumRatchetCount;
+    metadata[0U] = packSequencerStepMetadata(step);
+    fixture.engine.updateSequencerStepMetadata(0U, metadata);
+
+    runTicks(fixture.engine, 2400U);
+    CHECK_EQ(countGateWrites(HIGH), 8U);
+    CHECK_EQ(countGateWrites(LOW), 8U);
+    runTicks(fixture.engine, 200U);
+    CHECK_EQ(countGateWrites(HIGH), 8U);
+}
+
 void testSequencerTieKeepsAdjacentGateContinuousThenReleases() {
     Fixture fixture;
     SequencerPatternV2 pattern{};

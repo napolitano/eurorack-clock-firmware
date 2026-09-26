@@ -9,11 +9,15 @@
 #include "ui/channel_navigation_renderer.h"
 
 #include <cstdio>
+#include <cstring>
 
 #include "ui/text_formatter.h"
+#include "ui/sequencer_editor_primitives.h"
 #include "ui_text.h"
 
 namespace clockfw::ui {
+
+
 
 ChannelNavigationRenderer::ChannelNavigationRenderer(hal::OledDisplay& display)
     : display_(display), patternStripRenderer_(display) {}
@@ -133,61 +137,85 @@ void ChannelNavigationRenderer::renderSequencerEditor(
         std::min<std::uint16_t>(
             static_cast<std::uint16_t>(pageBaseStep) + 8U,
             pattern.length) - 1U);
+    const std::uint8_t selectedStep = static_cast<std::uint8_t>(
+        std::min<std::uint16_t>(
+            static_cast<std::uint16_t>(pageBaseStep) + navigation.sequencerCursor,
+            static_cast<std::uint16_t>(pattern.length - 1U)));
     char header[24]{};
     std::snprintf(
         header, sizeof(header), text::get(text::TextId::SequencerEditorHeaderFormat),
         navigation.selectedChannel + 1U, activeSlot + 1U,
         pageBaseStep + 1U, pageLastStep + 1U);
+    if (metadata != nullptr) {
+        const SequencerStepMetadata selectedMetadata =
+            unpackSequencerStepMetadata((*metadata)[selectedStep]);
+        if (selectedMetadata.probabilityPercent != 0U) {
+            const std::size_t used = std::strlen(header);
+            if (used < sizeof(header)) {
+                std::snprintf(
+                    header + used, sizeof(header) - used, " %u%%",
+                    selectedMetadata.probabilityPercent);
+            }
+        }
+    }
     display_.drawText(0, 0, header);
     display_.drawHorizontalLine(0, 9, hal::OledDisplay::kWidth);
+    sequencer_editor::drawTimingGrid(display_);
 
     for (std::uint8_t pageStep = 0U; pageStep < 8U; ++pageStep) {
         const std::uint8_t absoluteStep = static_cast<std::uint8_t>(pageBaseStep + pageStep);
-        const std::int16_t x = static_cast<std::int16_t>(5 + static_cast<int>(pageStep) * 15);
+        const std::int16_t columnX = static_cast<std::int16_t>(
+            sequencer_editor::kGridLeft + static_cast<int>(pageStep) * sequencer_editor::kStepPitch);
+        const std::int16_t gateX = static_cast<std::int16_t>(columnX + 3);
+        const std::int16_t centerX = static_cast<std::int16_t>(columnX + 7);
         const bool inPattern = absoluteStep < pattern.length;
         const bool selected = pageStep == navigation.sequencerCursor;
 
-        char stepNumber[4]{};
-        std::snprintf(stepNumber, sizeof(stepNumber), "%u", pageStep + 1U);
-        display_.drawText(static_cast<std::int16_t>(x + 1), 13, stepNumber);
         if (selected) {
-            display_.drawRectangle(x - 2, 23, 13, 13);
+            display_.drawRectangle(static_cast<std::int16_t>(columnX + 1), 20, 13, 13);
         }
         if (inPattern && sequencerPatternGate(pattern, absoluteStep)) {
-            display_.fillRectangle(x, 25, 9, 9);
+            display_.fillRectangle(gateX, sequencer_editor::kGateY, 9, 9);
         } else if (inPattern) {
-            display_.drawRectangle(x, 25, 9, 9);
+            display_.drawRectangle(gateX, sequencer_editor::kGateY, 9, 9);
         }
         if (inPattern && metadata != nullptr) {
             const SequencerStepMetadata stepMetadata =
                 unpackSequencerStepMetadata((*metadata)[absoluteStep]);
             if (stepMetadata.tie && pageStep < 7U && absoluteStep + 1U < pattern.length) {
-                display_.drawHorizontalLine(x + 8, 29, 7);
+                display_.drawHorizontalLine(
+                    static_cast<std::int16_t>(gateX + 8),
+                    static_cast<std::int16_t>(sequencer_editor::kGateY + 4),
+                    7);
             }
             if (stepMetadata.probabilityPercent != 0U) {
-                display_.setPixel(x + 4, 38);
-                display_.setPixel(x + 3, 39);
-                display_.setPixel(x + 5, 39);
-                display_.setPixel(x + 4, 40);
+                sequencer_editor::drawProbabilitySymbol(display_, centerX, 34);
             }
             if (stepMetadata.gateProfile != SequencerGateProfile::Default) {
-                display_.drawHorizontalLine(x + 1, 43, 7);
+                display_.drawHorizontalLine(static_cast<std::int16_t>(centerX - 3), 40, 7);
             }
-            if (stepMetadata.ratchetCount > 1U) {
-                display_.drawVerticalLine(x + 1, 47, 3);
-                display_.drawVerticalLine(x + 4, 47, 3);
-                display_.drawVerticalLine(x + 7, 47, 3);
-            }
+            sequencer_editor::drawRatchetSymbol(display_, centerX, stepMetadata.ratchetCount);
         }
     }
 
-    const std::uint8_t selectedStep = static_cast<std::uint8_t>(
-        std::min<std::uint16_t>(
-            static_cast<std::uint16_t>(pageBaseStep) + navigation.sequencerCursor,
-            static_cast<std::uint16_t>(pattern.length - 1U)));
+    const std::uint8_t playbackStep = engineSnapshot.channelStep[navigation.selectedChannel];
+    if (engineSnapshot.playing && playbackStep >= pageBaseStep &&
+        playbackStep < static_cast<std::uint16_t>(pageBaseStep) + 8U &&
+        playbackStep < pattern.length) {
+        const std::uint8_t pagePlaybackStep = static_cast<std::uint8_t>(playbackStep - pageBaseStep);
+        const std::int16_t playheadCenterX = static_cast<std::int16_t>(
+            sequencer_editor::kGridLeft + static_cast<int>(pagePlaybackStep) * sequencer_editor::kStepPitch + 7);
+        sequencer_editor::drawPlayheadTriangle(display_, playheadCenterX);
+    }
+
     char footer[20]{};
-    std::snprintf(footer, sizeof(footer), text::get(text::TextId::SequencerEditorFooterFormat), selectedStep + 1U, pattern.length);
+    std::snprintf(
+        footer, sizeof(footer), text::get(text::TextId::SequencerEditorFooterFormat),
+        selectedStep + 1U, pattern.length);
     display_.drawText(1, 55, footer);
+
+    sequencer_editor::drawDirectionIcon(display_, pattern.direction, 57, 54);
+    sequencer_editor::drawLoopModeIcon(display_, pattern.loopMode, 70, 54);
 
     char rate[8]{};
     formatRate(state.channels[navigation.selectedChannel].common, rate, sizeof(rate));
@@ -196,8 +224,7 @@ void ChannelNavigationRenderer::renderSequencerEditor(
         static_cast<std::int16_t>(hal::OledDisplay::kWidth - rateBounds.width - 1),
         55, rate);
 
-    patternStripRenderer_.drawSequencerEditorPageIndicator(
-        pattern.length, engineSnapshot.channelStep[navigation.selectedChannel]);
+    patternStripRenderer_.drawSequencerEditorPageIndicator(pattern.length, pageBaseStep);
     display_.present();
 }
 

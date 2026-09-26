@@ -50,7 +50,7 @@ A clock module looks simple until it becomes the timing centre of a real rack. T
 
 CLOCK exists because we wanted a module with a specific balance that we did not want to compromise away:
 
-- **Eight useful outputs, not eight copies of the same feature.** Each output can be a straight clock, a Euclidean pattern, a 64-step gate sequence or Off, while One Clock and Divider Bank cover the common global use cases immediately.
+- **Eight useful outputs, not eight copies of the same feature.** Each output can be a straight clock, a Euclidean pattern, a gate sequence or Off, while One Clock and Divider Bank cover the common global use cases immediately.
 - **A performance interface first.** One OLED, one push encoder and three large transport buttons keep PLAY, TAP and STOP/BACK physically obvious. Detailed settings are available, but they are not the normal performance surface.
 - **One deterministic timing model.** Clock, Euclid and Sequencer derive from the same master timeline instead of behaving like unrelated mini-sequencers that happen to share a box.
 - **Useful sync semantics rather than a token clock input.** INTERNAL, EXTERNAL and AUTO sources, configurable PPQN, edge selection, filtering, loss policy and separate reset behaviour are explicit parts of the design.
@@ -73,7 +73,7 @@ CLOCK reached **1.0** by stabilizing and qualifying the product that already exi
 
 ```mermaid
 flowchart LR
-    V1["1.0.1<br/>Stable baseline"] --> G["NOW<br/>1.1.0<br/>Grooves + Pre-Count"] --> S["1.2<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
+    V1["1.0.1<br/>Stable baseline"] --> G["1.1.0<br/>Stable<br/>Grooves + Pre-Count"] --> S["NOW<br/>1.2 dev<br/>Sequencer 2.0"] --> E["1.3<br/>Euclid Fill<br/>Conditions"] --> R["1.4<br/>Ratchet / Burst"] --> N["1.5<br/>Structured Random<br/>Hard HIL gate"] --> I["1.6<br/>Channel Interaction"] --> P["1.7<br/>Scenes + Phase"]
     V1 -. separate track .-> VCV["VCV Rack<br/>Development preview"]
 
     classDef current fill:#0B4FC0,color:#ffffff,stroke:#062F75,stroke-width:2px;
@@ -83,8 +83,9 @@ flowchart LR
     classDef virtual fill:#EEE7F7,color:#221832,stroke:#74509A,stroke-width:1.5px;
 
     class V1 stable;
-    class G current;
-    class S,E,R,I,P planned;
+    class G stable;
+    class S current;
+    class E,R,I,P planned;
     class N gate;
     class VCV virtual;
 ```
@@ -113,7 +114,7 @@ The post-1.1 development tree now contains a **VCV Rack edition** under [`vcv/`]
 | Channel functions | Off, Clock, Euclid, Sequencer |
 | Tempo | 1–999 BPM technical range; factory user range 20–999 BPM |
 | Euclid | 1–64 steps, hits and rotation |
-| Sequencer | 1–64 binary gate steps per channel, four 16-step editor pages |
+| Sequencer | post-1.1 dev: P1–P8 per channel, 1–128 steps, 8-step viewport, direction/loop modes and sparse Probability/Gate/Tie/Ratchet expression |
 | Groove Engine | Factory Swing/Pocket grooves, Amount/Rotate, 1–64-step Custom Editor and TAP Record |
 | Custom Groove library | 10 named durable slots with save/load/overwrite/rename/delete |
 | Pre-Count | Optional silent 1–64-beat count-in before a fresh STOP→PLAY |
@@ -225,8 +226,8 @@ The normal interaction grammar is deliberately small:
 | Encoder long press | Open current context settings | Open highlighted settings | Context dependent |
 | TAP + encoder press | Open Settings | - | - |
 | Hold TAP + encoder turn | - | Open/scroll horizontal mode carousel | - |
-| PLAY/PAUSE | Play/pause | - | Sequencer: next 16-step page |
-| TAP | Tap Tempo | Modifier | Sequencer: previous 16-step page |
+| PLAY/PAUSE | Play/pause | - | Sequencer editor: play/pause |
+| TAP | Tap Tempo | Modifier | Sequencer editor: previous 8-step viewport |
 | STOP/BACK | Stop + reset global phase | Back/cancel | Back/cancel |
 
 `SETTINGS → GENERAL SETTINGS` contains `INPUTS >`, `DIAGNOSTICS >` and `HARDWARE >`. `HARDWARE >` owns the two persistent device-local installation preferences: **ENCODER DIR** (`NORMAL / REVERSED`) changes semantic rotary direction after quadrature decoding, and **ORIENTATION** (`0 DEG / 180 DEG`) rotates the OLED transfer framebuffer. `DIAGNOSTICS → INPUTS` shows the live conditioned **INPUT 1 / INPUT 2** comparator levels; `DIAGNOSTICS → OUTPUTS` shows the eight gate source levels in a 4×2 indicator grid. Device-local hardware preferences are deliberately not changed by named presets or factory templates. Settings selection is shown by full-row inversion rather than a left-side cursor, reclaiming horizontal space on the 128×64 display.
@@ -294,14 +295,14 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **512 explicitly named Native test cases**. PlatformIO exposes twelve behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **525 explicitly named Native test cases**. PlatformIO exposes twelve behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
 | `test_clock_core` | 44 | deterministic rate, Q32, probability, Euclid and sequencer mathematics |
-| `test_realtime` | 28 | scheduler, physical gate driver and realtime input/timing integration |
+| `test_realtime` | 35 | scheduler, physical gate driver and realtime input/timing integration, including bounded Sequencer Tie/Ratchet gate behavior |
 | `test_sync_behavior` | 116 | external clock acquisition plus configurable INPUT 1/2 role semantics, transport commands, reset/run levels, jitter/glitches/loss and nominal LM393-front-end modeling |
-| `test_sequencer2` | 14 | Sequencer 2.0 128-step pattern model, direction/loop contracts, deterministic RANDOM and persistent-bank migration/power-loss behavior |
+| `test_sequencer2` | 20 | Sequencer 2.0 128-step pattern model, direction/loop contracts, deterministic RANDOM, bank migration and sparse step-expression persistence/defensive boundaries |
 | `test_swing` | 40 | Swing/Groove mathematics, exhaustive Custom-Groove sweeps, Groove Record capture and engine timing invariants |
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
@@ -311,7 +312,7 @@ Current inventory: **512 explicitly named Native test cases**. PlatformIO expose
 | `test_easter_eggs` | 36 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
 | `test_host_firmware` | 39 | complete firmware/UI/HAL/persistence scenarios, Groove Editor/Record workflows, schema migration and framebuffer/navigation contracts against deterministic framework fakes |
 
-The default Native run executes more than **433,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
+The default Native run executes more than **447,000 assertions**. Exhaustive loops remain useful for mathematical invariants, but user-visible musical and control contracts now also have independently reported cases. The nominal front-end tests exercise 2.5 V, 3 V and 4 V clock amplitudes through the documented resistor/hysteresis model; they do **not** replace physical comparator HIL.
 
 The broader host matrix additionally recompiles display variants, runs sanitizer configurations and produces aggregate coverage:
 
@@ -319,12 +320,12 @@ The broader host matrix additionally recompiles display variants, runs sanitizer
 python scripts/run_host_tests.py
 ```
 
-Current validated aggregate baseline:
+Current post-1.1 r47e validated aggregate baseline:
 
 ```text
-Executable lines     9800 / 10236  95.74 %
-Functions              852 / 865    98.50 %
-Decision branches     5992 / 6656   90.02 %
+Executable lines    10479 / 10980  95.44 %
+Functions              898 / 915    98.14 %
+Decision branches     6486 / 7200   90.08 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).

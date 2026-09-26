@@ -27,9 +27,9 @@ The strip is rendered from the same Euclidean pattern data used by the scheduler
 
 ### Sequencer performance view
 
-![Independent 64-step Sequencer performance screen while playing, with the active 16-step gate block and a lower block indicator showing which 16-step segment of the longer pattern is active.](../manual-source/assets/performance-independent-sequencer-play.png)
+![Independent Sequencer 2.0 performance screen while playing, with the active 16-step playback block and lower block indicator for the longer active pattern.](../manual-source/assets/performance-independent-sequencer-play.png)
 
-For lengths above 16 steps, the lowest display rows show the active 16-step block. A 64-step sequence therefore exposes four logical display segments.
+For lengths above 16 steps, the Performance screen continues to show a compact 16-step playback block. Sequencer 2.0 patterns may extend to 128 steps, so the lower indicator can represent up to eight playback blocks independently from the editor's eight-step viewport indicator.
 
 ### STOP
 

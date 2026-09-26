@@ -193,6 +193,47 @@ struct BreakoutGameTestAccess {
 };
 }
 
+namespace clockfw::ui {
+struct UiControllerTestAccess {
+    static NavigationState& navigation(UiController& controller) { return controller.navigation_; }
+    static const SequencerPatternV2* activePattern(const UiController& controller) {
+        return controller.activeSequencerPattern();
+    }
+    static SequencerStepMetadata activeMetadata(const UiController& controller) {
+        return controller.activeSequencerStepMetadata();
+    }
+    static void synchronizePattern(UiController& controller, const bool reschedule) {
+        controller.synchronizeActiveSequencerPattern(reschedule);
+    }
+    static void synchronizeMetadata(UiController& controller) {
+        controller.synchronizeActiveSequencerStepMetadata();
+    }
+    static void openStepEditor(UiController& controller) { controller.openSequencerStepEditor(); }
+    static void adjustPattern(UiController& controller, const std::int8_t delta, const std::uint32_t nowMs) {
+        controller.adjustSequencerV2(delta, nowMs);
+    }
+    static void adjustMetadata(UiController& controller, const std::int8_t delta, const std::uint32_t nowMs) {
+        controller.adjustSequencerStepMetadata(delta, nowMs);
+    }
+    static void toggleStep(UiController& controller, const std::uint32_t nowMs) {
+        controller.toggleSequencerStepV2(nowMs);
+    }
+    static bool command(UiController& controller, const std::uint8_t row, const std::uint32_t nowMs) {
+        return controller.executeSequencerPatternCommandV2(row, nowMs);
+    }
+    static services::SequencerPatternStore*& patternStore(UiController& controller) {
+        return controller.sequencerPatternStore_;
+    }
+    static services::SequencerStepStore*& stepStore(UiController& controller) {
+        return controller.sequencerStepStore_;
+    }
+    static void clearSequencerClipboard(UiController& controller) {
+        controller.sequencerPatternClipboardValid_ = false;
+        controller.sequencerStepClipboardValid_ = false;
+    }
+};
+}
+
 void setUp() {}
 void tearDown() {}
 

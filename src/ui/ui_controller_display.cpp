@@ -50,22 +50,24 @@ void UiController::serviceRendering(const std::uint32_t nowMs) {
     const engine::EngineSnapshot snapshot = engine_.snapshot();
     serviceGrooveRecorder(snapshot);
 
-    if (navigation_.screen == Screen::Performance) {
+    if (navigation_.screen == Screen::Performance ||
+        navigation_.screen == Screen::SequencerEditor) {
         const ChannelMode mode = state_.operatingMode == OperatingMode::Independent
             ? state_.channels[navigation_.selectedChannel].common.mode
             : ChannelMode::Clock;
         const std::uint8_t currentStep = snapshot.channelStep[navigation_.selectedChannel];
-        const bool playbackStepIsVisible =
-            state_.operatingMode == OperatingMode::Independent &&
-            (mode == ChannelMode::Euclid || mode == ChannelMode::Sequencer);
+        const bool editorPlayheadVisible = navigation_.screen == Screen::SequencerEditor;
+        const bool playbackStepIsVisible = editorPlayheadVisible ||
+            (state_.operatingMode == OperatingMode::Independent &&
+             (mode == ChannelMode::Euclid || mode == ChannelMode::Sequencer));
 
         const bool preCountStateChanged =
             snapshot.preCountActive != lastRenderedPreCountActive_ ||
             snapshot.preCountRemaining != lastRenderedPreCountRemaining_;
 
-        // The Pre-Count popover is intentionally static between beat boundaries.
-        // Redraw only when active/remaining state changes; this updates the number and
-        // meter-progress cells and guarantees one final frame that clears the popover.
+        // Performance redraws live rhythm feedback; the Sequencer editor also
+        // follows the production step so its independent playhead can move while
+        // the edit cursor remains stationary.
         if (!hasRenderedEngineStatus_ ||
             snapshot.externalLocked != lastRenderedExternalLocked_ ||
             (playbackStepIsVisible && currentStep != lastRenderedChannelStep_) ||

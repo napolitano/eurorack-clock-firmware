@@ -41,8 +41,8 @@ enum class SequencerLoopMode : std::uint8_t {
  * @brief One persistent Sequencer 2.0 gate pattern.
  *
  * Per-step probability/gate/tie/ratchet metadata is intentionally not embedded
- * here yet. It will live in a separate sparse override area so an untouched
- * 128-step pattern remains compact.
+ * here. It lives in the separate sparse override area so an untouched 128-step
+ * pattern remains compact.
  */
 struct SequencerPatternV2 final {
     std::uint8_t length = 16U;

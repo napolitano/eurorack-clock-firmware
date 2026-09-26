@@ -8,7 +8,7 @@ performance-independent-clock-pause	Independent Clock channel while paused
 performance-independent-clock-stop	Independent Clock channel while stopped
 performance-independent-off	Independent channel disabled
 performance-independent-euclid-play	Independent Euclid channel while playing
-performance-independent-sequencer-play	Independent 64-step Sequencer while playing
+performance-independent-sequencer-play	Independent 128-step Sequencer 2.0 while playing
 performance-one-clock-play	One Clock mode with Humanize while playing
 performance-pre-count-start	Pre-Count popover at the first beat of a 4/4 count
 performance-pre-count-progress	Pre-Count popover after the second beat of a 4/4 count
@@ -28,7 +28,7 @@ mode-select-sequencer	Horizontal mode carousel
 mode-select-off	Horizontal mode carousel
 mode-change-confirm-no	Mode-change confirmation with safe default NO
 mode-change-confirm-yes	Mode-change confirmation with YES selected
-sequencer-editor	64-step Sequencer editor
+sequencer-editor	Sequencer 2.0 editor with step expression and live playhead
 templates	Factory template selection
 groove-editor-custom	Custom Groove graphical editor
 groove-record-live	Custom Groove tap recorder while recording

@@ -201,16 +201,7 @@ void UiController::handleTransportButton(
     if (navigation_.screen == Screen::Performance) {
         toggleTransport(nowMs);
     } else if (navigation_.screen == Screen::SequencerEditor) {
-        const SequencerPatternV2* const pattern = activeSequencerPattern();
-        const std::uint8_t length = pattern != nullptr
-            ? pattern->length
-            : state_.channels[navigation_.selectedChannel].sequencer.length;
-        const std::uint8_t lastPage = static_cast<std::uint8_t>((length - 1U) / 8U);
-        if (navigation_.sequencerPage < lastPage) {
-            ++navigation_.sequencerPage;
-            navigation_.sequencerCursor = 0U;
-            invalidate();
-        }
+        toggleTransport(nowMs);
     }
 }
 
@@ -269,7 +260,7 @@ void UiController::handleResetButton(
         backFromSettings();
     } else if (navigation_.screen == Screen::SequencerEditor) {
         navigation_.settingsExitScreen = Screen::Performance;
-        openSettingsPage(SettingsPage::Sequencer, 5U);
+        openSettingsPage(SettingsPage::Sequencer, 0U);
     } else if (navigation_.screen == Screen::SequencerStepEditor) {
         navigation_.screen = Screen::SequencerEditor;
         navigation_.editing = false;

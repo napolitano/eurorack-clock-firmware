@@ -29,6 +29,9 @@
 #include "hal/oled_display.h"
 #include "hal/persistent_storage.h"
 #include "services/persistent_state_service.h"
+#include "services/custom_groove_store.h"
+#include "services/sequencer_pattern_store.h"
+#include "services/sequencer_step_store.h"
 #include "ui/ui_renderer.h"
 
 namespace clockfw::game {
@@ -99,12 +102,17 @@ public:
         std::filesystem::path outputDirectory,
         hal::OledDisplay& display,
         hal::PersistentStorage& storage,
-        services::PersistentStateService& persistentState)
+        services::PersistentStateService& persistentState,
+        services::CustomGrooveStore& customGrooveStore,
+        services::SequencerPatternStore& sequencerPatternStore,
+        services::SequencerStepStore& sequencerStepStore)
         : outputDirectory_(std::move(outputDirectory)),
           display_(display),
-          renderer_(display, persistentState),
+          renderer_(display, persistentState, customGrooveStore, sequencerPatternStore, sequencerStepStore),
           persistentState_(persistentState),
-          storage_(storage) {
+          storage_(storage),
+          sequencerPatternStore_(sequencerPatternStore),
+          sequencerStepStore_(sequencerStepStore) {
         std::filesystem::create_directories(outputDirectory_);
         manifest_.open(outputDirectory_ / "manifest.tsv", std::ios::trunc);
         if (!manifest_) {
@@ -227,11 +235,14 @@ private:
         state_.operatingMode = OperatingMode::Independent;
         state_.transport = TransportState::Playing;
         state_.channels[6].common.mode = ChannelMode::Sequencer;
-        state_.channels[6].sequencer.length = 64U;
-        state_.channels[6].sequencer.pattern = 0xA55A0F0F33CC5AA5ULL;
+        SequencerPatternV2 performancePattern{};
+        performancePattern.length = 128U;
+        performancePattern.gates = {{0xA55A0F0F33CC5AA5ULL, 0x5AA5CC330F0FA55AULL}};
+        sequencerPatternStore_.updatePattern(6U, 0U, performancePattern, 0U);
+        sequencerPatternStore_.setActiveSlot(6U, 0U, 0U);
         navigation_.selectedChannel = 6U;
-        snapshot_.channelStep[6] = 34U;
-        renderCurrent("performance-independent-sequencer-play", "Independent 64-step Sequencer while playing");
+        snapshot_.channelStep[6] = 82U;
+        renderCurrent("performance-independent-sequencer-play", "Independent 128-step Sequencer 2.0 while playing");
 
         reset();
         state_.transport = TransportState::Playing;
@@ -317,14 +328,35 @@ private:
 
         reset();
         state_.operatingMode = OperatingMode::Independent;
+        state_.transport = TransportState::Playing;
         state_.channels[0].common.mode = ChannelMode::Sequencer;
-        state_.channels[0].sequencer.length = 64U;
-        state_.channels[0].sequencer.pattern = 0xA55A0F0F33CC5AA5ULL;
+        SequencerPatternV2 editorPattern{};
+        editorPattern.length = 128U;
+        editorPattern.gates = {{0x00000000000000FFULL, 0x0ULL}};
+        editorPattern.direction = SequencerPlayDirection::PingPong;
+        editorPattern.loopMode = SequencerLoopMode::Loop;
+        sequencerPatternStore_.updatePattern(0U, 0U, editorPattern, 0U);
+        sequencerPatternStore_.setActiveSlot(0U, 0U, 0U);
+        SequencerStepMetadata metadata{};
+        metadata.probabilityPercent = 75U;
+        sequencerStepStore_.updateMetadata(0U, 0U, 0U, metadata, 0U);
+        metadata = SequencerStepMetadata{};
+        metadata.gateProfile = SequencerGateProfile::Duty50;
+        sequencerStepStore_.updateMetadata(0U, 0U, 1U, metadata, 0U);
+        metadata = SequencerStepMetadata{};
+        metadata.ratchetCount = 4U;
+        sequencerStepStore_.updateMetadata(0U, 0U, 2U, metadata, 0U);
+        metadata.ratchetCount = 8U;
+        sequencerStepStore_.updateMetadata(0U, 0U, 3U, metadata, 0U);
+        metadata = SequencerStepMetadata{};
+        metadata.tie = true;
+        sequencerStepStore_.updateMetadata(0U, 0U, 4U, metadata, 0U);
         navigation_.screen = ui::Screen::SequencerEditor;
-        navigation_.sequencerPage = 2U;
-        navigation_.sequencerCursor = 4U;
-        snapshot_.channelStep[0] = 36U;
-        renderCurrent("sequencer-editor", "64-step Sequencer editor");
+        navigation_.sequencerPage = 0U;
+        navigation_.sequencerCursor = 0U;
+        snapshot_.playing = true;
+        snapshot_.channelStep[0] = 3U;
+        renderCurrent("sequencer-editor", "Sequencer 2.0 editor with step expression and live playhead");
 
         reset();
         navigation_.screen = ui::Screen::Templates;
@@ -635,6 +667,8 @@ private:
     ui::UiRenderer renderer_;
     services::PersistentStateService& persistentState_;
     hal::PersistentStorage& storage_;
+    services::SequencerPatternStore& sequencerPatternStore_;
+    services::SequencerStepStore& sequencerStepStore_;
     ClockState state_{};
     ui::NavigationState navigation_{};
     engine::EngineSnapshot snapshot_{};
@@ -653,8 +687,15 @@ int main(int argc, char** argv) {
         clockfw::hal::PersistentStorage storage;
         clockfw::services::PersistentStateService persistentState(storage);
         persistentState.begin();
+        clockfw::services::CustomGrooveStore customGrooveStore(storage);
+        clockfw::services::SequencerPatternStore sequencerPatternStore(storage);
+        clockfw::services::SequencerStepStore sequencerStepStore(storage);
+        sequencerPatternStore.begin();
+        sequencerStepStore.begin();
 
-        ScreenshotCatalog catalog(argv[1], display, storage, persistentState);
+        ScreenshotCatalog catalog(
+            argv[1], display, storage, persistentState, customGrooveStore,
+            sequencerPatternStore, sequencerStepStore);
         catalog.renderAll();
         return 0;
     } catch (const std::exception&) {

@@ -130,13 +130,13 @@ void UiController::adjustSequencerV2(
     const std::int8_t delta,
     const std::uint32_t nowMs) {
     if (sequencerPatternStore_ == nullptr || delta == 0 ||
-        navigation_.selectedChannel >= kChannelCount) {
+        navigation_.selectedChannel >= kChannelCount || navigation_.cursor == 0U) {
         return;
     }
 
     const std::uint8_t channel = navigation_.selectedChannel;
     std::uint8_t slot = sequencerPatternStore_->activeSlot(channel);
-    if (navigation_.cursor == 0U) {
+    if (navigation_.cursor == 1U) {
         const int nextSlot = clampInt(
             static_cast<int>(slot) + delta,
             0,
@@ -153,7 +153,7 @@ void UiController::adjustSequencerV2(
 
     SequencerPatternV2 pattern = sequencerPatternStore_->pattern(channel, slot);
     bool changed = false;
-    if (navigation_.cursor == 1U) {
+    if (navigation_.cursor == 2U) {
         pattern.length = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(pattern.length) + delta, 1,
             static_cast<int>(kSequencerMaximumSteps)));
@@ -162,20 +162,20 @@ void UiController::adjustSequencerV2(
         }
         clampSequencerPattern(pattern);
         changed = true;
-    } else if (navigation_.cursor == 2U) {
+    } else if (navigation_.cursor == 3U) {
         pattern.rotation = static_cast<std::uint8_t>(clampInt(
             static_cast<int>(pattern.rotation) + delta,
             0,
             static_cast<int>(pattern.length - 1U)));
         changed = true;
-    } else if (navigation_.cursor == 3U) {
+    } else if (navigation_.cursor == 4U) {
         const int next = clampInt(
             static_cast<int>(pattern.direction) + delta,
             static_cast<int>(SequencerPlayDirection::Forward),
             static_cast<int>(SequencerPlayDirection::Random));
         pattern.direction = static_cast<SequencerPlayDirection>(next);
         changed = true;
-    } else if (navigation_.cursor == 4U) {
+    } else if (navigation_.cursor == 5U) {
         const int next = clampInt(
             static_cast<int>(pattern.loopMode) + delta,
             static_cast<int>(SequencerLoopMode::Loop),

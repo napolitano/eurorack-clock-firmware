@@ -18,8 +18,8 @@ Only the value currently being edited is inverted. Whole-row inversion is avoide
 | Encoder long press | Open current channel/global settings | Open highlighted settings | Context-dependent |
 | TAP + encoder press | Open Settings tree | — | — |
 | Hold TAP + encoder turn | — | Open/scroll horizontal mode carousel | — |
-| PLAY/PAUSE | Play / pause | — | Sequencer: next 16-step page |
-| TAP short | Tap Tempo | Modifier | Sequencer: previous 16-step page |
+| PLAY/PAUSE | Play / pause | — | Sequencer editor: play / pause |
+| TAP short | Tap Tempo | Modifier | Sequencer editor: previous 8-step viewport |
 | STOP/BACK | Stop + global reset | Back / cancel | Back / cancel |
 
 <h6 align="center">From Munich with &#9829;</h6>

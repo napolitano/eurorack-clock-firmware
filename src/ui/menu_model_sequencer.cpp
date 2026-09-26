@@ -28,25 +28,27 @@ MenuRow buildSequencerV2MenuRow(
     const SequencerPatternV2& pattern) {
     MenuRow row{};
     constexpr text::TextId kLabels[] = {
+        text::TextId::Editor,
         text::TextId::Pattern,
         text::TextId::Length,
         text::TextId::Rotate,
         text::TextId::Mode,
-        text::TextId::Loop,
-        text::TextId::Editor};
+        text::TextId::Loop};
     if (rowIndex >= 6U) {
         return row;
     }
     copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
     if (rowIndex == 0U) {
+        copyText(row.value, sizeof(row.value), text::TextId::Arrow);
+    } else if (rowIndex == 1U) {
         std::snprintf(
             row.value, sizeof(row.value),
             text::get(text::TextId::PatternSlotFormat), activeSlot + 1U);
-    } else if (rowIndex == 1U) {
-        std::snprintf(row.value, sizeof(row.value), "%u", pattern.length);
     } else if (rowIndex == 2U) {
-        std::snprintf(row.value, sizeof(row.value), "%u", pattern.rotation);
+        std::snprintf(row.value, sizeof(row.value), "%u", pattern.length);
     } else if (rowIndex == 3U) {
+        std::snprintf(row.value, sizeof(row.value), "%u", pattern.rotation);
+    } else if (rowIndex == 4U) {
         text::TextId id = text::TextId::Forward;
         switch (pattern.direction) {
             case SequencerPlayDirection::Forward: id = text::TextId::Forward; break;
@@ -55,12 +57,10 @@ MenuRow buildSequencerV2MenuRow(
             case SequencerPlayDirection::Random: id = text::TextId::Random; break;
         }
         copyText(row.value, sizeof(row.value), id);
-    } else if (rowIndex == 4U) {
+    } else {
         copyText(
             row.value, sizeof(row.value),
             pattern.loopMode == SequencerLoopMode::Once ? text::TextId::Once : text::TextId::Loop);
-    } else {
-        copyText(row.value, sizeof(row.value), text::TextId::Arrow);
     }
     return row;
 }

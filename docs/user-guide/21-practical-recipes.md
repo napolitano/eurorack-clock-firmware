@@ -23,13 +23,13 @@
 4. Use **ROTATE** to place the hits.
 5. Add **PROBABILITY** only if controlled omissions are wanted.
 
-### A 64-step gate phrase
+### An expressive 64-step gate phrase
 
-1. Choose **Sequencer**.
-2. Set `LENGTH = 64`.
-3. Open **EDITOR**.
-4. Use PLAY/TAP to move forward/back through the four 16-step pages.
-5. Toggle gates with encoder presses.
+1. Choose **Sequencer** and open **EDITOR**.
+2. Set `LENGTH = 64` and choose the required P1–P8 pattern slot.
+3. Turn the encoder through the pattern; the eight-step viewport follows automatically.
+4. Toggle gates with encoder presses. Use TAP + encoder press for Probability, Gate/Duty, Ratchet or Tie on exceptional steps.
+5. Press PLAY to audition without losing the edit cursor; the triangle is the independent playhead.
 6. BACK returns to Sequencer settings.
 
 ### Record a Groove by feel — step by step

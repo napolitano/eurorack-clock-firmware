@@ -8,8 +8,8 @@
 | ---: | --- | --- |
 | 1 | OLED | Performance view, menus, editors, prompts, and status feedback |
 | 2 | Push encoder | Turn to select/change values; short press to select/confirm; long press (~650 ms) opens the current context settings |
-| 3 | PLAY | Start/pause master transport; next page in the Sequencer editor |
-| 4 | TAP | Tap Tempo; modifier for Settings and mode selection; previous page in the Sequencer editor |
+| 3 | PLAY | Start/pause master transport, including while the Sequencer editor is open |
+| 4 | TAP | Tap Tempo; modifier for Settings/mode selection; previous eight-step viewport in the Sequencer editor |
 | 5 | STOP / BACK | Stop and reset global phase from Performance; back/cancel elsewhere |
 | 6 | SYNC IN | Conditioned external timing input |
 | 7 | RST IN | Conditioned external reset/phase input |

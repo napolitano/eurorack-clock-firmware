@@ -60,7 +60,7 @@ void UiController::activateCurrentSetting(const std::uint32_t nowMs) {
             activateTimingSetting();
             return;
         case SettingsPage::Sequencer:
-            if (navigation_.cursor == 5U) {
+            if (navigation_.cursor == 0U) {
                 navigation_.screen = Screen::SequencerEditor;
                 navigation_.sequencerPage = 0U;
                 navigation_.sequencerCursor = 0U;

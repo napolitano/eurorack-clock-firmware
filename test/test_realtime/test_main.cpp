@@ -122,6 +122,7 @@ int main() {
     RUN_TEST(testEngineExternalSyncDefensiveConfigurationPaths);
     RUN_TEST(testSequencerStepProbabilityOverrideReplacesChannelProbability);
     RUN_TEST(testSequencerEvenRatchetEmitsBoundedDistinctSubEvents);
+    RUN_TEST(testSequencerEightWayRatchetEmitsEightBoundedSubEvents);
     RUN_TEST(testSequencerTieKeepsAdjacentGateContinuousThenReleases);
     RUN_TEST(testSequencerTieDoesNotCrossRestRandomOrOnceEnd);
     RUN_TEST(testSequencerLiveEditReleasesActiveTieImmediately);

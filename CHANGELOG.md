@@ -18,11 +18,18 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Extend the development logical A/B image from the released 8 KiB layout to the existing 12-KiB architectural ceiling while continuing to accept 8-KiB and older 4-KiB generations; bytes beyond an older payload read as erased and the next durable write promotes the image without changing its historical prefix.
 - Seed pattern `P1` for every channel from its legacy 1.1 Sequencer settings on first Sequencer-2.0 initialization; `P2`-`P8` remain clean defaults.
 - Coalesce pattern-bank writes through the existing power-loss-safe A/B storage and suppress Flash commits while transport is PLAYING.
-- Add the focused `test_sequencer2` suite with 14 named tests covering 128-step bounds, traversal/ONCE behavior, deterministic RANDOM, rotation, corrupt records, legacy migration, delayed writes, interrupted commits, and 8-KiB-to-12-KiB promotion.
+- Add the focused `test_sequencer2` suite with 20 named tests covering 128-step bounds, traversal/ONCE behavior, deterministic RANDOM, rotation, corrupt records, legacy migration, delayed writes, interrupted commits, 8-KiB-to-12-KiB promotion and sparse step-expression persistence/defensive boundaries.
 - Integrate the active P1–P8 bank into the production ClockEngine and persist the selected pattern slot per channel.
 - Replace the released 16-step editor page with an **8-step viewport** over the active 1–128-step pattern; direct `EDITOR` entry, BACK navigation and long-press pattern operations follow the production hardware control model.
-- Expose pattern-local `PATTERN`, `LENGTH`, `ROTATE`, play `MODE`, `LOOP`, and `EDITOR` controls in the production settings tree.
-- Keep sparse step Probability/Gate/Tie/Ratchet metadata, Song Mode and USB full-device backup/restore as subsequent 1.2 work rather than presenting them as implemented.
+- Move `EDITOR` to the first Sequencer-menu row so pattern editing is the primary action; keep `PATTERN`, `LENGTH`, `ROTATE`, play `MODE`, and `LOOP` below it.
+- Add sparse per-step **Probability**, Gate/relative Duty, **Tie**, and bounded **Ratchet 1–8** expression outside repeated `ClockState`; untouched steps inherit channel defaults and consume no sparse record.
+- Execute step expression in the production scheduler: Probability replaces the channel probability for that step, Gate/Duty controls HIGH duration, Tie holds deterministic adjacent gates without retrigger, and Ratchet emits bounded sub-events without recursive scheduling.
+- Release an active tied gate immediately when the live pattern or its step metadata changes, preventing a live edit from leaving an output HIGH until a later sequencer event.
+- Redesign the 8-step editor around musical structure instead of step-number labels: quarter-beat boundaries use solid full-height grid lines, intervening step boundaries use dotted lines, and the selected edit step remains independently outlined.
+- Add a live playback-head triangle while transport is running without moving the edit cursor; PLAY/PAUSE remains transport inside the editor, while encoder movement crosses viewport boundaries directly.
+- Show step-expression state compactly: `%` marks Probability overrides (the selected value is shown only for the selected step), Tie keeps the connecting gate line, and Ratchet uses one row of 2–4 dots or two rows for 5–8 substeps.
+- Add compact direction and LOOP/ONCE pictograms to the editor status area and bind the bottom page indicator to the editor viewport rather than the unrelated playback page.
+- Keep Song Mode and USB full-device backup/restore as later work; per-step microtiming remains deliberately outside Sequencer expression because Swing/Groove already own deterministic timing displacement.
 - Treat the 12-KiB source configuration as **development-only pending a real STM32F401 ELF memory-gate run**; host tests prove layout/migration behavior but do not substitute for target SRAM evidence.
 
 ### Project support
@@ -68,10 +75,10 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Test architecture and focused coverage
 
-- Split the largest Native suites into thematic local case fragments while retaining one deterministic translation unit per PlatformIO suite; the named Native inventory is now 512 tests.
+- Split the largest Native suites into thematic local case fragments while retaining one deterministic translation unit per PlatformIO suite; the named Native inventory is now 525 tests.
 - Add focused host-coverage modes for core, realtime, sync, Sequencer 2.0, swing, settings, controls, screensavers and Easter eggs, with optional production-source narrowing for change-local diagnosis.
 - Keep focused reports diagnostic only: the repository-wide 95/95/90 coverage gate remains authoritative.
-- Keep the full firmware host matrix above the unchanged 95/95/90 gate after Sequencer 2.0 UI/engine and support integration: 95.74% lines, 98.50% functions and 90.02% decision branches.
+- Keep the full firmware host matrix above the unchanged 95/95/90 gate after the r47e Sequencer editor/expression hardening: 95.44% lines, 98.14% functions and 90.08% decision branches.
 
 ### Documentation
 

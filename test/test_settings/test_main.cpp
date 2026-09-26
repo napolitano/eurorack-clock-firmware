@@ -250,12 +250,13 @@ void testNestedGroupPagesExposeFormerGroupedParameters(){
     TEST_ASSERT_TRUE(std::strcmp("PROB",ui::buildMenuRow(ui::SettingsPage::ChannelOutput,0U,0U,h.state).label)==0);
     h.state.channels[0].common.mode=ChannelMode::Sequencer;
     SequencerPatternV2 pattern{};
-    TEST_ASSERT_TRUE(std::strcmp("PATTERN",ui::buildSequencerV2MenuRow(0U,1U,pattern).label)==0);
-    TEST_ASSERT_TRUE(std::strcmp("P2",ui::buildSequencerV2MenuRow(0U,1U,pattern).value)==0);
-    TEST_ASSERT_TRUE(std::strcmp("LENGTH",ui::buildSequencerV2MenuRow(1U,1U,pattern).label)==0);
-    TEST_ASSERT_TRUE(std::strcmp("MODE",ui::buildSequencerV2MenuRow(3U,1U,pattern).label)==0);
-    TEST_ASSERT_TRUE(std::strcmp("LOOP",ui::buildSequencerV2MenuRow(4U,1U,pattern).label)==0);
-    TEST_ASSERT_TRUE(std::strcmp("EDITOR",ui::buildSequencerV2MenuRow(5U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("EDITOR",ui::buildSequencerV2MenuRow(0U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp(">",ui::buildSequencerV2MenuRow(0U,1U,pattern).value)==0);
+    TEST_ASSERT_TRUE(std::strcmp("PATTERN",ui::buildSequencerV2MenuRow(1U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("P2",ui::buildSequencerV2MenuRow(1U,1U,pattern).value)==0);
+    TEST_ASSERT_TRUE(std::strcmp("LENGTH",ui::buildSequencerV2MenuRow(2U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("MODE",ui::buildSequencerV2MenuRow(4U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("LOOP",ui::buildSequencerV2MenuRow(5U,1U,pattern).label)==0);
     TEST_ASSERT_TRUE(std::strcmp("INVERT",ui::buildMenuRow(ui::SettingsPage::SequencerPattern,0U,0U,h.state).label)==0);
     h.state.operatingMode=OperatingMode::UnifiedClock;
     TEST_ASSERT_TRUE(std::strcmp("TIMING",ui::buildMenuRow(ui::SettingsPage::UnifiedClock,1U,0U,h.state).label)==0);
@@ -346,13 +347,13 @@ void testSequencerV2MenuRowsCoverDirectionsLoopAndBounds(){
     constexpr const char* labels[] = {"FORWARD", "REVERSE", "PINGPONG", "RANDOM"};
     for (std::size_t i = 0U; i < 4U; ++i) {
         pattern.direction = directions[i];
-        TEST_ASSERT_TRUE(std::strcmp(labels[i], ui::buildSequencerV2MenuRow(3U, 7U, pattern).value) == 0);
+        TEST_ASSERT_TRUE(std::strcmp(labels[i], ui::buildSequencerV2MenuRow(4U, 7U, pattern).value) == 0);
     }
-    TEST_ASSERT_TRUE(std::strcmp("P8", ui::buildSequencerV2MenuRow(0U, 7U, pattern).value) == 0);
-    TEST_ASSERT_TRUE(std::strcmp("128", ui::buildSequencerV2MenuRow(1U, 7U, pattern).value) == 0);
-    TEST_ASSERT_TRUE(std::strcmp("127", ui::buildSequencerV2MenuRow(2U, 7U, pattern).value) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("P8", ui::buildSequencerV2MenuRow(1U, 7U, pattern).value) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("128", ui::buildSequencerV2MenuRow(2U, 7U, pattern).value) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("127", ui::buildSequencerV2MenuRow(3U, 7U, pattern).value) == 0);
     pattern.loopMode = SequencerLoopMode::Once;
-    TEST_ASSERT_TRUE(std::strcmp("ONCE", ui::buildSequencerV2MenuRow(4U, 7U, pattern).value) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("ONCE", ui::buildSequencerV2MenuRow(5U, 7U, pattern).value) == 0);
     TEST_ASSERT_TRUE(ui::buildSequencerV2MenuRow(99U, 0U, pattern).label[0] == '\0');
 }
 

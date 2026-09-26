@@ -122,6 +122,127 @@ void testRenderEveryScreenAndState() {
     nav.pendingModeFunction = static_cast<ui::ModeFunction>(99U);
     renderer.render(state,nav,engine.snapshot());
     nav.screen=ui::Screen::SequencerEditor; state.channels[0].sequencer={20U,0U,0xAAAAULL}; for(std::uint8_t page=0;page<4U;++page){nav.sequencerPage=page;nav.sequencerCursor=7U;renderer.render(state,nav,engine.snapshot());}
+
+    // Sequencer 2.0 editor visual contract: quarter/beat boundaries are solid,
+    // intermediate steps are dotted, edit selection is independent from the
+    // playback triangle, expression symbols stay compact, and the bottom page
+    // indicator follows the editor viewport rather than the playback page.
+    ui::ChannelNavigationRenderer sequencerRenderer(display);
+    SequencerPatternV2 editorPattern{};
+    editorPattern.length = 128U;
+    editorPattern.gates = {{0xFFULL, 0ULL}};
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> editorMetadata{};
+    SequencerStepMetadata expression{};
+    expression.probabilityPercent = 75U;
+    editorMetadata[0U] = packSequencerStepMetadata(expression);
+    expression = SequencerStepMetadata{};
+    expression.gateProfile = SequencerGateProfile::Duty50;
+    editorMetadata[1U] = packSequencerStepMetadata(expression);
+    expression = SequencerStepMetadata{};
+    expression.ratchetCount = 4U;
+    editorMetadata[2U] = packSequencerStepMetadata(expression);
+    expression.ratchetCount = 8U;
+    editorMetadata[3U] = packSequencerStepMetadata(expression);
+    expression = SequencerStepMetadata{};
+    expression.tie = true;
+    editorMetadata[4U] = packSequencerStepMetadata(expression);
+    nav.sequencerPage = 0U;
+    nav.sequencerCursor = 0U;
+    auto editorSnapshot = engine.snapshot();
+    editorSnapshot.playing = true;
+    editorSnapshot.channelStep[0] = 3U;
+    sequencerRenderer.renderSequencerEditor(
+        state, nav, editorSnapshot, &editorPattern, 0U, &editorMetadata);
+    const auto sequencerEditorFrame = display.framebufferForTest();
+    CHECK(modePixelSet(sequencerEditorFrame, 4, 16));   // solid beat boundary
+    CHECK(modePixelSet(sequencerEditorFrame, 19, 15));  // dotted step boundary
+    CHECK(!modePixelSet(sequencerEditorFrame, 19, 16));
+    CHECK(modePixelSet(sequencerEditorFrame, 19, 17));
+    CHECK(modePixelSet(sequencerEditorFrame, 5, 20));   // edit-cursor outline
+    CHECK(modePixelSet(sequencerEditorFrame, 56, 48));  // playback triangle tip
+    CHECK(modePixelSet(sequencerEditorFrame, 53, 43));  // ratchet 8 row 1
+    CHECK(modePixelSet(sequencerEditorFrame, 53, 46));  // ratchet 8 row 2
+
+    for (const auto direction : {
+             SequencerPlayDirection::Forward,
+             SequencerPlayDirection::Reverse,
+             SequencerPlayDirection::PingPong,
+             SequencerPlayDirection::Random}) {
+        editorPattern.direction = direction;
+        for (const auto loopMode : {SequencerLoopMode::Loop, SequencerLoopMode::Once}) {
+            editorPattern.loopMode = loopMode;
+            sequencerRenderer.renderSequencerEditor(
+                state, nav, editorSnapshot, &editorPattern, 0U, &editorMetadata);
+        }
+    }
+
+    nav.sequencerPage = 5U;
+    nav.sequencerCursor = 0U;
+    editorSnapshot.playing = false;
+    editorSnapshot.channelStep[0] = 0U;
+    sequencerRenderer.renderSequencerEditor(
+        state, nav, editorSnapshot, &editorPattern, 0U, &editorMetadata);
+    const auto pageFiveFrame = display.framebufferForTest();
+    CHECK(modePixelSet(pageFiveFrame, 40, 62));
+    CHECK(!modePixelSet(pageFiveFrame, 0, 62));
+    CHECK(modePixelSet(pageFiveFrame, 0, 63));
+
+    // Step-expression editor rendering must cover both inherited/default and
+    // explicit values, both fixed-ms and duty gate profiles, RANDOM tie
+    // unavailability, and the selected/editing value inversion contract.
+    nav.sequencerPage = 0U;
+    nav.sequencerCursor = 0U;
+    nav.editing = false;
+    SequencerStepMetadata stepEditorMetadata{};
+    editorPattern.direction = SequencerPlayDirection::Forward;
+    editorPattern.gates = {{0x01ULL, 0ULL}};
+    for (std::uint8_t row = 0U; row < 5U; ++row) {
+        nav.cursor = row;
+        sequencerRenderer.renderSequencerStepEditor(
+            state, nav, editorPattern, 0U, stepEditorMetadata);
+    }
+
+    stepEditorMetadata.probabilityPercent = 64U;
+    stepEditorMetadata.gateProfile = SequencerGateProfile::Duty75;
+    stepEditorMetadata.ratchetCount = 8U;
+    stepEditorMetadata.tie = true;
+    for (std::uint8_t row = 1U; row < 5U; ++row) {
+        nav.cursor = row;
+        nav.editing = true;
+        sequencerRenderer.renderSequencerStepEditor(
+            state, nav, editorPattern, 0U, stepEditorMetadata);
+    }
+
+    stepEditorMetadata.gateProfile = SequencerGateProfile::Trigger10Ms;
+    editorPattern.direction = SequencerPlayDirection::Random;
+    editorPattern.gates = {{0ULL, 0ULL}};
+    nav.cursor = 4U;
+    nav.editing = false;
+    sequencerRenderer.renderSequencerStepEditor(
+        state, nav, editorPattern, 0U, stepEditorMetadata);
+
+    // Defensive/fallback rendering remains defined when only the legacy
+    // sequencer state is available and when playback lies outside the edited
+    // viewport. These are product fallbacks, not unreachable coverage stubs.
+    state.channels[0].sequencer.length = 0U;
+    state.channels[0].sequencer.rotation = 63U;
+    nav.sequencerPage = 0U;
+    nav.sequencerCursor = 0U;
+    editorSnapshot.playing = true;
+    editorSnapshot.channelStep[0] = 120U;
+    sequencerRenderer.renderSequencerEditor(
+        state, nav, editorSnapshot, nullptr, 0U, nullptr);
+    state.channels[0].sequencer.length = 8U;
+    state.channels[0].sequencer.rotation = 0U;
+    sequencerRenderer.renderSequencerEditor(
+        state, nav, editorSnapshot, nullptr, 0U, nullptr);
+
+    state.operatingMode = OperatingMode::UnifiedClock;
+    sequencerRenderer.renderChannelQuickSelect(state, nav);
+    state.operatingMode = OperatingMode::DividerBank;
+    sequencerRenderer.renderChannelQuickSelect(state, nav);
+    state.operatingMode = OperatingMode::Independent;
+
     nav.screen=ui::Screen::Settings;
     const ui::SettingsPage pages[]={ui::SettingsPage::Root,ui::SettingsPage::General,ui::SettingsPage::InputAssignments,ui::SettingsPage::Hardware,ui::SettingsPage::Master,ui::SettingsPage::Sync,ui::SettingsPage::Preferences,ui::SettingsPage::Screensaver,ui::SettingsPage::Info,ui::SettingsPage::Licenses,ui::SettingsPage::Updates,ui::SettingsPage::Channel,ui::SettingsPage::ChannelTiming,ui::SettingsPage::ChannelOutput,ui::SettingsPage::Clock,ui::SettingsPage::Euclid,ui::SettingsPage::Sequencer,ui::SettingsPage::SequencerPattern,ui::SettingsPage::UnifiedClock,ui::SettingsPage::UnifiedTiming,ui::SettingsPage::UnifiedOutput,ui::SettingsPage::Groove,ui::SettingsPage::GrooveEditorMenu,ui::SettingsPage::GrooveRecordMenu,ui::SettingsPage::DividerBank};
     for(auto page:pages){nav.settingsPage=page;const auto count=ui::settingsPageItemCount(page);for(std::uint8_t row=0;row<count;++row){nav.cursor=row;nav.scrollOffset=row>4U?static_cast<std::uint8_t>(row-4U):0U;nav.editing=(row&1U)!=0U;renderer.render(state,nav,engine.snapshot());}}

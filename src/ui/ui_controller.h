@@ -137,6 +137,8 @@ public:
 #endif
 
 private:
+    friend struct UiControllerTestAccess;
+
     /** @brief Routes one encoder detent according to the active screen and edit state. */
     void handleEncoderDelta(
         std::int8_t delta, bool tapPressed, bool transportPressed, std::uint32_t nowMs);
