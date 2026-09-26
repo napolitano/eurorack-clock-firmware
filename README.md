@@ -320,12 +320,12 @@ The broader host matrix additionally recompiles display variants, runs sanitizer
 python scripts/run_host_tests.py
 ```
 
-Current post-1.1 r47e validated aggregate baseline:
+Current post-1.1 r47f validated aggregate baseline:
 
 ```text
-Executable lines    10479 / 10980  95.44 %
-Functions              898 / 915    98.14 %
-Decision branches     6486 / 7200   90.08 %
+Executable lines    10485 / 10993  95.38 %
+Functions              899 / 916    98.14 %
+Decision branches     6492 / 7208   90.07 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).

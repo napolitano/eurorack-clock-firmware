@@ -146,6 +146,9 @@ void testRenderEveryScreenAndState() {
     expression = SequencerStepMetadata{};
     expression.tie = true;
     editorMetadata[4U] = packSequencerStepMetadata(expression);
+    expression = SequencerStepMetadata{};
+    expression.probabilityPercent = 64U;
+    editorMetadata[5U] = packSequencerStepMetadata(expression);
     nav.sequencerPage = 0U;
     nav.sequencerCursor = 0U;
     auto editorSnapshot = engine.snapshot();
@@ -158,10 +161,36 @@ void testRenderEveryScreenAndState() {
     CHECK(modePixelSet(sequencerEditorFrame, 19, 15));  // dotted step boundary
     CHECK(!modePixelSet(sequencerEditorFrame, 19, 16));
     CHECK(modePixelSet(sequencerEditorFrame, 19, 17));
-    CHECK(modePixelSet(sequencerEditorFrame, 5, 20));   // edit-cursor outline
-    CHECK(modePixelSet(sequencerEditorFrame, 56, 48));  // playback triangle tip
-    CHECK(modePixelSet(sequencerEditorFrame, 53, 43));  // ratchet 8 row 1
-    CHECK(modePixelSet(sequencerEditorFrame, 53, 46));  // ratchet 8 row 2
+    CHECK(modePixelSet(sequencerEditorFrame, 8, 11));   // visible beat number 1
+    CHECK(modePixelSet(sequencerEditorFrame, 67, 11));  // visible beat number 2
+
+    // A nine-pixel gate is centered between the 15-pixel grid boundaries.
+    // Step 2 sits between x=19 and x=34, so its gate spans x=23..31.
+    CHECK(modePixelSet(sequencerEditorFrame, 23, 22));
+    CHECK(modePixelSet(sequencerEditorFrame, 31, 22));
+    CHECK(!modePixelSet(sequencerEditorFrame, 22, 22));
+    CHECK(!modePixelSet(sequencerEditorFrame, 32, 22));
+
+    CHECK(modePixelSet(sequencerEditorFrame, 6, 20));   // centered edit-cursor outline
+    CHECK(modePixelSet(sequencerEditorFrame, 57, 48));  // centered playback triangle tip
+    CHECK(modePixelSet(sequencerEditorFrame, 54, 34));  // ratchet 8 row 1 above Probability
+    CHECK(modePixelSet(sequencerEditorFrame, 54, 37));  // ratchet 8 row 2 above Probability
+    CHECK(modePixelSet(sequencerEditorFrame, 9, 41));   // selected Probability renders 75 as digits
+    CHECK(modePixelSet(sequencerEditorFrame, 85, 41));  // non-selected Probability keeps % marker
+    CHECK(modePixelSet(sequencerEditorFrame, 79, 26));  // Tie physically bridges adjacent gate cells
+
+    // LOOP/ONCE is intentionally not duplicated in the live editor status.
+    // Changing only end behavior therefore leaves the editor frame unchanged.
+    editorPattern.direction = SequencerPlayDirection::Forward;
+    editorPattern.loopMode = SequencerLoopMode::Loop;
+    sequencerRenderer.renderSequencerEditor(
+        state, nav, editorSnapshot, &editorPattern, 0U, &editorMetadata);
+    const auto loopStatusFrame = display.framebufferForTest();
+    editorPattern.loopMode = SequencerLoopMode::Once;
+    sequencerRenderer.renderSequencerEditor(
+        state, nav, editorSnapshot, &editorPattern, 0U, &editorMetadata);
+    const auto onceStatusFrame = display.framebufferForTest();
+    CHECK(loopStatusFrame == onceStatusFrame);
 
     for (const auto direction : {
              SequencerPlayDirection::Forward,
@@ -169,11 +198,8 @@ void testRenderEveryScreenAndState() {
              SequencerPlayDirection::PingPong,
              SequencerPlayDirection::Random}) {
         editorPattern.direction = direction;
-        for (const auto loopMode : {SequencerLoopMode::Loop, SequencerLoopMode::Once}) {
-            editorPattern.loopMode = loopMode;
-            sequencerRenderer.renderSequencerEditor(
-                state, nav, editorSnapshot, &editorPattern, 0U, &editorMetadata);
-        }
+        sequencerRenderer.renderSequencerEditor(
+            state, nav, editorSnapshot, &editorPattern, 0U, &editorMetadata);
     }
 
     nav.sequencerPage = 5U;

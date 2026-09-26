@@ -4,7 +4,7 @@
 
 This document separates the implemented post-1.1 development state from later Sequencer 2.0 work. The frozen 1.1 release manual remains authoritative for released 1.1.0 behavior; this file describes the current development tree.
 
-## CURRENT development state (r47e)
+## CURRENT development state (r47f)
 
 - Maximum pattern length: **128 steps**. The OLED editor is an eight-step viewport, not a length limit.
 - **8 pattern slots per channel × 8 physical channels = 64 pattern slots**. The active slot is persisted per channel.
@@ -16,8 +16,8 @@ This document separates the implemented post-1.1 development state from later Se
 - `EDITOR` opens the eight-step viewport directly. BACK returns to Sequencer parameters. Encoder long-press opens pattern operations; BACK from pattern operations returns to the editor.
 - Turning the encoder moves the edit cursor continuously through the active pattern and changes the eight-step viewport when a boundary is crossed. The bottom page indicator follows this **edit viewport**, not the playback position.
 - PLAY/PAUSE controls transport while the editor stays open. The edit cursor remains a rectangle around the selected step; an independent small triangle at the bottom marks the currently playing step when it is visible in the current viewport.
-- The editor uses a timing grid instead of per-step numbers: every four-step beat boundary is a longer/solid vertical reference, while intermediate step boundaries use shorter ticks and dotted vertical lines.
-- Direction and end behavior are visible as compact status pictograms: forward, reverse, ping-pong or random plus LOOP or ONCE.
+- The editor uses a timing grid instead of per-step numbers: every four-step beat boundary is a longer/solid vertical reference and carries its beat number, while intermediate step boundaries use shorter ticks and dotted vertical lines. Gate cells are centered geometrically between the grid boundaries.
+- Only traversal direction is duplicated in the live editor status as a compact forward, reverse, ping-pong or random pictogram. LOOP/ONCE remains editable in the Sequencer settings but is not repeated in the editor because normal looping does not need a second live-state symbol.
 - Persistent pattern bank: fixed 2-KiB extension at logical offset 8192, explicit records + CRC, global rather than duplicated in CURRENT/eight presets.
 - Legacy migration: each channel's released 1.1 64-bit Sequencer state becomes P1; P2–P8 keep clean defaults.
 - Flash writes are coalesced and are not committed while transport is PLAYING.
@@ -26,10 +26,10 @@ This document separates the implemented post-1.1 development state from later Se
 
 Each step can carry sparse expression metadata without increasing the fixed pattern record or repeated `ClockState`:
 
-- **Probability** — `DEFAULT` inherits channel probability; an explicit 1–100% value replaces it for that step. The grid shows a compact `%` marker, while the numeric value is shown only for the selected step.
+- **Probability** — `DEFAULT` inherits channel probability; an explicit 1–100% value replaces it for that step. Non-selected overrides use a compact `%` marker. On the selected step, compact numeric digits replace that marker in the same grid position instead of moving the value into the header.
 - **Gate / Duty** — `DEFAULT` inherits the channel gate length. Overrides provide short 1/2/5/10 ms triggers, relative 25/50/75% duty, or fixed 20/50/100 ms gates.
-- **Tie** — holds a deterministic adjacent gate continuously rather than retriggering. The editor shows the existing connection line between the two gate cells. Tie is unavailable for RANDOM traversal and mutually exclusive with Ratchet.
-- **Ratchet** — **1–8 total substeps**. `1` is the normal event and needs no symbol. Counts 2–4 use one row of dots; counts 5–8 use two rows with four dots on the first row and the remainder on the second. Probability and Ratchet may be active on the same step.
+- **Tie** — holds a deterministic adjacent gate continuously rather than retriggering. The editor draws one continuous horizontal bridge from the current gate cell into the next gate cell. Tie is unavailable for RANDOM traversal and mutually exclusive with Ratchet.
+- **Ratchet** — **1–8 total substeps**. `1` is the normal event and needs no symbol. Counts 2–4 use one row of dots; counts 5–8 use two rows with four dots on the first row and the remainder on the second. The Ratchet dots sit above the Probability marker/value so both attributes remain visually associated with the same step. Probability and Ratchet may be active on the same step.
 
 Ratchets are bounded scheduler sub-events; they do not recurse and every emitted HIGH has a corresponding bounded LOW. Live pattern or metadata edits release an already-held Tie before replacing its runtime state, so editing cannot leave a gate stuck HIGH.
 
@@ -43,7 +43,7 @@ Song Mode is a global topology peer to Independent, One Clock and Divider Bank, 
 
 Polymeter therefore comes from different pattern lengths; polyrhythm comes from the existing rational per-channel rates. Pattern changes must remain anchored to the shared musical timeline. Exact CONTINUE/RESTART transition semantics still require a final contract before implementation.
 
-## OPEN after r47e
+## OPEN after r47f
 
 - Song Mode topology and arrangement persistence;
 - USB full-device backup/restore transport and guarded device-side USB DATA mode;

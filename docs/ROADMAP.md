@@ -116,7 +116,7 @@ Definition of done:
 
 **Goal:** turn the existing binary trigger pattern into a compact but expressive gate sequencer without turning the 128×64 UI into a miniature DAW.
 
-**Implemented in current post-1.1 development (through r47e):**
+**Implemented in current post-1.1 development (through r47f):**
 
 - compact 1–128-step pattern model using two 64-bit gate words;
 - eight persistent pattern slots per physical channel (64 global pattern records) plus persistent active-slot selection;

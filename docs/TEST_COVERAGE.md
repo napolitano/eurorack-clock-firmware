@@ -58,16 +58,16 @@ The r46 aggregate passes the unchanged 95/95/90 host gate. The decision-branch m
 
 Post-1.1 r47 development adds persistent step expression, live Tie-edit safety and the Sequencer editor redesign. The focused r47d step-store hardening slice brought `sequencer_step_store.cpp` to **99.15% lines / 100.00% functions / 91.62% decision branches**. These are source-narrowed diagnostics, not a replacement for the repository-wide 95/95/90 gate.
 
-The complete r47e aggregate after the editor-grid/playhead redesign, Ratchet 1-8 production regression and additional UI/expression branch coverage is:
+The complete r47f aggregate after the editor-grid/playhead redesign, Ratchet 1-8 production regression, visual grid polish and additional UI/expression branch coverage is:
 
 ```text
-Executable lines:  10479/10980 (95.44%)
-Functions:            898/915   (98.14%)
-Decision branches:   6486/7200 (90.08%)
-Compiler branches:   6487/8456 (76.71%, informational only)
+Executable lines:  10485/10993 (95.38%)
+Functions:            899/916   (98.14%)
+Decision branches:   6492/7208 (90.07%)
+Compiler branches:   6493/8464 (76.71%, informational only)
 ```
 
-The r47e aggregate passes the unchanged 95/95/90 gate. ASan/UBSan, simulator and VCV adapter qualification remain separate gates; none of these host results substitute for the still-open STM32F401 ELF/RAM memory-gate evidence for the 12-KiB development persistence image.
+The r47f aggregate passes the unchanged 95/95/90 gate. ASan/UBSan, simulator and VCV adapter qualification remain separate gates; none of these host results substitute for the still-open STM32F401 ELF/RAM memory-gate evidence for the 12-KiB development persistence image.
 
 ### Sequencer 2.0 development slice
 
