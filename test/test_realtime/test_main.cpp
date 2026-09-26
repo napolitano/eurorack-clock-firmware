@@ -17,6 +17,8 @@
 #include "config.h"
 #include "defaults.h"
 #include "domain/clock_types.h"
+#include "domain/sequencer_pattern.h"
+#include "domain/sequencer_step_metadata.h"
 #include "domain/default_configuration.h"
 #include "engine/clock_engine.h"
 #include "hal/external_input_capture.h"
@@ -84,6 +86,7 @@ void runTicks(engine::ClockEngine& engine, const std::uint32_t count) {
 
 #include "cases/clock_precount_sync.inc"
 #include "cases/reset_overflow_boundaries.inc"
+#include "cases/sequencer_step_expression.inc"
 
 }  // namespace
 
@@ -117,6 +120,12 @@ int main() {
     RUN_TEST(testSyncQueueOverflowDoesNotMasqueradeAsTempoDrop);
     RUN_TEST(testExternalSyncConfigurationBoundaryPaths);
     RUN_TEST(testEngineExternalSyncDefensiveConfigurationPaths);
+    RUN_TEST(testSequencerStepProbabilityOverrideReplacesChannelProbability);
+    RUN_TEST(testSequencerEvenRatchetEmitsBoundedDistinctSubEvents);
+    RUN_TEST(testSequencerTieKeepsAdjacentGateContinuousThenReleases);
+    RUN_TEST(testSequencerTieDoesNotCrossRestRandomOrOnceEnd);
+    RUN_TEST(testSequencerLiveEditReleasesActiveTieImmediately);
+    RUN_TEST(testSequencerRelativeDutyOverridesGateLength);
     std::cout << "Realtime assertions: " << checks << "\n";
     return UNITY_END();
 }

@@ -8,10 +8,12 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 #include "domain/clock_types.h"
 #include "domain/sequencer_pattern.h"
+#include "domain/sequencer_step_metadata.h"
 #include "engine/clock_engine.h"
 #include "hal/oled_display.h"
 #include "ui/pattern_strip_renderer.h"
@@ -53,7 +55,7 @@ public:
     void renderModeChangeConfirm(const NavigationState& navigation);
 
     /**
-     * @brief Draws one 16-step window of a channel's 64-step sequencer.
+     * @brief Draws one 8-step viewport of a channel's 128-step Sequencer 2.0 pattern.
      * @param state Complete channel configuration.
      * @param navigation Current page, channel, and step cursor.
      * @param engineSnapshot Current playback step used by the bottom block indicator.
@@ -63,7 +65,16 @@ public:
         const NavigationState& navigation,
         const engine::EngineSnapshot& engineSnapshot,
         const SequencerPatternV2* activePattern = nullptr,
-        std::uint8_t activeSlot = 0U);
+        std::uint8_t activeSlot = 0U,
+        const std::array<SequencerStepMetadataWord, kSequencerMaximumSteps>* metadata = nullptr);
+
+    /** @brief Draws the five-row detail editor for one selected Sequencer step. */
+    void renderSequencerStepEditor(
+        const ClockState& state,
+        const NavigationState& navigation,
+        const SequencerPatternV2& activePattern,
+        std::uint8_t activeSlot,
+        const SequencerStepMetadata& metadata);
 
 private:
     /** @brief Draws the simplified overview shown while a global operating mode is active. */

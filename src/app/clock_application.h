@@ -24,6 +24,7 @@
 #include "hal/persistent_storage.h"
 #include "services/persistent_state_service.h"
 #include "services/sequencer_pattern_store.h"
+#include "services/sequencer_step_store.h"
 #include "services/custom_groove_store.h"
 #include "services/external_sync_controller.h"
 #include "ui/ui_controller.h"
@@ -157,6 +158,7 @@ private:
     services::PersistentStateService persistentState_;
     services::CustomGrooveStore customGrooveStore_;
     services::SequencerPatternStore sequencerPatternStore_;
+    services::SequencerStepStore sequencerStepStore_;
     engine::ClockEngine engine_;
     services::ExternalSyncController externalSyncController_;
     ui::UiRenderer renderer_;

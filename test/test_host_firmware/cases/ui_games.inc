@@ -23,9 +23,13 @@ void testUiControllerFlows() {
     persistentState.begin();
     services::CustomGrooveStore grooveStore(storage);
     services::SequencerPatternStore sequencerStore(storage);
+    services::SequencerStepStore sequencerStepStore(storage);
     CHECK(sequencerStore.begin());
-    ui::UiRenderer renderer(display, persistentState, grooveStore, sequencerStore);
-    ui::UiController controller(state, engine, renderer, persistentState, grooveStore, sequencerStore);
+    CHECK(sequencerStepStore.begin());
+    ui::UiRenderer renderer(
+        display, persistentState, grooveStore, sequencerStore, sequencerStepStore);
+    ui::UiController controller(
+        state, engine, renderer, persistentState, grooveStore, sequencerStore, sequencerStepStore);
     std::uint32_t now = 100U;
 
     controller.invalidate();
@@ -468,6 +472,49 @@ void testUiControllerFlows() {
     controllerTurn(controller, 5, now);
     controllerShortPress(controller, now);
     CHECK(sequencerPatternGate(sequencerStore.pattern(selectedChannel, 1U), 5U));
+
+    // TAP + encoder push opens per-step expression without consuming a page-back action.
+    controllerTapPushChord(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::SequencerStepEditor);
+    CHECK_EQ(controller.navigation().cursor, 0U);
+
+    controllerTurn(controller, 1, now);     // PROB
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 75, now);    // DEFAULT -> 75%
+    controllerShortPress(controller, now);
+    CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).probabilityPercent, 75U);
+
+    controllerTurn(controller, 1, now);     // LENGTH
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 6, now);     // DEFAULT -> 50% duty
+    controllerShortPress(controller, now);
+    CHECK_EQ(
+        sequencerStepStore.metadata(selectedChannel, 1U, 5U).gateProfile,
+        SequencerGateProfile::Duty50);
+
+    controllerTurn(controller, 1, now);     // RATCHET
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 2, now);     // 1 -> 3
+    controllerShortPress(controller, now);
+    CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).ratchetCount, 3U);
+
+    controllerTurn(controller, 1, now);     // TIE
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 1, now);     // OFF -> ON; mutually excludes ratchet
+    controllerShortPress(controller, now);
+    CHECK(sequencerStepStore.metadata(selectedChannel, 1U, 5U).tie);
+    CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).ratchetCount, 1U);
+
+    controllerTurn(controller, -1, now);    // RATCHET
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 2, now);     // 1 -> 3; clears tie
+    controllerShortPress(controller, now);
+    CHECK_EQ(sequencerStepStore.metadata(selectedChannel, 1U, 5U).ratchetCount, 3U);
+    CHECK(!sequencerStepStore.metadata(selectedChannel, 1U, 5U).tie);
+
+    controllerReset(controller, now);       // Step detail -> editor
+    CHECK_EQ(controller.navigation().screen, ui::Screen::SequencerEditor);
+    CHECK_EQ(controller.navigation().sequencerCursor, 5U);
 
     for (int page = 0; page < 15; ++page) {
         sample = {};

@@ -23,6 +23,7 @@ enum class Screen : std::uint8_t {
     ModeChangeConfirm,
     Settings,
     SequencerEditor,
+    SequencerStepEditor,
     Templates,
     PresetSlots,
     OverwriteConfirm,

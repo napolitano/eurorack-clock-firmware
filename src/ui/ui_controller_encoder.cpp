@@ -223,13 +223,31 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
             return;
 
         case Screen::SequencerEditor:
-            if (sequencerPatternStore_ != nullptr) {
+            if (tapModifierPressed_ && sequencerPatternStore_ != nullptr &&
+                sequencerStepStore_ != nullptr) {
+                sequencerTapPressConsumed_ = true;
+                openSequencerStepEditor();
+            } else if (sequencerPatternStore_ != nullptr) {
                 toggleSequencerStepV2(nowMs);
             } else {
                 const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
                     navigation_.sequencerPage * 8U + navigation_.sequencerCursor);
                 settingsEditor_.toggleSequencerStep(navigation_.selectedChannel, absoluteStep);
                 persistCurrentState(nowMs);
+                invalidate();
+            }
+            return;
+
+        case Screen::SequencerStepEditor:
+            if (navigation_.cursor == 0U) {
+                toggleSequencerStepGateFromDetail(nowMs);
+            } else {
+                const SequencerPatternV2* const pattern = activeSequencerPattern();
+                if (navigation_.cursor == 4U && pattern != nullptr &&
+                    pattern->direction == SequencerPlayDirection::Random) {
+                    return;
+                }
+                navigation_.editing = !navigation_.editing;
                 invalidate();
             }
             return;

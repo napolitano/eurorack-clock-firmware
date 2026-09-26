@@ -12,9 +12,11 @@
 
 #include "config.h"
 #include "domain/sequencer_pattern.h"
+#include "domain/sequencer_step_metadata.h"
 #include "hal/persistent_layout.h"
 #include "hal/persistent_storage.h"
 #include "services/sequencer_pattern_store.h"
+#include "services/sequencer_step_store.h"
 
 using namespace clockfw;
 
@@ -159,6 +161,170 @@ void testRotationIsAppliedAfterTraversal() {
     TEST_ASSERT_TRUE(sequencerPatternHitForEvent(0U, pattern, 0U));
 }
 
+
+
+void testStepMetadataPackingProfilesAndInvalidWords() {
+    SequencerStepMetadata metadata{};
+    TEST_ASSERT_TRUE(isSequencerStepMetadataValid(metadata));
+    TEST_ASSERT_TRUE(isSequencerStepMetadataDefault(metadata));
+    TEST_ASSERT_EQUAL_UINT32(0U, packSequencerStepMetadata(metadata));
+
+    metadata.probabilityPercent = 73U;
+    metadata.gateProfile = SequencerGateProfile::Duty50;
+    metadata.ratchetCount = 4U;
+    metadata.tie = true;
+    TEST_ASSERT_TRUE(isSequencerStepMetadataValid(metadata));
+    TEST_ASSERT_FALSE(isSequencerStepMetadataDefault(metadata));
+    const SequencerStepMetadataWord packed = packSequencerStepMetadata(metadata);
+    const SequencerStepMetadata restored = unpackSequencerStepMetadata(packed);
+    TEST_ASSERT_EQUAL_UINT8(73U, restored.probabilityPercent);
+    TEST_ASSERT_EQUAL_UINT8(
+        static_cast<std::uint8_t>(SequencerGateProfile::Duty50),
+        static_cast<std::uint8_t>(restored.gateProfile));
+    TEST_ASSERT_EQUAL_UINT8(4U, restored.ratchetCount);
+    TEST_ASSERT_TRUE(restored.tie);
+
+    TEST_ASSERT_EQUAL_UINT8(25U, sequencerGateProfileDutyPercent(SequencerGateProfile::Duty25));
+    TEST_ASSERT_EQUAL_UINT8(50U, sequencerGateProfileDutyPercent(SequencerGateProfile::Duty50));
+    TEST_ASSERT_EQUAL_UINT8(75U, sequencerGateProfileDutyPercent(SequencerGateProfile::Duty75));
+    TEST_ASSERT_EQUAL_UINT8(0U, sequencerGateProfileDutyPercent(SequencerGateProfile::Trigger5Ms));
+    TEST_ASSERT_EQUAL_UINT32(1U, sequencerGateProfileMilliseconds(SequencerGateProfile::Trigger1Ms, 17U));
+    TEST_ASSERT_EQUAL_UINT32(2U, sequencerGateProfileMilliseconds(SequencerGateProfile::Trigger2Ms, 17U));
+    TEST_ASSERT_EQUAL_UINT32(5U, sequencerGateProfileMilliseconds(SequencerGateProfile::Trigger5Ms, 17U));
+    TEST_ASSERT_EQUAL_UINT32(10U, sequencerGateProfileMilliseconds(SequencerGateProfile::Trigger10Ms, 17U));
+    TEST_ASSERT_EQUAL_UINT32(20U, sequencerGateProfileMilliseconds(SequencerGateProfile::Gate20Ms, 17U));
+    TEST_ASSERT_EQUAL_UINT32(50U, sequencerGateProfileMilliseconds(SequencerGateProfile::Gate50Ms, 17U));
+    TEST_ASSERT_EQUAL_UINT32(100U, sequencerGateProfileMilliseconds(SequencerGateProfile::Gate100Ms, 17U));
+    TEST_ASSERT_EQUAL_UINT32(17U, sequencerGateProfileMilliseconds(SequencerGateProfile::Duty75, 17U));
+
+    metadata.probabilityPercent = 101U;
+    TEST_ASSERT_FALSE(isSequencerStepMetadataValid(metadata));
+    TEST_ASSERT_EQUAL_UINT32(0U, packSequencerStepMetadata(metadata));
+    metadata = SequencerStepMetadata{};
+    metadata.ratchetCount = 0U;
+    TEST_ASSERT_FALSE(isSequencerStepMetadataValid(metadata));
+    metadata.ratchetCount = static_cast<std::uint8_t>(kSequencerMaximumRatchetCount + 1U);
+    TEST_ASSERT_FALSE(isSequencerStepMetadataValid(metadata));
+    const SequencerStepMetadata reserved = unpackSequencerStepMetadata(0x8000U);
+    TEST_ASSERT_TRUE(isSequencerStepMetadataDefault(reserved));
+}
+
+void testSparseStepStoreRoundTripRemovalAndPatternCopy() {
+    hal::PersistentStorage storage;
+    services::SequencerStepStore store(storage);
+    TEST_ASSERT_TRUE(store.begin());
+    TEST_ASSERT_EQUAL_UINT32(0U, static_cast<std::uint32_t>(store.overrideCount()));
+
+    SequencerStepMetadata first{};
+    first.probabilityPercent = 42U;
+    first.gateProfile = SequencerGateProfile::Duty25;
+    first.ratchetCount = 3U;
+    TEST_ASSERT_TRUE(store.updateMetadata(2U, 5U, 127U, first, 10U));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<std::uint32_t>(store.overrideCount()));
+    TEST_ASSERT_TRUE(store.dirty());
+    TEST_ASSERT_EQUAL_UINT8(42U, store.metadata(2U, 5U, 127U).probabilityPercent);
+
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> words{};
+    store.loadPatternWords(2U, 5U, words);
+    TEST_ASSERT_EQUAL_UINT32(packSequencerStepMetadata(first), words[127U]);
+    TEST_ASSERT_EQUAL_UINT32(0U, words[126U]);
+
+    SequencerStepMetadata second{};
+    second.gateProfile = SequencerGateProfile::Trigger2Ms;
+    second.tie = true;
+    words[3U] = packSequencerStepMetadata(second);
+    TEST_ASSERT_TRUE(store.replacePatternWords(1U, 1U, words, 11U));
+    TEST_ASSERT_EQUAL_UINT32(3U, static_cast<std::uint32_t>(store.overrideCount()));
+    TEST_ASSERT_EQUAL_UINT8(42U, store.metadata(1U, 1U, 127U).probabilityPercent);
+    TEST_ASSERT_TRUE(store.metadata(1U, 1U, 3U).tie);
+
+    TEST_ASSERT_TRUE(store.flush());
+    services::SequencerStepStore restored(storage);
+    TEST_ASSERT_TRUE(restored.begin());
+    TEST_ASSERT_EQUAL_UINT32(3U, static_cast<std::uint32_t>(restored.overrideCount()));
+    TEST_ASSERT_TRUE(restored.metadata(1U, 1U, 3U).tie);
+    TEST_ASSERT_EQUAL_UINT8(42U, restored.metadata(1U, 1U, 127U).probabilityPercent);
+
+    TEST_ASSERT_TRUE(restored.updateMetadata(1U, 1U, 3U, SequencerStepMetadata{}, 100U));
+    TEST_ASSERT_EQUAL_UINT32(2U, static_cast<std::uint32_t>(restored.overrideCount()));
+    TEST_ASSERT_TRUE(restored.clearPattern(1U, 1U, 101U));
+    TEST_ASSERT_EQUAL_UINT32(1U, static_cast<std::uint32_t>(restored.overrideCount()));
+    TEST_ASSERT_TRUE(restored.clearPattern(1U, 1U, 102U));
+}
+
+void testSparseStepStoreCapacityValidationAndReservedSongRegion() {
+    hal::PersistentStorage storage;
+    std::array<std::uint8_t, hal::persistent_layout::kSequencerSongRegionBytes> songSentinel{};
+    for (std::size_t index = 0U; index < songSentinel.size(); ++index) {
+        songSentinel[index] = static_cast<std::uint8_t>((index * 19U + 11U) & 0xFFU);
+    }
+    TEST_ASSERT_TRUE(storage.writeBytes(
+        hal::persistent_layout::kSequencerSongRegionOffset,
+        songSentinel.data(),
+        songSentinel.size()));
+
+    services::SequencerStepStore store(storage);
+    TEST_ASSERT_TRUE(store.begin());
+    SequencerStepMetadata metadata{};
+    metadata.probabilityPercent = 100U;
+    for (std::size_t index = 0U; index < services::SequencerStepStore::kMaximumOverrides; ++index) {
+        const std::uint8_t step = static_cast<std::uint8_t>(index % kSequencerMaximumSteps);
+        const std::size_t patternIndex = index / kSequencerMaximumSteps;
+        const std::uint8_t channel = static_cast<std::uint8_t>(patternIndex % kChannelCount);
+        const std::uint8_t slot = static_cast<std::uint8_t>(patternIndex / kChannelCount);
+        TEST_ASSERT_TRUE(store.updateMetadata(channel, slot, step, metadata, 20U));
+    }
+    TEST_ASSERT_EQUAL_UINT32(
+        static_cast<std::uint32_t>(services::SequencerStepStore::kMaximumOverrides),
+        static_cast<std::uint32_t>(store.overrideCount()));
+    TEST_ASSERT_FALSE(store.updateMetadata(2U, 7U, 124U, metadata, 21U));
+    TEST_ASSERT_TRUE(store.flush());
+
+    std::array<std::uint8_t, hal::persistent_layout::kSequencerSongRegionBytes> after{};
+    TEST_ASSERT_TRUE(storage.readBytes(
+        hal::persistent_layout::kSequencerSongRegionOffset, after.data(), after.size()));
+    for (std::size_t index = 0U; index < after.size(); ++index) {
+        TEST_ASSERT_EQUAL_UINT8(songSentinel[index], after[index]);
+    }
+
+    TEST_ASSERT_FALSE(store.updateMetadata(kChannelCount, 0U, 0U, metadata, 0U));
+    TEST_ASSERT_FALSE(store.updateMetadata(0U, kSequencerPatternSlotsPerChannel, 0U, metadata, 0U));
+    TEST_ASSERT_FALSE(store.updateMetadata(0U, 0U, kSequencerMaximumSteps, metadata, 0U));
+    metadata.ratchetCount = 0U;
+    TEST_ASSERT_FALSE(store.updateMetadata(0U, 0U, 0U, metadata, 0U));
+    TEST_ASSERT_TRUE(isSequencerStepMetadataDefault(store.metadata(kChannelCount, 0U, 0U)));
+    TEST_ASSERT_TRUE(isSequencerStepMetadataDefault(store.metadata(0U, 0U, kSequencerMaximumSteps)));
+    TEST_ASSERT_FALSE(store.clearPattern(kChannelCount, 0U, 0U));
+    TEST_ASSERT_FALSE(store.clearPattern(0U, kSequencerPatternSlotsPerChannel, 0U));
+
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> invalidWords{};
+    invalidWords[0U] = 0x8000U;
+    TEST_ASSERT_FALSE(store.replacePatternWords(0U, 0U, invalidWords, 0U));
+    TEST_ASSERT_FALSE(store.replacePatternWords(kChannelCount, 0U, {}, 0U));
+}
+
+void testSparseStepStoreDelayedCommitAndReadWriteFailures() {
+    hal::PersistentStorage storage;
+    services::SequencerStepStore store(storage);
+    TEST_ASSERT_TRUE(store.begin());
+    SequencerStepMetadata metadata{};
+    metadata.gateProfile = SequencerGateProfile::Gate20Ms;
+    TEST_ASSERT_TRUE(store.updateMetadata(0U, 0U, 4U, metadata, 100U));
+    TEST_ASSERT_TRUE(store.service(100U + config::kPersistenceCommitDelayMs - 1U, true));
+    TEST_ASSERT_TRUE(store.dirty());
+    TEST_ASSERT_TRUE(store.service(100U + config::kPersistenceCommitDelayMs, false));
+    TEST_ASSERT_TRUE(store.dirty());
+    hal::PersistentStorage::failNextWriteForTest();
+    TEST_ASSERT_FALSE(store.service(100U + config::kPersistenceCommitDelayMs, true));
+    TEST_ASSERT_TRUE(store.dirty());
+    TEST_ASSERT_TRUE(store.flush());
+    TEST_ASSERT_FALSE(store.dirty());
+
+    hal::PersistentStorage::failNextReadForTest();
+    services::SequencerStepStore unreadable(storage);
+    TEST_ASSERT_FALSE(unreadable.begin());
+    TEST_ASSERT_EQUAL_UINT32(0U, static_cast<std::uint32_t>(unreadable.overrideCount()));
+}
 
 void testLegacyChannelSequencesSeedPatternOneOnly() {
     hal::PersistentStorage storage;
@@ -444,6 +610,10 @@ int main(int, char**) {
     RUN_TEST(testOnceStopsAfterOneTraversalCycle);
     RUN_TEST(testRandomTraversalIsDeterministicHistoryFreeAndBounded);
     RUN_TEST(testRotationIsAppliedAfterTraversal);
+    RUN_TEST(testStepMetadataPackingProfilesAndInvalidWords);
+    RUN_TEST(testSparseStepStoreRoundTripRemovalAndPatternCopy);
+    RUN_TEST(testSparseStepStoreCapacityValidationAndReservedSongRegion);
+    RUN_TEST(testSparseStepStoreDelayedCommitAndReadWriteFailures);
     RUN_TEST(testLegacyChannelSequencesSeedPatternOneOnly);
     RUN_TEST(testPersistentBankRoundTripAndDelayedCommit);
     RUN_TEST(testStoreRejectsInvalidRequestsAndDefersWhenWritesAreBlocked);

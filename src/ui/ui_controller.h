@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 
 #include "domain/clock_types.h"
@@ -19,6 +20,7 @@
 #include "services/persistent_state_service.h"
 #include "services/custom_groove_store.h"
 #include "services/sequencer_pattern_store.h"
+#include "services/sequencer_step_store.h"
 #include "services/groove_recorder.h"
 #include "services/tap_tempo.h"
 #include "ui/settings_editor.h"
@@ -84,6 +86,19 @@ public:
         services::PersistentStateService& persistentState,
         services::CustomGrooveStore& customGrooveStore,
         services::SequencerPatternStore& sequencerPatternStore,
+        game::ArcadeLeaderboardStore* leaderboard = nullptr,
+        const hal::ExternalInputCapture* externalInputs = nullptr,
+        const hal::GateOutputDriver* gateOutputs = nullptr);
+
+    /** @brief Constructs the controller with persistent Sequencer 2.0 step expression enabled. */
+    UiController(
+        ClockState& state,
+        engine::ClockEngine& engine,
+        UiRenderer& renderer,
+        services::PersistentStateService& persistentState,
+        services::CustomGrooveStore& customGrooveStore,
+        services::SequencerPatternStore& sequencerPatternStore,
+        services::SequencerStepStore& sequencerStepStore,
         game::ArcadeLeaderboardStore* leaderboard = nullptr,
         const hal::ExternalInputCapture* externalInputs = nullptr,
         const hal::GateOutputDriver* gateOutputs = nullptr);
@@ -241,6 +256,21 @@ private:
     /** @brief Pushes the selected channel's active pattern snapshot into the real-time engine. */
     void synchronizeActiveSequencerPattern(bool rescheduleChannel);
 
+    /** @brief Pushes the selected channel's active sparse step-expression snapshot into the engine. */
+    void synchronizeActiveSequencerStepMetadata();
+
+    /** @brief Opens the detailed editor for the currently selected Sequencer step. */
+    void openSequencerStepEditor();
+
+    /** @brief Returns the currently selected step's decoded expression override. */
+    SequencerStepMetadata activeSequencerStepMetadata() const;
+
+    /** @brief Applies one encoder delta to the selected step-expression field. */
+    void adjustSequencerStepMetadata(std::int8_t delta, std::uint32_t nowMs);
+
+    /** @brief Toggles the selected detailed step's gate state. */
+    void toggleSequencerStepGateFromDetail(std::uint32_t nowMs);
+
     /** @brief Keeps the selected settings row visible inside the five-row viewport. */
     void normalizeScrollOffset();
 
@@ -350,6 +380,7 @@ private:
     services::PersistentStateService& persistentState_;
     services::CustomGrooveStore* customGrooveStore_ = nullptr;
     services::SequencerPatternStore* sequencerPatternStore_ = nullptr;
+    services::SequencerStepStore* sequencerStepStore_ = nullptr;
     game::ArcadeLeaderboardStore* leaderboard_ = nullptr;
     const hal::ExternalInputCapture* externalInputs_ = nullptr;
     const hal::GateOutputDriver* gateOutputs_ = nullptr;
@@ -373,6 +404,7 @@ private:
     bool hasRenderedDiagnosticSnapshot_ = false;
 
     bool settingsChordActive_ = false;
+    bool tapModifierPressed_ = false;
     bool encoderPressTracking_ = false;
     bool encoderLongPressHandled_ = false;
     std::uint32_t encoderPressedAtMs_ = 0U;
@@ -392,7 +424,10 @@ private:
     bool transportPressConsumedByGrooveZoom_ = false;
     Screen grooveWorkspaceScreen_ = Screen::GrooveEditor;
     SequencerPatternV2 sequencerPatternClipboard_{};
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> sequencerStepClipboard_{};
     bool sequencerPatternClipboardValid_ = false;
+    bool sequencerStepClipboardValid_ = false;
+    bool sequencerTapPressConsumed_ = false;
     std::uint32_t generatedNameSeed_ = 0xC10C2026U;
     std::uint32_t generatedNameSequence_ = 0U;
 };

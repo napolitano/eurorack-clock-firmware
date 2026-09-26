@@ -8,12 +8,14 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 
 #include "domain/clock_types.h"
 #include "domain/custom_groove.h"
 #include "domain/sequencer_pattern.h"
+#include "domain/sequencer_step_metadata.h"
 #include "hal/gate_output_driver.h"
 
 namespace clockfw::engine {
@@ -93,6 +95,15 @@ public:
         std::size_t channelIndex,
         const SequencerPatternV2& pattern,
         bool rescheduleChannel = true);
+
+    /**
+     * @brief Installs the prepared 128-step expression snapshot for one active Sequencer pattern.
+     * @param channelIndex Zero-based channel index.
+     * @param metadata Packed DEFAULT/Probability/Gate/Tie/Ratchet values for steps 0..127.
+     */
+    void updateSequencerStepMetadata(
+        std::size_t channelIndex,
+        const std::array<SequencerStepMetadataWord, kSequencerMaximumSteps>& metadata);
 
     /**
      * @brief Replaces one in-memory Custom Groove library slot used by real-time scheduling.
@@ -219,6 +230,8 @@ private:
     /** @brief In-memory Custom Groove library; Flash is never read from scheduler context. */
     CustomGroovePattern customGrooves_[kCustomGrooveSlotCount]{};
     SequencerPatternV2 sequencerPatterns_[kChannelCount]{};
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps>
+        sequencerStepMetadata_[kChannelCount]{};
     bool sequencerPatternV2Active_[kChannelCount]{};
     CustomGroovePattern customGroovePreviews_[kChannelCount]{};
     std::uint8_t customGroovePreviewAmount_[kChannelCount]{};
@@ -233,7 +246,13 @@ private:
         std::uint8_t step = 0U;
         std::uint8_t displayedStep = 0U;
         std::uint32_t gateOffTick = 0U;
+        bool gateOffScheduled = false;
         bool gateHigh = false;
+        bool tieHold = false;
+        std::uint8_t ratchetRemaining = 0U;
+        std::uint64_t nextRatchetQ32 = 0U;
+        std::uint64_t ratchetSpacingQ32 = 0U;
+        std::uint32_t ratchetGateTicks = 1U;
         std::uint32_t randomState = 0x12345678U;
     };
 
@@ -281,6 +300,9 @@ private:
 
     /** @brief Evaluates and emits one scheduled event for one channel. */
     void fireChannelEvent(std::size_t channelIndex);
+
+    /** @brief Emits bounded pending EVEN ratchet sub-events from the shared master timeline. */
+    void serviceSequencerRatchets();
 
     /** @brief Rebuilds one channel on its deterministic epoch-anchored musical grid. */
     void scheduleChannelFromCurrentPosition(

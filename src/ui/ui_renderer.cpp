@@ -8,6 +8,8 @@
 
 #include "ui/ui_renderer.h"
 
+#include <array>
+
 #include <cstdio>
 
 #include "config.h"
@@ -84,6 +86,23 @@ UiRenderer::UiRenderer(
       grooveEditorRenderer_(display),
       screensaverRenderer_(display) {}
 
+UiRenderer::UiRenderer(
+    hal::OledDisplay& display,
+    const services::PersistentStateService& persistentState,
+    const services::CustomGrooveStore& customGrooveStore,
+    const services::SequencerPatternStore& sequencerPatternStore,
+    const services::SequencerStepStore& sequencerStepStore)
+    : display_(display),
+      persistentState_(persistentState),
+      customGrooveStore_(&customGrooveStore),
+      sequencerPatternStore_(&sequencerPatternStore),
+      sequencerStepStore_(&sequencerStepStore),
+      performanceRenderer_(display, &customGrooveStore),
+      channelNavigationRenderer_(display),
+      settingsRenderer_(display, &sequencerPatternStore),
+      grooveEditorRenderer_(display),
+      screensaverRenderer_(display) {}
+
 void UiRenderer::render(
     const ClockState& state,
     const NavigationState& navigation,
@@ -118,8 +137,34 @@ void UiRenderer::render(
                 slot = sequencerPatternStore_->activeSlot(navigation.selectedChannel);
                 pattern = &sequencerPatternStore_->pattern(navigation.selectedChannel, slot);
             }
+            std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> metadata{};
+            const std::array<SequencerStepMetadataWord, kSequencerMaximumSteps>* metadataPtr = nullptr;
+            if (sequencerStepStore_ != nullptr && pattern != nullptr) {
+                sequencerStepStore_->loadPatternWords(
+                    navigation.selectedChannel, slot, metadata);
+                metadataPtr = &metadata;
+            }
             channelNavigationRenderer_.renderSequencerEditor(
-                state, navigation, engineSnapshot, pattern, slot);
+                state, navigation, engineSnapshot, pattern, slot, metadataPtr);
+            break;
+        }
+        case Screen::SequencerStepEditor: {
+            SequencerPatternV2 fallback{};
+            const SequencerPatternV2* pattern = &fallback;
+            std::uint8_t slot = 0U;
+            SequencerStepMetadata metadata{};
+            if (sequencerPatternStore_ != nullptr && navigation.selectedChannel < kChannelCount) {
+                slot = sequencerPatternStore_->activeSlot(navigation.selectedChannel);
+                pattern = &sequencerPatternStore_->pattern(navigation.selectedChannel, slot);
+                if (sequencerStepStore_ != nullptr) {
+                    const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
+                        navigation.sequencerPage * 8U + navigation.sequencerCursor);
+                    metadata = sequencerStepStore_->metadata(
+                        navigation.selectedChannel, slot, absoluteStep);
+                }
+            }
+            channelNavigationRenderer_.renderSequencerStepEditor(
+                state, navigation, *pattern, slot, metadata);
             break;
         }
         case Screen::Templates:

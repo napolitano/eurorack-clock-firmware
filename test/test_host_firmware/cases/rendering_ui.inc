@@ -286,6 +286,23 @@ void testRenderEveryScreenAndState() {
 
 void controllerShortPress(ui::UiController& controller,std::uint32_t& now){hal::ControlSample s{};s.encoderButton=pressedEdge();controller.processControls(s,now++);s={};s.encoderButton=releasedEdge();controller.processControls(s,now++);}
 void controllerLongPress(ui::UiController& controller,std::uint32_t& now){hal::ControlSample s{};s.encoderButton=pressedEdge();controller.processControls(s,now++);s={};s.encoderButton=heldButton();now += config::kEncoderLongPressMs;controller.processControls(s,now++);s={};s.encoderButton=releasedEdge();controller.processControls(s,now++);}
+void controllerTapPushChord(ui::UiController& controller,std::uint32_t& now){
+    hal::ControlSample s{};
+    s.tapButton=pressedEdge();
+    controller.processControls(s,now++);
+    s={};
+    s.tapButton=heldButton();
+    s.encoderButton=pressedEdge();
+    controller.processControls(s,now++);
+    s={};
+    s.tapButton=heldButton();
+    s.encoderButton=releasedEdge();
+    controller.processControls(s,now++);
+    s={};
+    s.tapButton=releasedEdge();
+    controller.processControls(s,now++);
+}
+
 void controllerOpenSettingsChord(ui::UiController& controller,std::uint32_t& now){
     hal::ControlSample s{};
     s.tapButton=pressedEdge();

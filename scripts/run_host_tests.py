@@ -147,6 +147,7 @@ def realtime_sources() -> list[Path]:
         "src/domain/custom_groove.cpp",
         "src/domain/groove_catalog.cpp",
         "src/domain/sequencer_pattern.cpp",
+        "src/domain/sequencer_step_metadata.cpp",
         "src/engine/clock_engine.cpp",
         "src/engine/clock_engine_capture.cpp",
         "src/engine/clock_engine_custom_groove.cpp",
@@ -307,8 +308,10 @@ def sequencer2_sources() -> list[Path]:
     """Return the compact Sequencer 2.0 model/store slice."""
     return [
         ROOT / "src/domain/sequencer_pattern.cpp",
+        ROOT / "src/domain/sequencer_step_metadata.cpp",
         ROOT / "src/hal/persistent_storage.cpp",
         ROOT / "src/services/sequencer_pattern_store.cpp",
+        ROOT / "src/services/sequencer_step_store.cpp",
     ]
 
 def tap_tempo_sources() -> list[Path]:

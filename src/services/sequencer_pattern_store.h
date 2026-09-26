@@ -28,7 +28,7 @@ namespace clockfw::services {
 class SequencerPatternStore final {
 public:
     static constexpr std::size_t kStorageOffset = hal::persistent_layout::kSequencer2RegionOffset;
-    static constexpr std::size_t kStorageBytes = 2048U;
+    static constexpr std::size_t kStorageBytes = hal::persistent_layout::kSequencerPatternBankBytes;
     static constexpr std::size_t kHeaderBytes = 16U;
     static constexpr std::size_t kRecordBytes = 24U;
     static constexpr std::size_t kPatternCount =

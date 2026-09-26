@@ -314,6 +314,11 @@ enum class TextId : std::uint16_t {
     SequencerEditorHeaderFormat,
     SequencerEditorFooterFormat,
     PatternSlotFormat,
+    SequencerStepEditorTitleFormat,
+    Ratchet,
+    Tie,
+    DefaultValue,
+    NotAvailable,
     Count
 };
 
@@ -363,7 +368,8 @@ inline constexpr TextCatalog kEnglishUs{{
     "RENAME", "DELETE", "RENAME GROOVE", "DELETE GROOVE", "DELETE GROOVE?",
     "RECORD", "GROOVE RECORD", "RECORD MENU", "ONE SHOT", "ENDLESS", "COUNT IN", "READY", "REC", "EDITOR >",
     "SUPPORT CLOCK", "GITHUB SPONSORS", "KO-FI", "FORWARD", "REVERSE", "PINGPONG", "RANDOM", "LOOP", "ONCE",
-    "github.com/sponsors/napolitano", "ko-fi.com/X8X21EOLQ9", "SEQ C%u P%u %u-%u", "S%03u/%03u", "P%u"
+    "github.com/sponsors/napolitano", "ko-fi.com/X8X21EOLQ9", "SEQ C%u P%u %u-%u", "S%03u/%03u", "P%u",
+    "STEP %u C%u P%u", "RATCHET", "TIE", "DEFAULT", "N/A"
 }};
 
 /** Musical qualifier pool used for generated Custom Groove default names. */

@@ -115,7 +115,8 @@ void ChannelNavigationRenderer::renderSequencerEditor(
     const NavigationState& navigation,
     const engine::EngineSnapshot& engineSnapshot,
     const SequencerPatternV2* const activePattern,
-    const std::uint8_t activeSlot) {
+    const std::uint8_t activeSlot,
+    const std::array<SequencerStepMetadataWord, kSequencerMaximumSteps>* const metadata) {
     SequencerPatternV2 fallback{};
     const SequencerSettings& legacy = state.channels[navigation.selectedChannel].sequencer;
     fallback.length = legacy.length == 0U ? 1U : legacy.length;
@@ -157,6 +158,27 @@ void ChannelNavigationRenderer::renderSequencerEditor(
         } else if (inPattern) {
             display_.drawRectangle(x, 25, 9, 9);
         }
+        if (inPattern && metadata != nullptr) {
+            const SequencerStepMetadata stepMetadata =
+                unpackSequencerStepMetadata((*metadata)[absoluteStep]);
+            if (stepMetadata.tie && pageStep < 7U && absoluteStep + 1U < pattern.length) {
+                display_.drawHorizontalLine(x + 8, 29, 7);
+            }
+            if (stepMetadata.probabilityPercent != 0U) {
+                display_.setPixel(x + 4, 38);
+                display_.setPixel(x + 3, 39);
+                display_.setPixel(x + 5, 39);
+                display_.setPixel(x + 4, 40);
+            }
+            if (stepMetadata.gateProfile != SequencerGateProfile::Default) {
+                display_.drawHorizontalLine(x + 1, 43, 7);
+            }
+            if (stepMetadata.ratchetCount > 1U) {
+                display_.drawVerticalLine(x + 1, 47, 3);
+                display_.drawVerticalLine(x + 4, 47, 3);
+                display_.drawVerticalLine(x + 7, 47, 3);
+            }
+        }
     }
 
     const std::uint8_t selectedStep = static_cast<std::uint8_t>(
@@ -176,6 +198,93 @@ void ChannelNavigationRenderer::renderSequencerEditor(
 
     patternStripRenderer_.drawSequencerEditorPageIndicator(
         pattern.length, engineSnapshot.channelStep[navigation.selectedChannel]);
+    display_.present();
+}
+
+void ChannelNavigationRenderer::renderSequencerStepEditor(
+    const ClockState& state,
+    const NavigationState& navigation,
+    const SequencerPatternV2& activePattern,
+    const std::uint8_t activeSlot,
+    const SequencerStepMetadata& metadata) {
+    display_.clear();
+    display_.setFont(hal::DisplayFont::Small);
+    display_.setTextColor(hal::PixelColor::White);
+
+    const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
+        navigation.sequencerPage * 8U + navigation.sequencerCursor);
+    char header[24]{};
+    std::snprintf(
+        header, sizeof(header), text::get(text::TextId::SequencerStepEditorTitleFormat),
+        absoluteStep + 1U, navigation.selectedChannel + 1U, activeSlot + 1U);
+    display_.drawText(0, 0, header);
+    display_.drawHorizontalLine(0, 9, hal::OledDisplay::kWidth);
+
+    const char* labels[5] = {
+        text::get(text::TextId::Gate),
+        text::get(text::TextId::Probability),
+        text::get(text::TextId::Length),
+        text::get(text::TextId::Ratchet),
+        text::get(text::TextId::Tie),
+    };
+    char values[5][12]{};
+    std::snprintf(
+        values[0], sizeof(values[0]), "%s",
+        text::get(sequencerPatternGate(activePattern, absoluteStep)
+            ? text::TextId::On : text::TextId::Off));
+    if (metadata.probabilityPercent == 0U) {
+        std::snprintf(values[1], sizeof(values[1]), "%s", text::get(text::TextId::DefaultValue));
+    } else {
+        std::snprintf(
+            values[1], sizeof(values[1]), text::get(text::TextId::PercentFormat), metadata.probabilityPercent);
+    }
+    if (metadata.gateProfile == SequencerGateProfile::Default) {
+        std::snprintf(
+            values[2], sizeof(values[2]), "%s", text::get(text::TextId::DefaultValue));
+    } else {
+        const std::uint8_t duty = sequencerGateProfileDutyPercent(metadata.gateProfile);
+        if (duty != 0U) {
+            std::snprintf(
+                values[2], sizeof(values[2]), text::get(text::TextId::PercentFormat), duty);
+        } else {
+            const std::uint16_t milliseconds =
+                sequencerGateProfileMilliseconds(metadata.gateProfile, 0U);
+            std::snprintf(
+                values[2], sizeof(values[2]), text::get(text::TextId::MillisecondsFormat),
+                milliseconds);
+        }
+    }
+    std::snprintf(values[3], sizeof(values[3]), "%u", metadata.ratchetCount);
+    if (activePattern.direction == SequencerPlayDirection::Random) {
+        std::snprintf(values[4], sizeof(values[4]), "%s", text::get(text::TextId::NotAvailable));
+    } else {
+        std::snprintf(
+            values[4], sizeof(values[4]), "%s",
+            text::get(metadata.tie ? text::TextId::On : text::TextId::Off));
+    }
+
+    for (std::uint8_t row = 0U; row < 5U; ++row) {
+        const std::int16_t y = static_cast<std::int16_t>(12 + row * 9U);
+        const bool selected = navigation.cursor == row;
+        if (selected) {
+            display_.drawText(0, y, text::get(text::TextId::Arrow));
+        }
+        display_.drawText(8, y, labels[row]);
+        const hal::TextBounds bounds = display_.measureText(values[row], 0, y);
+        const std::int16_t valueX = static_cast<std::int16_t>(127 - bounds.width);
+        if (selected && navigation.editing && row != 0U) {
+            display_.fillRectangle(
+                valueX - 1, y - 1,
+                static_cast<std::int16_t>(bounds.width + 2U), 9,
+                hal::PixelColor::White);
+            display_.setTextColor(hal::PixelColor::Black);
+            display_.drawText(valueX, y, values[row]);
+            display_.setTextColor(hal::PixelColor::White);
+        } else {
+            display_.drawText(valueX, y, values[row]);
+        }
+    }
+    (void)state;
     display_.present();
 }
 

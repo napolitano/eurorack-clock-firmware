@@ -97,6 +97,9 @@ void ClockEngine::pause() {
     playing_ = false;
     restartPending_ = false;
     for (std::size_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
+        ChannelRuntime& runtime = channelRuntime_[channelIndex];
+        runtime.tieHold = false;
+        runtime.ratchetRemaining = 0U;
         setGateState(channelIndex, false);
     }
 }
@@ -110,6 +113,9 @@ void ClockEngine::stop() {
     preCountRemainder_ = 0U;
     preCountExternalPulseRemainder_ = 0U;
     for (std::size_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
+        ChannelRuntime& runtime = channelRuntime_[channelIndex];
+        runtime.tieHold = false;
+        runtime.ratchetRemaining = 0U;
         setGateState(channelIndex, false);
     }
     resetRuntime();
@@ -130,7 +136,7 @@ void ClockEngine::processSchedulerTick() {
     // Gate-off checks always run, even while transport is paused or stopped.
     for (std::size_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
         ChannelRuntime& runtime = channelRuntime_[channelIndex];
-        if (runtime.gateHigh &&
+        if (runtime.gateHigh && runtime.gateOffScheduled &&
             static_cast<std::int32_t>(schedulerTickCounter_ - runtime.gateOffTick) >= 0) {
             setGateState(channelIndex, false);
         }
@@ -198,6 +204,8 @@ void ClockEngine::processSchedulerTick() {
         }
     }
 
+    serviceSequencerRatchets();
+
     for (std::size_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
         if (configuration_.channels[channelIndex].common.mode == ChannelMode::Off) {
             setGateState(channelIndex, false);
@@ -246,80 +254,14 @@ std::uint32_t ClockEngine::resetRuntimeCountForTest() const {
 
 void ClockEngine::setGateState(const std::size_t channelIndex, const bool high) {
     ChannelRuntime& runtime = channelRuntime_[channelIndex];
+    if (!high) {
+        runtime.gateOffScheduled = false;
+    }
     if (runtime.gateHigh == high) {
         return;
     }
     runtime.gateHigh = high;
     gateOutputs_.setChannelState(channelIndex, high);
-}
-
-void ClockEngine::fireChannelEvent(const std::size_t channelIndex) {
-    const ChannelConfig& channel = configuration_.channels[channelIndex];
-    ChannelRuntime& runtime = channelRuntime_[channelIndex];
-
-    if (channel.common.mode == ChannelMode::Off) {
-        setGateState(channelIndex, false);
-        return;
-    }
-
-    runtime.displayedStep = runtime.step;
-    bool hit = false;
-    switch (channel.common.mode) {
-        case ChannelMode::Clock:
-            hit = true;
-            break;
-        case ChannelMode::Euclid:
-            hit = core::isEuclideanHit(runtime.step, channel.euclid);
-            break;
-        case ChannelMode::Sequencer:
-            if (sequencerPatternV2Active_[channelIndex]) {
-                const SequencerPatternV2& pattern = sequencerPatterns_[channelIndex];
-                const std::uint32_t seed = 0x53455132UL ^
-                    (static_cast<std::uint32_t>(channelIndex + 1U) * 0x9E3779B9UL);
-                const SequencerTraversalResult traversal = resolveSequencerTraversal(
-                    runtime.nextEventSerial, pattern, seed);
-                if (traversal.active) {
-                    runtime.displayedStep = rotateSequencerStep(traversal.step, pattern);
-                    hit = sequencerPatternGate(pattern, runtime.displayedStep);
-                }
-            } else {
-                hit = core::isSequencerHit(runtime.step, channel.sequencer);
-            }
-            break;
-        case ChannelMode::Off:
-            return;
-    }
-    if (channel.common.mode == ChannelMode::Euclid) {
-        runtime.step = core::advanceStep(runtime.step, channel.euclid.steps);
-    } else if (channel.common.mode == ChannelMode::Sequencer &&
-               !sequencerPatternV2Active_[channelIndex]) {
-        runtime.step = core::advanceStep(runtime.step, channel.sequencer.length);
-    } else if (channel.common.mode != ChannelMode::Sequencer) {
-        const std::uint8_t localCycleLength =
-            channel.clock.meter.beats != 0U ? channel.clock.meter.beats : 1U;
-        runtime.step = core::advanceStep(runtime.step, localCycleLength);
-    }
-
-    if (channel.common.muted) {
-        hit = false;
-    } else if (hit) {
-        hit = core::passesProbability(channel.common.probabilityPercent, runtime.randomState);
-    }
-
-    if (!hit) {
-        return;
-    }
-
-    setGateState(channelIndex, true);
-
-    const std::uint64_t shortestActualIntervalUs = calculateShortestActualIntervalUs(channelIndex);
-
-    const std::uint32_t gateTicks = core::calculateGatePulseTicks(
-        channel.common.gateLengthMs,
-        config::kSchedulerTickUs,
-        shortestActualIntervalUs,
-        0U);
-    runtime.gateOffTick = schedulerTickCounter_ + gateTicks;
 }
 
 void ClockEngine::scheduleChannelFromCurrentPosition(
@@ -423,6 +365,12 @@ void ClockEngine::resetRuntime() {
         runtime.displayedStep = 0U;
         runtime.nextEventSerial = 0U;
         runtime.gateOffTick = 0U;
+        runtime.gateOffScheduled = false;
+        runtime.tieHold = false;
+        runtime.ratchetRemaining = 0U;
+        runtime.nextRatchetQ32 = 0U;
+        runtime.ratchetSpacingQ32 = 0U;
+        runtime.ratchetGateTicks = 1U;
         scheduleChannelFromCurrentPosition(channelIndex, true);
     }
 }

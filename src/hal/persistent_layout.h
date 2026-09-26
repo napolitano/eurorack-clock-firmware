@@ -24,6 +24,19 @@ inline constexpr std::size_t kCurrentImageBytes = kMaximumImageBytes;
 /** Sequencer 2.0 extension begins immediately after the historical 8-KiB image. */
 inline constexpr std::size_t kSequencer2RegionOffset = kV1ImageBytes;
 
+/** Fixed P1..P8 pattern-bank allocation. */
+inline constexpr std::size_t kSequencerPatternBankBytes = 2048U;
+
+/** Sparse per-step expression records follow the fixed pattern bank. */
+inline constexpr std::size_t kSequencerStepMetadataOffset =
+    kSequencer2RegionOffset + kSequencerPatternBankBytes;
+inline constexpr std::size_t kSequencerStepMetadataBytes = 1536U;
+
+/** Final 512 bytes of the 12-KiB image remain reserved for Song Mode. */
+inline constexpr std::size_t kSequencerSongRegionOffset =
+    kSequencerStepMetadataOffset + kSequencerStepMetadataBytes;
+inline constexpr std::size_t kSequencerSongRegionBytes = 512U;
+
 /** Clock CURRENT + named-preset records start at byte zero. */
 inline constexpr std::size_t kClockStateRegionOffset = 0U;
 
@@ -38,6 +51,9 @@ static_assert(kLegacyScoreRegionOffset < kLeaderboardRegionOffset);
 static_assert(kLeaderboardRegionOffset < kV1ImageBytes);
 static_assert(kV1ImageBytes < kCurrentImageBytes);
 static_assert(kSequencer2RegionOffset == kV1ImageBytes);
+static_assert(kSequencerStepMetadataOffset == kSequencer2RegionOffset + kSequencerPatternBankBytes);
+static_assert(kSequencerSongRegionOffset == kSequencerStepMetadataOffset + kSequencerStepMetadataBytes);
+static_assert(kSequencerSongRegionOffset + kSequencerSongRegionBytes == kCurrentImageBytes);
 static_assert(kCurrentImageBytes <= kMaximumImageBytes);
 
 }  // namespace clockfw::hal::persistent_layout

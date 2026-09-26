@@ -26,6 +26,104 @@ void UiController::synchronizeActiveSequencerPattern(const bool rescheduleChanne
         return;
     }
     engine_.updateSequencerPattern(navigation_.selectedChannel, *pattern, rescheduleChannel);
+    synchronizeActiveSequencerStepMetadata();
+}
+
+void UiController::synchronizeActiveSequencerStepMetadata() {
+    if (sequencerStepStore_ == nullptr || sequencerPatternStore_ == nullptr ||
+        navigation_.selectedChannel >= kChannelCount) {
+        return;
+    }
+    const std::uint8_t channel = navigation_.selectedChannel;
+    const std::uint8_t slot = sequencerPatternStore_->activeSlot(channel);
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> metadata{};
+    sequencerStepStore_->loadPatternWords(channel, slot, metadata);
+    engine_.updateSequencerStepMetadata(channel, metadata);
+}
+
+void UiController::openSequencerStepEditor() {
+    if (sequencerPatternStore_ == nullptr || sequencerStepStore_ == nullptr ||
+        navigation_.selectedChannel >= kChannelCount) {
+        return;
+    }
+    const SequencerPatternV2* const pattern = activeSequencerPattern();
+    const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
+        navigation_.sequencerPage * 8U + navigation_.sequencerCursor);
+    if (pattern == nullptr || absoluteStep >= pattern->length) {
+        return;
+    }
+    navigation_.screen = Screen::SequencerStepEditor;
+    navigation_.cursor = 0U;
+    navigation_.editing = false;
+    invalidate();
+}
+
+SequencerStepMetadata UiController::activeSequencerStepMetadata() const {
+    if (sequencerPatternStore_ == nullptr || sequencerStepStore_ == nullptr ||
+        navigation_.selectedChannel >= kChannelCount) {
+        return SequencerStepMetadata{};
+    }
+    const std::uint8_t channel = navigation_.selectedChannel;
+    const std::uint8_t slot = sequencerPatternStore_->activeSlot(channel);
+    const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
+        navigation_.sequencerPage * 8U + navigation_.sequencerCursor);
+    return sequencerStepStore_->metadata(channel, slot, absoluteStep);
+}
+
+void UiController::adjustSequencerStepMetadata(
+    const std::int8_t delta,
+    const std::uint32_t nowMs) {
+    if (delta == 0 || sequencerPatternStore_ == nullptr || sequencerStepStore_ == nullptr ||
+        navigation_.selectedChannel >= kChannelCount || navigation_.cursor == 0U) {
+        return;
+    }
+    const std::uint8_t channel = navigation_.selectedChannel;
+    const std::uint8_t slot = sequencerPatternStore_->activeSlot(channel);
+    const SequencerPatternV2& pattern = sequencerPatternStore_->pattern(channel, slot);
+    const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
+        navigation_.sequencerPage * 8U + navigation_.sequencerCursor);
+    if (absoluteStep >= pattern.length) {
+        return;
+    }
+
+    SequencerStepMetadata metadata = sequencerStepStore_->metadata(channel, slot, absoluteStep);
+    if (navigation_.cursor == 1U) {
+        metadata.probabilityPercent = static_cast<std::uint8_t>(clampInt(
+            static_cast<int>(metadata.probabilityPercent) + delta, 0, 100));
+    } else if (navigation_.cursor == 2U) {
+        const int next = clampInt(
+            static_cast<int>(metadata.gateProfile) + delta,
+            static_cast<int>(SequencerGateProfile::Default),
+            static_cast<int>(SequencerGateProfile::Gate100Ms));
+        metadata.gateProfile = static_cast<SequencerGateProfile>(next);
+    } else if (navigation_.cursor == 3U) {
+        metadata.ratchetCount = static_cast<std::uint8_t>(clampInt(
+            static_cast<int>(metadata.ratchetCount) + delta, 1,
+            static_cast<int>(kSequencerMaximumRatchetCount)));
+        if (metadata.ratchetCount > 1U) {
+            metadata.tie = false;
+        }
+    } else if (navigation_.cursor == 4U) {
+        if (pattern.direction == SequencerPlayDirection::Random) {
+            return;
+        }
+        const int next = clampInt(static_cast<int>(metadata.tie ? 1 : 0) + delta, 0, 1);
+        metadata.tie = next != 0;
+        if (metadata.tie) {
+            metadata.ratchetCount = 1U;
+        }
+    } else {
+        return;
+    }
+
+    if (sequencerStepStore_->updateMetadata(channel, slot, absoluteStep, metadata, nowMs)) {
+        synchronizeActiveSequencerStepMetadata();
+        invalidate();
+    }
+}
+
+void UiController::toggleSequencerStepGateFromDetail(const std::uint32_t nowMs) {
+    toggleSequencerStepV2(nowMs);
 }
 
 void UiController::adjustSequencerV2(
@@ -124,10 +222,22 @@ bool UiController::executeSequencerPatternCommandV2(
     if (rowIndex == 3U) {
         sequencerPatternClipboard_ = pattern;
         sequencerPatternClipboardValid_ = true;
+        if (sequencerStepStore_ != nullptr) {
+            sequencerStepStore_->loadPatternWords(channel, slot, sequencerStepClipboard_);
+            sequencerStepClipboardValid_ = true;
+        } else {
+            sequencerStepClipboard_.fill(0U);
+            sequencerStepClipboardValid_ = false;
+        }
         return true;
     }
     if (rowIndex == 4U) {
         if (!sequencerPatternClipboardValid_) {
+            return false;
+        }
+        if (sequencerStepStore_ != nullptr && sequencerStepClipboardValid_ &&
+            !sequencerStepStore_->replacePatternWords(
+                channel, slot, sequencerStepClipboard_, nowMs)) {
             return false;
         }
         pattern = sequencerPatternClipboard_;
@@ -142,6 +252,10 @@ bool UiController::executeSequencerPatternCommandV2(
             (void)setSequencerPatternGate(pattern, step, enabled);
         }
         clampSequencerPattern(pattern);
+        if (rowIndex == 1U && sequencerStepStore_ != nullptr &&
+            !sequencerStepStore_->clearPattern(channel, slot, nowMs)) {
+            return false;
+        }
     } else {
         return false;
     }
@@ -150,6 +264,7 @@ bool UiController::executeSequencerPatternCommandV2(
         return false;
     }
     engine_.updateSequencerPattern(channel, pattern, false);
+    synchronizeActiveSequencerStepMetadata();
     const std::uint8_t lastPage = static_cast<std::uint8_t>((pattern.length - 1U) / 8U);
     if (navigation_.sequencerPage > lastPage) {
         navigation_.sequencerPage = lastPage;

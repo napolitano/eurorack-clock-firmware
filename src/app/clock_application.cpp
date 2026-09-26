@@ -58,10 +58,11 @@ ClockApplication::ClockApplication()
       persistentState_(persistentStorage_),
       customGrooveStore_(persistentStorage_),
       sequencerPatternStore_(persistentStorage_),
+      sequencerStepStore_(persistentStorage_),
       engine_(gateOutputs_),
       externalSyncController_(externalInputs_, engine_),
-      renderer_(display_, persistentState_, customGrooveStore_, sequencerPatternStore_),
-      uiController_(state_, engine_, renderer_, persistentState_, customGrooveStore_, sequencerPatternStore_, selectedLeaderboard_, &externalInputs_, &gateOutputs_) {}
+      renderer_(display_, persistentState_, customGrooveStore_, sequencerPatternStore_, sequencerStepStore_),
+      uiController_(state_, engine_, renderer_, persistentState_, customGrooveStore_, sequencerPatternStore_, sequencerStepStore_, selectedLeaderboard_, &externalInputs_, &gateOutputs_) {}
 
 
 void ClockApplication::loadCustomGrooveLibrary() {
@@ -81,6 +82,9 @@ void ClockApplication::loadSequencerPatternBank() {
             channelIndex,
             sequencerPatternStore_.pattern(channelIndex, slot),
             false);
+        std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> metadata{};
+        sequencerStepStore_.loadPatternWords(channelIndex, slot, metadata);
+        engine_.updateSequencerStepMetadata(channelIndex, metadata);
     }
 }
 
@@ -100,6 +104,7 @@ void ClockApplication::begin(const ClockState& initialState) {
     persistentState_.begin();
     (void)persistentState_.restoreCurrentState(state_);
     (void)sequencerPatternStore_.begin();
+    (void)sequencerStepStore_.begin();
     if (!sequencerPatternStore_.hasDurableBank()) {
         (void)sequencerPatternStore_.seedLegacyPatternOnes(state_, hal::SystemClock::milliseconds());
     }
@@ -203,6 +208,7 @@ void ClockApplication::runOnce() {
     const bool allowFlashWrite = state_.transport != TransportState::Playing;
     persistentState_.service(nowMs, allowFlashWrite);
     (void)sequencerPatternStore_.service(nowMs, allowFlashWrite);
+    (void)sequencerStepStore_.service(nowMs, allowFlashWrite);
 }
 
 #ifdef CLOCK_SIMULATOR

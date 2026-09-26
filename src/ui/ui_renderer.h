@@ -16,6 +16,7 @@
 #include "services/persistent_state_service.h"
 #include "services/custom_groove_store.h"
 #include "services/sequencer_pattern_store.h"
+#include "services/sequencer_step_store.h"
 #include "ui/groove_editor_renderer.h"
 #include "ui/channel_navigation_renderer.h"
 #include "ui/performance_renderer.h"
@@ -52,6 +53,14 @@ public:
         const services::CustomGrooveStore& customGrooveStore,
         const services::SequencerPatternStore& sequencerPatternStore);
 
+    /** @brief Constructs the renderer with persistent Sequencer step expression. */
+    UiRenderer(
+        hal::OledDisplay& display,
+        const services::PersistentStateService& persistentState,
+        const services::CustomGrooveStore& customGrooveStore,
+        const services::SequencerPatternStore& sequencerPatternStore,
+        const services::SequencerStepStore& sequencerStepStore);
+
     /**
      * @brief Renders the screen selected by the current navigation state.
      * @param state Complete musical/application configuration.
@@ -87,6 +96,7 @@ private:
     const services::PersistentStateService& persistentState_;
     const services::CustomGrooveStore* customGrooveStore_ = nullptr;
     const services::SequencerPatternStore* sequencerPatternStore_ = nullptr;
+    const services::SequencerStepStore* sequencerStepStore_ = nullptr;
     PerformanceRenderer performanceRenderer_;
     ChannelNavigationRenderer channelNavigationRenderer_;
     SettingsRenderer settingsRenderer_;

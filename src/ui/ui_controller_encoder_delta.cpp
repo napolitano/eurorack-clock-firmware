@@ -239,6 +239,17 @@ void UiController::handleEncoderDelta(
         return;
     }
 
+    if (navigation_.screen == Screen::SequencerStepEditor) {
+        if (navigation_.editing) {
+            adjustSequencerStepMetadata(delta, nowMs);
+        } else {
+            navigation_.cursor = static_cast<std::uint8_t>(clampInt(
+                static_cast<int>(navigation_.cursor) + delta, 0, 4));
+            invalidate();
+        }
+        return;
+    }
+
     if (navigation_.screen == Screen::SequencerEditor) {
         const SequencerPatternV2* const pattern = activeSequencerPattern();
         const std::uint8_t length = pattern != nullptr

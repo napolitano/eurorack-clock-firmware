@@ -86,6 +86,29 @@ UiController::UiController(
       gateOutputs_(gateOutputs),
       settingsEditor_(state, engine) {}
 
+UiController::UiController(
+    ClockState& state,
+    engine::ClockEngine& engine,
+    UiRenderer& renderer,
+    services::PersistentStateService& persistentState,
+    services::CustomGrooveStore& customGrooveStore,
+    services::SequencerPatternStore& sequencerPatternStore,
+    services::SequencerStepStore& sequencerStepStore,
+    game::ArcadeLeaderboardStore* const leaderboard,
+    const hal::ExternalInputCapture* const externalInputs,
+    const hal::GateOutputDriver* const gateOutputs)
+    : state_(state),
+      engine_(engine),
+      renderer_(renderer),
+      persistentState_(persistentState),
+      customGrooveStore_(&customGrooveStore),
+      sequencerPatternStore_(&sequencerPatternStore),
+      sequencerStepStore_(&sequencerStepStore),
+      leaderboard_(leaderboard),
+      externalInputs_(externalInputs),
+      gateOutputs_(gateOutputs),
+      settingsEditor_(state, engine) {}
+
 void UiController::invalidate() {
     renderDirty_ = true;
 }
@@ -104,6 +127,7 @@ void UiController::processControls(
     if (hasUserActivity(controls)) {
         noteUserActivity(nowMs);
     }
+    tapModifierPressed_ = controls.tapButton.pressed;
 
     const bool settingsChordPressed =
         navigation_.screen == Screen::Performance &&
@@ -204,6 +228,11 @@ void UiController::handleTapButton(
         return;
     }
 
+    if (sequencerTapPressConsumed_) {
+        sequencerTapPressConsumed_ = false;
+        return;
+    }
+
     if (modeTapTurnActive_ && navigation_.screen == Screen::ModeSelect) {
         modeTapTurnActive_ = false;
         commitSelectedMode(nowMs);
@@ -241,6 +270,10 @@ void UiController::handleResetButton(
     } else if (navigation_.screen == Screen::SequencerEditor) {
         navigation_.settingsExitScreen = Screen::Performance;
         openSettingsPage(SettingsPage::Sequencer, 5U);
+    } else if (navigation_.screen == Screen::SequencerStepEditor) {
+        navigation_.screen = Screen::SequencerEditor;
+        navigation_.editing = false;
+        invalidate();
     } else if (navigation_.screen == Screen::Templates) {
         openSettingsPage(SettingsPage::Preferences);
     } else if (navigation_.screen == Screen::PresetSlots) {
