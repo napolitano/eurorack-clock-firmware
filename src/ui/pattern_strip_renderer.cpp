@@ -58,7 +58,7 @@ void PatternStripRenderer::drawEuclidPattern(
     drawCurrentStepUnderline(
         static_cast<std::int16_t>((boundedStep % 16U) * kSlotWidth),
         kSlotWidth);
-    drawPatternBlockIndicator(stepCount, boundedStep);
+    drawPatternBlockIndicator(stepCount, boundedStep, 16U);
 }
 
 void PatternStripRenderer::drawSequencerPlaybackBlock(
@@ -92,22 +92,62 @@ void PatternStripRenderer::drawSequencerPlaybackBlock(
     drawSequencerBlockIndicator(safeLength, boundedStep);
 }
 
+void PatternStripRenderer::drawSequencerPlaybackBlock(
+    const SequencerPatternV2& pattern,
+    const std::uint8_t currentStep,
+    const std::int16_t topY) {
+    const std::uint8_t safeLength = pattern.length == 0U ? 1U : pattern.length;
+    const std::uint8_t boundedStep = static_cast<std::uint8_t>(currentStep % safeLength);
+    const std::uint8_t blockIndex = static_cast<std::uint8_t>(boundedStep / 16U);
+    const std::uint8_t blockBase = static_cast<std::uint8_t>(blockIndex * 16U);
+    constexpr std::int16_t kSlotWidth = hal::OledDisplay::kWidth / 16;
+
+    for (std::uint8_t slot = 0U; slot < 16U; ++slot) {
+        const std::uint8_t absoluteStep = static_cast<std::uint8_t>(blockBase + slot);
+        if (absoluteStep >= safeLength) {
+            continue;
+        }
+        const std::int16_t slotX = static_cast<std::int16_t>(slot * kSlotWidth);
+        const std::int16_t cellX = static_cast<std::int16_t>(slotX + 1);
+        if (sequencerPatternGate(pattern, absoluteStep)) {
+            display_.fillRectangle(cellX, topY, kSequencerCellSize, kSequencerCellSize);
+        } else {
+            display_.drawRectangle(cellX, topY, kSequencerCellSize, kSequencerCellSize);
+        }
+    }
+
+    drawCurrentStepUnderline(
+        static_cast<std::int16_t>((boundedStep % 16U) * kSlotWidth),
+        kSlotWidth);
+    drawSequencerBlockIndicator(safeLength, boundedStep);
+}
+
 void PatternStripRenderer::drawSequencerBlockIndicator(
     const std::uint8_t sequenceLength,
     const std::uint8_t activeStep) {
-    drawPatternBlockIndicator(sequenceLength, activeStep);
+    drawPatternBlockIndicator(sequenceLength, activeStep, 16U);
+}
+
+void PatternStripRenderer::drawSequencerEditorPageIndicator(
+    const std::uint8_t sequenceLength,
+    const std::uint8_t activeStep) {
+    drawPatternBlockIndicator(sequenceLength, activeStep, 8U);
 }
 
 void PatternStripRenderer::drawPatternBlockIndicator(
     const std::uint8_t sequenceLength,
-    const std::uint8_t activeStep) {
-    if (sequenceLength <= 16U) {
+    const std::uint8_t activeStep,
+    const std::uint8_t blockSize) {
+    if (sequenceLength <= blockSize || blockSize == 0U) {
         return;
     }
 
-    const std::uint8_t blockCount = static_cast<std::uint8_t>((sequenceLength + 15U) / 16U);
+    const std::uint8_t blockCount = static_cast<std::uint8_t>(
+        (static_cast<std::uint16_t>(sequenceLength) + blockSize - 1U) / blockSize);
     const std::uint8_t activeBlock = static_cast<std::uint8_t>(
-        std::min<std::uint8_t>(activeStep / 16U, static_cast<std::uint8_t>(blockCount - 1U)));
+        std::min<std::uint8_t>(
+            static_cast<std::uint8_t>(activeStep / blockSize),
+            static_cast<std::uint8_t>(blockCount - 1U)));
     constexpr std::int16_t kGap = 3;
     const std::int16_t totalGapWidth = static_cast<std::int16_t>((blockCount - 1U) * kGap);
     const std::int16_t segmentWidth = static_cast<std::int16_t>(

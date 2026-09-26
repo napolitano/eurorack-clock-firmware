@@ -249,9 +249,14 @@ void testNestedGroupPagesExposeFormerGroupedParameters(){
     TEST_ASSERT_TRUE(std::strcmp("GROOVE",ui::buildMenuRow(ui::SettingsPage::ChannelTiming,4U,0U,h.state).label)==0);
     TEST_ASSERT_TRUE(std::strcmp("PROB",ui::buildMenuRow(ui::SettingsPage::ChannelOutput,0U,0U,h.state).label)==0);
     h.state.channels[0].common.mode=ChannelMode::Sequencer;
-    TEST_ASSERT_TRUE(std::strcmp("LENGTH",ui::buildMenuRow(ui::SettingsPage::Sequencer,0U,0U,h.state).label)==0);
-    TEST_ASSERT_TRUE(std::strcmp("PATTERN",ui::buildMenuRow(ui::SettingsPage::Sequencer,2U,0U,h.state).label)==0);
-    TEST_ASSERT_TRUE(std::strcmp("EDITOR",ui::buildMenuRow(ui::SettingsPage::SequencerPattern,0U,0U,h.state).label)==0);
+    SequencerPatternV2 pattern{};
+    TEST_ASSERT_TRUE(std::strcmp("PATTERN",ui::buildSequencerV2MenuRow(0U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("P2",ui::buildSequencerV2MenuRow(0U,1U,pattern).value)==0);
+    TEST_ASSERT_TRUE(std::strcmp("LENGTH",ui::buildSequencerV2MenuRow(1U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("MODE",ui::buildSequencerV2MenuRow(3U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("LOOP",ui::buildSequencerV2MenuRow(4U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("EDITOR",ui::buildSequencerV2MenuRow(5U,1U,pattern).label)==0);
+    TEST_ASSERT_TRUE(std::strcmp("INVERT",ui::buildMenuRow(ui::SettingsPage::SequencerPattern,0U,0U,h.state).label)==0);
     h.state.operatingMode=OperatingMode::UnifiedClock;
     TEST_ASSERT_TRUE(std::strcmp("TIMING",ui::buildMenuRow(ui::SettingsPage::UnifiedClock,1U,0U,h.state).label)==0);
     TEST_ASSERT_TRUE(std::strcmp("OUTPUT",ui::buildMenuRow(ui::SettingsPage::UnifiedClock,2U,0U,h.state).label)==0);
@@ -263,7 +268,7 @@ void testAllSettingsPageTitlesAndCountsAreReachable(){
         ui::SettingsPage::Root, ui::SettingsPage::General, ui::SettingsPage::InputAssignments, ui::SettingsPage::Hardware, ui::SettingsPage::Diagnostics,
         ui::SettingsPage::DiagnosticsInputs, ui::SettingsPage::DiagnosticsOutputs, ui::SettingsPage::Master,
         ui::SettingsPage::Sync, ui::SettingsPage::Preferences, ui::SettingsPage::Screensaver,
-        ui::SettingsPage::Info, ui::SettingsPage::Licenses, ui::SettingsPage::Updates,
+        ui::SettingsPage::Info, ui::SettingsPage::Support, ui::SettingsPage::Licenses, ui::SettingsPage::Updates,
         ui::SettingsPage::Channel, ui::SettingsPage::ChannelTiming, ui::SettingsPage::ChannelOutput,
         ui::SettingsPage::Clock, ui::SettingsPage::Euclid, ui::SettingsPage::Sequencer,
         ui::SettingsPage::SequencerPattern, ui::SettingsPage::UnifiedClock,
@@ -273,7 +278,7 @@ void testAllSettingsPageTitlesAndCountsAreReachable(){
         TEST_ASSERT_TRUE(ui::settingsPageTitle(page) != nullptr);
         (void)ui::settingsPageItemCount(page, ChannelMode::Clock, false);
     }
-    TEST_ASSERT_EQUAL_UINT8(6U, ui::settingsPageItemCount(ui::SettingsPage::Root, ChannelMode::Clock, true));
+    TEST_ASSERT_EQUAL_UINT8(7U, ui::settingsPageItemCount(ui::SettingsPage::Root, ChannelMode::Clock, true));
     TEST_ASSERT_EQUAL_UINT8(0U, ui::settingsPageItemCount(static_cast<ui::SettingsPage>(255), ChannelMode::Clock, false));
     TEST_ASSERT_TRUE(std::strlen(ui::settingsPageTitle(static_cast<ui::SettingsPage>(255))) > 0U);
 }
@@ -331,12 +336,41 @@ void testChannelHierarchyFallbacksAndActionLookupAreReachable(){
     }
 }
 
+void testSequencerV2MenuRowsCoverDirectionsLoopAndBounds(){
+    SequencerPatternV2 pattern{};
+    pattern.length = 128U;
+    pattern.rotation = 127U;
+    constexpr SequencerPlayDirection directions[] = {
+        SequencerPlayDirection::Forward, SequencerPlayDirection::Reverse,
+        SequencerPlayDirection::PingPong, SequencerPlayDirection::Random};
+    constexpr const char* labels[] = {"FORWARD", "REVERSE", "PINGPONG", "RANDOM"};
+    for (std::size_t i = 0U; i < 4U; ++i) {
+        pattern.direction = directions[i];
+        TEST_ASSERT_TRUE(std::strcmp(labels[i], ui::buildSequencerV2MenuRow(3U, 7U, pattern).value) == 0);
+    }
+    TEST_ASSERT_TRUE(std::strcmp("P8", ui::buildSequencerV2MenuRow(0U, 7U, pattern).value) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("128", ui::buildSequencerV2MenuRow(1U, 7U, pattern).value) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("127", ui::buildSequencerV2MenuRow(2U, 7U, pattern).value) == 0);
+    pattern.loopMode = SequencerLoopMode::Once;
+    TEST_ASSERT_TRUE(std::strcmp("ONCE", ui::buildSequencerV2MenuRow(4U, 7U, pattern).value) == 0);
+    TEST_ASSERT_TRUE(ui::buildSequencerV2MenuRow(99U, 0U, pattern).label[0] == '\0');
+}
+
 void testMenuModelConditionalRowsCoverBothStates(){
     Harness h;
-    auto row = ui::buildMenuRow(ui::SettingsPage::Root, 4U, 0U, h.state, true);
+    auto row = ui::buildMenuRow(ui::SettingsPage::Root, 5U, 0U, h.state, true);
     TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::HighScores), row.label) == 0);
-    row = ui::buildMenuRow(ui::SettingsPage::Root, 4U, 0U, h.state, false);
-    TEST_ASSERT_TRUE(std::strlen(row.label) > 0U);
+    row = ui::buildMenuRow(ui::SettingsPage::Root, 5U, 0U, h.state, false);
+    TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::PhaseReset), row.label) == 0);
+    row = ui::buildMenuRow(ui::SettingsPage::Root, 3U, 0U, h.state, false);
+    TEST_ASSERT_TRUE(std::strcmp(text::get(text::TextId::SupportClock), row.label) == 0);
+    row = ui::buildMenuRow(ui::SettingsPage::Support, 0U, 0U, h.state, false);
+    TEST_ASSERT_TRUE(std::strcmp("GITHUB SPONSORS", row.label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("github.com/sponsors/napolitano", row.value) == 0);
+    TEST_ASSERT_TRUE(row.expandableInformation);
+    row = ui::buildMenuRow(ui::SettingsPage::Support, 1U, 0U, h.state, false);
+    TEST_ASSERT_TRUE(std::strcmp("KO-FI", row.label) == 0);
+    TEST_ASSERT_TRUE(std::strcmp("ko-fi.com/X8X21EOLQ9", row.value) == 0);
 
     h.state.device.encoderDirectionReversed = true;
     row = ui::buildMenuRow(ui::SettingsPage::Hardware, 0U, 0U, h.state);
@@ -423,7 +457,7 @@ int main(){
     RUN_TEST(testEuclidShrinkingStepsClampsHitsAndRotation); RUN_TEST(testEuclidHitsCannotExceedSteps); RUN_TEST(testEuclidRotationCannotExceedLastStep);
     RUN_TEST(testSequencerLengthClampResetsInvalidRotation); RUN_TEST(testSequencerRotationClampsToLengthMinusOne); RUN_TEST(testSequencerToggleRejectsStepOutsideLength); RUN_TEST(testSequencerToggleFlipsValidStep); RUN_TEST(testSequencerPasteBeforeCopyIsRejected); RUN_TEST(testSequencerCopyPasteClampsPatternToTargetLength);
     RUN_TEST(testGrooveDefaultsOffAtFullAmount); RUN_TEST(testUnifiedGrooveEditorOwnsGlobalSettings); RUN_TEST(testIndependentGrooveEditorOwnsSelectedChannel); RUN_TEST(testGrooveAmountClampsZeroToHundred); RUN_TEST(testGrooveRotationClampsToPatternLength); RUN_TEST(testGroovePresetChangeNormalizesRotation); RUN_TEST(testGrooveMenuShapeIsStable); RUN_TEST(testChannelRootUsesModeAwareGroupPriority); RUN_TEST(testNestedGroupPagesExposeFormerGroupedParameters);
-    RUN_TEST(testAllSettingsPageTitlesAndCountsAreReachable); RUN_TEST(testAllChannelRootRowsAreReachable); RUN_TEST(testGrooveMenuRowsAndNoOpBranchesAreReachable); RUN_TEST(testChannelHierarchyFallbacksAndActionLookupAreReachable); RUN_TEST(testMenuModelConditionalRowsCoverBothStates); RUN_TEST(testGrooveOffRotationFormattingCoversZeroLength); RUN_TEST(testEditorDefensiveAndSearchBranchesAreReachable);
+    RUN_TEST(testAllSettingsPageTitlesAndCountsAreReachable); RUN_TEST(testAllChannelRootRowsAreReachable); RUN_TEST(testGrooveMenuRowsAndNoOpBranchesAreReachable); RUN_TEST(testChannelHierarchyFallbacksAndActionLookupAreReachable); RUN_TEST(testSequencerV2MenuRowsCoverDirectionsLoopAndBounds); RUN_TEST(testMenuModelConditionalRowsCoverBothStates); RUN_TEST(testGrooveOffRotationFormattingCoversZeroLength); RUN_TEST(testEditorDefensiveAndSearchBranchesAreReachable);
     RUN_TEST(testScreensaverEditorCoversInvalidStoredModeAndOffDelayRow); RUN_TEST(testUnifiedHumanizeEditorNormalizesUnknownStoredValue);
     RUN_TEST(testUnifiedClockSwingClampsAtFifty); RUN_TEST(testUnifiedClockHumanizeUsesCuratedOptions); RUN_TEST(testDividerBankClampsAtPrimes); RUN_TEST(testDividerBankGateLengthUsesCuratedOptions); RUN_TEST(testNonEditablePageDoesNotChangeTempo);
     return UNITY_END();

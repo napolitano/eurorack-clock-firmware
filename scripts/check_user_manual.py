@@ -26,6 +26,8 @@ ROOT = Path(__file__).resolve().parents[1]
 REPOSITORY_URL = "https://github.com/napolitano/eurorack-clock-firmware"
 REPOSITORY_QR = ROOT / "docs" / "manual-source" / "assets" / "repository-qr.png"
 UPDATES_QR = ROOT / "docs" / "manual-source" / "assets" / "updates-qr.png"
+KOFI_SUPPORT_URL = "https://ko-fi.com/X8X21EOLQ9"
+KOFI_SUPPORT_QR = ROOT / "docs" / "manual-source" / "assets" / "kofi-support-qr.png"
 
 PRERELEASE_VERSION_RE = re.compile(
     r"\b[0-9]+\.[0-9]+\.[0-9]+-(?:alpha|beta|rc)\.[0-9]+\b",
@@ -267,6 +269,17 @@ def validate_layout_v2(content_xml: str, styles_xml: str) -> None:
     if source_heading is None or source_heading.attrib.get(f"{{{ns['text']}}}style-name") != "ManualSubsectionPageHeading":
         raise RuntimeError("Source repository must begin on its own page")
 
+    if "Support CLOCK" not in content_xml or KOFI_SUPPORT_URL not in content_xml:
+        raise RuntimeError("Maintained manual is missing the current Support CLOCK block")
+    if not KOFI_SUPPORT_QR.is_file():
+        raise RuntimeError(f"Canonical Ko-fi support QR asset missing: {KOFI_SUPPORT_QR}")
+    support_match = re.search(
+        r'draw:name="KofiSupportQR"[^>]*>\s*<draw:image[^>]*xlink:href="([^"]+)"',
+        content_xml,
+    )
+    if support_match is None:
+        raise RuntimeError("Maintained manual Ko-fi support QR image is missing")
+
     if not UPDATES_QR.is_file():
         raise RuntimeError(f"Canonical firmware-update QR asset missing: {UPDATES_QR}")
     with Image.open(UPDATES_QR) as image:
@@ -286,6 +299,17 @@ def validate_odt(path: Path, version: str) -> None:
             raise RuntimeError("Manual style contract must request Ubuntu and Ubuntu Light")
         if requires_layout_v2(path, version):
             validate_layout_v2(content_xml, styles_xml)
+            support_match = re.search(
+                r'draw:name="KofiSupportQR"[^>]*>\s*<draw:image[^>]*xlink:href="([^"]+)"',
+                content_xml,
+            )
+            if support_match is None:
+                raise RuntimeError("Maintained manual Ko-fi support QR image is missing")
+            support_href = support_match.group(1)
+            if support_href not in archive.namelist():
+                raise RuntimeError(f"Maintained manual Ko-fi QR payload missing: {support_href}")
+            if archive.read(support_href) != KOFI_SUPPORT_QR.read_bytes():
+                raise RuntimeError("Embedded Ko-fi QR does not match the canonical asset")
         if version not in content_xml:
             raise RuntimeError(f"Manual body does not identify firmware {version}")
         if version not in meta_xml:

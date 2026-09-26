@@ -60,8 +60,8 @@ ClockApplication::ClockApplication()
       sequencerPatternStore_(persistentStorage_),
       engine_(gateOutputs_),
       externalSyncController_(externalInputs_, engine_),
-      renderer_(display_, persistentState_, customGrooveStore_),
-      uiController_(state_, engine_, renderer_, persistentState_, customGrooveStore_, selectedLeaderboard_, &externalInputs_, &gateOutputs_) {}
+      renderer_(display_, persistentState_, customGrooveStore_, sequencerPatternStore_),
+      uiController_(state_, engine_, renderer_, persistentState_, customGrooveStore_, sequencerPatternStore_, selectedLeaderboard_, &externalInputs_, &gateOutputs_) {}
 
 
 void ClockApplication::loadCustomGrooveLibrary() {
@@ -70,6 +70,17 @@ void ClockApplication::loadCustomGrooveLibrary() {
         if (customGrooveStore_.load(slotIndex, pattern)) {
             engine_.updateCustomGrooveSlot(slotIndex, pattern, false);
         }
+    }
+}
+
+
+void ClockApplication::loadSequencerPatternBank() {
+    for (std::uint8_t channelIndex = 0U; channelIndex < kChannelCount; ++channelIndex) {
+        const std::uint8_t slot = sequencerPatternStore_.activeSlot(channelIndex);
+        engine_.updateSequencerPattern(
+            channelIndex,
+            sequencerPatternStore_.pattern(channelIndex, slot),
+            false);
     }
 }
 
@@ -140,6 +151,7 @@ void ClockApplication::begin(const ClockState& initialState) {
     // ClockEngine::begin() receives the already-forced STOP state. Starting the
     // scheduler therefore cannot produce gates even after the logical gate output is enabled.
     engine_.begin(state_);
+    loadSequencerPatternBank();
     externalSyncController_.begin(state_);
     schedulerTimer_.start(config::kSchedulerFrequencyHz, schedulerInterruptThunk);
 
@@ -296,6 +308,7 @@ void ClockApplication::serviceSimulatorStartup(const std::uint32_t nowMs) {
 
 void ClockApplication::finishSimulatorStartup() {
     engine_.begin(state_);
+    loadSequencerPatternBank();
     externalSyncController_.begin(state_);
     schedulerTimer_.start(config::kSchedulerFrequencyHz, schedulerInterruptThunk);
     gateOutputs_.setAllChannelsLow();
@@ -370,21 +383,6 @@ bool ClockApplication::serviceSelectedEasterEggForSimulator(const std::uint32_t 
 }
 #endif
 
-
-void ClockApplication::synchronizeDevicePreferences(const bool force) {
-    if (force || !devicePreferencesApplied_ ||
-        state_.device.encoderDirectionReversed != appliedEncoderDirectionReversed_) {
-        controlPanel_.setEncoderDirectionReversed(state_.device.encoderDirectionReversed);
-        appliedEncoderDirectionReversed_ = state_.device.encoderDirectionReversed;
-    }
-    if (force || !devicePreferencesApplied_ ||
-        state_.device.displayRotated180 != appliedDisplayRotated180_) {
-        display_.setRotation180(state_.device.displayRotated180);
-        appliedDisplayRotated180_ = state_.device.displayRotated180;
-        uiController_.invalidate();
-    }
-    devicePreferencesApplied_ = true;
-}
 
 void ClockApplication::schedulerInterruptThunk() {
     // The callback is registered only after begin() assigns activeInstance_, and

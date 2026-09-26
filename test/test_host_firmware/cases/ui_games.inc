@@ -21,8 +21,11 @@ void testUiControllerFlows() {
     hal::PersistentStorage::resetForTest();
     services::PersistentStateService persistentState(storage);
     persistentState.begin();
-    ui::UiRenderer renderer(display, persistentState);
-    ui::UiController controller(state, engine, renderer, persistentState);
+    services::CustomGrooveStore grooveStore(storage);
+    services::SequencerPatternStore sequencerStore(storage);
+    CHECK(sequencerStore.begin());
+    ui::UiRenderer renderer(display, persistentState, grooveStore, sequencerStore);
+    ui::UiController controller(state, engine, renderer, persistentState, grooveStore, sequencerStore);
     std::uint32_t now = 100U;
 
     controller.invalidate();
@@ -234,12 +237,12 @@ void testUiControllerFlows() {
     controllerReset(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::Performance);
 
-    // Exercise all five root actions.
-    for (std::uint8_t rootRow = 0U; rootRow < 5U; ++rootRow) {
+    // Exercise all six root actions, including SUPPORT CLOCK.
+    for (std::uint8_t rootRow = 0U; rootRow < 6U; ++rootRow) {
         controllerOpenSettingsChord(controller, now);
         controllerTurn(controller, static_cast<std::int8_t>(rootRow), now);
         controllerShortPress(controller, now);
-        if (rootRow == 4U) {
+        if (rootRow == 5U) {
             CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Root);
         } else {
             CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
@@ -249,6 +252,13 @@ void testUiControllerFlows() {
                 CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
             } else if (rootRow == 2U) {
                 CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Preferences);
+            } else if (rootRow == 3U) {
+                CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Support);
+                controllerShortPress(controller, now); // GitHub Sponsors -> informational popover
+                CHECK_EQ(controller.navigation().screen, ui::Screen::InformationPopover);
+                CHECK(std::strcmp(controller.navigation().informationPopoverTitle.data(), "GITHUB SPONSORS") == 0);
+                controllerShortPress(controller, now);
+                CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Support);
             } else {
                 CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Info);
                 controllerShortPress(controller, now); // short PRODUCT fits; no popover
@@ -410,10 +420,10 @@ void testUiControllerFlows() {
     controllerReset(controller, now);
     controllerReset(controller, now);
 
-    // SEQUENCER owns LENGTH/ROTATE/PATTERN. Pattern operations remain one more
-    // focused level below the Sequencer group.
+    // Sequencer 2.0 exposes the active P1..P8 slot, 1..128 length,
+    // direction, loop mode and a direct 8-step editor entry. Long-push from
+    // the editor opens pattern operations and BACK returns to the editor.
     state.channels[selectedChannel].common.mode = ChannelMode::Sequencer;
-    state.channels[selectedChannel].sequencer.length = 64U;
     engine.updateChannel(selectedChannel, state.channels[selectedChannel], true);
     controllerOpenSettingsChord(controller, now);
     controllerTurn(controller, 1, now);
@@ -422,22 +432,50 @@ void testUiControllerFlows() {
     controllerTurn(controller, 1, now);
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Sequencer);
-    CHECK(std::strcmp(ui::buildMenuRow(ui::SettingsPage::Sequencer,0U,selectedChannel,state).label,"LENGTH") == 0);
-    controllerTurn(controller, 2, now); // PATTERN
+    CHECK(std::strcmp(
+        ui::buildSequencerV2MenuRow(0U, sequencerStore.activeSlot(selectedChannel),
+                                    sequencerStore.pattern(selectedChannel, sequencerStore.activeSlot(selectedChannel))).label,
+        "PATTERN") == 0);
+
+    controllerShortPress(controller, now); // edit PATTERN
+    controllerTurn(controller, 1, now);     // P1 -> P2
     controllerShortPress(controller, now);
-    CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::SequencerPattern);
-    CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::SequencerPattern), "PATTERN") == 0);
-    controllerShortPress(controller, now); // EDITOR
+    CHECK_EQ(sequencerStore.activeSlot(selectedChannel), 1U);
+
+    controllerTurn(controller, 1, now);     // LENGTH
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 112, now);   // 16 -> 128
+    controllerShortPress(controller, now);
+    CHECK_EQ(sequencerStore.pattern(selectedChannel, 1U).length, 128U);
+
+    controllerTurn(controller, 2, now);     // DIRECTION
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 2, now);     // FORWARD -> PINGPONG
+    controllerShortPress(controller, now);
+    CHECK_EQ(
+        sequencerStore.pattern(selectedChannel, 1U).direction,
+        SequencerPlayDirection::PingPong);
+
+    controllerTurn(controller, 1, now);     // LOOP
+    controllerShortPress(controller, now);
+    controllerTurn(controller, 1, now);     // LOOP -> ONCE
+    controllerShortPress(controller, now);
+    CHECK_EQ(sequencerStore.pattern(selectedChannel, 1U).loopMode, SequencerLoopMode::Once);
+
+    controllerTurn(controller, 1, now);     // EDITOR
+    controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::SequencerEditor);
     controllerTurn(controller, 5, now);
     controllerShortPress(controller, now);
-    for (int page = 0; page < 4; ++page) {
+    CHECK(sequencerPatternGate(sequencerStore.pattern(selectedChannel, 1U), 5U));
+
+    for (int page = 0; page < 15; ++page) {
         sample = {};
         sample.transportButton = pressedEdge();
         controller.processControls(sample, now++);
     }
-    CHECK_EQ(controller.navigation().sequencerPage, 3U);
-    for (int page = 0; page < 4; ++page) {
+    CHECK_EQ(controller.navigation().sequencerPage, 15U);
+    for (int page = 0; page < 15; ++page) {
         sample = {};
         sample.tapButton = pressedEdge();
         controller.processControls(sample, now++);
@@ -446,18 +484,23 @@ void testUiControllerFlows() {
         controller.processControls(sample, now++);
     }
     CHECK_EQ(controller.navigation().sequencerPage, 0U);
-    controllerReset(controller, now);
+
+    controllerLongPress(controller, now);
+    CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::SequencerPattern);
-    controllerTurn(controller, 1, now); // INVERT
-    controllerShortPress(controller, now);
-    controllerReset(controller, now); // Pattern -> Sequencer
+    CHECK(std::strcmp(ui::settingsPageTitle(ui::SettingsPage::SequencerPattern), "PATTERN") == 0);
+    controllerShortPress(controller, now); // INVERT
+    CHECK(!sequencerPatternGate(sequencerStore.pattern(selectedChannel, 1U), 5U));
+    controllerReset(controller, now);       // Pattern ops -> editor
+    CHECK_EQ(controller.navigation().screen, ui::Screen::SequencerEditor);
+    controllerReset(controller, now);       // Editor -> Sequencer settings
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Sequencer);
-    CHECK_EQ(controller.navigation().cursor, 2U);
-    controllerReset(controller, now); // Sequencer -> Channel
+    CHECK_EQ(controller.navigation().cursor, 5U);
+    controllerReset(controller, now);       // Sequencer -> Channel
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Channel);
     CHECK_EQ(controller.navigation().cursor, 1U);
-    controllerReset(controller, now); // Channel -> Root
-    controllerReset(controller, now); // Root -> Performance
+    controllerReset(controller, now);       // Channel -> Root
+    controllerReset(controller, now);       // Root -> Performance
 
     // TAP no longer has a long-press shortcut. Holding it without turning must
     // never leave Performance; mode-specific parameters are reached through menus.
@@ -534,7 +577,7 @@ void testUiControllerFlows() {
     engine.updateConfiguration(state, true);
 
     controllerOpenSettingsChord(controller, now);
-    controllerTurn(controller, 3, now); // INFO
+    controllerTurn(controller, 4, now); // INFO
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Info);
     controllerTurn(controller, 5, now); // FACTORY RESET, final INFO item
@@ -597,7 +640,7 @@ void testHighScoreResetAppearsAfterStartAndClearsSafely() {
 
     controllerOpenSettingsChord(controller, now);
     CHECK(!controller.navigation().highScoreResetAvailable);
-    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Root, ChannelMode::Clock, false), 5U);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Root, ChannelMode::Clock, false), 6U);
     controllerReset(controller, now);
 
     CHECK(leaderboard.markStarted());
@@ -608,8 +651,8 @@ void testHighScoreResetAppearsAfterStartAndClearsSafely() {
 
     controllerOpenSettingsChord(controller, now);
     CHECK(controller.navigation().highScoreResetAvailable);
-    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Root, ChannelMode::Clock, true), 6U);
-    controllerTurn(controller, 4, now);
+    CHECK_EQ(ui::settingsPageItemCount(ui::SettingsPage::Root, ChannelMode::Clock, true), 7U);
+    controllerTurn(controller, 5, now);
     controllerShortPress(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::HighScoreClearConfirm);
     CHECK_EQ(controller.navigation().cursor, 0U);

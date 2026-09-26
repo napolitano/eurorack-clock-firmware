@@ -8,7 +8,7 @@
 pio test -e native
 ```
 
-This is the developer-facing Native entry point. The suite deliberately makes timing, musical behavior, persistence, UI, and physical-control contracts visible instead of presenting only the 44-case mathematical core. PlatformIO executes eleven conventionally named suites:
+This is the developer-facing Native entry point. The suite deliberately makes timing, musical behavior, persistence, UI, and physical-control contracts visible instead of presenting only the 44-case mathematical core. PlatformIO executes twelve conventionally named suites:
 
 | Suite | Named cases | What it proves |
 | --- | ---: | --- |
@@ -20,11 +20,11 @@ This is the developer-facing Native entry point. The suite deliberately makes ti
 | `test_humanize` | 12 | deterministic One Clock timing displacement, bounds, repeatability and isolation |
 | `test_tap_tempo` | 24 | tap estimator acquisition, rolling average, clamps, invalid intervals, jitter and timestamp wrap |
 | `test_controls` | 51 | TIM4 encoder quadrature, detent-phase recovery after missed/coalesced transitions and encoder-push phase shifts, first-detent and immediate direction-reversal behavior, NORMAL/REVERSED direction mapping, fast-turn backlog/drain and saturation, debounce, bounce, hold and simultaneous button behavior |
-| `test_settings` | 88 | settings boundaries, configurable inputs, grouped channel settings, Groove Editor/Recorder menus, Custom Groove slot management, Info overflow/popover, device preferences and invalid-input invariants |
+| `test_settings` | 89 | settings boundaries, configurable inputs, grouped channel settings, Groove Editor/Recorder menus, Custom Groove slot management, Info overflow/popover, device preferences and invalid-input invariants |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic/rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | intro launch gating, reset state, output safety and game-specific controls |
 | `test_host_firmware` | 39 | complete firmware/UI/HAL/persistence behavior, Groove Editor/Record workflows, schema migrations and framebuffer/navigation contracts using deterministic host fakes |
-| **Total** | **511** | public Native inventory |
+| **Total** | **512** | public Native inventory |
 
 The default Native configuration executes more than **433,000 assertions**. `scripts/check_test_inventory.py` enforces the visible-suite inventory contract so a broad test-count increase cannot hide a regression in one focused suite.
 

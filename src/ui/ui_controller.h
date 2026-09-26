@@ -18,6 +18,7 @@
 #include "hal/gate_output_driver.h"
 #include "services/persistent_state_service.h"
 #include "services/custom_groove_store.h"
+#include "services/sequencer_pattern_store.h"
 #include "services/groove_recorder.h"
 #include "services/tap_tempo.h"
 #include "ui/settings_editor.h"
@@ -73,6 +74,20 @@ public:
         const hal::ExternalInputCapture* externalInputs = nullptr,
         const hal::GateOutputDriver* gateOutputs = nullptr);
 
+    /**
+     * @brief Constructs the controller with Custom Groove and Sequencer 2.0 persistence enabled.
+     */
+    UiController(
+        ClockState& state,
+        engine::ClockEngine& engine,
+        UiRenderer& renderer,
+        services::PersistentStateService& persistentState,
+        services::CustomGrooveStore& customGrooveStore,
+        services::SequencerPatternStore& sequencerPatternStore,
+        game::ArcadeLeaderboardStore* leaderboard = nullptr,
+        const hal::ExternalInputCapture* externalInputs = nullptr,
+        const hal::GateOutputDriver* gateOutputs = nullptr);
+
     /** @brief Marks the current frame as requiring a redraw. */
     void invalidate();
 
@@ -108,7 +123,8 @@ public:
 
 private:
     /** @brief Routes one encoder detent according to the active screen and edit state. */
-    void handleEncoderDelta(std::int8_t delta, bool tapPressed, bool transportPressed);
+    void handleEncoderDelta(
+        std::int8_t delta, bool tapPressed, bool transportPressed, std::uint32_t nowMs);
 
     /** @brief Handles encoder push/release events. */
     void handleEncoderButton(const hal::ButtonSample& button, std::uint32_t nowMs);
@@ -165,7 +181,7 @@ private:
     void backFromSettings();
 
     /** @brief Activates the currently selected settings row or toggles edit mode. */
-    void activateCurrentSetting();
+    void activateCurrentSetting(std::uint32_t nowMs);
 
     /** @brief Toggles value editing for a leaf settings row and schedules a redraw. */
     void toggleCurrentSettingEditing();
@@ -207,7 +223,23 @@ private:
     void activateDividerBankSetting();
 
     /** @brief Activates the Sequencer editor entry or one pattern command. */
-    void activateSequencerPatternSetting();
+    void activateSequencerPatternSetting(std::uint32_t nowMs);
+
+
+    /** @brief Returns the selected channel's active Sequencer 2.0 pattern when available. */
+    const SequencerPatternV2* activeSequencerPattern() const;
+
+    /** @brief Applies one encoder delta to PATTERN/LENGTH/ROTATE/DIRECTION/LOOP. */
+    void adjustSequencerV2(std::int8_t delta, std::uint32_t nowMs);
+
+    /** @brief Toggles the selected 8-step viewport gate in the active persistent pattern. */
+    void toggleSequencerStepV2(std::uint32_t nowMs);
+
+    /** @brief Executes one long-push Pattern operation (invert/clear/fill/copy/paste). */
+    bool executeSequencerPatternCommandV2(std::uint8_t rowIndex, std::uint32_t nowMs);
+
+    /** @brief Pushes the selected channel's active pattern snapshot into the real-time engine. */
+    void synchronizeActiveSequencerPattern(bool rescheduleChannel);
 
     /** @brief Keeps the selected settings row visible inside the five-row viewport. */
     void normalizeScrollOffset();
@@ -317,6 +349,7 @@ private:
     UiRenderer& renderer_;
     services::PersistentStateService& persistentState_;
     services::CustomGrooveStore* customGrooveStore_ = nullptr;
+    services::SequencerPatternStore* sequencerPatternStore_ = nullptr;
     game::ArcadeLeaderboardStore* leaderboard_ = nullptr;
     const hal::ExternalInputCapture* externalInputs_ = nullptr;
     const hal::GateOutputDriver* gateOutputs_ = nullptr;
@@ -358,6 +391,8 @@ private:
     bool grooveLoadPendingAfterDiscard_ = false;
     bool transportPressConsumedByGrooveZoom_ = false;
     Screen grooveWorkspaceScreen_ = Screen::GrooveEditor;
+    SequencerPatternV2 sequencerPatternClipboard_{};
+    bool sequencerPatternClipboardValid_ = false;
     std::uint32_t generatedNameSeed_ = 0xC10C2026U;
     std::uint32_t generatedNameSequence_ = 0U;
 };

@@ -362,6 +362,22 @@ std::uint8_t ClockEngine::channelCycleLength(const std::size_t channelIndex) con
 
 void ClockEngine::synchronizeChannelStepPhase(const std::size_t channelIndex) {
     ChannelRuntime& runtime = channelRuntime_[channelIndex];
+    if (configuration_.channels[channelIndex].common.mode == ChannelMode::Sequencer &&
+        sequencerPatternV2Active_[channelIndex]) {
+        const SequencerPatternV2& pattern = sequencerPatterns_[channelIndex];
+        const std::uint32_t seed = 0x53455132UL ^
+            (static_cast<std::uint32_t>(channelIndex + 1U) * 0x9E3779B9UL);
+        const SequencerTraversalResult current = resolveSequencerTraversal(
+            runtime.nextEventSerial, pattern, seed);
+        const SequencerTraversalResult previous = resolveSequencerTraversal(
+            runtime.nextEventSerial == 0U ? 0U : runtime.nextEventSerial - 1U,
+            pattern,
+            seed);
+        runtime.step = current.active ? rotateSequencerStep(current.step, pattern) : 0U;
+        runtime.displayedStep = previous.active ? rotateSequencerStep(previous.step, pattern) : 0U;
+        return;
+    }
+
     const std::uint8_t cycleLength = channelCycleLength(channelIndex);
     if (configuration_.channels[channelIndex].common.resetMode == ResetMode::Global) {
         runtime.step = static_cast<std::uint8_t>(runtime.nextEventSerial % cycleLength);

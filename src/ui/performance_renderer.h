@@ -11,6 +11,7 @@
 #include <cstdint>
 
 #include "domain/clock_types.h"
+#include "domain/sequencer_pattern.h"
 #include "engine/clock_engine.h"
 #include "hal/oled_display.h"
 #include "services/custom_groove_store.h"
@@ -39,7 +40,8 @@ public:
     void render(
         const ClockState& state,
         const NavigationState& navigation,
-        const engine::EngineSnapshot& engineSnapshot);
+        const engine::EngineSnapshot& engineSnapshot,
+        const SequencerPatternV2* activeSequencerPattern = nullptr);
 
 private:
     /** @brief Draws PLAY, PAUSE, or STOP right-aligned in the status line. */

@@ -53,11 +53,13 @@ void testMenuModelAndFormatters() {
     const auto generalRoot = ui::buildMenuRow(ui::SettingsPage::Root, 0U, 0U, state);
     const auto channelRoot = ui::buildMenuRow(ui::SettingsPage::Root, 1U, 0U, state);
     const auto presetsRoot = ui::buildMenuRow(ui::SettingsPage::Root, 2U, 0U, state);
-    const auto infoRoot = ui::buildMenuRow(ui::SettingsPage::Root, 3U, 0U, state);
-    const auto phaseResetRoot = ui::buildMenuRow(ui::SettingsPage::Root, 4U, 0U, state);
+    const auto supportRoot = ui::buildMenuRow(ui::SettingsPage::Root, 3U, 0U, state);
+    const auto infoRoot = ui::buildMenuRow(ui::SettingsPage::Root, 4U, 0U, state);
+    const auto phaseResetRoot = ui::buildMenuRow(ui::SettingsPage::Root, 5U, 0U, state);
     CHECK(std::strcmp(generalRoot.label, "GENERAL SETTINGS") == 0);
     CHECK(std::strcmp(channelRoot.label, "CHANNEL SETTINGS") == 0);
     CHECK(std::strcmp(presetsRoot.label, "PRESETS") == 0);
+    CHECK(std::strcmp(supportRoot.label, "SUPPORT CLOCK") == 0);
     CHECK(std::strcmp(infoRoot.label, "INFO") == 0);
     CHECK(std::strcmp(phaseResetRoot.label, "PHASE RESET") == 0);
     const auto generalSync = ui::buildMenuRow(ui::SettingsPage::General, 1U, 0U, state);

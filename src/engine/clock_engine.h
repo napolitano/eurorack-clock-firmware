@@ -13,6 +13,7 @@
 
 #include "domain/clock_types.h"
 #include "domain/custom_groove.h"
+#include "domain/sequencer_pattern.h"
 #include "hal/gate_output_driver.h"
 
 namespace clockfw::engine {
@@ -81,6 +82,17 @@ public:
         std::size_t channelIndex,
         const ChannelConfig& channelConfiguration,
         bool rescheduleChannel);
+
+    /**
+     * @brief Installs one active Sequencer 2.0 pattern snapshot for a channel.
+     * @param channelIndex Zero-based channel index.
+     * @param pattern Valid compact 1..128-step pattern.
+     * @param rescheduleChannel True to rebuild the selected channel's next event position.
+     */
+    void updateSequencerPattern(
+        std::size_t channelIndex,
+        const SequencerPatternV2& pattern,
+        bool rescheduleChannel = true);
 
     /**
      * @brief Replaces one in-memory Custom Groove library slot used by real-time scheduling.
@@ -206,6 +218,8 @@ private:
 
     /** @brief In-memory Custom Groove library; Flash is never read from scheduler context. */
     CustomGroovePattern customGrooves_[kCustomGrooveSlotCount]{};
+    SequencerPatternV2 sequencerPatterns_[kChannelCount]{};
+    bool sequencerPatternV2Active_[kChannelCount]{};
     CustomGroovePattern customGroovePreviews_[kChannelCount]{};
     std::uint8_t customGroovePreviewAmount_[kChannelCount]{};
     std::uint8_t customGroovePreviewRotation_[kChannelCount]{};

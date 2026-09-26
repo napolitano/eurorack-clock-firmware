@@ -121,7 +121,9 @@ def ensure_styles(root: etree._Element) -> None:
 
 
 def image_paragraph(template: etree._Element, href: str, name: str) -> etree._Element:
+    """Clone a screenshot paragraph using the dedicated gallery-spacing style."""
     paragraph = copy.deepcopy(template)
+    paragraph.set(q("text", "style-name"), "ManualGalleryScreenshotP")
     image = paragraph.xpath(".//draw:image", namespaces=NS)[0]
     frame = paragraph.xpath(".//draw:frame", namespaces=NS)[0]
     image.set(q("xlink", "href"), href)
@@ -157,10 +159,13 @@ def gallery_table(
 
 
 def heading_paragraph(template: etree._Element, text: str) -> etree._Element:
+    """Clone an intermediate heading while preserving the normalized T2 span contract."""
     paragraph = copy.deepcopy(template)
     for child in list(paragraph):
         paragraph.remove(child)
-    paragraph.text = text
+    paragraph.text = None
+    span = etree.SubElement(paragraph, q("text", "span"), {q("text", "style-name"): "T2"})
+    span.text = text
     return paragraph
 
 

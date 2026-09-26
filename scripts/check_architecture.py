@@ -32,6 +32,7 @@ MAX_CPP_LINES = 450
 # introducing fake one-to-one headers that expose no additional interface.
 IMPLEMENTATION_COMPANION_HEADERS = {
     "external_sync_controller_inputs.cpp": "external_sync_controller.h",
+    "clock_application_preferences.cpp": "clock_application.h",
     "persistent_state_codec.cpp": "persistent_state_service.h",
     "persistent_state_migration.cpp": "persistent_state_service.h",
     "persistent_state_migration_v8.cpp": "persistent_state_service.h",
@@ -52,12 +53,15 @@ IMPLEMENTATION_COMPANION_HEADERS = {
     "clock_engine_timing.cpp": "clock_engine.h",
     "clock_engine_sync.cpp": "clock_engine.h",
     "clock_engine_capture.cpp": "clock_engine.h",
+    "clock_engine_sequencer.cpp": "clock_engine.h",
     "performance_renderer_precount.cpp": "performance_renderer.h",
     "ui_controller_navigation.cpp": "ui_controller.h",
     "ui_controller_display.cpp": "ui_controller.h",
     "ui_controller_presets.cpp": "ui_controller.h",
     "ui_controller_groove_record.cpp": "ui_controller.h",
+    "ui_controller_sequencer.cpp": "ui_controller.h",
     "menu_model_sync.cpp": "menu_model.h",
+    "menu_model_sequencer.cpp": "menu_model.h",
     "settings_editor_sync.cpp": "settings_editor.h",
     "simulator_runtime_inputs.cpp": "simulator_runtime.h",
 }

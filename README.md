@@ -294,7 +294,7 @@ The public PlatformIO command exposes the complete native suite rather than a sm
 pio test -e native
 ```
 
-Current inventory: **511 explicitly named Native test cases**. PlatformIO exposes twelve behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
+Current inventory: **512 explicitly named Native test cases**. PlatformIO exposes twelve behavioral suites rather than leaving the 44-case mathematical core as the dominant visible result:
 
 | Native suite | Cases | Primary purpose |
 | --- | ---: | --- |
@@ -306,7 +306,7 @@ Current inventory: **511 explicitly named Native test cases**. PlatformIO expose
 | `test_humanize` | 12 | One Clock humanize bounds, deterministic repeatability, channel spread, swing interaction and mode isolation |
 | `test_tap_tempo` | 24 | tap acquisition, averaging, clamps, invalid intervals, reset behavior, jitter and timestamp wrap |
 | `test_controls` | 51 | TIM4 quadrature counting, detent recovery, fast-turn behavior, NORMAL/REVERSED direction and button debounce |
-| `test_settings` | 88 | settings boundaries, input-role exclusivity, INPUTS/HARDWARE navigation, device preferences, grouped channel settings and invalid-input behavior |
+| `test_settings` | 89 | settings boundaries, input-role exclusivity, INPUTS/HARDWARE navigation, device preferences, grouped channel settings and invalid-input behavior |
 | `test_screensavers` | 19 | all screensaver renderers, deterministic frames, rewind behavior and long frame sweeps |
 | `test_easter_eggs` | 36 | launch gating, reset state, host-safe output behavior and game-specific control/state contracts |
 | `test_host_firmware` | 39 | complete firmware/UI/HAL/persistence scenarios, Groove Editor/Record workflows, schema migration and framebuffer/navigation contracts against deterministic framework fakes |
@@ -322,9 +322,9 @@ python scripts/run_host_tests.py
 Current validated aggregate baseline:
 
 ```text
-Executable lines     9534 / 9940   95.92 %
-Functions              836 / 850    98.35 %
-Decision branches     5811 / 6424   90.46 %
+Executable lines     9800 / 10236  95.74 %
+Functions              852 / 865    98.50 %
+Decision branches     5992 / 6656   90.02 %
 ```
 
 The project enforces a 90% decision-branch gate. Production-source architecture checks additionally reject heap allocation in embedded code and flag stack frames larger than 4 KiB. Full details: [`test/README.md`](test/README.md) and [`docs/TEST_COVERAGE.md`](docs/TEST_COVERAGE.md).
@@ -369,10 +369,14 @@ The simulator panel dimensions and control coordinates are maintained in [`sim/p
 
 ## Supporting the project
 
-CLOCK is developed independently by South Signal Lab. If the firmware, documentation or engineering work is useful to you, the repository exposes **GitHub Sponsors** and **Patreon** through GitHub's standard Sponsor panel via [`.github/FUNDING.yml`](.github/FUNDING.yml).
+CLOCK is developed independently by South Signal Lab. If the firmware, documentation or engineering work is useful to you, you can support ongoing development through **GitHub Sponsors** or **Ko-fi**. GitHub also exposes both channels through [`.github/FUNDING.yml`](.github/FUNDING.yml).
 
 - [GitHub Sponsors](https://github.com/sponsors/napolitano)
-- [Patreon - South Signal Lab](https://www.patreon.com/southsignallab)
+- [Ko-fi](https://ko-fi.com/X8X21EOLQ9)
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X21EOLQ9)
+
+See [`docs/SUPPORT.md`](docs/SUPPORT.md) for the canonical support information used by the repository and generated Wiki.
 
 ## Project identity, citation and license
 

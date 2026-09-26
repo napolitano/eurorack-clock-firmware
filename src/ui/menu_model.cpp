@@ -43,6 +43,7 @@ const char* settingsPageTitle(const SettingsPage page) {
         case SettingsPage::Preferences: return text::get(text::TextId::Presets);
         case SettingsPage::Screensaver: return text::get(text::TextId::Screensaver);
         case SettingsPage::Info: return text::get(text::TextId::Info);
+        case SettingsPage::Support: return text::get(text::TextId::SupportClock);
         case SettingsPage::Licenses: return text::get(text::TextId::Licenses);
         case SettingsPage::Updates: return text::get(text::TextId::Updates);
         case SettingsPage::Channel: return text::get(text::TextId::Channel);
@@ -69,7 +70,7 @@ std::uint8_t settingsPageItemCount(
     const ChannelMode mode,
     const bool highScoreResetAvailable) {
     switch (page) {
-        case SettingsPage::Root: return highScoreResetAvailable ? 6U : 5U;
+        case SettingsPage::Root: return highScoreResetAvailable ? 7U : 6U;
         case SettingsPage::General: return 5U;
         case SettingsPage::InputAssignments: return 3U;
         case SettingsPage::Hardware: return 2U;
@@ -81,6 +82,7 @@ std::uint8_t settingsPageItemCount(
         case SettingsPage::Preferences: return 4U;
         case SettingsPage::Screensaver: return 4U;
         case SettingsPage::Info: return 6U;
+        case SettingsPage::Support: return 2U;
         case SettingsPage::Licenses: return 7U;
         case SettingsPage::Updates: return 1U;
         case SettingsPage::Channel: return channelMenuItemCount(mode);
@@ -88,8 +90,8 @@ std::uint8_t settingsPageItemCount(
         case SettingsPage::ChannelOutput: return 5U;
         case SettingsPage::Clock: return 2U;
         case SettingsPage::Euclid: return 3U;
-        case SettingsPage::Sequencer: return 3U;
-        case SettingsPage::SequencerPattern: return 6U;
+        case SettingsPage::Sequencer: return 6U;
+        case SettingsPage::SequencerPattern: return 5U;
         case SettingsPage::UnifiedClock: return 3U;
         case SettingsPage::UnifiedTiming: return 6U;
         case SettingsPage::UnifiedOutput: return 2U;
@@ -121,20 +123,29 @@ MenuRow buildMenuRow(
     const ChannelConfig& channel = state.channels[selectedChannel];
 
     if (page == SettingsPage::Root) {
-        if (rowIndex < 4U) {
+        if (rowIndex < 5U) {
             constexpr text::TextId kLabels[] = {
                 text::TextId::GeneralSettings,
                 text::TextId::ChannelSettings,
                 text::TextId::Presets,
+                text::TextId::SupportClock,
                 text::TextId::Info};
             copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
             copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-        } else if (highScoreResetAvailable && rowIndex == 4U) {
+        } else if (highScoreResetAvailable && rowIndex == 5U) {
             copyText(row.label, sizeof(row.label), text::TextId::HighScores);
             copyText(row.value, sizeof(row.value), text::TextId::Clear);
         } else {
             copyText(row.label, sizeof(row.label), text::TextId::PhaseReset);
         }
+    } else if (page == SettingsPage::Support) {
+        copyText(
+            row.label, sizeof(row.label),
+            rowIndex == 0U ? text::TextId::GithubSponsors : text::TextId::Kofi);
+        std::snprintf(
+            row.value, sizeof(row.value), "%s",
+            rowIndex == 0U ? text::get(text::TextId::GithubSponsorsUrl) : text::get(text::TextId::KofiUrl));
+        row.expandableInformation = true;
     } else if (page == SettingsPage::General) {
         constexpr text::TextId kLabels[] = {
             text::TextId::ModeClockLong,
@@ -342,30 +353,19 @@ MenuRow buildMenuRow(
             : (rowIndex == 1U ? channel.euclid.hits : channel.euclid.rotation);
         std::snprintf(row.value, sizeof(row.value), "%u", value);
     } else if (page == SettingsPage::Sequencer) {
-        constexpr text::TextId kLabels[] = {
-            text::TextId::Length,
-            text::TextId::Rotate,
-            text::TextId::Pattern};
-        copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
-        if (rowIndex == 0U) {
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.sequencer.length);
-        } else if (rowIndex == 1U) {
-            std::snprintf(row.value, sizeof(row.value), "%u", channel.sequencer.rotation);
-        } else {
-            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-        }
+        SequencerPatternV2 fallback{};
+        fallback.length = channel.sequencer.length;
+        fallback.rotation = channel.sequencer.rotation;
+        fallback.gates = {{channel.sequencer.pattern, 0ULL}};
+        row = buildSequencerV2MenuRow(rowIndex, 0U, fallback);
     } else if (page == SettingsPage::SequencerPattern) {
         constexpr text::TextId kLabels[] = {
-            text::TextId::Editor,
             text::TextId::Invert,
             text::TextId::Clear,
             text::TextId::FillAlternate,
             text::TextId::Copy,
             text::TextId::Paste};
         copyText(row.label, sizeof(row.label), kLabels[rowIndex]);
-        if (rowIndex == 0U) {
-            copyText(row.value, sizeof(row.value), text::TextId::Arrow);
-        }
     } else if (page == SettingsPage::UnifiedClock) {
         row = buildUnifiedClockMenuRow(rowIndex);
     } else if (page == SettingsPage::UnifiedTiming) {

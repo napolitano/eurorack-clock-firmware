@@ -11,6 +11,7 @@
 #include "domain/clock_types.h"
 #include "hal/oled_display.h"
 #include "services/persistent_state_service.h"
+#include "services/sequencer_pattern_store.h"
 #include "ui/ui_types.h"
 
 namespace clockfw::ui {
@@ -22,7 +23,9 @@ public:
      * @brief Constructs the renderer around the shared OLED abstraction.
      * @param display Display HAL receiving all drawing commands.
      */
-    explicit SettingsRenderer(hal::OledDisplay& display);
+    explicit SettingsRenderer(
+        hal::OledDisplay& display,
+        const services::SequencerPatternStore* sequencerPatternStore = nullptr);
 
     /**
      * @brief Draws the currently selected settings page.
@@ -72,6 +75,7 @@ public:
 
 private:
     hal::OledDisplay& display_;
+    const services::SequencerPatternStore* sequencerPatternStore_ = nullptr;
 };
 
 }  // namespace clockfw::ui

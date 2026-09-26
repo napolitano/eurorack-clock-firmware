@@ -16,7 +16,8 @@ namespace clockfw::ui {
 void UiController::handleEncoderDelta(
     const std::int8_t delta,
     const bool tapPressed,
-    const bool transportPressed) {
+    const bool transportPressed,
+    const std::uint32_t nowMs) {
     if (navigation_.screen == Screen::GrooveEditor) {
         if (transportPressed) {
             transportPressConsumedByGrooveZoom_ = true;
@@ -214,6 +215,9 @@ void UiController::handleEncoderDelta(
             } else if (navigation_.cursor == 3U) {
                 adjustGrooveZoom(delta);
             }
+        } else if (navigation_.editing && navigation_.settingsPage == SettingsPage::Sequencer &&
+                   sequencerPatternStore_ != nullptr) {
+            adjustSequencerV2(delta, nowMs);
         } else if (navigation_.editing) {
             settingsEditor_.adjust(
                 navigation_.settingsPage,
@@ -236,11 +240,14 @@ void UiController::handleEncoderDelta(
     }
 
     if (navigation_.screen == Screen::SequencerEditor) {
-        const SequencerSettings& sequencer = state_.channels[navigation_.selectedChannel].sequencer;
-        int absoluteStep = navigation_.sequencerPage * 16 + navigation_.sequencerCursor + delta;
-        absoluteStep = clampInt(absoluteStep, 0, static_cast<int>(sequencer.length) - 1);
-        navigation_.sequencerPage = static_cast<std::uint8_t>(absoluteStep / 16);
-        navigation_.sequencerCursor = static_cast<std::uint8_t>(absoluteStep % 16);
+        const SequencerPatternV2* const pattern = activeSequencerPattern();
+        const std::uint8_t length = pattern != nullptr
+            ? pattern->length
+            : state_.channels[navigation_.selectedChannel].sequencer.length;
+        int absoluteStep = navigation_.sequencerPage * 8 + navigation_.sequencerCursor + delta;
+        absoluteStep = clampInt(absoluteStep, 0, static_cast<int>(length) - 1);
+        navigation_.sequencerPage = static_cast<std::uint8_t>(absoluteStep / 8);
+        navigation_.sequencerCursor = static_cast<std::uint8_t>(absoluteStep % 8);
         invalidate();
     }
 }

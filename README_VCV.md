@@ -83,4 +83,10 @@ The VCV port is a software trial of CLOCK's digital behavior. It does **not** mo
 
 The canonical project documentation remains [`README.md`](README.md) and [`docs/USER_GUIDE.md`](docs/USER_GUIDE.md).
 
+## Support CLOCK
+
+The VCV Rack edition is part of the same South Signal Lab CLOCK project. Ongoing development can be supported through [GitHub Sponsors](https://github.com/sponsors/napolitano) or [Ko-fi](https://ko-fi.com/X8X21EOLQ9).
+
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/X8X21EOLQ9)
+
 <h6 align="center">From Munich with &#9829;</h6>

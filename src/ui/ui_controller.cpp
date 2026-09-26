@@ -65,6 +65,27 @@ UiController::UiController(
       gateOutputs_(gateOutputs),
       settingsEditor_(state, engine) {}
 
+UiController::UiController(
+    ClockState& state,
+    engine::ClockEngine& engine,
+    UiRenderer& renderer,
+    services::PersistentStateService& persistentState,
+    services::CustomGrooveStore& customGrooveStore,
+    services::SequencerPatternStore& sequencerPatternStore,
+    game::ArcadeLeaderboardStore* const leaderboard,
+    const hal::ExternalInputCapture* const externalInputs,
+    const hal::GateOutputDriver* const gateOutputs)
+    : state_(state),
+      engine_(engine),
+      renderer_(renderer),
+      persistentState_(persistentState),
+      customGrooveStore_(&customGrooveStore),
+      sequencerPatternStore_(&sequencerPatternStore),
+      leaderboard_(leaderboard),
+      externalInputs_(externalInputs),
+      gateOutputs_(gateOutputs),
+      settingsEditor_(state, engine) {}
+
 void UiController::invalidate() {
     renderDirty_ = true;
 }
@@ -98,7 +119,8 @@ void UiController::processControls(
     }
 
     if (controls.encoderDelta != 0 && !settingsChordActive_) {
-        handleEncoderDelta(controls.encoderDelta, controls.tapButton.pressed, controls.transportButton.pressed);
+        handleEncoderDelta(
+            controls.encoderDelta, controls.tapButton.pressed, controls.transportButton.pressed, nowMs);
         persistCurrentState(nowMs);
     }
 
@@ -154,10 +176,17 @@ void UiController::handleTransportButton(
 
     if (navigation_.screen == Screen::Performance) {
         toggleTransport(nowMs);
-    } else if (navigation_.screen == Screen::SequencerEditor && navigation_.sequencerPage < 3U) {
-        ++navigation_.sequencerPage;
-        navigation_.sequencerCursor = 0U;
-        invalidate();
+    } else if (navigation_.screen == Screen::SequencerEditor) {
+        const SequencerPatternV2* const pattern = activeSequencerPattern();
+        const std::uint8_t length = pattern != nullptr
+            ? pattern->length
+            : state_.channels[navigation_.selectedChannel].sequencer.length;
+        const std::uint8_t lastPage = static_cast<std::uint8_t>((length - 1U) / 8U);
+        if (navigation_.sequencerPage < lastPage) {
+            ++navigation_.sequencerPage;
+            navigation_.sequencerCursor = 0U;
+            invalidate();
+        }
     }
 }
 
@@ -210,7 +239,8 @@ void UiController::handleResetButton(
     } else if (navigation_.screen == Screen::Settings) {
         backFromSettings();
     } else if (navigation_.screen == Screen::SequencerEditor) {
-        openSettingsPage(SettingsPage::SequencerPattern);
+        navigation_.settingsExitScreen = Screen::Performance;
+        openSettingsPage(SettingsPage::Sequencer, 5U);
     } else if (navigation_.screen == Screen::Templates) {
         openSettingsPage(SettingsPage::Preferences);
     } else if (navigation_.screen == Screen::PresetSlots) {

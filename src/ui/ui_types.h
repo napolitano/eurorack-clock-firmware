@@ -53,6 +53,7 @@ enum class SettingsPage : std::uint8_t {
     Preferences,
     Screensaver,
     Info,
+    Support,
     Licenses,
     Updates,
     Channel,

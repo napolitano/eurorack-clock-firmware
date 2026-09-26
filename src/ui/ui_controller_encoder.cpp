@@ -35,6 +35,7 @@ void UiController::handleEncoderButton(
          navigation_.screen == Screen::ChannelQuickSelect ||
          navigation_.screen == Screen::GrooveEditor ||
          navigation_.screen == Screen::GrooveRecorder ||
+         navigation_.screen == Screen::SequencerEditor ||
          navigation_.screen == Screen::NameEntry ||
          navigation_.screen == Screen::GrooveNameEntry)) {
         encoderLongPressHandled_ = true;
@@ -217,18 +218,21 @@ void UiController::handleShortEncoderPress(const std::uint32_t nowMs) {
             return;
 
         case Screen::Settings:
-            activateCurrentSetting();
+            activateCurrentSetting(nowMs);
             persistCurrentState(nowMs);
             return;
 
-        case Screen::SequencerEditor: {
-            const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
-                navigation_.sequencerPage * 16U + navigation_.sequencerCursor);
-            settingsEditor_.toggleSequencerStep(navigation_.selectedChannel, absoluteStep);
-            persistCurrentState(nowMs);
-            invalidate();
+        case Screen::SequencerEditor:
+            if (sequencerPatternStore_ != nullptr) {
+                toggleSequencerStepV2(nowMs);
+            } else {
+                const std::uint8_t absoluteStep = static_cast<std::uint8_t>(
+                    navigation_.sequencerPage * 8U + navigation_.sequencerCursor);
+                settingsEditor_.toggleSequencerStep(navigation_.selectedChannel, absoluteStep);
+                persistCurrentState(nowMs);
+                invalidate();
+            }
             return;
-        }
 
         case Screen::GrooveEditor:
         case Screen::GrooveRecorder:
@@ -256,6 +260,11 @@ void UiController::handleLongEncoderPress(const std::uint32_t nowMs) {
     if (origin == Screen::GrooveEditor) {
         navigation_.settingsExitScreen = Screen::GrooveEditor;
         openSettingsPage(SettingsPage::GrooveEditorMenu);
+        return;
+    }
+    if (origin == Screen::SequencerEditor) {
+        navigation_.settingsExitScreen = Screen::SequencerEditor;
+        openSettingsPage(SettingsPage::SequencerPattern);
         return;
     }
     if (origin == Screen::GrooveRecorder) {

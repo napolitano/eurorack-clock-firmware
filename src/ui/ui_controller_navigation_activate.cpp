@@ -14,7 +14,7 @@
 
 namespace clockfw::ui {
 
-void UiController::activateCurrentSetting() {
+void UiController::activateCurrentSetting(const std::uint32_t nowMs) {
     // SettingsPage is the state-machine discriminator. Page-specific helpers keep
     // navigation commands separate from ordinary leaf-value editing.
     switch (navigation_.settingsPage) {
@@ -43,6 +43,9 @@ void UiController::activateCurrentSetting() {
         case SettingsPage::Info:
             activateInfoSetting();
             return;
+        case SettingsPage::Support:
+            openSelectedInformationPopover();
+            return;
         case SettingsPage::Preferences:
             activatePreferencesSetting();
             return;
@@ -57,8 +60,12 @@ void UiController::activateCurrentSetting() {
             activateTimingSetting();
             return;
         case SettingsPage::Sequencer:
-            if (navigation_.cursor == 2U) {
-                openSettingsPage(SettingsPage::SequencerPattern);
+            if (navigation_.cursor == 5U) {
+                navigation_.screen = Screen::SequencerEditor;
+                navigation_.sequencerPage = 0U;
+                navigation_.sequencerCursor = 0U;
+                navigation_.editing = false;
+                invalidate();
             } else {
                 toggleCurrentSettingEditing();
             }
@@ -76,7 +83,7 @@ void UiController::activateCurrentSetting() {
             activateDividerBankSetting();
             return;
         case SettingsPage::SequencerPattern:
-            activateSequencerPatternSetting();
+            activateSequencerPatternSetting(nowMs);
             return;
         case SettingsPage::Master:
         case SettingsPage::Sync:
@@ -120,8 +127,10 @@ void UiController::activateRootSetting() {
     } else if (navigation_.cursor == 2U) {
         openSettingsPage(SettingsPage::Preferences);
     } else if (navigation_.cursor == 3U) {
+        openSettingsPage(SettingsPage::Support);
+    } else if (navigation_.cursor == 4U) {
         openSettingsPage(SettingsPage::Info);
-    } else if (navigation_.highScoreResetAvailable && navigation_.cursor == 4U) {
+    } else if (navigation_.highScoreResetAvailable && navigation_.cursor == 5U) {
         navigation_.screen = Screen::HighScoreClearConfirm;
         navigation_.cursor = 0U;  // Confirmation dialogs always default to NO.
         navigation_.editing = false;
@@ -318,19 +327,20 @@ void UiController::activateDividerBankSetting() {
     }
 }
 
-void UiController::activateSequencerPatternSetting() {
-    if (navigation_.cursor == 0U) {
-        navigation_.screen = Screen::SequencerEditor;
-        navigation_.sequencerPage = 0U;
-        navigation_.sequencerCursor = 0U;
-        invalidate();
+void UiController::activateSequencerPatternSetting(const std::uint32_t nowMs) {
+    if (sequencerPatternStore_ != nullptr) {
+        if (executeSequencerPatternCommandV2(navigation_.cursor, nowMs)) {
+            invalidate();
+        }
         return;
     }
 
-    if (settingsEditor_.executeSequencerCommand(
-            navigation_.selectedChannel, navigation_.cursor)) {
+    // Compatibility fallback for host/unit contexts that do not attach the V2 store.
+    const std::uint8_t legacyRow = static_cast<std::uint8_t>(navigation_.cursor + 1U);
+    if (settingsEditor_.executeSequencerCommand(navigation_.selectedChannel, legacyRow)) {
         invalidate();
     }
 }
+
 
 }  // namespace clockfw::ui

@@ -78,11 +78,11 @@ Accordingly, 99 slots are **architecturally plausible but not yet release-proven
 
 If the final groove representation cannot satisfy that budget safely, the slot count must be reduced or the storage architecture changed deliberately; it must not be achieved by weakening the persistence or memory gates.
 
-### Post-1.1 r45 implementation status
+### Post-1.1 r46 implementation status
 
-The initial Sequencer 2.0 development slice now implements option 4 **experimentally**: the source layout accepts/promotes prior 8-KiB generations to a 12-KiB logical image and places a 2-KiB global 8×8 pattern bank at offset 8192. It does **not** enlarge schema-v12 `ClockState`; legacy 64-bit channel sequences are copied into each channel's P1 slot on first initialization. The remaining 2 KiB of the extension is deliberately unassigned.
+Sequencer 2.0 now implements option 4 **experimentally**: the source layout accepts/promotes prior 8-KiB generations to a 12-KiB logical image and places a 2-KiB global 8×8 pattern bank at offset 8192. It does **not** enlarge schema-v12 `ClockState`; legacy 64-bit channel sequences are copied into each channel's P1 slot on first initialization. The active P1-P8 slot is persisted per channel, the production engine consumes the selected 1-128-step pattern directly, and the production UI exposes pattern selection, length, rotation, direction, loop mode and an 8-step viewport editor. The remaining 2 KiB of the extension is deliberately unassigned for later 1.2 work such as sparse step metadata.
 
-This source change does not waive the audit gate below. Host coverage, migration, CRC and interrupted-commit tests are green, but this environment does not contain PlatformIO/the ARM toolchain, so the required real STM32F401 ELF/RAM measurement has **not** been produced here. The 12-KiB configuration therefore remains development-only rather than release-approved.
+This source change does not waive the audit gate below. The r46 host aggregate passes 95/95/90 coverage, and migration/CRC/interrupted-commit contracts are tested, but this environment does not contain PlatformIO/the ARM toolchain, so the required real STM32F401 ELF/RAM measurement has **not** been produced here. The 12-KiB configuration therefore remains development-only rather than release-approved.
 
 ## RAM consequence of increasing the logical image
 

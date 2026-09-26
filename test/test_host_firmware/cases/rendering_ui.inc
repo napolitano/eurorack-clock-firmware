@@ -432,7 +432,7 @@ void testReadOnlyInformationOverflowUsesPopoverWithoutEditingSemantics() {
     ui::UiController controller(state, engine, renderer, persistentState);
     std::uint32_t now = 100U;
     controllerOpenSettingsChord(controller, now);
-    controllerTurn(controller, 3, now); // INFO
+    controllerTurn(controller, 4, now); // INFO
     controllerShortPress(controller, now);
     controllerShortPress(controller, now); // PRODUCT fits and is not expandable in practice
     CHECK_EQ(controller.navigation().screen, ui::Screen::Settings);

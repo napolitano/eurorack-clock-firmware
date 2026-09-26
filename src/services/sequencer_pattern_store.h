@@ -43,6 +43,12 @@ public:
     /** @brief Returns one immutable slot, or slot 0/channel 0 defaults for invalid indices. */
     const SequencerPatternV2& pattern(std::uint8_t channelIndex, std::uint8_t slotIndex) const;
 
+    /** @brief Returns the persisted active pattern slot for one channel, defaulting to P1. */
+    std::uint8_t activeSlot(std::uint8_t channelIndex) const;
+
+    /** @brief Selects P1..P8 for one channel and schedules a coalesced persistent commit. */
+    bool setActiveSlot(std::uint8_t channelIndex, std::uint8_t slotIndex, std::uint32_t nowMs);
+
     /**
      * @brief Seeds P1 of every channel from the legacy 1.x SequencerSettings.
      *
@@ -79,7 +85,10 @@ public:
     bool hasDurableBank() const { return hasDurableBank_; }
 
 private:
-    static constexpr std::uint8_t kFormatVersion = 1U;
+    static constexpr std::uint8_t kFormatVersion = 2U;
+    static constexpr std::uint8_t kLegacyFormatVersion = 1U;
+    static constexpr std::size_t kActiveSlotsOffset =
+        kHeaderBytes + kPatternCount * kRecordBytes;
 
     /** @brief Maps channel and slot indices onto the fixed bank array. */
     static std::size_t flatIndex(std::uint8_t channelIndex, std::uint8_t slotIndex);
@@ -102,6 +111,7 @@ private:
 
     hal::PersistentStorage& storage_;
     std::array<SequencerPatternV2, kPatternCount> patterns_{};
+    std::array<std::uint8_t, kChannelCount> activeSlots_{};
     std::uint32_t dirtySinceMs_ = 0U;
     bool dirty_ = false;
     bool hasDurableBank_ = false;

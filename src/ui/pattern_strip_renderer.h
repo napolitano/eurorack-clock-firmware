@@ -11,6 +11,7 @@
 #include <cstdint>
 
 #include "domain/clock_types.h"
+#include "domain/sequencer_pattern.h"
 #include "hal/oled_display.h"
 
 namespace clockfw::ui {
@@ -46,6 +47,17 @@ public:
         std::uint8_t currentStep,
         std::int16_t topY);
 
+    /** @brief Draws the currently playing 16-step block from a Sequencer 2.0 pattern. */
+    void drawSequencerPlaybackBlock(
+        const SequencerPatternV2& pattern,
+        std::uint8_t currentStep,
+        std::int16_t topY);
+
+    /** @brief Draws 8-step editor-page progress for patterns up to 128 steps. */
+    void drawSequencerEditorPageIndicator(
+        std::uint8_t sequenceLength,
+        std::uint8_t activeStep);
+
     /**
      * @brief Draws 16-step block indicators at the two bottom OLED rows.
      * @param sequenceLength Active sequence length in steps.
@@ -63,7 +75,8 @@ private:
     /** @brief Draws shared 16-step block progress for long Euclid/Sequencer patterns. */
     void drawPatternBlockIndicator(
         std::uint8_t sequenceLength,
-        std::uint8_t activeStep);
+        std::uint8_t activeStep,
+        std::uint8_t blockSize);
 
     /** @brief Draws a two-pixel-high underline for one current pattern slot. */
     void drawCurrentStepUnderline(

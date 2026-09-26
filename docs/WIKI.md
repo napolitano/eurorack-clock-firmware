@@ -13,7 +13,7 @@ The generator publishes a curated hierarchy instead of blindly copying every Mar
 - Architecture, Timing, Configuration, Simulator, and VCV Rack Trial First;
 - Native Tests, Test Coverage, HIL Qualification, and V1 Forward Compatibility;
 - Developer Setup, VCV Plugin Development, Development Workflow, Dependencies, and Documentation Index;
-- Licensing, Project Identity, Contributing, and Security.
+- Support CLOCK, Licensing, Project Identity, Contributing, and Security.
 
 The chapter-oriented repository source lives in `docs/user-guide/`. `docs/USER_GUIDE.md` remains the consolidated operating-reference view, but the generated Wiki uses the split chapter set so its navigation follows the same mental model as the ODT/PDF manual instead of presenting one very long page.
 

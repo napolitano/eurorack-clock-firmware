@@ -15,6 +15,7 @@
 #include "hal/oled_display.h"
 #include "services/persistent_state_service.h"
 #include "services/custom_groove_store.h"
+#include "services/sequencer_pattern_store.h"
 #include "ui/groove_editor_renderer.h"
 #include "ui/channel_navigation_renderer.h"
 #include "ui/performance_renderer.h"
@@ -43,6 +44,13 @@ public:
         hal::OledDisplay& display,
         const services::PersistentStateService& persistentState,
         const services::CustomGrooveStore& customGrooveStore);
+
+    /** @brief Constructs the renderer with Custom Groove and Sequencer 2.0 stores. */
+    UiRenderer(
+        hal::OledDisplay& display,
+        const services::PersistentStateService& persistentState,
+        const services::CustomGrooveStore& customGrooveStore,
+        const services::SequencerPatternStore& sequencerPatternStore);
 
     /**
      * @brief Renders the screen selected by the current navigation state.
@@ -78,6 +86,7 @@ private:
     hal::OledDisplay& display_;
     const services::PersistentStateService& persistentState_;
     const services::CustomGrooveStore* customGrooveStore_ = nullptr;
+    const services::SequencerPatternStore* sequencerPatternStore_ = nullptr;
     PerformanceRenderer performanceRenderer_;
     ChannelNavigationRenderer channelNavigationRenderer_;
     SettingsRenderer settingsRenderer_;

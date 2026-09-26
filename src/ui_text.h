@@ -300,6 +300,20 @@ enum class TextId : std::uint16_t {
     Ready,
     Recording,
     EditorArrow,
+    SupportClock,
+    GithubSponsors,
+    Kofi,
+    Forward,
+    Reverse,
+    PingPong,
+    Random,
+    Loop,
+    Once,
+    GithubSponsorsUrl,
+    KofiUrl,
+    SequencerEditorHeaderFormat,
+    SequencerEditorFooterFormat,
+    PatternSlotFormat,
     Count
 };
 
@@ -347,7 +361,9 @@ inline constexpr TextCatalog kEnglishUs{{
     "GROOVE MENU", "GROOVE EDITOR", "SAVE", "LOAD", "ZOOM", "GROOVE NAME", "LOAD GROOVE", "SAVE GROOVE", "<EMPTY>", "FIT",
     "OVERWRITE GROOVE?", "DISCARD CHANGES?", "GROOVE STORE N/A", "S%02u %+d  L%u", "Z%u",
     "RENAME", "DELETE", "RENAME GROOVE", "DELETE GROOVE", "DELETE GROOVE?",
-    "RECORD", "GROOVE RECORD", "RECORD MENU", "ONE SHOT", "ENDLESS", "COUNT IN", "READY", "REC", "EDITOR >"
+    "RECORD", "GROOVE RECORD", "RECORD MENU", "ONE SHOT", "ENDLESS", "COUNT IN", "READY", "REC", "EDITOR >",
+    "SUPPORT CLOCK", "GITHUB SPONSORS", "KO-FI", "FORWARD", "REVERSE", "PINGPONG", "RANDOM", "LOOP", "ONCE",
+    "github.com/sponsors/napolitano", "ko-fi.com/X8X21EOLQ9", "SEQ C%u P%u %u-%u", "S%03u/%03u", "P%u"
 }};
 
 /** Musical qualifier pool used for generated Custom Groove default names. */

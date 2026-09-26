@@ -104,7 +104,10 @@ void drawUpdateQr(hal::OledDisplay& display) {
 
 }  // namespace
 
-SettingsRenderer::SettingsRenderer(hal::OledDisplay& display) : display_(display) {}
+SettingsRenderer::SettingsRenderer(
+    hal::OledDisplay& display,
+    const services::SequencerPatternStore* const sequencerPatternStore)
+    : display_(display), sequencerPatternStore_(sequencerPatternStore) {}
 
 bool SettingsRenderer::informationValueOverflows(
     const char* const label,
@@ -233,12 +236,21 @@ void SettingsRenderer::renderSettings(
         if (rowIndex >= itemCount) {
             break;
         }
-        MenuRow row = buildMenuRow(
-            navigation.settingsPage,
-            rowIndex,
-            navigation.selectedChannel,
-            state,
-            navigation.highScoreResetAvailable);
+        MenuRow row{};
+        if (navigation.settingsPage == SettingsPage::Sequencer && sequencerPatternStore_ != nullptr) {
+            const std::uint8_t activeSlot = sequencerPatternStore_->activeSlot(navigation.selectedChannel);
+            row = buildSequencerV2MenuRow(
+                rowIndex,
+                activeSlot,
+                sequencerPatternStore_->pattern(navigation.selectedChannel, activeSlot));
+        } else {
+            row = buildMenuRow(
+                navigation.settingsPage,
+                rowIndex,
+                navigation.selectedChannel,
+                state,
+                navigation.highScoreResetAvailable);
+        }
         if (navigation.settingsPage == SettingsPage::GrooveEditorMenu) {
             if (rowIndex == 2U) {
                 if (navigation.grooveZoomSteps == 0U) {

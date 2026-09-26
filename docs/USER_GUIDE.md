@@ -298,6 +298,8 @@ The same meter definition drives the bar/beat counter and Pre-Count. With extern
 
 The Settings-root **PHASE RESET** command applies that global musical reset immediately without stopping to erase or replace any saved configuration. It is intentionally distinct from **FACTORY RESET**, which is a destructive maintenance action under `INFO`.
 
+The Settings root also contains **SUPPORT CLOCK**. It is read-only and lists the current [GitHub Sponsors](https://github.com/sponsors/napolitano) and [Ko-fi](https://ko-fi.com/X8X21EOLQ9) destinations; it does not change configuration, licensing, or transport state.
+
 ![Timing reference diagram comparing the ideal grid with Swing and Phase offsets and showing One Clock Humanize as small per-output displacement around the common reference.](manual-source/assets/timing-swing-phase.svg)
 
 ### Swing, Groove, and Humanize — what changes?

@@ -117,6 +117,9 @@ private:
     /** @brief Loads the fixed-record Custom Groove library into the real-time engine cache. */
     void loadCustomGrooveLibrary();
 
+    /** @brief Loads every channel's persisted active Sequencer 2.0 pattern into the engine. */
+    void loadSequencerPatternBank();
+
     /** @brief Applies persistent device-local control/display preferences to the HAL only when they change. */
     void synchronizeDevicePreferences(bool force = false);
 

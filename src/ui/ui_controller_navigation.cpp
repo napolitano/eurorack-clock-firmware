@@ -120,7 +120,8 @@ void UiController::backFromSettings() {
         navigation_.screen = navigation_.settingsExitScreen;
     } else if (navigation_.settingsPage == SettingsPage::General ||
                navigation_.settingsPage == SettingsPage::Preferences ||
-               navigation_.settingsPage == SettingsPage::Info) {
+               navigation_.settingsPage == SettingsPage::Info ||
+               navigation_.settingsPage == SettingsPage::Support) {
         navigation_.settingsPage = SettingsPage::Root;
     } else if (navigation_.settingsPage == SettingsPage::Sync) {
         navigation_.settingsPage = SettingsPage::InputAssignments;
@@ -143,7 +144,11 @@ void UiController::backFromSettings() {
                navigation_.settingsPage == SettingsPage::Sequencer) {
         navigation_.settingsPage = SettingsPage::Channel;
     } else if (navigation_.settingsPage == SettingsPage::SequencerPattern) {
-        navigation_.settingsPage = SettingsPage::Sequencer;
+        if (navigation_.settingsExitScreen == Screen::SequencerEditor) {
+            navigation_.screen = Screen::SequencerEditor;
+        } else {
+            navigation_.settingsPage = SettingsPage::Sequencer;
+        }
     } else if (navigation_.settingsPage == SettingsPage::UnifiedTiming ||
                navigation_.settingsPage == SettingsPage::UnifiedOutput) {
         navigation_.settingsPage = SettingsPage::UnifiedClock;

@@ -84,6 +84,7 @@ PAGES = (
     WikiPage('docs/DEPENDENCIES.md', 'Dependencies', 'Dependencies', 'Development'),
     WikiPage('docs/README.md', 'Documentation-Index', 'Documentation Index', 'Development'),
     WikiPage('docs/WIKI.md', 'Wiki-Publication', 'Wiki Publication', 'Development'),
+    WikiPage('docs/SUPPORT.md', 'Support-CLOCK', 'Support CLOCK', 'Project'),
     WikiPage('docs/LICENSING.md', 'Licensing', 'Licensing', 'Project'),
     WikiPage('docs/PROJECT_IDENTITY.md', 'Project-Identity', 'Project Identity', 'Project'),
     WikiPage('CONTRIBUTING.md', 'Contributing', 'Contributing', 'Project'),

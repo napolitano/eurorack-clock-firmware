@@ -272,16 +272,29 @@ void ClockEngine::fireChannelEvent(const std::size_t channelIndex) {
             hit = core::isEuclideanHit(runtime.step, channel.euclid);
             break;
         case ChannelMode::Sequencer:
-            hit = core::isSequencerHit(runtime.step, channel.sequencer);
+            if (sequencerPatternV2Active_[channelIndex]) {
+                const SequencerPatternV2& pattern = sequencerPatterns_[channelIndex];
+                const std::uint32_t seed = 0x53455132UL ^
+                    (static_cast<std::uint32_t>(channelIndex + 1U) * 0x9E3779B9UL);
+                const SequencerTraversalResult traversal = resolveSequencerTraversal(
+                    runtime.nextEventSerial, pattern, seed);
+                if (traversal.active) {
+                    runtime.displayedStep = rotateSequencerStep(traversal.step, pattern);
+                    hit = sequencerPatternGate(pattern, runtime.displayedStep);
+                }
+            } else {
+                hit = core::isSequencerHit(runtime.step, channel.sequencer);
+            }
             break;
         case ChannelMode::Off:
             return;
     }
     if (channel.common.mode == ChannelMode::Euclid) {
         runtime.step = core::advanceStep(runtime.step, channel.euclid.steps);
-    } else if (channel.common.mode == ChannelMode::Sequencer) {
+    } else if (channel.common.mode == ChannelMode::Sequencer &&
+               !sequencerPatternV2Active_[channelIndex]) {
         runtime.step = core::advanceStep(runtime.step, channel.sequencer.length);
-    } else {
+    } else if (channel.common.mode != ChannelMode::Sequencer) {
         const std::uint8_t localCycleLength =
             channel.clock.meter.beats != 0U ? channel.clock.meter.beats : 1U;
         runtime.step = core::advanceStep(runtime.step, localCycleLength);
@@ -365,11 +378,7 @@ void ClockEngine::scheduleChannelFromCurrentPosition(
     // shared epoch. Otherwise a live CLOCK -> EUCLID/SEQ switch can be on-grid
     // in time while evaluating the wrong pattern step.
     if (channel.common.resetMode == ResetMode::Global) {
-        const std::uint8_t cycleLength = channelCycleLength(channelIndex);
-        runtime.step = static_cast<std::uint8_t>(eventSerial % cycleLength);
-        runtime.displayedStep = eventSerial == 0U
-            ? static_cast<std::uint8_t>(0U)
-            : static_cast<std::uint8_t>((eventSerial - 1ULL) % cycleLength);
+        synchronizeChannelStepPhase(channelIndex);
     }
 }
 void ClockEngine::startPreCountUnsafe() {

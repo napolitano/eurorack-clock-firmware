@@ -105,10 +105,11 @@ class ProjectMetadataTests(unittest.TestCase):
         metadata = json.loads((ROOT / "codemeta.json").read_text(encoding="utf-8"))
         self.assertNotIn("identifier", metadata)
 
-    def test_repository_funding_exposes_github_and_patreon(self) -> None:
+    def test_repository_funding_exposes_github_and_kofi(self) -> None:
         funding = (ROOT / ".github" / "FUNDING.yml").read_text(encoding="utf-8")
         self.assertRegex(funding, r"(?m)^github:\s+napolitano\s*$")
-        self.assertRegex(funding, r"(?m)^patreon:\s+southsignallab\s*$")
+        self.assertRegex(funding, r"(?m)^ko_fi:\s+X8X21EOLQ9\s*$")
+        self.assertNotRegex(funding, r"(?m)^patreon:")
 
     def test_doxygen_output_is_clean_checkout_safe(self) -> None:
         doxyfile = (ROOT / "Doxyfile").read_text(encoding="utf-8")

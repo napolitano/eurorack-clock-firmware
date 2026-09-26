@@ -69,15 +69,36 @@ UiRenderer::UiRenderer(
       grooveEditorRenderer_(display),
       screensaverRenderer_(display) {}
 
+UiRenderer::UiRenderer(
+    hal::OledDisplay& display,
+    const services::PersistentStateService& persistentState,
+    const services::CustomGrooveStore& customGrooveStore,
+    const services::SequencerPatternStore& sequencerPatternStore)
+    : display_(display),
+      persistentState_(persistentState),
+      customGrooveStore_(&customGrooveStore),
+      sequencerPatternStore_(&sequencerPatternStore),
+      performanceRenderer_(display, &customGrooveStore),
+      channelNavigationRenderer_(display),
+      settingsRenderer_(display, &sequencerPatternStore),
+      grooveEditorRenderer_(display),
+      screensaverRenderer_(display) {}
+
 void UiRenderer::render(
     const ClockState& state,
     const NavigationState& navigation,
     const engine::EngineSnapshot& engineSnapshot,
     const DiagnosticSnapshot& diagnostics) {
     switch (navigation.screen) {
-        case Screen::Performance:
-            performanceRenderer_.render(state, navigation, engineSnapshot);
+        case Screen::Performance: {
+            const SequencerPatternV2* pattern = nullptr;
+            if (sequencerPatternStore_ != nullptr && navigation.selectedChannel < kChannelCount) {
+                const std::uint8_t slot = sequencerPatternStore_->activeSlot(navigation.selectedChannel);
+                pattern = &sequencerPatternStore_->pattern(navigation.selectedChannel, slot);
+            }
+            performanceRenderer_.render(state, navigation, engineSnapshot, pattern);
             break;
+        }
         case Screen::ChannelQuickSelect:
             channelNavigationRenderer_.renderChannelQuickSelect(state, navigation);
             break;
@@ -90,9 +111,17 @@ void UiRenderer::render(
         case Screen::Settings:
             settingsRenderer_.renderSettings(state, navigation, diagnostics);
             break;
-        case Screen::SequencerEditor:
-            channelNavigationRenderer_.renderSequencerEditor(state, navigation, engineSnapshot);
+        case Screen::SequencerEditor: {
+            const SequencerPatternV2* pattern = nullptr;
+            std::uint8_t slot = 0U;
+            if (sequencerPatternStore_ != nullptr && navigation.selectedChannel < kChannelCount) {
+                slot = sequencerPatternStore_->activeSlot(navigation.selectedChannel);
+                pattern = &sequencerPatternStore_->pattern(navigation.selectedChannel, slot);
+            }
+            channelNavigationRenderer_.renderSequencerEditor(
+                state, navigation, engineSnapshot, pattern, slot);
             break;
+        }
         case Screen::Templates:
             settingsRenderer_.renderTemplates(navigation);
             break;

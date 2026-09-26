@@ -2,7 +2,7 @@
 
 # South Signal Lab CLOCK Test Coverage — stable v1.1.0
 
-The stable-release test policy is repository-wide rather than limited to `clock_core`. Stable 1.1.0 shipped with 497 named Native cases. The current post-1.1 development tree adds 14 focused `test_sequencer2` cases for a **511-case** working inventory, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
+The stable-release test policy is repository-wide rather than limited to `clock_core`. Stable 1.1.0 shipped with 497 named Native cases. The current post-1.1 development tree adds the focused `test_sequencer2` suite plus current settings/support regressions for a **512-case** working inventory, while `run_host_tests.py` remains the authoritative variant/sanitizer/coverage matrix.
 
 ## Hard CI gates
 
@@ -44,6 +44,17 @@ Compiler branches:   5812/7517 (77.32%, informational only)
 ```
 
 The r45 aggregate includes the current focused behavioral suites plus rebuilt SPI/I2C host-firmware variants. It is host evidence only; the enlarged 12-KiB target staging image still requires a real STM32F401 ELF memory-gate result before release approval.
+
+Post-1.1 r46 development aggregate after wiring the active P1-P8 bank into the production engine, adding the 8-step/128-step UI path, the SUPPORT CLOCK page and current support documentation:
+
+```text
+Executable lines:   9800/10236 (95.74%)
+Functions:            852/865   (98.50%)
+Decision branches:   5992/6656 (90.02%)
+Compiler branches:   5993/7795 (76.88%, informational only)
+```
+
+The r46 aggregate passes the unchanged 95/95/90 host gate. The decision-branch margin is deliberately visible and must not be treated as permission to reduce the threshold. Target SRAM/Flash approval for the 12-KiB persistence staging image remains pending a real STM32F401 ELF memory-gate run.
 
 
 ### Sequencer 2.0 development slice
@@ -115,7 +126,7 @@ The complete firmware variants compile the real production `.cpp` files against 
 - application boot lifecycle, safe display-failure path, scheduler callback and STM32Cube entry-point/platform-I/O glue
 - all `ClockEngine` public methods and OFF/CLOCK/EUC/SEQ behavior
 - pause/stop, external-loss STOP/FREE behavior, bar progression/wrap and GLOBAL/FREE reset handling
-- all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 88-case Settings suite also locks down min/max coupling, enum boundaries, SYNC smoothing labels and cross-setting invariants
+- all settings mutation pages and sequencer commands, including invalid-index boundary handling; a dedicated 89-case Settings suite also locks down min/max coupling, enum boundaries, SYNC smoothing labels and cross-setting invariants
 - tap tempo and all factory templates
 - all menu pages, labels, compact formatters and localization fallback
 - performance, pictographic 2×4 channel overview, horizontal centered mode carousel, settings, Clock/Plug/Heartbeat/Acid/Spectrum/Field/Blox/Matrix/Cube Cover/Fractal/Orbit/Make Music/Labyrinth/Starfield/Fireworks screensaver effects, preset overwrite/name-band, templates and sequencer render paths

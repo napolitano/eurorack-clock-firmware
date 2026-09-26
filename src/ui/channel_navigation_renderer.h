@@ -11,6 +11,7 @@
 #include <cstdint>
 
 #include "domain/clock_types.h"
+#include "domain/sequencer_pattern.h"
 #include "engine/clock_engine.h"
 #include "hal/oled_display.h"
 #include "ui/pattern_strip_renderer.h"
@@ -60,7 +61,9 @@ public:
     void renderSequencerEditor(
         const ClockState& state,
         const NavigationState& navigation,
-        const engine::EngineSnapshot& engineSnapshot);
+        const engine::EngineSnapshot& engineSnapshot,
+        const SequencerPatternV2* activePattern = nullptr,
+        std::uint8_t activeSlot = 0U);
 
 private:
     /** @brief Draws the simplified overview shown while a global operating mode is active. */

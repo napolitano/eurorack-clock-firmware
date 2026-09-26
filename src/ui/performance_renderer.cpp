@@ -97,7 +97,8 @@ PerformanceRenderer::PerformanceRenderer(
 void PerformanceRenderer::render(
     const ClockState& state,
     const NavigationState& navigation,
-    const engine::EngineSnapshot& engineSnapshot) {
+    const engine::EngineSnapshot& engineSnapshot,
+    const SequencerPatternV2* const activeSequencerPattern) {
     display_.clear();
     display_.setFont(hal::DisplayFont::Small);
     display_.setTextColor(hal::PixelColor::White);
@@ -238,10 +239,13 @@ void PerformanceRenderer::render(
             currentStep,
             kPatternTopY);
     } else if (configuredChannel.common.mode == ChannelMode::Sequencer) {
-        patternStripRenderer_.drawSequencerPlaybackBlock(
-            configuredChannel.sequencer,
-            currentStep,
-            kPatternTopY);
+        if (activeSequencerPattern != nullptr) {
+            patternStripRenderer_.drawSequencerPlaybackBlock(
+                *activeSequencerPattern, currentStep, kPatternTopY);
+        } else {
+            patternStripRenderer_.drawSequencerPlaybackBlock(
+                configuredChannel.sequencer, currentStep, kPatternTopY);
+        }
     }
 
     presentPerformanceFrame(state, engineSnapshot);

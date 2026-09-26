@@ -12,6 +12,7 @@
 #include <cstdint>
 
 #include "domain/clock_types.h"
+#include "domain/sequencer_pattern.h"
 #include "ui/ui_types.h"
 
 namespace clockfw::ui {
@@ -50,6 +51,13 @@ MenuRow buildMenuRow(
     std::uint8_t selectedChannel,
     const ClockState& state,
     bool highScoreResetAvailable = false);
+
+
+/** @brief Formats one Sequencer 2.0 settings row from an active pattern snapshot. */
+MenuRow buildSequencerV2MenuRow(
+    std::uint8_t rowIndex,
+    std::uint8_t activeSlot,
+    const SequencerPatternV2& pattern);
 
 /** @brief Returns the index of the current integer rate option. */
 std::size_t findRateOptionIndex(const CommonChannelSettings& settings);

@@ -171,12 +171,26 @@ void testLegacyChannelSequencesSeedPatternOneOnly() {
         state.channels[channel].sequencer.rotation = static_cast<std::uint8_t>(channel % 3U);
         state.channels[channel].sequencer.pattern = 1ULL << channel;
     }
+    // Defensive migration contracts: old/corrupt zero length becomes one step,
+    // values above the released 64-step ceiling are capped, and rotations that
+    // no longer fit the migrated length are re-anchored to zero.
+    state.channels[0].sequencer.length = 0U;
+    state.channels[0].sequencer.rotation = 7U;
+    state.channels[1].sequencer.length = 65U;
+    state.channels[1].sequencer.rotation = 64U;
+
     TEST_ASSERT_TRUE(store.seedLegacyPatternOnes(state, 123U));
     TEST_ASSERT_FALSE(store.seedLegacyPatternOnes(state, 124U));
     for (std::uint8_t channel = 0U; channel < kChannelCount; ++channel) {
         const auto& migrated = store.pattern(channel, 0U);
-        TEST_ASSERT_EQUAL_UINT8(static_cast<std::uint8_t>(9U + channel), migrated.length);
-        TEST_ASSERT_EQUAL_UINT8(static_cast<std::uint8_t>(channel % 3U), migrated.rotation);
+        const std::uint8_t expectedLength = channel == 0U
+            ? 1U
+            : (channel == 1U ? 64U : static_cast<std::uint8_t>(9U + channel));
+        const std::uint8_t expectedRotation = channel < 2U
+            ? 0U
+            : static_cast<std::uint8_t>(channel % 3U);
+        TEST_ASSERT_EQUAL_UINT8(expectedLength, migrated.length);
+        TEST_ASSERT_EQUAL_UINT8(expectedRotation, migrated.rotation);
         TEST_ASSERT_EQUAL_UINT8(
             static_cast<std::uint8_t>(SequencerPlayDirection::Forward),
             static_cast<std::uint8_t>(migrated.direction));
@@ -312,6 +326,16 @@ void testStoreRejectsInvalidRequestsAndDefersWhenWritesAreBlocked() {
     hal::PersistentStorage storage;
     services::SequencerPatternStore store(storage);
     TEST_ASSERT_TRUE(store.begin());
+    TEST_ASSERT_TRUE(store.flush());
+
+    TEST_ASSERT_EQUAL_UINT8(0U, store.activeSlot(kChannelCount));
+    TEST_ASSERT_FALSE(store.setActiveSlot(kChannelCount, 0U, 1U));
+    TEST_ASSERT_FALSE(store.setActiveSlot(0U, kSequencerPatternSlotsPerChannel, 1U));
+    TEST_ASSERT_TRUE(store.setActiveSlot(0U, 0U, 1U));
+    TEST_ASSERT_TRUE(store.setActiveSlot(0U, 1U, 2U));
+    TEST_ASSERT_TRUE(store.dirty());
+    TEST_ASSERT_TRUE(store.setActiveSlot(0U, 2U, 3U));
+    TEST_ASSERT_EQUAL_UINT8(2U, store.activeSlot(0U));
     TEST_ASSERT_TRUE(store.flush());
 
     SequencerPatternV2 invalid{};

@@ -11,6 +11,7 @@ Hold **TAP** and press the encoder from Performance to open the root Settings tr
 | **GENERAL SETTINGS** | Global CLOCK, INPUTS, SCREENSAVER, DIAGNOSTICS and HARDWARE pages. |
 | **CHANNEL SETTINGS** | The currently selected Independent channel or the active One Clock / Divider Bank topology. |
 | **PRESETS** | CURRENT recovery, Load/Save Preset, and factory Templates. |
+| **SUPPORT CLOCK** | GitHub Sponsors and Ko-fi destinations for supporting ongoing CLOCK development. |
 | **INFO** | Product/version information, licenses, update QR and guarded Factory Reset. |
 | **PHASE RESET** | Immediate non-destructive global musical phase reset. |
 
@@ -47,6 +48,18 @@ The BPM number remains the quarter-note reference. At 120 BPM, `/4` produces 500
 Independent mode separates pattern generation from shared timing/output behavior. The most important controls are `RATE/NUM/DEN`, Swing, Groove, Probability, Gate length, Phase, Reset and Mute. Gate length is an absolute time value rather than a duty cycle; an otherwise-too-long pulse is shortened before the next rising event so it cannot consume the following onset.
 
 One Clock exposes shared **TIMING** (rate, Swing, Groove, Humanize) and **OUTPUT** (Gate, Phase) pages. Divider Bank exposes divider family and one shared Gate length.
+
+
+### SUPPORT CLOCK
+
+`SUPPORT CLOCK` is an informational page with the current project-support destinations. It does not alter firmware behavior or licensing.
+
+<p align="center"><img src="../manual-source/assets/settings-support.png" alt="Support CLOCK page with GitHub Sponsors and Ko-fi entries." width="360"></p>
+
+- **GITHUB SPONSORS** — `github.com/sponsors/napolitano`
+- **KO-FI** — `ko-fi.com/X8X21EOLQ9`
+
+The publication manual also carries the Ko-fi QR code. The canonical repository links are maintained in [`../SUPPORT.md`](../SUPPORT.md).
 
 ### INFO and read-only overflow
 

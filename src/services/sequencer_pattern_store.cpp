@@ -108,13 +108,16 @@ void SequencerPatternStore::resetDefaults() {
     for (SequencerPatternV2& pattern : patterns_) {
         pattern = SequencerPatternV2{};
     }
+    activeSlots_.fill(0U);
     dirty_ = false;
     dirtySinceMs_ = 0U;
     hasDurableBank_ = false;
 }
 
 bool SequencerPatternStore::decodeBank(const std::array<std::uint8_t, kStorageBytes>& bytes) {
-    if (read32(bytes.data()) != kMagic || bytes[4] != kFormatVersion ||
+    const std::uint8_t formatVersion = bytes[4];
+    if (read32(bytes.data()) != kMagic ||
+        (formatVersion != kFormatVersion && formatVersion != kLegacyFormatVersion) ||
         bytes[5] != kChannelCount || bytes[6] != kSequencerPatternSlotsPerChannel ||
         bytes[7] != kSequencerMaximumSteps ||
         read32(bytes.data() + kCrcOffset) !=
@@ -129,7 +132,18 @@ bool SequencerPatternStore::decodeBank(const std::array<std::uint8_t, kStorageBy
             return false;
         }
     }
+    std::array<std::uint8_t, kChannelCount> decodedActive{};
+    if (formatVersion == kFormatVersion) {
+        for (std::size_t channelIndex = 0U; channelIndex < decodedActive.size(); ++channelIndex) {
+            const std::uint8_t slot = bytes[kActiveSlotsOffset + channelIndex];
+            if (slot >= kSequencerPatternSlotsPerChannel) {
+                return false;
+            }
+            decodedActive[channelIndex] = slot;
+        }
+    }
     patterns_ = decoded;
+    activeSlots_ = decodedActive;
     return true;
 }
 
@@ -142,6 +156,9 @@ void SequencerPatternStore::encodeBank(std::array<std::uint8_t, kStorageBytes>& 
     bytes[7] = kSequencerMaximumSteps;
     for (std::size_t index = 0U; index < patterns_.size(); ++index) {
         encodePattern(patterns_[index], bytes.data() + kPayloadOffset + index * kRecordBytes);
+    }
+    for (std::size_t channelIndex = 0U; channelIndex < activeSlots_.size(); ++channelIndex) {
+        bytes[kActiveSlotsOffset + channelIndex] = activeSlots_[channelIndex];
     }
     write32(
         bytes.data() + kCrcOffset,
@@ -171,6 +188,29 @@ const SequencerPatternV2& SequencerPatternStore::pattern(
         return patterns_[0U];
     }
     return patterns_[flatIndex(channelIndex, slotIndex)];
+}
+
+
+std::uint8_t SequencerPatternStore::activeSlot(const std::uint8_t channelIndex) const {
+    return channelIndex < kChannelCount ? activeSlots_[channelIndex] : 0U;
+}
+
+bool SequencerPatternStore::setActiveSlot(
+    const std::uint8_t channelIndex,
+    const std::uint8_t slotIndex,
+    const std::uint32_t nowMs) {
+    if (channelIndex >= kChannelCount || slotIndex >= kSequencerPatternSlotsPerChannel) {
+        return false;
+    }
+    if (activeSlots_[channelIndex] == slotIndex) {
+        return true;
+    }
+    activeSlots_[channelIndex] = slotIndex;
+    if (!dirty_) {
+        dirtySinceMs_ = nowMs;
+    }
+    dirty_ = true;
+    return true;
 }
 
 bool SequencerPatternStore::seedLegacyPatternOnes(
