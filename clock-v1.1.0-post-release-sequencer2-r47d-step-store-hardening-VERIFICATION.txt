@@ -1,0 +1,75 @@
+South Signal Lab CLOCK
+r47d step-store coverage hardening checkpoint
+Date: 2026-09-26
+
+STATUS
+- Checkpoint only; NOT r47 final.
+- Source base: user-supplied r47c live-tie-fix bundle.
+- Production code unchanged in this checkpoint.
+- Added regression coverage in test/test_sequencer2/test_main.cpp only.
+
+CHANGES
+- Added defensive sparse step-store decode coverage for:
+  * invalid magic
+  * invalid format version
+  * invalid maximum-step header field
+  * invalid payload CRC
+  * record count beyond capacity
+  * reserved key bits
+  * default record encoded as explicit override
+  * non-canonical metadata word
+  * duplicate sparse record key
+- Added no-op/update/removal coverage for absent/default and identical metadata.
+- Added invalid channel/slot expansion coverage.
+- Added replace-pattern capacity coverage.
+
+VERIFIED FOCUSED RESULT
+Sequencer 2.0 suite:
+- 20 tests
+- 10,524 assertions
+- 0 failures
+
+src/services/sequencer_step_store.cpp focused coverage:
+- Lines: 234/236 = 99.15%
+- Functions: 22/22 = 100.00%
+- Decision branches: 153/167 = 91.62%
+- Compiler branches: 153/188 = 81.38% (informational)
+
+Comparison with supplied r47c focused measurement in this run:
+- Before: Decision branches 128/167 = 76.65%
+- After:  153/167 = 91.62%
+- Net newly covered decision branches: 25
+
+OTHER SUITES OBSERVED GREEN DURING FULL-MATRIX ATTEMPTS
+- Core: 44 tests / 215,299 assertions / 0 failures
+- Realtime: 34 / 261 / 0
+- Realtime external GPIO variant: 34 / 261 / 0
+- SYNC behavior: 116 / 5,177 / 0
+- Sequencer 2.0: 20 / 10,524 / 0
+- Swing: 40 / 211,235 / 0
+- Humanize: 12 / 82 / 0
+- Tap Tempo: 24 / 31 / 0
+- Controls: 51 / 567 / 0
+- Settings/UI: 89 / 310 / 0
+- Screensavers: 19 / 41 / 0
+- Easter eggs: 36 / 168 / 0
+- Host firmware SPI default: 39 / 3,325 / 0
+
+FULL REPOSITORY GATE
+- NOT VERIFIED in this environment for r47d.
+- The normal run_host_tests.py --skip-sanitizers invocation repeatedly exceeded the available execution window while recompiling the complete matrix.
+- A partial aggregate from the suites available at one checkpoint is NOT equivalent to the repository-wide report because the remaining host-firmware configuration variants and native smoke coverage were absent.
+- Therefore no repository-wide 95/95/90 PASS or FAIL is claimed here.
+
+SANITIZERS / VCV / DOCUMENTATION / ARCHITECTURE
+- Not rerun after r47d test-only changes in this checkpoint.
+- Their previous r47c status must not be relabeled as r47d evidence.
+
+TARGET EVIDENCE
+- STM32F401 ELF/RAM persistence gate remains unverified in this environment unless an ARM/PlatformIO toolchain is available.
+
+NEXT REQUIRED STEP FOR r47 FINAL
+1. Execute the complete repository host coverage matrix, including all host-firmware variants and native smoke, without lowering 95/95/90.
+2. If Decision Branches remain below 90%, use the resulting full_coverage.json to target the remaining r47 UI/renderer/application branches with semantic tests.
+3. Run ASan/UBSan, VCV coverage, architecture, dependency and documentation gates.
+4. Update Sequencer 2.0 documentation/manual for Probability, Duty/Gate Length, Tie and Ratchet only after the complete gate is green.

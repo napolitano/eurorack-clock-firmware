@@ -38,6 +38,11 @@ std::uint32_t testCrc32(const std::uint8_t* data, std::size_t size) {
     return crc ^ 0xFFFFFFFFUL;
 }
 
+void writeTest16(std::uint8_t* destination, std::uint16_t value) {
+    destination[0] = static_cast<std::uint8_t>(value & 0xFFU);
+    destination[1] = static_cast<std::uint8_t>((value >> 8U) & 0xFFU);
+}
+
 void writeTest32(std::uint8_t* destination, std::uint32_t value) {
     destination[0] = static_cast<std::uint8_t>(value & 0xFFU);
     destination[1] = static_cast<std::uint8_t>((value >> 8U) & 0xFFU);
@@ -324,6 +329,157 @@ void testSparseStepStoreDelayedCommitAndReadWriteFailures() {
     services::SequencerStepStore unreadable(storage);
     TEST_ASSERT_FALSE(unreadable.begin());
     TEST_ASSERT_EQUAL_UINT32(0U, static_cast<std::uint32_t>(unreadable.overrideCount()));
+}
+
+void testSparseStepStoreDefensiveDecodeAndNoOpBranches() {
+    hal::PersistentStorage storage;
+    services::SequencerStepStore writer(storage);
+    TEST_ASSERT_TRUE(writer.begin());
+
+    SequencerStepMetadata first{};
+    first.probabilityPercent = 67U;
+    first.gateProfile = SequencerGateProfile::Duty50;
+    first.ratchetCount = 2U;
+    TEST_ASSERT_TRUE(writer.updateMetadata(1U, 2U, 9U, first, 10U));
+    TEST_ASSERT_TRUE(writer.flush());
+
+    std::array<std::uint8_t, services::SequencerStepStore::kStorageBytes> bank{};
+    TEST_ASSERT_TRUE(storage.readBytes(
+        services::SequencerStepStore::kStorageOffset, bank.data(), bank.size()));
+
+    auto restoreBank = [&]() {
+        TEST_ASSERT_TRUE(storage.writeBytes(
+            services::SequencerStepStore::kStorageOffset, bank.data(), bank.size()));
+    };
+    auto rewritePayloadCrc = [](auto& bytes) {
+        const std::uint32_t crc = testCrc32(
+            bytes.data() + services::SequencerStepStore::kHeaderBytes,
+            bytes.size() - services::SequencerStepStore::kHeaderBytes);
+        writeTest32(bytes.data() + 8U, crc);
+    };
+    auto expectFallback = [&](const auto& corrupted) {
+        TEST_ASSERT_TRUE(storage.writeBytes(
+            services::SequencerStepStore::kStorageOffset, corrupted.data(), corrupted.size()));
+        services::SequencerStepStore reader(storage);
+        TEST_ASSERT_TRUE(reader.begin());
+        TEST_ASSERT_EQUAL_UINT32(0U, static_cast<std::uint32_t>(reader.overrideCount()));
+        restoreBank();
+    };
+
+    {
+        auto corrupted = bank;
+        corrupted[0U] ^= 0x01U;
+        expectFallback(corrupted);
+    }
+    {
+        auto corrupted = bank;
+        corrupted[4U] ^= 0x01U;
+        expectFallback(corrupted);
+    }
+    {
+        auto corrupted = bank;
+        corrupted[7U] ^= 0x01U;
+        expectFallback(corrupted);
+    }
+    {
+        auto corrupted = bank;
+        corrupted[8U] ^= 0x01U;
+        expectFallback(corrupted);
+    }
+    {
+        auto corrupted = bank;
+        writeTest16(
+            corrupted.data() + 5U,
+            static_cast<std::uint16_t>(services::SequencerStepStore::kMaximumOverrides + 1U));
+        expectFallback(corrupted);
+    }
+    {
+        auto corrupted = bank;
+        const std::size_t record = services::SequencerStepStore::kHeaderBytes;
+        corrupted[record + 1U] |= 0xE0U;
+        rewritePayloadCrc(corrupted);
+        expectFallback(corrupted);
+    }
+    {
+        auto corrupted = bank;
+        const std::size_t record = services::SequencerStepStore::kHeaderBytes;
+        writeTest16(corrupted.data() + record + 2U, 0U);
+        rewritePayloadCrc(corrupted);
+        expectFallback(corrupted);
+    }
+    {
+        auto corrupted = bank;
+        const std::size_t record = services::SequencerStepStore::kHeaderBytes;
+        const SequencerStepMetadataWord nonCanonical = static_cast<SequencerStepMetadataWord>(
+            packSequencerStepMetadata(first) | 0x8000U);
+        writeTest16(corrupted.data() + record + 2U, nonCanonical);
+        rewritePayloadCrc(corrupted);
+        expectFallback(corrupted);
+    }
+    {
+        auto corrupted = bank;
+        writeTest16(corrupted.data() + 5U, 2U);
+        const std::size_t firstRecord = services::SequencerStepStore::kHeaderBytes;
+        const std::size_t secondRecord = firstRecord + services::SequencerStepStore::kRecordBytes;
+        for (std::size_t i = 0U; i < services::SequencerStepStore::kRecordBytes; ++i) {
+            corrupted[secondRecord + i] = corrupted[firstRecord + i];
+        }
+        rewritePayloadCrc(corrupted);
+        expectFallback(corrupted);
+    }
+
+    services::SequencerStepStore store(storage);
+    TEST_ASSERT_TRUE(store.begin());
+    TEST_ASSERT_TRUE(isSequencerStepMetadataDefault(store.metadata(1U, 2U, 10U)));
+    TEST_ASSERT_TRUE(isSequencerStepMetadataDefault(
+        store.metadata(0U, kSequencerPatternSlotsPerChannel, 0U)));
+
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> words{};
+    words.fill(0xFFFFU);
+    store.loadPatternWords(kChannelCount, 0U, words);
+    for (const auto word : words) TEST_ASSERT_EQUAL_UINT32(0U, word);
+    words.fill(0xFFFFU);
+    store.loadPatternWords(0U, kSequencerPatternSlotsPerChannel, words);
+    for (const auto word : words) TEST_ASSERT_EQUAL_UINT32(0U, word);
+
+    TEST_ASSERT_TRUE(store.updateMetadata(1U, 2U, 10U, SequencerStepMetadata{}, 20U));
+    TEST_ASSERT_TRUE(store.updateMetadata(1U, 2U, 9U, first, 21U));
+    TEST_ASSERT_FALSE(store.dirty());
+
+    SequencerStepMetadata changed = first;
+    changed.tie = true;
+    TEST_ASSERT_TRUE(store.updateMetadata(1U, 2U, 9U, changed, 22U));
+    TEST_ASSERT_TRUE(store.dirty());
+    TEST_ASSERT_TRUE(store.updateMetadata(1U, 2U, 9U, changed, 23U));
+    TEST_ASSERT_TRUE(store.updateMetadata(1U, 2U, 9U, SequencerStepMetadata{}, 24U));
+    TEST_ASSERT_TRUE(isSequencerStepMetadataDefault(store.metadata(1U, 2U, 9U)));
+    TEST_ASSERT_TRUE(store.flush());
+    TEST_ASSERT_TRUE(store.flush());
+}
+
+void testSparseStepStoreReplaceCapacityAndMixedPatternBranches() {
+    hal::PersistentStorage storage;
+    services::SequencerStepStore store(storage);
+    TEST_ASSERT_TRUE(store.begin());
+
+    SequencerStepMetadata metadata{};
+    metadata.probabilityPercent = 100U;
+    for (std::size_t index = 0U; index < services::SequencerStepStore::kMaximumOverrides; ++index) {
+        const std::uint8_t step = static_cast<std::uint8_t>(index % kSequencerMaximumSteps);
+        const std::size_t patternIndex = index / kSequencerMaximumSteps;
+        const std::uint8_t channel = static_cast<std::uint8_t>(patternIndex % kChannelCount);
+        const std::uint8_t slot = static_cast<std::uint8_t>(patternIndex / kChannelCount);
+        TEST_ASSERT_TRUE(store.updateMetadata(channel, slot, step, metadata, 0U));
+    }
+
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> replacement{};
+    replacement.fill(packSequencerStepMetadata(metadata));
+    TEST_ASSERT_FALSE(store.replacePatternWords(7U, 7U, replacement, 1U));
+
+    std::array<SequencerStepMetadataWord, kSequencerMaximumSteps> loaded{};
+    store.loadPatternWords(0U, 0U, loaded);
+    TEST_ASSERT_EQUAL_UINT32(packSequencerStepMetadata(metadata), loaded[0U]);
+    TEST_ASSERT_EQUAL_UINT32(packSequencerStepMetadata(metadata), loaded[127U]);
 }
 
 void testLegacyChannelSequencesSeedPatternOneOnly() {
@@ -614,6 +770,8 @@ int main(int, char**) {
     RUN_TEST(testSparseStepStoreRoundTripRemovalAndPatternCopy);
     RUN_TEST(testSparseStepStoreCapacityValidationAndReservedSongRegion);
     RUN_TEST(testSparseStepStoreDelayedCommitAndReadWriteFailures);
+    RUN_TEST(testSparseStepStoreDefensiveDecodeAndNoOpBranches);
+    RUN_TEST(testSparseStepStoreReplaceCapacityAndMixedPatternBranches);
     RUN_TEST(testLegacyChannelSequencesSeedPatternOneOnly);
     RUN_TEST(testPersistentBankRoundTripAndDelayedCommit);
     RUN_TEST(testStoreRejectsInvalidRequestsAndDefersWhenWritesAreBlocked);
