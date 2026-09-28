@@ -11,6 +11,7 @@
 #include <array>
 #include <cctype>
 #include <cstdint>
+#include <limits>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -115,6 +116,22 @@ std::wstring familyToWide(const std::string& family) {
     return utf8ToWide(family);
 }
 
+int winLongToInt(const LONG value, const char* const context) {
+    if (value < static_cast<LONG>(std::numeric_limits<int>::min()) ||
+        value > static_cast<LONG>(std::numeric_limits<int>::max())) {
+        throw std::runtime_error(std::string(context) + " exceeds Storybook renderer integer range");
+    }
+    return static_cast<int>(value);
+}
+
+int paddedPositiveDimension(const LONG value, const int padding, const char* const context) {
+    const int base = winLongToInt(value, context);
+    if (base > std::numeric_limits<int>::max() - padding) {
+        throw std::runtime_error(std::string(context) + " exceeds Storybook renderer integer range");
+    }
+    return std::max(1, base + padding);
+}
+
 struct WindowsFontContext {
     HDC dc = nullptr;
     HFONT font = nullptr;
@@ -174,7 +191,7 @@ int systemTextWidth(const std::string& text, const StoryFontStyle& font) {
     if (GetTextExtentPoint32W(context.dc, wide.data(), static_cast<int>(wide.size()), &size) == FALSE) {
         throw std::runtime_error("cannot measure system Storybook text");
     }
-    return size.cx;
+    return winLongToInt(size.cx, "system Storybook text width");
 }
 
 int systemFontHeight(const StoryFontStyle& font) {
@@ -196,7 +213,7 @@ int drawSystemTextLine(
     if (GetTextExtentPoint32W(metricsContext.dc, wide.data(), static_cast<int>(wide.size()), &extent) == FALSE) {
         throw std::runtime_error("cannot measure system Storybook text");
     }
-    const int width = std::max(1, extent.cx + 4);
+    const int width = paddedPositiveDimension(extent.cx, 4, "system Storybook glyph width");
     const int height = std::max(1, static_cast<int>(metricsContext.metrics.tmHeight) + 4);
 
     BITMAPINFO info{};
@@ -235,7 +252,7 @@ int drawSystemTextLine(
     }
     SelectObject(metricsContext.dc, oldBitmap);
     DeleteObject(bitmap);
-    return extent.cx;
+    return winLongToInt(extent.cx, "system Storybook rendered text width");
 }
 
 #else

@@ -20,6 +20,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Fixed
 
+- Fixed MinGW/UCRT64 compilation of the Windows Storybook system-font renderer: Win32 `SIZE::cx` is a `LONG`, so measured GDI widths now pass through checked `LONG` -> `int` conversion before renderer arithmetic instead of mixing Win32 and renderer integer types under `-Werror`.
 - Guarded the Windows `WIN32_LEAN_AND_MEAN` and `NOMINMAX` definitions in the Storybook host-process launcher so MinGW/UCRT64 builds remain clean under `-Werror` when the toolchain already defines `NOMINMAX`.
 
 ### Automated tutorial / Storybook infrastructure

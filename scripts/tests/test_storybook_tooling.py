@@ -166,6 +166,15 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("#ifndef WIN32_LEAN_AND_MEAN\n#define WIN32_LEAN_AND_MEAN\n#endif", source)
         self.assertIn("#ifndef NOMINMAX\n#define NOMINMAX\n#endif", source)
 
+    def test_windows_system_font_widths_use_checked_win32_conversion(self) -> None:
+        """GDI LONG dimensions must not leak into int renderer arithmetic under MinGW -Werror."""
+        source = (ROOT / "sim/tutorial/story_text_renderer.cpp").read_text(encoding="utf-8")
+        self.assertIn("int winLongToInt(const LONG value", source)
+        self.assertIn("paddedPositiveDimension(extent.cx, 4", source)
+        self.assertNotIn("std::max(1, extent.cx + 4)", source)
+        self.assertNotIn("return size.cx;", source)
+        self.assertNotIn("return extent.cx;", source)
+
     def test_sb7_publication_is_external_media_only(self) -> None:
         """Final video composition may invoke ffmpeg/ffprobe but must not feed media state back into CLOCK."""
         publication = (ROOT / "sim/tutorial/publication_pipeline.cpp").read_text(encoding="utf-8")
