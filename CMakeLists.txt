@@ -61,6 +61,7 @@ add_library(clock-simulator-runtime STATIC
     sim/simulator_persistence.cpp
     sim/scope_timeline.cpp
     sim/scope_session.cpp
+    sim/panel_led_visual.cpp
 )
 target_link_libraries(clock-simulator-runtime PUBLIC clock-simulator-firmware)
 target_compile_definitions(clock-simulator-runtime PUBLIC
@@ -76,6 +77,15 @@ target_compile_options(clock-simulator-runtime PRIVATE ${CLOCK_WARNING_FLAGS})
 add_executable(clock-simulator-headless sim/headless_main.cpp)
 target_link_libraries(clock-simulator-headless PRIVATE clock-simulator-runtime)
 target_compile_options(clock-simulator-headless PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_library(clock-simulator-panel-layout STATIC
+    sim/panel_layout.cpp
+    sim/panel_layout_ini.cpp
+)
+target_include_directories(clock-simulator-panel-layout PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim"
+)
+target_compile_options(clock-simulator-panel-layout PRIVATE ${CLOCK_WARNING_FLAGS})
 
 add_library(clock-storybook-contract STATIC
     sim/tutorial/story_contract.cpp
@@ -122,6 +132,19 @@ target_include_directories(clock-storybook-runner PUBLIC
 )
 target_compile_options(clock-storybook-runner PRIVATE ${CLOCK_WARNING_FLAGS})
 
+add_library(clock-storybook-presentation STATIC
+    sim/tutorial/panel_presentation.cpp
+    sim/tutorial/panel_dynamic_layer.cpp
+)
+target_link_libraries(clock-storybook-presentation PUBLIC
+    clock-storybook-runner
+    clock-simulator-panel-layout
+)
+target_include_directories(clock-storybook-presentation PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim"
+)
+target_compile_options(clock-storybook-presentation PRIVATE ${CLOCK_WARNING_FLAGS})
+
 add_executable(clock-storybook-contract-tests
     sim/storybook_contract_tests.cpp
 )
@@ -152,6 +175,17 @@ target_compile_definitions(clock-storybook-runner-tests PRIVATE
 )
 target_compile_options(clock-storybook-runner-tests PRIVATE ${CLOCK_WARNING_FLAGS})
 
+add_executable(clock-storybook-panel-presentation-tests
+    sim/storybook_panel_presentation_tests.cpp
+)
+target_link_libraries(clock-storybook-panel-presentation-tests PRIVATE
+    clock-storybook-presentation
+)
+target_compile_definitions(clock-storybook-panel-presentation-tests PRIVATE
+    CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_compile_options(clock-storybook-panel-presentation-tests PRIVATE ${CLOCK_WARNING_FLAGS})
+
 add_library(clock-vcv-runtime-adapter STATIC
     vcv/clock_vcv_runtime.cpp
 )
@@ -180,10 +214,11 @@ target_compile_options(clock-manual-screenshot-generator PRIVATE ${CLOCK_WARNING
 add_executable(clock-simulator-tests
     sim/simulator_tests.cpp
     sim/simulator_contract_tests.cpp
-    sim/panel_layout.cpp
-    sim/panel_layout_ini.cpp
 )
-target_link_libraries(clock-simulator-tests PRIVATE clock-simulator-runtime)
+target_link_libraries(clock-simulator-tests PRIVATE
+    clock-simulator-runtime
+    clock-simulator-panel-layout
+)
 target_compile_options(clock-simulator-tests PRIVATE ${CLOCK_WARNING_FLAGS})
 
 if(CLOCK_SIMULATOR_WITH_SDL)
@@ -207,13 +242,11 @@ if(CLOCK_SIMULATOR_WITH_SDL)
 
     add_executable(clock-simulator
         sim/main.cpp
-        sim/panel_layout.cpp
-        sim/panel_layout_ini.cpp
         sim/panel_renderer.cpp
         sim/panel_renderer_scope.cpp
         sim/simulator_input.cpp
     )
-    target_link_libraries(clock-simulator PRIVATE clock-simulator-runtime SDL3::SDL3)
+    target_link_libraries(clock-simulator PRIVATE clock-simulator-runtime clock-simulator-panel-layout SDL3::SDL3)
     target_compile_options(clock-simulator PRIVATE ${CLOCK_WARNING_FLAGS})
 
     add_test(
@@ -244,5 +277,6 @@ add_test(NAME storybook_contract_tests COMMAND clock-storybook-contract-tests)
 add_test(NAME storybook_simulator_port_tests COMMAND clock-storybook-simulator-port-tests)
 add_test(NAME storybook_parser_tests COMMAND clock-storybook-parser-tests)
 add_test(NAME storybook_runner_tests COMMAND clock-storybook-runner-tests)
+add_test(NAME storybook_panel_presentation_tests COMMAND clock-storybook-panel-presentation-tests)
 add_test(NAME simulator_runtime_tests COMMAND clock-simulator-tests)
 add_test(NAME vcv_runtime_adapter_tests COMMAND clock-vcv-runtime-tests)

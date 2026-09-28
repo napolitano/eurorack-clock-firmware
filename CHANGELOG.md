@@ -29,6 +29,9 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add the executable `docs/tutorials/stories/external-sync.yaml` reference story and require two independent runs to produce the same logical trace while proving AUTO acquisition/lock, firmware auto-start, generator hold/reacquisition and manual STOP precedence.
 - Implement `setup.factory_reset` through an erased simulator-persistence precondition and the existing power lifecycle rather than direct `ClockState` mutation.
 - Add runner coverage for encoder direction/detents, encoder push, TAP, POWER, SYNC source/patch/generator, RST patch/generator/pulse, subtitles, visible-channel scope, explicit waits, timeout failures and assertion failures.
+- Add the SB-4 one-way front-panel presentation layer: synchronized visible button/encoder states, deterministic SYNC/RST plug insertion/removal, scriptable scope state, real POWER/cable telemetry, and PanelLayout-only geometry.
+- Move shared activity-LED visual persistence into `panel_led_visual.*` so both the native panel and Storybook derive visible LED state from the same real gate telemetry without synthesizing pulses.
+- Add a deterministic headless RGBA dynamic panel layer and regressions proving custom PanelLayout coordinates, PLAY down/up synchronization, half-progress SYNC/RST insertion, visible patch plugs, real encoder telemetry, POWER OFF agreement, and actual LED-source ownership.
 
 ### Sequencer 2.0 foundation
 

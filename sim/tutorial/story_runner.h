@@ -14,6 +14,7 @@
 #include <vector>
 
 #include "tutorial/story_model.h"
+#include "tutorial/story_presentation_sink.h"
 #include "tutorial/story_simulator_port.h"
 
 namespace clockfw::sim::tutorial {
@@ -68,7 +69,10 @@ struct StoryRunResult {
 class StoryRunner final {
 public:
     /** @brief Binds one strict simulator port and the canonical docs/tutorials resource root. */
-    StoryRunner(StorySimulatorPort& port, std::filesystem::path tutorialRoot);
+    StoryRunner(
+        StorySimulatorPort& port,
+        std::filesystem::path tutorialRoot,
+        StoryPresentationSink* presentationSink = nullptr);
 
     /** @brief Validates and executes one complete story deterministically. */
     StoryRunResult run(const Story& story);
@@ -76,6 +80,7 @@ public:
 private:
     StorySimulatorPort& port_;
     std::filesystem::path tutorialRoot_;
+    StoryPresentationSink* presentationSink_ = nullptr;
 };
 
 }  // namespace clockfw::sim::tutorial

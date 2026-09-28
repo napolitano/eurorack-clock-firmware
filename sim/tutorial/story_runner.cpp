@@ -6,21 +6,16 @@
  * @license PolyForm-Noncommercial-1.0.0
  */
 #include "tutorial/story_runner.h"
-
 #include <algorithm>
 #include <cstdint>
 #include <string>
 #include <utility>
-
 #include "tutorial/interaction_profile_loader.h"
 #include "tutorial/story_validator.h"
-
 namespace clockfw::sim::tutorial {
 namespace {
-
 constexpr std::uint64_t kUsPerMs = 1000ULL;
 constexpr std::uint64_t kWaitPollUs = 1000ULL;
-
 const char* traceSceneName(const SceneKind kind) {
     switch (kind) {
         case SceneKind::Chapter: return "chapter";
@@ -30,7 +25,6 @@ const char* traceSceneName(const SceneKind kind) {
     }
     return "scene";
 }
-
 const char* traceActionName(const StoryActionKind kind) {
     switch (kind) {
         case StoryActionKind::Encoder: return "encoder";
@@ -51,7 +45,6 @@ const char* traceActionName(const StoryActionKind kind) {
     }
     return "action";
 }
-
 const char* portErrorName(const StoryPortError error) {
     switch (error) {
         case StoryPortError::None: return "none";
@@ -62,7 +55,6 @@ const char* portErrorName(const StoryPortError error) {
     }
     return "unknown port error";
 }
-
 bool isPacedAction(const StoryActionKind kind) {
     switch (kind) {
         case StoryActionKind::Encoder:
@@ -85,7 +77,6 @@ bool isPacedAction(const StoryActionKind kind) {
     }
     return false;
 }
-
 SignalWaveform toSimulatorWaveform(const StoryWaveform waveform) {
     switch (waveform) {
         case StoryWaveform::Square: return SignalWaveform::Square;
@@ -94,11 +85,14 @@ SignalWaveform toSimulatorWaveform(const StoryWaveform waveform) {
     }
     return SignalWaveform::Square;
 }
-
 class RunContext final {
 public:
-    RunContext(StorySimulatorPort& port, const Story& story, const InteractionTiming& timing)
-        : port_(port), story_(story), timing_(timing) {}
+    RunContext(
+        StorySimulatorPort& port,
+        const Story& story,
+        const InteractionTiming& timing,
+        StoryPresentationSink* presentationSink)
+        : port_(port), story_(story), timing_(timing), presentationSink_(presentationSink) {}
 
     StoryRunResult execute() {
         if (!applySetup()) {
@@ -174,6 +168,9 @@ private:
                     if (!requirePort(port_.rotateEncoderDetent(action.encoderDirection), action, sceneIndex, actionIndex)) {
                         return false;
                     }
+                    if (presentationSink_ != nullptr) {
+                        presentationSink_->onEncoderDetent(presentationUs_, action.encoderDirection);
+                    }
                     emit(StoryTraceKind::EncoderDetent, sceneIndex, actionIndex, "encoder",
                          action.encoderDirection > 0 ? "clockwise" : "counter_clockwise");
                     advanceActiveMs(timing_.encoderDetentMs);
@@ -189,6 +186,9 @@ private:
                                      timing_.buttonReleasePauseMs, action, sceneIndex, actionIndex);
             case StoryActionKind::Power: {
                 if (!requirePort(port_.setPower(action.state), action, sceneIndex, actionIndex)) return false;
+                if (presentationSink_ != nullptr) {
+                    presentationSink_->onPowerState(presentationUs_, action.state);
+                }
                 emit(StoryTraceKind::PowerState, sceneIndex, actionIndex, "power", action.state ? "on" : "off");
                 advanceActiveMs(timing_.afterMajorScreenChangeMs);
                 return true;
@@ -197,11 +197,21 @@ private:
             case StoryActionKind::ResetCable: {
                 const PatchAction patch = action.kind == StoryActionKind::SyncCable
                     ? PatchAction::SyncCable : PatchAction::ResetCable;
-                advanceActiveMs(timing_.patchActionMs);
                 if (!requirePort(port_.setPatchConnected(patch, action.state), action, sceneIndex, actionIndex)) return false;
+                if (presentationSink_ != nullptr) {
+                    presentationSink_->onPatchMotion(
+                        presentationUs_,
+                        patch,
+                        action.state,
+                        static_cast<std::uint64_t>(timing_.patchActionMs) * kUsPerMs);
+                }
                 emit(StoryTraceKind::PatchState, sceneIndex, actionIndex,
                      action.kind == StoryActionKind::SyncCable ? "sync_cable" : "rst_cable",
                      action.state ? "connected" : "disconnected");
+                advanceActiveMs(timing_.patchActionMs);
+                if (presentationSink_ != nullptr) {
+                    presentationSink_->onPatchSettled(presentationUs_, patch, action.state);
+                }
                 return true;
             }
             case StoryActionKind::SyncGenerator:
@@ -236,6 +246,9 @@ private:
                 emit(StoryTraceKind::Subtitle, sceneIndex, actionIndex, "subtitle", action.text);
                 return true;
             case StoryActionKind::Scope:
+                if (presentationSink_ != nullptr) {
+                    presentationSink_->onScopeState(presentationUs_, action.scopeMode);
+                }
                 emit(StoryTraceKind::Scope, sceneIndex, actionIndex, "scope",
                      action.scopeMode == ScopeMode::VisibleChannel ? "visible_channel" : "hidden");
                 return true;
@@ -265,9 +278,15 @@ private:
         const std::size_t sceneIndex,
         const std::size_t actionIndex) {
         if (!requirePort(port_.setModuleControl(control, true), action, sceneIndex, actionIndex)) return false;
+        if (presentationSink_ != nullptr) {
+            presentationSink_->onControlState(presentationUs_, control, true);
+        }
         emit(StoryTraceKind::ControlState, sceneIndex, actionIndex, std::string(moduleControlName(control)), "down");
         advanceActiveMs(downMs);
         if (!requirePort(port_.setModuleControl(control, false), action, sceneIndex, actionIndex)) return false;
+        if (presentationSink_ != nullptr) {
+            presentationSink_->onControlState(presentationUs_, control, false);
+        }
         emit(StoryTraceKind::ControlState, sceneIndex, actionIndex, std::string(moduleControlName(control)), "up");
         advanceActiveMs(releaseAndPauseMs);
         return true;
@@ -388,6 +407,7 @@ private:
     const InteractionTiming& timing_;
     StoryRunResult result_;
     std::uint64_t presentationUs_ = 0ULL;
+    StoryPresentationSink* presentationSink_ = nullptr;
 };
 
 }  // namespace
@@ -396,8 +416,11 @@ StoryRunResult::operator bool() const {
     return issues.empty();
 }
 
-StoryRunner::StoryRunner(StorySimulatorPort& port, std::filesystem::path tutorialRoot)
-    : port_(port), tutorialRoot_(std::move(tutorialRoot)) {}
+StoryRunner::StoryRunner(
+    StorySimulatorPort& port,
+    std::filesystem::path tutorialRoot,
+    StoryPresentationSink* presentationSink)
+    : port_(port), tutorialRoot_(std::move(tutorialRoot)), presentationSink_(presentationSink) {}
 
 StoryRunResult StoryRunner::run(const Story& story) {
     StoryRunResult rejected;
@@ -415,7 +438,7 @@ StoryRunResult StoryRunner::run(const Story& story) {
         return rejected;
     }
 
-    RunContext context(port_, story, *timing.timing);
+    RunContext context(port_, story, *timing.timing, presentationSink_);
     return context.execute();
 }
 

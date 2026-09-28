@@ -167,6 +167,12 @@ Exact durations are defined centrally in [`interaction_profiles.yaml`](interacti
 The generated tutorial is composed first. Optional pre-produced intro/outro clips are concatenated only in the publication stage. Default final media is MP4/H.264; WebM is optional.
 
 
+## Physical panel presentation
+
+SB-4 binds recorded physical actions to a one-way presentation timeline. Button/encoder-push down/up state is visible for the exact deterministic interaction interval. Encoder rotation uses the simulator's accepted detent position. SYNC/RST patch actions use `patch_action_ms` as visible insertion/removal time while invoking the real cable operation at the start of that motion.
+
+The dynamic panel layer never owns CLOCK behaviour. POWER, cable connection, signal level, encoder position and all eight LEDs are read from `SimulatorRuntime`; geometry is read exclusively from `PanelLayout`. Scope visibility remains a presentation state and does not alter firmware time or simulator state.
+
 ## Execution contract
 
 SB-3 executes validated stories through `StoryRunner` and `StorySimulatorPort`. The runner produces a deterministic logical trace; the same story, firmware/simulator revision, resource files, and starting simulator state must produce the same trace timestamps and events.

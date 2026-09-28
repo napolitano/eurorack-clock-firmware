@@ -170,3 +170,22 @@ The runner emits stable trace events for scene/action boundaries, physical contr
 The schema-1 setup boundary now has an explicit host implementation: `factory_reset: true` clears the simulator persistence image to the erased/factory precondition and reboots through the existing simulator lifecycle. It does not write `ClockState` directly.
 
 `docs/tutorials/stories/external-sync.yaml` is the SB-3 reference story. Automated integration runs it twice from independent fresh simulator instances and requires identical logical traces while proving AUTO acquisition/lock, real firmware auto-start, generator hold/reacquisition, unchanged CLOCK `SOURCE`, and manual STOP precedence while incoming SYNC remains locked.
+
+## SB-4 front-panel presentation layer
+
+SB-4 introduces a one-way physical-presentation sink and deterministic panel layer without adding any reverse dependency into CLOCK. `StoryRunner` may notify a `StoryPresentationSink` at the exact presentation timestamp of an accepted simulator action; the sink cannot mutate `SimulatorRuntime` or `ClockState`.
+
+`PanelPresentationTimeline` records only transient presentation facts that the simulator does not expose directly: button/encoder-push depression, plug insertion/removal motion, scope visibility, and the visible record of POWER actions. Stable product/environment facts remain authoritative elsewhere:
+
+- encoder position comes from `SimulatorRuntime::encoderVisualPosition()`;
+- POWER comes from `SimulatorRuntime::poweredOn()`;
+- SYNC/RST cable and signal state come from simulator input telemetry;
+- all eight LED states come from real gate telemetry through the shared `panelLedVisuallyLit()` rule;
+- every control/jack/LED coordinate and size comes from `PanelLayout`.
+
+Recorded patch actions now invoke the real simulator cable operation at the **start** of the visible insertion/removal motion. The deterministic `patch_action_ms` interval then represents physical motion only. This satisfies the physical interaction contract: the video never shows a patch operation that has not reached the simulator, and the simulator never receives a recorded patch operation without a matching visible motion.
+
+`panel_dynamic_layer.*` rasterizes only dynamic host presentation into a transparent RGBA8 layer: encoder indicator/push feedback, depressed buttons, visible SYNC/RST plugs/cables, and the eight actual activity LEDs. Static panel art, OLED composition, typography, chapters and subtitles remain SB-5 responsibilities. The layer is deliberately headless and uses no SDL or desktop capture.
+
+The interactive SDL panel and Storybook now share the same LED visual-persistence helper so short real gate pulses are presented consistently without either renderer synthesizing gate activity.
+

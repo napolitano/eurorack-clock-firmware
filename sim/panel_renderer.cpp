@@ -8,6 +8,7 @@
 #include "panel_renderer.h"
 
 #include "scope_timeline.h"
+#include "panel_led_visual.h"
 
 #include <algorithm>
 #include <array>
@@ -20,8 +21,6 @@
 namespace clockfw::sim {
 namespace {
 
-/** Minimum perceived LED-on time at 1x; logic annotations remain electrically exact. */
-constexpr std::uint64_t kLedVisualPersistenceUs = 75000ULL;
 constexpr float kPi = 3.14159265358979323846F;
 
 void setColor(SDL_Renderer* renderer, Uint8 red, Uint8 green, Uint8 blue, Uint8 alpha = 255U) {
@@ -203,16 +202,10 @@ void PanelRenderer::renderFrontPanel(
 
     const auto& channels = runtime.telemetry();
     const std::uint64_t nowUs = runtime.nowMicroseconds();
-    const double safeSpeed = std::max(speedMultiplier, 1.0);
-    const std::uint64_t ledPersistenceUs = static_cast<std::uint64_t>(
-        static_cast<double>(kLedVisualPersistenceUs) * safeSpeed);
     for (std::size_t index = 0U; index < kChannelCount; ++index) {
         const auto& center = panelLayout_.outputCenters[index];
         const auto& led = panelLayout_.ledCenters[index];
-        const bool recentPulse = channels[index].lastRisingUs != 0ULL &&
-            nowUs >= channels[index].lastRisingUs &&
-            nowUs - channels[index].lastRisingUs <= ledPersistenceUs;
-        const bool ledLit = channels[index].logicHigh || recentPulse;
+        const bool ledLit = panelLedVisuallyLit(channels[index], nowUs, speedMultiplier);
         setColor(renderer, ledLit ? panelLayout_.ledOnColor : panelLayout_.ledOffColor);
         drawCircle(renderer, led.x, led.y, panelLayout_.ledRadius, true);
 
