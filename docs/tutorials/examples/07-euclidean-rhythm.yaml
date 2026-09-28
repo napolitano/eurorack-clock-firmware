@@ -55,7 +55,7 @@ scenes:
             height: 10
             placement: right
             label: "12 steps define the cycle"
-            duration_ms: 5900
+            duration_ms: 21400
         - subtitle:
             text: "Increase the number of hits to 5."
         - encoder_push: {}
@@ -71,7 +71,7 @@ scenes:
             height: 10
             placement: right
             label: "Five hits are distributed across the cycle"
-            duration_ms: 5400
+            duration_ms: 19500
         - subtitle:
             text: "Select ROTATE to inspect the position of those five hits."
         - encoder:
@@ -85,7 +85,7 @@ scenes:
             height: 10
             placement: right
             label: "ROTATE: same hits, shifted starting position"
-            duration_ms: 3100
+            duration_ms: 11200
         - button:
             name: STOP_BACK
         - button:
@@ -110,13 +110,13 @@ scenes:
             height: 10
             placement: right
             label: "ROTATE shifts the pattern without changing its count"
-            duration_ms: 4300
+            duration_ms: 15600
   - callout:
       type: tip
       title: "Three core parameters"
       body: |
         STEPS sets cycle length, HITS sets event count, and ROTATE shifts the pattern.
-      duration_ms: 3500
+      duration_ms: 12700
   - text:
       title: "Thanks for watching"
       body: |

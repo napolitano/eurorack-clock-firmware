@@ -1,11 +1,17 @@
-[warmly] Hi, I’m Axel from South Signal Lab. This time we’ll use the Sequencer. I’ll switch modes, move to one step, toggle its gate, and run the pattern so you can see what that edit did. We’ll use the front-panel controls and leave the rest of the pattern alone.
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you the basic Sequencer workflow in CLOCK: selecting the mode, choosing a step, toggling its gate, and then running the pattern so we can see the result.
 
-Open the overview, hold TAP, and turn to Sequencer. Release TAP and confirm. Here’s the step grid. In Euclid you set a length and a hit count; here you choose the steps yourself. That makes it handy when you know exactly where you want a gate.
+[conversational] CLOCK is my eight-output Eurorack master clock, rhythm generator, and gate sequencer. Unlike Euclid, where you describe a distribution mathematically, the Sequencer lets you decide directly which individual steps should produce gates.
 
-Turn the encoder one click to step two. Notice that the cursor moves, but the step itself hasn’t changed yet. Press the encoder and the gate toggles. That’s the edit: turning selects a position, pressing changes it. Let’s press PLAY and watch the scope while the pattern runs.
+[confidently] Open the overview, hold TAP, and turn to Sequencer. Release TAP and confirm the change. Here’s the step grid. Turning the encoder moves the cursor through the pattern; pressing the encoder changes the selected step.
 
-There’s a practical limit to what you can draw on this little display at once. A pattern can be longer than sixteen steps, so CLOCK shows it in blocks. We’re staying on the first visible block today; I’m not changing the pattern length or jumping to another block in this example.
+[thoughtful] Turn one click to step two. Notice that moving the cursor has not edited the pattern yet. Now press the encoder and the gate toggles. That distinction is useful: turn to navigate, press to change the selected step.
 
-The Sequencer chooses where events go. CLOCK’s shared timing determines when those steps happen. I’ll stop the transport and return to Performance; the step we toggled belongs to this channel’s pattern.
+[conversational] Let’s press PLAY and watch the scope while the pattern runs. The gate we just enabled now becomes part of this channel’s repeating sequence.
 
-That’s the basic Sequencer edit. Thanks for watching. We changed one step and then ran the pattern to see it work. I’ll keep sharing the module’s details here at South Signal Lab. You can follow the development, and there’s Ko-fi if you’d like to support the project. See you in the next one.
+[slowly] A pattern can be longer than the sixteen steps that fit comfortably on the display at once. CLOCK therefore presents longer sequences in blocks. We’re staying on the first visible block here; this example is only about the basic select-and-toggle interaction.
+
+[thoughtful] The Sequencer decides where events belong in the pattern. CLOCK’s shared timing model decides when those steps occur. That keeps a sequenced channel rhythmically related to the other outputs.
+
+[confidently] I’ll stop the transport and return to Performance. The edited step remains part of this channel’s sequence.
+
+[warmly] And that brings us to the end of this example. Thank you very much for your interest and your time. If you liked what you saw, want to stay up to date, or would like to support the project, follow me here or on Ko-fi for exclusive insights into the development process behind my Eurorack modules. [softly] Bye, and see you soon.

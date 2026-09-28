@@ -1,11 +1,15 @@
-[warmly] Hi, I’m Axel from South Signal Lab. Divider Bank is the quick way to get eight related divisions from one clock. Let’s switch to it and choose which family of divisions those outputs use. I’ll show the bank selection on the module and then run it.
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you Divider Bank — the quickest way to turn one timing source into eight related clock divisions without configuring eight channels one by one.
 
-Open the overview. Hold TAP and turn one click to Divider Bank. Release TAP; the confirmation appears on NO, so turn to YES and press. We’re now configuring a bank rather than editing eight individual channels one after another. One choice sets up the family across the outputs.
+[conversational] CLOCK is my eight-output Eurorack master clock, rhythm generator, and gate sequencer. Divider Bank is one of its three output topologies, alongside One Clock and Independent.
 
-The first family is powers of two. Think of the familiar divide-by-two, divide-by-four progression. Press the encoder to edit the bank, turn one click to the integers, and press to confirm. There’s a prime-number family in the list as well, but we’re leaving the integer bank selected for this run.
+[confidently] Open the overview. Hold TAP and turn to Divider Bank. Release TAP; the confirmation appears on NO, so turn to YES and press. We’re now configuring a bank as a whole instead of editing eight separate channel setups.
 
-Back on the main screen, press PLAY. I’ll show one output on the scope. The eight divisions have different rates, but they’re all derived from the same reference. So their relationship stays predictable as the source clock runs. After a moment, I’ll press STOP.
+[thoughtful] The first family is powers of two: the familiar progression built around divide-by-two relationships. Press the encoder to edit the bank, turn one click to the integer family, and press again to confirm. There’s also a prime-number family in the list, but we’ll leave Integer selected for this example.
 
-That’s when I reach for Divider Bank: I want a useful spread of clock divisions without building eight separate channel setups first.
+[conversational] Back on the main screen, press PLAY. I’ll show one output on the scope. The eight outputs run at different related rates, but every one of them is derived from the same reference clock.
 
-That’s Divider Bank. Thanks for watching. It’s a quick way to get several related pulses before you start making individual channel setups. I’m sharing the CLOCK build here at South Signal Lab. Follow along if you’re interested in the decisions behind it, and Ko-fi is there if you’d like to support the project. See you soon.
+[slowly] That shared origin is the point. The divisions remain predictably related while the source runs, so Divider Bank is a fast way to distribute several useful timing rates around a patch.
+
+[confidently] After a moment, I’ll press STOP. Nothing had to be configured channel by channel; the bank choice defined the family for all eight outputs.
+
+[warmly] And that brings us to the end of this example. Thank you very much for your interest and your time. If you like what you’ve seen, want to stay up to date, or would like to support me, follow me here or on Ko-fi for exclusive insights into the development process behind my Eurorack modules. [softly] Bye, and see you soon.

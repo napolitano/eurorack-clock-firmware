@@ -2,58 +2,70 @@
 
 # CLOCK tutorial voice-over and picture timing
 
-Voice-over is recorded after the Storybook picture and mixed in the editor. The scripts in this directory are the authoritative spoken copy. Story YAML contains real control actions and presentation-only holds at the states being described. Subtitles remain short action labels, not transcripts.
+Voice-over is recorded after the Storybook picture and mixed in the editor. The scripts in this directory are the authoritative spoken copy. Story YAML contains real control actions plus presentation-only holds at the states being explained. Subtitles remain short action labels rather than transcripts.
 
-## Reference pace and fixed framing
+## Reference pace and framing
 
-- The tracked intro and outro clips measure **4.5 s** and **5.5 s** respectively (`ffprobe` on the bundled MP4s).
-- The provided spoken opening and sign-off examples took roughly **15 s** and **16 s**. For rough planning, use **195 spoken words/minute** (about 3.25 words/s), then allow for natural pauses and watching a control action.
-- Examples 01–10 have **18 s** opening cards and **20 s** closing cards. The longer example 11 uses **16 s** and **22 s**. Each current paragraph fits its card at the reference pace with a small editing margin.
-- Eleven v3 accepts natural-language Audio Tags, but the tags can also be spoken aloud when a delivery does not suit the voice. Use only a few delivery cues, and check the generated result. Natural punctuation and paragraph breaks usually do the work. See the official [Audio Tags 101](https://elevenlabs.io/blog/v3-audiotags).
-- Eleven v3 delivery tags are cues, not words to speak. Record a paragraph at a time when a control action needs a more precise edit. Speech duration must ultimately be measured from the recorded take or generated audio; the numbers below are planning values, not audio measurements.
+- The tracked intro and outro clips measure **4.5 s** and **5.5 s** respectively (`ffprobe` on the bundled MP4 assets).
+- The provided spoken opening and sign-off references take roughly **15 s** and **16 s**.
+- Planning therefore uses approximately **195 spoken words/minute** (3.25 words/s), but this is only a baseline. Audio Tags, punctuation, breathing and visual explanation add time.
+- Every example reserves **18 s** for the opening card and **20 s** for the closing card.
+- Body holds are sized from the actual script rather than from a fixed tutorial-length target. The narration dictates the edit; it is not squeezed into an arbitrary picture duration.
+- Eleven v3 uses inline Audio Tags, punctuation and text structure for performance direction. SSML `<break>` markup is not part of the v3 contract.
+- Final publication timing must still be checked against the actual generated or recorded take. If a take differs materially, retime the corresponding Story hold and regenerate the video/subtitle sidecars together.
 
-## Revised planning lengths
+## Current planning values
 
-`Picture` includes title, story actions, explanation holds, summary and closing card, but excludes the two bumper clips. The action duration estimate follows `interaction_profiles.yaml`; `wait_until` in example 10 is variable, so its picture time is less certain. `Speech` counts script words at 195 wpm. Both columns are rounded planning values, not rendered-video measurements.
+`Speech` is the plain spoken word count at 195 wpm and therefore excludes additional expressive pauses. `Explicit Story time` is the exact sum of authored scene/focus durations and explicit waits in the YAML. It does **not** include the additional deterministic time consumed by encoder turns, pushes, button actions, patch motions or `wait_until`, so the final StoryRunner duration is longer. `+ bumpers` adds the fixed 10 seconds from the 4.5-s intro and 5.5-s outro.
 
-| Example | Spoken words | Speech | Picture | With bumpers |
+| Example | Spoken words | Speech | Explicit Story time | + bumpers |
 | --- | ---: | ---: | ---: | ---: |
-| 01 · First Clock | 248 | 1:16 | ~1:21 | ~1:31 |
-| 02 · Transport | 231 | 1:11 | ~1:14 | ~1:24 |
-| 03 · Encoder tempo | 210 | 1:05 | ~1:07 | ~1:17 |
-| 04 · Tap Tempo | 207 | 1:04 | ~1:08 | ~1:18 |
-| 05 · Topology / channel | 259 | 1:20 | ~1:24 | ~1:34 |
-| 06 · Clock mode | 245 | 1:15 | ~1:17 | ~1:27 |
-| 07 · Euclid | 315 | 1:37 | ~1:43 | ~1:53 |
-| 08 · Sequencer | 277 | 1:25 | ~1:31 | ~1:41 |
-| 09 · Divider Bank | 266 | 1:22 | ~1:28 | ~1:38 |
-| 10 · External SYNC / RST | 274 | 1:24 | ~1:27* | ~1:37* |
-| 11 · Eight Clock channels | 901 | 4:37 | ~5:16 | ~5:26 |
+| 01 · First Clock | 301 | 1:33 | 1:47 | 1:57 |
+| 02 · Transport | 299 | 1:32 | 1:48 | 1:58 |
+| 03 · Encoder tempo | 253 | 1:18 | 1:32 | 1:42 |
+| 04 · Tap Tempo | 274 | 1:24 | 1:38 | 1:48 |
+| 05 · Topology / channel | 308 | 1:35 | 1:51 | 2:01 |
+| 06 · Clock mode | 302 | 1:33 | 1:46 | 1:56 |
+| 07 · Euclid | 339 | 1:44 | 2:01 | 2:11 |
+| 08 · Sequencer | 318 | 1:38 | 1:52 | 2:02 |
+| 09 · Divider Bank | 300 | 1:32 | 1:48 | 1:58 |
+| 10 · External SYNC / RST | 322 | 1:39 | 1:54 | 2:04 |
+| 11 · Eight Clock channels | 1295 | 6:38 | 7:12 | 7:22 |
 
-\* Includes an assumed ~1 s acquisition of external lock. The actual picture duration depends on the accepted incoming edges.
+These are edit budgets, not measured ElevenLabs output lengths.
 
-## Example 11: coverage and editing order
+## Example 11: narrative structure
 
-The chapter introduces the goal; the factory-state card explains why eight Clock channels are already present behind One Clock. The tutorial then shows the topology switch and confirmation, eight-tile overview, channel-four selection and the long encoder press. It highlights MODE, then physically moves through **every visible Clock-channel setting**. The VO follows those exact selections:
+Example 11 is intentionally a full walkthrough rather than a fast feature demo. It now starts with a proper orientation before the first control action:
 
-| Selected menu row | What the narration explains | Picture state |
+- what South Signal Lab is showing;
+- what CLOCK is;
+- why Independent still uses one shared timing reference;
+- what will be changed on channel 4;
+- what will remain unchanged and only be explained.
+
+The tutorial then shows the real topology switch and confirmation, the eight-channel overview, channel-four selection, the short encoder push versus long encoder press, and the four channel-setting groups `MODE · TIMING · CLOCK · OUTPUT`.
+
+Every setting that is actually shown on screen receives its own explanation and visual hold:
+
+| Selected menu row | Narration purpose | Picture state |
 | --- | --- | --- |
-| MODE | Clock, Euclid, Sequencer and Off change this channel's function | MODE selected; no mode change |
-| TIMING → DIV/MULT | integer divide/multiply relative to shared timing | edit ×1 → ×2 and confirm |
-| TIMING → NUMERATOR | upper part of the rational rate | selected, left at 1 |
-| TIMING → DENOMINATOR | lower part of the rational rate | selected, left at 1 |
-| TIMING → SWING | alternating interval displacement | selected, unchanged |
-| TIMING → GROOVE | repeatable pattern timing and its separate page | selected, unchanged |
-| CLOCK → METER BEATS | beats per local measure | selected, unchanged |
-| CLOCK → METER UNIT | note value counted as one beat | selected, unchanged |
-| OUTPUT → PROBABILITY | chance an eligible event reaches the jack | selected, unchanged |
-| OUTPUT → GATE | pulse HIGH time | edit 10 → 20 ms and confirm |
-| OUTPUT → PHASE | channel offset relative to common reference | selected, unchanged |
-| OUTPUT → RESET | Global vs Sync Free phase behavior | selected, unchanged |
-| OUTPUT → MUTE | silence without clearing configuration | selected, unchanged |
+| MODE | Clock, Euclid, Sequencer and Off; scope is the selected channel only | MODE selected; unchanged |
+| TIMING → DIV/MULT | integer divide/multiply relative to the shared reference | edit ×1 → ×2 and confirm |
+| TIMING → NUMERATOR | upper half of a rational rate relationship | selected; unchanged |
+| TIMING → DENOMINATOR | lower half of that rational relationship | selected; unchanged |
+| TIMING → SWING | long/short event-spacing displacement without changing average tempo | selected; unchanged |
+| TIMING → GROOVE | deterministic pattern-based timing; entry point only | selected; groove editor not opened |
+| CLOCK → METER BEATS | beats in this channel's local measure | selected; unchanged |
+| CLOCK → METER UNIT | note value that counts as one beat | selected; unchanged |
+| OUTPUT → PROBABILITY | chance that an eligible event reaches the output | selected; unchanged |
+| OUTPUT → GATE | physical HIGH time of the pulse | edit 10 → 20 ms and confirm |
+| OUTPUT → PHASE | offset relative to the shared timing reference | selected; unchanged |
+| OUTPUT → RESET | Global versus Sync Free reset behavior | selected; unchanged |
+| OUTPUT → MUTE | silence the output without deleting its configuration | selected; unchanged |
 
-Each selection gets a separately timed focus on the corresponding OLED row. The focus freezes firmware time while it is presented; physical encoder and button actions still run under `HUMAN_NORMAL`. The final scope view runs with firmware time active so the changed rate can be seen. A one-row focus on GROOVE explains the entry point, not the eight subsettings inside its separate groove editor; that editor is outside this Clock-channel walkthrough.
+`GROOVE` is explained as the entry to its own editor but that editor is not opened in Example 11. A separate editor would add settings that are not otherwise shown in this walkthrough and would turn the example into a second tutorial.
 
-At the reference pace the 901-word script needs roughly **4:37 of speech**, before pauses. The revised story plans roughly **5:16 of picture plus 10 seconds of bumper clips**. This is a working edit budget, not a measured ElevenLabs take. Its individually timed focus holds allow roughly a second after each row, plus the real control-action time. If a take differs, retime the corresponding hold or action beat and regenerate the video and subtitle sidecars together.
+The final scope view demonstrates the two actual edits: channel 4 at ×2 with a 20-ms gate while the other seven Clock channels retain their original settings.
 
 <h6 align="center">From Munich with &#9829;</h6>

@@ -45,7 +45,7 @@ scenes:
             height: 10
             placement: right
             label: "Clock is the selected channel mode"
-            duration_ms: 8000
+            duration_ms: 31100
         - subtitle:
             text: "Start transport and watch the selected channel."
         - button:
@@ -69,13 +69,13 @@ scenes:
             height: 10
             placement: right
             label: "Gate activity follows the master timeline"
-            duration_ms: 4500
+            duration_ms: 17500
   - callout:
       type: tip
       title: "Clock is still phase-coherent"
       body: |
         Independent Clock does not become a free-running second master clock.
-      duration_ms: 3200
+      duration_ms: 12400
   - text:
       title: "Thanks for watching"
       body: |

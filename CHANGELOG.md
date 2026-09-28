@@ -14,8 +14,9 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 - Add the approved South Signal Lab 1080p intro and outro as the only intentionally tracked Storybook MP4 source assets, and reference both from every editable teaching example.
 - Ignore generated tutorial videos, audio renders, subtitle sidecars, retained frame trees, staging directories and Storybook frame PNG/RGBA intermediates so publication output cannot drift into source control.
-- Add US-English Eleven-v3 narration scripts with sparse Audio Tags, 18-second spoken-opening windows and 20-second varied closing windows sized from measured narration delivery.
-- Expand the editable teaching set from ten to eleven examples with a full eight-Independent-Clocks walkthrough covering topology change, short-push channel selection, the real encoder long-press, and the TIMING / CLOCK / OUTPUT settings hierarchy.
+- Rework all eleven US-English Eleven-v3 narration scripts around the full South Signal Lab opening/sign-off contract, explicit viewer orientation before detailed operation, and purposeful Audio Tags for warmer, more natural delivery.
+- Recalculate every editable example from the actual narration length at the measured ~195 wpm reference pace; retain 18-second opening and 20-second closing windows while substantially extending body holds where the explanation needs room.
+- Expand the editable teaching set from ten to eleven examples with a full eight-Independent-Clocks walkthrough covering product orientation, topology change, short-push channel selection, the real encoder long-press, and a separately timed explanation of every MODE / TIMING / CLOCK / OUTPUT setting actually shown on screen.
 - Keep subtitles concise while the post-production voice-over explains intent, context and parameter meaning in more detail.
 
 ### Storybook focus-arrow readability

@@ -1,11 +1,15 @@
-[warmly] Hi, I’m Axel from South Signal Lab. I’m going to patch an external clock into SYNC, send a separate reset pulse to RST, and then press STOP. The three actions do different jobs. I’ll keep the transport visible so the differences are easy to see.
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how CLOCK separates three things that are often confused: external timing through SYNC, phase reset through RST, and manual transport control through PLAY and STOP.
 
-CLOCK starts with SOURCE on AUTO. Connect the incoming clock to SYNC. A cable in the jack isn’t enough to establish timing; CLOCK waits for valid edges before the lock symbol appears. Once it locks, it follows those pulses. The SOURCE setting is still AUTO. I’ll leave the scope on briefly so you can watch the output.
+[conversational] CLOCK is my eight-output Eurorack master clock, rhythm generator, and gate sequencer. In this example an external source will provide the timing, a separate reset pulse will restart phase, and the front panel will remain in charge of transport.
 
-Now patch RST as well. I’ll hold the reset generator and send one pulse. [pause] The phase starts over, but the transport keeps playing. RST hasn’t become a second clock input, and SYNC is still providing the pulse reference.
+[thoughtful] CLOCK starts with SOURCE on AUTO. Patch the incoming clock into SYNC. A cable in the jack is not enough to establish timing; CLOCK waits for valid edges before it can measure the period and show a lock.
 
-[slowly] Finally, press STOP slash BACK. The external clock is still connected and its pulses are still arriving. Even so, CLOCK stays stopped. An explicit press on the front panel wins over automatic start from the incoming clock. Watch the transport indicator for a moment; it doesn’t jump back to PLAY.
+[confidently] Once the lock is established, CLOCK follows the external pulse reference. SOURCE still says AUTO, because AUTO is the selected policy — the lock tells us which source is currently in control. I’ll leave the scope visible briefly so you can see the resulting output activity.
 
-SYNC gives us timing. RST gives us a phase restart. PLAY and STOP remain transport controls. Keeping those jobs separate makes the patch much easier to reason about.
+[conversational] Now patch RST as well. I’ll hold the reset generator and send one pulse. [pause] The musical phase starts over, but the transport keeps playing. RST has not become another transport button, and it has not replaced SYNC as the timing source.
 
-That’s external SYNC and RST. Thanks for watching. The point to remember is that incoming clock pulses still don’t undo a manual STOP. I’ll keep sharing the CLOCK build and what I learn from it here at South Signal Lab. Follow along, or visit Ko-fi if you’d like to support the project. See you next time.
+[slowly] Finally, press STOP slash BACK. The external clock remains connected, and its pulses are still arriving. Even so, CLOCK stays stopped. An explicit manual STOP has priority; incoming SYNC is not allowed to quietly restart something you deliberately stopped.
+
+[with emphasis] That separation is the key: SYNC provides timing, RST restarts phase, and the transport controls remain transport controls.
+
+[warmly] And that brings us to the end of this example. Thank you very much for your interest and your time. If you liked what you saw, want to stay up to date, or would like to support the project, follow me here or on Ko-fi for exclusive insights into the development process behind my Eurorack modules. [softly] Bye, and see you soon.

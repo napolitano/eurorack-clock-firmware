@@ -45,7 +45,7 @@ scenes:
             height: 10
             placement: right
             label: "One bank drives eight related divisions"
-            duration_ms: 6200
+            duration_ms: 18900
         - subtitle:
             text: "Change the divider bank from powers of two to integers."
         - encoder_push: {}
@@ -61,7 +61,7 @@ scenes:
             height: 10
             placement: right
             label: "Integer bank selected"
-            duration_ms: 7300
+            duration_ms: 22300
         - button:
             name: STOP_BACK
         - button:
@@ -84,13 +84,13 @@ scenes:
             height: 10
             placement: right
             label: "Powers of two · integers · primes"
-            duration_ms: 5200
+            duration_ms: 15900
   - callout:
       type: tip
       title: "Bank choices"
       body: |
         Divider Bank offers powers-of-two, integer, and prime division families.
-      duration_ms: 3300
+      duration_ms: 10100
   - text:
       title: "Thanks for watching"
       body: |

@@ -1,11 +1,15 @@
-[warmly] Hi, I’m Axel from South Signal Lab. Today I’m going to change how CLOCK uses its eight outputs, then pick just one of them to work on. Those are two different choices, so let’s do them in order.
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you two related but separate choices in CLOCK: how the eight outputs are organized, and which individual output you’re actually editing.
 
-At the top level, there’s One Clock, Divider Bank, and Independent. One Clock sends the same clock to all eight outputs. Divider Bank gives you a family of related divisions. Independent lets each output have its own settings. That’s the one we’re heading for.
+[conversational] CLOCK is my eight-output Eurorack master clock, rhythm generator, and gate sequencer. It can use those outputs as one shared clock, as a divider bank, or as individually configurable channels. In this example we’ll move into Independent and then select one channel.
 
-Press the encoder to open the overview. Hold TAP while you turn to Clock, then let go. CLOCK asks for confirmation; it starts on NO. Turn to YES and press the encoder. We’re now in Independent, but we haven’t chosen which output to edit yet.
+[thoughtful] At the top level, there’s One Clock, Divider Bank, and Independent. One Clock applies one shared setup to all eight outputs. Divider Bank produces a related family of divisions. Independent lets each output keep its own mode and channel settings.
 
-Press the encoder again and you’ll see eight tiles. Turn two clicks to channel three, then press to select it. Now when we open channel settings, we’ll be working on output three. We haven’t changed the other seven just by selecting this one.
+[confidently] Press the encoder to open the overview. Hold TAP while you turn to Clock, then release TAP. CLOCK asks for confirmation and starts on NO. That guard is intentional because we’re changing the way all eight outputs are organized. Turn to YES and press the encoder.
 
-One point to keep in mind: Independent doesn’t give you eight unrelated master clocks. The outputs can have different modes and rates, but they still refer back to the same timing system. That’s how the patterns stay musically connected.
+[pause] We’re now in Independent, but we still haven’t chosen which output to edit.
 
-That’s the distinction: choose the layout, then choose the output. Thanks for watching. We’ll put an Independent Clock channel to work in the next video. I’ll keep sharing the build at South Signal Lab; follow along, and Ko-fi is there if you’d like to support the project. See you soon.
+[conversational] Press the encoder again and you’ll see eight tiles. Turn to channel three and press to select it. From this point, channel-level edits belong to output three. Simply selecting it has not changed the other seven.
+
+[slowly] Independent does not mean eight unrelated master clocks. The channels may have different modes and rates, but they still refer to CLOCK’s shared timing system. That common reference is what keeps the resulting rhythms musically connected.
+
+[warmly] And that brings us to the end of this example. Thank you very much for your interest and your time. If you like what you’ve seen, want to stay up to date, or would like to support me, follow me here or on Ko-fi for exclusive insights into the development process behind my Eurorack modules. [softly] Bye, and see you soon.

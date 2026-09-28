@@ -1,9 +1,13 @@
-[warmly] Hi, I’m Axel from South Signal Lab. Let’s set a tempo by tapping it in. There’s one small detail I want to show you: tapping changes the internal BPM, but it doesn’t secretly switch the clock source.
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how Tap Tempo works on CLOCK, including one detail that matters a lot: tapping a tempo does not secretly change the selected clock source.
 
-The first tap starts a new measurement. On its own, it can’t tell CLOCK how fast I’m going. The second gives it an interval, and another tap helps settle the result. You’ll see feedback on the display once there’s enough information to measure a pulse.
+[conversational] CLOCK is my eight-output Eurorack master clock, rhythm generator, and gate sequencer. Tap Tempo gives you a fast way to set the internal or fallback BPM by feel, while the source logic remains explicit and predictable.
 
-[slowly] The SOURCE setting is still AUTO after those taps. TAP is updating the internal tempo CLOCK can fall back to; it isn’t taking external SYNC out of the picture.
+[thoughtful] The first tap starts a new measurement. By itself, one timestamp cannot tell CLOCK how fast you’re tapping. The second tap gives it an interval, and further taps help settle the result. Once there’s enough information, the display gives you visual feedback and the BPM updates.
 
-That means I can tap in a comfortable tempo before I connect anything. If a valid external clock arrives, AUTO can lock to it. If I’m working internally, the tempo I just tapped is already there. No source setting changed behind my back.
+[slowly] Now look at SOURCE. It still says AUTO. TAP has changed the internal tempo that CLOCK can use, but it has not removed external SYNC from consideration and it has not switched the source behind your back.
 
-That’s Tap Tempo. Thanks for watching. The useful thing to remember is that SOURCE stays on AUTO after those taps. I’ll keep showing you the details behind CLOCK here at South Signal Lab. You can follow the build here, or support it on Ko-fi if you’d like. See you in the next one.
+[confidently] That means I can tap in a comfortable tempo before anything is patched. If a valid external clock later arrives, AUTO can lock to it. If I continue internally, the tempo I just tapped is already there as the reference.
+
+[with emphasis] The important rule is simple: Tap Tempo changes tempo, not ownership of the clock source.
+
+[warmly] And that brings us to the end of this example. Thank you very much for your interest and your time. If you liked what you saw, want to stay up to date, or would like to support the project, follow me here or on Ko-fi for exclusive insights into the development process behind my Eurorack modules. [softly] Bye, and see you soon.

@@ -35,7 +35,7 @@ scenes:
         - focus:
             target: play
             label: "PLAY starts the transport"
-            duration_ms: 5200
+            duration_ms: 12900
         - subtitle:
             text: "Press PLAY again to pause."
         - button:
@@ -46,7 +46,7 @@ scenes:
         - focus:
             target: oled_top_bar
             label: "PAUSE keeps transport state"
-            duration_ms: 5300
+            duration_ms: 13200
         - subtitle:
             text: "Press PLAY to resume."
         - button:
@@ -57,7 +57,7 @@ scenes:
         - focus:
             target: play
             label: "PLAY resumes from PAUSE"
-            duration_ms: 4900
+            duration_ms: 12200
         - subtitle:
             text: "Press STOP/BACK to stop and reset global phase."
         - button:
@@ -67,13 +67,13 @@ scenes:
         - focus:
             target: stop
             label: "STOP ends the run and resets phase"
-            duration_ms: 8500
+            duration_ms: 21200
   - callout:
       type: warning
       title: "STOP is authoritative"
       body: |
         A manual STOP remains authoritative even when external SYNC is present.
-      duration_ms: 3000
+      duration_ms: 7500
   - text:
       title: "Thanks for watching"
       body: |

@@ -2,17 +2,46 @@
 
 # CLOCK tutorial voice-over scripts
 
-This directory contains the US-English narration scripts for the eleven editable Storybook examples. Voice-over is deliberately a **post-production layer**: Storybook renders the deterministic tutorial and bumper composition first; narration generated from these scripts is added afterwards in the video editor.
+This directory contains the US-English narration scripts for the eleven editable Storybook examples. Voice-over remains a **post-production layer**: Storybook renders the deterministic tutorial and bumper composition first; narration generated from these scripts is added afterwards in the video editor.
 
-The `.txt` files are written for **Eleven v3**. They sound like Axel explaining what he does at the front panel, rather than reciting UI labels. Audio Tags are limited to moments when the delivery actually changes: `[warmly]` at the opening, occasional `[slowly]` for a distinction, and a single `[pause]` before the reset result. Natural punctuation and paragraph breaks carry most of the rhythm. See ElevenLabs’ [Audio Tags 101](https://elevenlabs.io/blog/v3-audiotags) for v3 usage. Do not convert these scripts to SSML `<break>` markup. Generate paragraph by paragraph when a line needs a different take, and listen for any tag that gets read aloud instead of performed.
+The scripts target **Eleven v3** and follow the official Audio Tags guidance. Tags are used as performance direction rather than decoration: `[warmly]` for the opening, `[conversational]` for normal explanation, `[thoughtful]` or `[slowly]` where a distinction needs space, `[confidently]` or `[with emphasis]` for an important rule, and `[pause]` only where an actual pause belongs. Punctuation, ellipses, paragraph boundaries and normal sentence rhythm remain part of the direction. Do not convert the scripts to SSML `<break>` markup; Eleven v3 does not use SSML break tags.
 
-The opening identifies Axel and the one thing this video demonstrates. The closing refers to what was just shown, usually points to the next topic, and mentions South Signal Lab and Ko-fi once. The wording changes with the subject; it is not a fixed promo read.
+The intended delivery is friendly, technically precise and human rather than announcer-like. Audio Tags must support that delivery, not turn the tutorials into a dramatic performance. Generate paragraph by paragraph when a section needs a different take or tighter synchronization, and always listen for a tag that the chosen voice interprets badly or reads aloud.
 
-After the 4.5-second pre-produced intro, examples 01–10 reserve 18 seconds for the opening and 20 seconds for the sign-off. The detailed example 11 reserves 16 seconds for the opening and 22 seconds for its longer sign-off. The measured reference is a pacing guide, not the duration of these unrecorded scripts.
+## Opening contract
+
+Every tutorial is designed to work as a standalone video. The opening therefore does three things before detailed operation begins:
+
+1. identifies South Signal Lab and Axel;
+2. states clearly what this video is going to demonstrate;
+3. gives enough product context to understand what CLOCK is and why the demonstrated function matters.
+
+The canonical opening form begins:
+
+> Hi, this is South Signal Lab. My name is Axel, and today I’ll show you ...
+
+Light subject-specific variation after that sentence is expected. The identity and orientation must not be shortened away.
+
+## Closing contract
+
+Every tutorial keeps the full sign-off intent rather than collapsing it into a short promotional line. The closing must:
+
+- mark the end of the tutorial;
+- thank the viewer for their interest and time;
+- mention staying up to date and optional support;
+- name South Signal Lab / Ko-fi appropriately;
+- refer to behind-the-scenes development insight;
+- end with a natural goodbye.
+
+Wording may vary slightly from video to video, but those elements stay present. The closing is deliberately given enough screen time to be spoken naturally.
+
+## Timing contract
+
+The user's measured reference delivery is roughly **15 seconds for the opening** and **16 seconds for the closing**. Storybook therefore reserves **18 seconds for the opening card** and **20 seconds for the closing card** in all eleven examples. The body timing is derived from the actual narration length at roughly **195 spoken words per minute**, then padded for Audio Tags, natural pauses, control actions and visual comprehension.
 
 Generated narration audio (`.wav`, `.mp3`, `.m4a`, `.aac`, `.flac`) is intentionally ignored by Git and must not be added to source packages.
 
-See [`TIMING.md`](TIMING.md) for the narration-window contract and the detailed walkthrough timing notes.
+See [`TIMING.md`](TIMING.md) for the per-example planning values and the detailed Example 11 setting checklist.
 
 ## Script map
 

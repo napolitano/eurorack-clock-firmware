@@ -1,11 +1,13 @@
-[warmly] Hi, I’m Axel from South Signal Lab. Let’s power up CLOCK, make it tick, change the tempo, and stop it again. I’ll also show you what to look for on the display when it first comes on.
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you the very first steps with CLOCK: powering it up, reading the main screen, starting the clock, changing the tempo, and stopping it again.
 
-There it is. CLOCK starts stopped, at 120 BPM. One Clock is selected, and the source says AUTO. Across the top of the display you can check the transport and the musical context. Those are the things I glance at before touching anything else.
+[conversational] CLOCK is my eight-output Eurorack master clock, rhythm generator, and gate sequencer. For this first example, we’ll keep things deliberately simple and stay in the factory One Clock setup, where all eight outputs follow one shared clock.
 
-Now press PLAY. All eight outputs follow this one clock. I’ll turn the encoder a few clicks clockwise, and you can see the BPM rise. Because we’re in One Clock, that tempo change applies to the whole set of outputs.
+[thoughtful] There it is. CLOCK starts in STOP, at 120 BPM. One Clock is selected, and the source says AUTO. Across the top of the display you can check the transport and the musical context. Those are the things I usually glance at before touching anything else.
 
-Press STOP slash BACK. The gates stop, and the global phase resets as well. So when I press PLAY next time, the pattern starts from a known point. That’s useful when several things are patched to CLOCK and need to come back together.
+[confidently] Now press PLAY. All eight outputs follow this one clock. I’ll turn the encoder a few clicks clockwise, and you can see the BPM rise immediately. Because we’re in One Clock, that tempo change applies to the complete set of outputs.
 
-For now, One Clock is a good place to start. We can give outputs different jobs later, but there’s no need to tackle that while we’re learning the three controls on the front.
+[slowly] Now press STOP slash BACK. The gates stop, and the global phase resets as well. That means the next start begins from a defined point instead of simply carrying on from wherever the clock happened to be.
 
-That’s our first clock. Thanks for spending a few minutes with me. Next I’ll look at what PLAY, PAUSE, and STOP each do. I’m documenting the build here at South Signal Lab; you can follow along, and Ko-fi is there if you’d like to support the work. See you next time.
+[conversational] For a first contact with CLOCK, One Clock is exactly where I’d start. We can give the outputs different jobs later, but right now the important thing is simply seeing how the front panel, transport, display, and master tempo work together.
+
+[warmly] And that brings us to the end of this first example. Thank you very much for your interest and your time. If you like what you’ve seen, want to stay up to date, or would like to support me, follow me here or on Ko-fi for exclusive insights into the development process behind my Eurorack modules. [softly] Bye, and see you soon.

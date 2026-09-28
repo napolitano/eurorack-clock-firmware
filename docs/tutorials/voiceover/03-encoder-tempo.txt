@@ -1,9 +1,11 @@
-[warmly] Hi, I’m Axel from South Signal Lab. Here’s a quick one: changing CLOCK’s tempo with the encoder, and why that single BPM number still matters when the outputs are doing different things. I’ll keep the performance screen in view so you can follow every click.
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how to change CLOCK’s master tempo directly with the encoder — without opening a menu or entering a separate edit mode.
 
-On the performance screen, turn clockwise and the BPM goes up. Turn the other way and it comes back down. No menu, no edit mode. You can see the value change while your hand is still on the encoder.
+[conversational] CLOCK is my eight-output Eurorack master clock, rhythm generator, and gate sequencer. Even when the outputs later run different divisions, multiplications, or patterns, they still need one clear musical reference. That’s what this BPM value represents.
 
-That number is the master tempo. The channels can divide it, multiply it, or make patterns from it, but they’re still working from the same musical reference. When I change the BPM here, those relationships move with it.
+[confidently] On the Performance screen, turn the encoder clockwise and the BPM goes up. Turn it the other way and it comes back down. The value changes while your hand is still on the control, so tempo remains a direct performance parameter.
 
-That’s useful if you have several patches running. I can speed the whole thing up without visiting eight channel menus. Each output keeps its own rate or pattern; I’ve just moved the tempo they share.
+[thoughtful] That number is the master tempo. Individual channels can divide it, multiply it, or derive patterns from it, but they remain tied to the same timing system. Changing the BPM therefore moves those relationships together rather than creating unrelated clocks.
 
-And that’s the master tempo control. Thanks for watching. In the next example I’ll tap in a tempo instead of turning the encoder. I’m building CLOCK here at South Signal Lab and sharing the decisions along the way. Follow along, or visit Ko-fi if you’d like to support the project. See you soon.
+[conversational] In a larger patch, that’s the useful part: I can speed the whole rhythmic structure up or slow it down without visiting eight separate channel menus. Each output keeps its own configuration; I’m only moving the common reference underneath it.
+
+[warmly] And that brings us to the end of this example. Thank you very much for your interest and your time. If you like what you’ve seen, want to stay up to date, or would like to support me, follow me here or on Ko-fi for exclusive insights into the development process behind my Eurorack modules. [softly] Bye, and see you soon.

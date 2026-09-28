@@ -24,7 +24,7 @@ scenes:
       body: |
         SYNC supplies timing. In factory AUTO mode, two accepted edges establish lock.
         RST changes phase only; it does not take ownership of PLAY or STOP.
-      duration_ms: 4800
+      duration_ms: 9600
   - tutorial:
       subtitle: "Patch the external clock to SYNC and wait for lock."
       actions:
@@ -47,7 +47,7 @@ scenes:
         - focus:
             target: oled_top_bar
             label: "AUTO locks to valid external SYNC"
-            duration_ms: 10500
+            duration_ms: 20900
   - tutorial:
       subtitle: "Patch RST, hold its generator, then inject one reset pulse."
       actions:
@@ -62,7 +62,7 @@ scenes:
         - focus:
             target: rst
             label: "RST restarts phase; transport stays playing"
-            duration_ms: 6900
+            duration_ms: 13700
         - subtitle:
             text: "Now press STOP. External SYNC must not override it."
         - button:
@@ -75,7 +75,7 @@ scenes:
         - focus:
             target: stop
             label: "Manual STOP stays authoritative"
-            duration_ms: 9800
+            duration_ms: 19500
   - callout:
       type: recipe
       title: "External timing recipe"
@@ -83,7 +83,7 @@ scenes:
         - "Use SYNC for timing and wait for lock."
         - "Use RST when you need a phase restart."
         - "Use CLOCK's transport controls for manual PLAY/STOP authority."
-      duration_ms: 4300
+      duration_ms: 8600
   - text:
       title: "Thanks for watching"
       body: |

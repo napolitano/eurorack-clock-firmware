@@ -27,7 +27,7 @@ scenes:
       body: |
         CLOCK powers up in STOP at 120 BPM.
         One Clock is the factory topology and SOURCE is AUTO.
-      duration_ms: 3500
+      duration_ms: 7500
   - tutorial:
       subtitle: "Power CLOCK on."
       actions:
@@ -40,11 +40,11 @@ scenes:
             target: oled_top_bar
             placement: right
             label: "Top bar: status, musical context, transport"
-            duration_ms: 2800
+            duration_ms: 6000
         - focus:
             target: oled_top_bar
             label: "120 BPM · One Clock · AUTO · STOP"
-            duration_ms: 6600
+            duration_ms: 14100
         - subtitle:
             text: "Press PLAY."
         - button:
@@ -55,7 +55,7 @@ scenes:
         - focus:
             target: play
             label: "PLAY starts all eight outputs"
-            duration_ms: 5300
+            duration_ms: 11300
         - subtitle:
             text: "Turn the encoder to raise the master tempo."
         - encoder:
@@ -70,7 +70,7 @@ scenes:
             height: 10
             placement: right
             label: "Master tempo controls the shared clock"
-            duration_ms: 5200
+            duration_ms: 11100
         - subtitle:
             text: "Press STOP/BACK to stop and reset phase."
         - button:
@@ -80,14 +80,14 @@ scenes:
         - focus:
             target: stop
             label: "STOP resets the global phase"
-            duration_ms: 4300
+            duration_ms: 9200
   - callout:
       type: tip
       title: "Start simple"
       body: |
         One Clock sends the same master timing to all eight outputs.
         Use Independent when each output needs its own rhythmic function.
-      duration_ms: 3500
+      duration_ms: 7500
   - text:
       title: "Thanks for watching"
       body: |

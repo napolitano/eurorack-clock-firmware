@@ -29,7 +29,7 @@ scenes:
         - focus:
             target: tap
             label: "First TAP starts a measurement"
-            duration_ms: 4600
+            duration_ms: 10200
         - subtitle:
             text: "Tap again at the new pulse."
         - button:
@@ -46,7 +46,7 @@ scenes:
             height: 10
             placement: right
             label: "AUTO stays selected; internal BPM is updated"
-            duration_ms: 12500
+            duration_ms: 27600
         - focus:
             target: oled_region
             x: 0
@@ -55,14 +55,14 @@ scenes:
             height: 10
             placement: right
             label: "Subsequent taps refine the internal BPM"
-            duration_ms: 5600
+            duration_ms: 12400
   - callout:
       type: tip
       title: "AUTO stays AUTO"
       body: |
         Tap Tempo changes the internal fallback BPM only.
         It never changes the selected clock source.
-      duration_ms: 3500
+      duration_ms: 7700
   - text:
       title: "Thanks for watching"
       body: |

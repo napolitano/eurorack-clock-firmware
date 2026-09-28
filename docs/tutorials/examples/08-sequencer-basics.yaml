@@ -45,7 +45,7 @@ scenes:
             height: 10
             placement: right
             label: "Sequencer places gates on chosen steps"
-            duration_ms: 6300
+            duration_ms: 17800
         - subtitle:
             text: "Move to step 2 and toggle its gate."
         - encoder:
@@ -60,7 +60,7 @@ scenes:
             height: 10
             placement: right
             label: "Step 2 is now toggled"
-            duration_ms: 5100
+            duration_ms: 14400
         - button:
             name: PLAY
         - assert:
@@ -79,7 +79,7 @@ scenes:
             height: 10
             placement: right
             label: "Pattern blocks extend beyond 16 steps"
-            duration_ms: 10500
+            duration_ms: 29600
         - button:
             name: STOP_BACK
         - button:
@@ -91,7 +91,7 @@ scenes:
       title: "Longer patterns"
       body: |
         Sequencer supports patterns beyond 16 steps; the display follows the active block.
-      duration_ms: 3500
+      duration_ms: 9900
   - text:
       title: "Thanks for watching"
       body: |

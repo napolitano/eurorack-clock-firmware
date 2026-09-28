@@ -1,13 +1,17 @@
-[warmly] Hi, I’m Axel from South Signal Lab. Let’s make a Euclidean rhythm on CLOCK. I’ll set its length and the number of hits, then show what ROTATE would change without altering those two numbers. You’ll see the result on the display and then in the scope.
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how CLOCK creates a Euclidean rhythm: we’ll set the cycle length, choose how many hits it contains, and look at what rotation changes.
 
-Choose Euclid from the mode carousel and confirm. A Euclidean pattern spreads its hits as evenly as it can through the available steps. First, select STEPS and press to edit. I’m turning four clicks down, from sixteen to twelve. Press again to keep that value. So this pattern has twelve places it can use before the cycle starts over.
+[conversational] CLOCK is my eight-output Eurorack master clock, rhythm generator, and gate sequencer. A Euclidean channel is useful when you want a structured rhythm without manually placing every individual gate.
 
-Next is HITS. Press to edit, turn it from four to five, and confirm. That gives us five gates spread across the twelve-step cycle. The spaces between them won’t all be identical, because twelve doesn’t divide evenly by five; the algorithm makes them as even as possible.
+[thoughtful] Choose Euclid from the mode carousel and confirm. A Euclidean pattern distributes a chosen number of hits as evenly as it can across a chosen number of steps.
 
-Move down once more to ROTATE. We’re only looking at this row today. Rotate moves the pattern’s starting position around the cycle. It doesn’t create a sixth hit, and it doesn’t change the twelve steps we just set.
+[confidently] First, select STEPS and press to edit. I’m turning four clicks down, from sixteen to twelve, then pressing again to confirm. So the pattern now has twelve positions before its cycle starts over.
 
-Now back out to Performance and press PLAY. On the scope you can watch the five gates come around again as the cycle repeats. I’ll let it run briefly, then stop it.
+[conversational] Next is HITS. Press to edit, move from four to five, and confirm. We now have five gates spread across those twelve steps. Because twelve does not divide evenly by five, the gaps cannot all be identical; the Euclidean distribution makes them as even as possible.
 
-Twelve steps, five hits, zero change to rotation. Those three controls describe the pattern’s shape and starting point. The channel still uses CLOCK’s common timing, so you can put this rhythm alongside a regular clock on another output.
+[thoughtful] Move down to ROTATE. Rotation shifts where that same pattern begins around the cycle. It does not add another hit, and it does not change the twelve-step length. It changes the starting relationship of the pattern.
 
-That’s our first Euclidean rhythm. Thanks for watching. The numbers were twelve steps and five hits; next time we’ll place a gate on a specific step ourselves. I’ll keep showing the CLOCK build at South Signal Lab. You can follow along, and Ko-fi is there if you’d like to support the project. See you then.
+[confidently] Now back out to Performance and press PLAY. On the scope you can watch the five gates come around as the twelve-step cycle repeats. I’ll let it run briefly, then stop it again.
+
+[slowly] So the three ideas are distinct: STEPS defines the cycle length, HITS defines how many gates are distributed across it, and ROTATE moves the pattern around that cycle. The channel still follows CLOCK’s common timing reference.
+
+[warmly] And that brings us to the end of this example. Thank you very much for your interest and your time. If you like what you’ve seen, want to stay up to date, or would like to support me, follow me here or on Ko-fi for exclusive insights into the development process behind my Eurorack modules. [softly] Bye, and see you soon.
