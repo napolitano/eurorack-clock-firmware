@@ -1,0 +1,63 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: sequencer-mode
+title: "Sequencer Mode"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Sequencer Mode"
+      subtitle: "Edit gates directly on the step grid"
+      duration_ms: 2800
+  - tutorial:
+      subtitle: "Select Sequencer from the mode carousel."
+      actions:
+        - wait_ms: 1100
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 4
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - subtitle:
+            text: "Move to step 2 and toggle its gate."
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 1600
+        - scope:
+            state: hide
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+  - callout:
+      type: tip
+      title: "Longer patterns"
+      body: |
+        Sequencer supports patterns beyond 16 steps; the display follows the active block.
+      duration_ms: 3500

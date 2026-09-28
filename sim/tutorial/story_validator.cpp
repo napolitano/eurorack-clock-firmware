@@ -128,6 +128,7 @@ std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem:
 
     bool syncCable = false;
     bool resetCable = false;
+    std::array<bool, 3U> heldButtons{};
     for (std::size_t sceneIndex = 0U; sceneIndex < story.scenes.size(); ++sceneIndex) {
         const StoryScene& scene = story.scenes[sceneIndex];
         if (!phase1SupportsTransition(scene.transition)) {
@@ -157,6 +158,20 @@ std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem:
                 issues.push_back({story.id, sceneIndex, actionIndex, action.sourceLine, reason});
             };
             switch (action.kind) {
+                case StoryActionKind::Button:
+                    if (action.buttonState.has_value()) {
+                        std::size_t index = 0U;
+                        if (action.moduleControl == ModuleControl::Tap) index = 1U;
+                        else if (action.moduleControl == ModuleControl::StopBack) index = 2U;
+                        if (*action.buttonState && heldButtons[index]) {
+                            semanticIssue("button is already held down");
+                        } else if (!*action.buttonState && !heldButtons[index]) {
+                            semanticIssue("button up requires the same button to be held down");
+                        } else {
+                            heldButtons[index] = *action.buttonState;
+                        }
+                    }
+                    break;
                 case StoryActionKind::SyncCable: syncCable = action.state; break;
                 case StoryActionKind::ResetCable: resetCable = action.state; break;
                 case StoryActionKind::SyncGenerator:
@@ -170,6 +185,10 @@ std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem:
             }
             if (!expectedValid(action)) semanticIssue("invalid expected state for wait_until/assert");
         }
+    }
+    if (heldButtons[0] || heldButtons[1] || heldButtons[2]) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, 0U,
+                          "all explicitly held buttons must be released before the story ends"});
     }
     return issues;
 }

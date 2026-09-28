@@ -246,6 +246,83 @@ scenes:
     }
 
 
+
+    const StoryParseResult heldTap = parseStoryText(R"YAML(
+schema: 1
+id: held-tap
+title: "Held TAP"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - tutorial:
+      actions:
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+)YAML");
+    ok &= require(heldTap && validateStory(*heldTap.story, tutorialRoot).empty(),
+                  "explicit button down/up must validate for real modifier gestures");
+    ok &= require(heldTap && heldTap.story->scenes[0].actions[0].buttonState == true &&
+                      heldTap.story->scenes[0].actions[2].buttonState == false,
+                  "button down/up states must decode explicitly");
+
+
+    const StoryParseResult longPush = parseStoryText(R"YAML(
+schema: 1
+id: long-encoder-push
+title: "Long push"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - tutorial:
+      actions:
+        - encoder_push:
+            hold_ms: 800
+)YAML");
+    ok &= require(longPush && longPush.story->scenes[0].actions[0].holdMs == 800U &&
+                      validateStory(*longPush.story, tutorialRoot).empty(),
+                  "encoder_push.hold_ms must preserve a real long-push duration");
+
+    const StoryParseResult orphanRelease = parseStoryText(R"YAML(
+schema: 1
+id: orphan-button-release
+title: "Orphan release"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - tutorial:
+      actions:
+        - button:
+            name: TAP
+            state: up
+)YAML");
+    ok &= require(orphanRelease && containsReason(validateStory(*orphanRelease.story, tutorialRoot), "held down"),
+                  "button release without matching hold must fail semantic validation");
+
+    const StoryParseResult badButtonState = parseStoryText(R"YAML(
+schema: 1
+id: bad-button-state
+title: "Bad button state"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - tutorial:
+      actions:
+        - button:
+            name: TAP
+            state: toggle
+)YAML");
+    ok &= require(!badButtonState && containsReason(badButtonState.issues, "button.state"),
+                  "unknown explicit button state must fail parsing");
+
     const StoryParseResult blockText = parseStoryText(R"YAML(
 schema: 1
 id: block-text

@@ -1,0 +1,60 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: getting-started
+title: "Getting Started"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+defaults:
+  transition:
+    type: cut
+setup:
+  factory_reset: true
+  power: off
+scenes:
+  - chapter:
+      number: 1
+      title: "Getting Started"
+      subtitle: "Power, PLAY, tempo, STOP"
+      duration_ms: 2500
+  - text:
+      title: "Factory state"
+      body: |
+        CLOCK powers up in STOP at 120 BPM.
+        One Clock is the factory topology and SOURCE is AUTO.
+      duration_ms: 3500
+  - tutorial:
+      subtitle: "Power CLOCK on."
+      actions:
+        - power:
+            state: on
+        - wait_ms: 1100
+        - assert:
+            transport: stopped
+        - subtitle:
+            text: "Press PLAY."
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - wait_ms: 900
+        - subtitle:
+            text: "Turn the encoder to raise the master tempo."
+        - encoder:
+            direction: clockwise
+            detents: 4
+        - wait_ms: 700
+        - subtitle:
+            text: "Press STOP/BACK to stop and reset phase."
+        - button:
+            name: STOP_BACK
+        - assert:
+            transport: stopped
+  - callout:
+      type: tip
+      title: "Start simple"
+      body: |
+        One Clock sends the same master timing to all eight outputs.
+        Use Independent when each output needs its own rhythmic function.
+      duration_ms: 3500

@@ -78,4 +78,8 @@ Final SRT/WebVTT sidecars are regenerated from the SB-6 cue list with the measur
 
 Publication uses a sibling staging directory and replaces the requested output only after all requested encodes and sidecars succeed. If an older successful output exists, it is first renamed to a sibling backup and restored if the final staged-directory swap fails. Missing media, probe failure, normalization failure, codec failure or final composition failure therefore leaves a previous successful publication untouched. Missing `ffmpeg`/`ffprobe` affects only this media-publication stage; firmware and non-publication simulator/Storybook targets do not depend on them.
 
+## Canonical reference catalog
+
+Phase 1 ships 13 didactic stories under [`stories/`](stories/README.md). The implementation evidence for the frozen 40-point Phase-1 gate is maintained in [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md). The catalog is executable documentation: CI parses, validates and runs every story twice through the real simulator boundary and requires deterministic logical traces. Story files remain documentation assets under `docs/tutorials/`; generated frames/videos remain ignored publication output.
+
 <h6 align="center">From Munich with &#9829;</h6>

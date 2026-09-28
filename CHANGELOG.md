@@ -48,6 +48,12 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Execute `ffmpeg`/`ffprobe` through argv-safe host process calls without shell interpolation; missing tools or referenced media fail only the publication stage.
 - Publish through staging plus previous-output backup/rollback so failed media work cannot replace or discard the last successful publication.
 - Add integration coverage for intro+outro, intro-only, outro-only, no-clips, MP4/H.264, WebM/VP9, audio/no-audio, subtitle offsets, media normalization, and missing-asset failure preservation.
+- Add the SB-8 canonical reference Storybook under `docs/tutorials/stories/`: Getting Started, PLAY/STOP, Changing Tempo, Tap Tempo, Selecting an Operating Topology, Selecting an Independent Channel, Clock Mode, Euclidean Mode, Sequencer Mode, Divider Bank, Saving and Loading a Preset, External SYNC, and External RST.
+- Extend schema 1 with explicit held-button `state: down|up` and encoder-push `hold_ms` so real TAP-modifier chords and long encoder presses can be recorded without direct UI-state mutation.
+- Add `storybook_reference_stories_tests`: parse, validate and execute all 13 canonical stories twice on independent simulator instances, require deterministic traces, and assert their intended production states.
+- Add a 40-point Phase-1 acceptance-evidence matrix under `docs/tutorials/PHASE1_ACCEPTANCE.md`, backed by implementation/test references rather than prose-only claims.
+- Run the canonical reference catalog explicitly in the native simulator CI job on Linux, Windows and macOS in addition to normal CTest coverage.
+- Extend Storybook repository policy so the exact canonical story set, physical modifier/long-push authoring contracts and 40-row Phase-1 evidence matrix cannot silently regress.
 
 ### Sequencer 2.0 foundation
 

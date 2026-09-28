@@ -1,0 +1,62 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: divider-bank
+title: "Divider Bank"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Divider Bank"
+      subtitle: "Eight related divisions from one source"
+      duration_ms: 2800
+  - tutorial:
+      subtitle: "Select Divider Bank from the mode carousel."
+      actions:
+        - wait_ms: 1100
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - subtitle:
+            text: "Change the divider bank from powers of two to integers."
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 1500
+        - scope:
+            state: hide
+        - button:
+            name: STOP_BACK
+  - callout:
+      type: tip
+      title: "Bank choices"
+      body: |
+        Divider Bank offers powers-of-two, integer, and prime division families.
+      duration_ms: 3300

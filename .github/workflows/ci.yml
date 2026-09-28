@@ -107,6 +107,9 @@ jobs:
       - name: Run simulator integration tests
         run: ctest --preset simulator-headless
 
+      - name: Validate canonical Storybook reference stories
+        run: ctest --test-dir build/simulator-headless -R storybook_reference_stories_tests --output-on-failure
+
   simulator-sdl-build:
     name: SDL3 simulator frontend build
     runs-on: ubuntu-latest

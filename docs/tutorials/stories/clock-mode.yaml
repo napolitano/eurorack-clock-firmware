@@ -1,0 +1,55 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: clock-mode
+title: "Clock Mode"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Clock Mode"
+      subtitle: "A conventional clock on one Independent output"
+      duration_ms: 2800
+  - tutorial:
+      subtitle: "Select Clock from the mode carousel."
+      actions:
+        - wait_ms: 1100
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - subtitle:
+            text: "Start transport and watch the selected channel."
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 1400
+        - scope:
+            state: hide
+        - button:
+            name: STOP_BACK
+  - callout:
+      type: tip
+      title: "Clock is still phase-coherent"
+      body: |
+        Independent Clock does not become a free-running second master clock.
+      duration_ms: 3200

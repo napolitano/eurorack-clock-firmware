@@ -126,10 +126,26 @@ private:
                 advanceActiveMs(timing_.afterValueChangeMs);
                 return true;
             case StoryActionKind::EncoderPush:
-                return executeButton(ModuleControl::EncoderPush, timing_.encoderPushDownMs,
-                                     timing_.encoderPushReleasePauseMs + timing_.afterNavigationMs,
-                                     action, sceneIndex, actionIndex);
+                return executeButton(
+                    ModuleControl::EncoderPush,
+                    action.holdMs.value_or(timing_.encoderPushDownMs),
+                    timing_.encoderPushReleasePauseMs + timing_.afterNavigationMs,
+                    action, sceneIndex, actionIndex);
             case StoryActionKind::Button:
+                if (action.buttonState.has_value()) {
+                    if (!requirePort(port_.setModuleControl(action.moduleControl, *action.buttonState),
+                                     action, sceneIndex, actionIndex)) {
+                        return false;
+                    }
+                    if (presentationSink_ != nullptr) {
+                        presentationSink_->onControlState(presentationUs_, action.moduleControl, *action.buttonState);
+                    }
+                    emit(StoryTraceKind::ControlState, sceneIndex, actionIndex,
+                         std::string(moduleControlName(action.moduleControl)),
+                         *action.buttonState ? "down" : "up");
+                    advanceActiveMs(*action.buttonState ? timing_.buttonDownMs : timing_.buttonReleasePauseMs);
+                    return true;
+                }
                 return executeButton(action.moduleControl, timing_.buttonDownMs,
                                      timing_.buttonReleasePauseMs, action, sceneIndex, actionIndex);
             case StoryActionKind::Power: {

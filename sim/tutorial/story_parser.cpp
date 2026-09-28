@@ -195,16 +195,25 @@ struct Decoder final {
             }
         } else if (name == "encoder_push") {
             action.kind = StoryActionKind::EncoderPush;
-            rejectUnknown(node, {}, "encoder_push", sceneIndex, actionIndex);
+            rejectUnknown(node, {"hold_ms"}, "encoder_push", sceneIndex, actionIndex);
+            if (const Node* value = node.find("hold_ms")) {
+                action.holdMs = uintValue(*value, "encoder_push.hold_ms", 1U, 10000U, sceneIndex, actionIndex);
+            }
         } else if (name == "button") {
             action.kind = StoryActionKind::Button;
-            rejectUnknown(node, {"name"}, "button", sceneIndex, actionIndex);
+            rejectUnknown(node, {"name", "state"}, "button", sceneIndex, actionIndex);
             if (const Node* value = required(node, "name", "button", sceneIndex, actionIndex)) {
                 const auto text = scalar(*value, "button.name", sceneIndex, actionIndex);
                 if (text && *text == "PLAY") action.moduleControl = ModuleControl::Play;
                 else if (text && *text == "TAP") action.moduleControl = ModuleControl::Tap;
                 else if (text && (*text == "STOP" || *text == "STOP_BACK")) action.moduleControl = ModuleControl::StopBack;
                 else if (text) issue(*value, "button.name: unknown CLOCK button '" + *text + "'", sceneIndex, actionIndex);
+            }
+            if (const Node* value = node.find("state")) {
+                const auto text = scalar(*value, "button.state", sceneIndex, actionIndex);
+                if (text && *text == "down") action.buttonState = true;
+                else if (text && *text == "up") action.buttonState = false;
+                else if (text) issue(*value, "button.state: expected 'down' or 'up'", sceneIndex, actionIndex);
             }
         } else if (name == "power" || name == "sync_cable" || name == "rst_cable" || name == "sync_generator" || name == "rst_generator") {
             action.kind = name == "power" ? StoryActionKind::Power : name == "sync_cable" ? StoryActionKind::SyncCable :

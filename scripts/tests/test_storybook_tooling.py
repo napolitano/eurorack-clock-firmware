@@ -25,6 +25,8 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("clock-storybook-parser-tests", cmake)
         self.assertIn("clock-storybook-runner", cmake)
         self.assertIn("clock-storybook-runner-tests", cmake)
+        self.assertIn("clock-storybook-reference-stories-tests", cmake)
+        self.assertIn("storybook_reference_stories_tests", cmake)
         self.assertIn("clock-storybook-frame-pipeline", cmake)
         self.assertIn("clock-storybook-frame-pipeline-tests", cmake)
         self.assertIn("clock-storybook-publication", cmake)
@@ -70,8 +72,34 @@ class StorybookToolingTests(unittest.TestCase):
 
     def test_story_sources_live_under_docs_not_simulator_code(self) -> None:
         """Authored stories/themes belong under docs/tutorials; sim/tutorial is implementation only."""
-        self.assertTrue((ROOT / "docs/tutorials/stories/external-sync.yaml").is_file())
+        expected = {
+            "getting-started.yaml", "play-stop.yaml", "changing-tempo.yaml", "tap-tempo.yaml",
+            "selecting-operating-topology.yaml", "selecting-independent-channel.yaml", "clock-mode.yaml",
+            "euclidean-mode.yaml", "sequencer-mode.yaml", "divider-bank.yaml",
+            "saving-loading-preset.yaml", "external-sync.yaml", "external-rst.yaml",
+        }
+        actual = {path.name for path in (ROOT / "docs/tutorials/stories").glob("*.yaml")}
+        self.assertEqual(expected, actual)
         self.assertFalse(any((ROOT / "sim/tutorial").rglob("*.yaml")))
+
+    def test_phase1_acceptance_matrix_has_exactly_40_evidence_rows(self) -> None:
+        """SB-8 closes the frozen 40-point Phase-1 implementation gate with repository evidence."""
+        acceptance = (ROOT / "docs/tutorials/PHASE1_ACCEPTANCE.md").read_text(encoding="utf-8")
+        rows = [line for line in acceptance.splitlines() if line.startswith("| ") and len(line) > 3 and line[2].isdigit()]
+        self.assertEqual(40, len(rows))
+        self.assertIn("storybook_reference_stories_tests", acceptance)
+        self.assertIn("13 reference stories", acceptance)
+
+    def test_reference_authoring_supports_real_modifier_and_long_push_gestures(self) -> None:
+        """Reference stories must express existing physical chords without direct state mutation."""
+        schema = (ROOT / "docs/tutorials/STORY_SCHEMA_1.md").read_text(encoding="utf-8")
+        self.assertIn("button.state", schema)
+        self.assertIn("encoder_push.hold_ms", schema)
+        preset = (ROOT / "docs/tutorials/stories/saving-loading-preset.yaml").read_text(encoding="utf-8")
+        self.assertIn("hold_ms: 800", preset)
+        topology = (ROOT / "docs/tutorials/stories/selecting-operating-topology.yaml").read_text(encoding="utf-8")
+        self.assertIn("state: down", topology)
+        self.assertIn("state: up", topology)
 
     def test_sb3_runner_keeps_firmware_behaviour_behind_story_port(self) -> None:
         """The runner must orchestrate the strict port rather than mutate production state directly."""

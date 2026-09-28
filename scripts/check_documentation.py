@@ -277,6 +277,7 @@ def check_storybook_sb0_contract(errors: list[str]) -> None:
         ROOT / 'docs/tutorials/README.md',
         ROOT / 'docs/tutorials/STORYBOOK_ARCHITECTURE.md',
         ROOT / 'docs/tutorials/STORY_SCHEMA_1.md',
+        ROOT / 'docs/tutorials/PHASE1_ACCEPTANCE.md',
         ROOT / 'docs/tutorials/stories/examples/schema1-minimal.yaml',
         ROOT / 'docs/tutorials/stories/examples/schema1-power-scope-publication.yaml',
         ROOT / 'docs/tutorials/stories/examples/schema1-invalid-fade.yaml',

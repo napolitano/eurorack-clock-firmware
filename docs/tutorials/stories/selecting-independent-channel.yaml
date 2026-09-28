@@ -1,0 +1,50 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: selecting-independent-channel
+title: "Selecting an Independent Channel"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Selecting a Channel"
+      subtitle: "Independent topology exposes all eight outputs"
+      duration_ms: 2800
+  - tutorial:
+      subtitle: "First select Clock to enter Independent topology."
+      actions:
+        - wait_ms: 1100
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - wait_ms: 500
+        - subtitle:
+            text: "Open the overview and select channel 3."
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - wait_ms: 800
+  - callout:
+      type: tip
+      title: "All channels share time"
+      body: |
+        Independent channels can use different rhythmic functions while remaining anchored to one master timeline.
+      duration_ms: 3500

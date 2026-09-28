@@ -188,7 +188,13 @@ scenes:
         - encoder:
             direction: counter_clockwise
             detents: 1
+        - button:
+            name: TAP
+            state: down
         - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
         - button:
             name: TAP
         - sync_source:

@@ -1,0 +1,57 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: external-rst
+title: "Using External RST"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "External RST"
+      subtitle: "Reset phase without changing transport"
+      duration_ms: 2800
+  - text:
+      title: "RST is phase-only"
+      body: |
+        RST resets or holds phase according to RST MODE.
+        It does not start or stop transport by itself.
+      duration_ms: 3800
+  - tutorial:
+      subtitle: "Connect a source to RST and hold its continuous generator."
+      actions:
+        - wait_ms: 1100
+        - rst_cable:
+            state: connect
+        - rst_generator:
+            state: hold
+        - subtitle:
+            text: "Start CLOCK, then inject one RST pulse."
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - wait_ms: 700
+        - scope:
+            state: show
+            channel: visible
+        - rst_pulse: {}
+        - assert:
+            transport: playing
+        - wait_ms: 1200
+        - scope:
+            state: hide
+        - button:
+            name: STOP_BACK
+        - assert:
+            transport: stopped
+  - callout:
+      type: warning
+      title: "RST is not PLAY"
+      body: |
+        External reset changes phase semantics only; transport remains under CLOCK transport control.
+      duration_ms: 3300

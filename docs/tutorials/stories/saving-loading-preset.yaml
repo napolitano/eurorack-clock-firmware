@@ -1,0 +1,79 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: saving-loading-preset
+title: "Saving and Loading a Preset"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_FAST
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Saving and Loading a Preset"
+      subtitle: "Store a configuration, change it, restore it"
+      duration_ms: 2800
+  - tutorial:
+      subtitle: "Open Settings with TAP + encoder push."
+      actions:
+        - wait_ms: 1100
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - subtitle:
+            text: "Open PRESETS and choose SAVE PRESET."
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - subtitle:
+            text: "Choose slot 1, then long-push to accept its default name."
+        - encoder_push: {}
+        - encoder_push:
+            hold_ms: 800
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - subtitle:
+            text: "Change the tempo after saving."
+        - encoder:
+            direction: clockwise
+            detents: 5
+        - subtitle:
+            text: "Open PRESETS again and load slot 1."
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder_push: {}
+        - wait_ms: 700
+  - callout:
+      type: tip
+      title: "CURRENT is automatic"
+      body: |
+        CLOCK keeps a CURRENT working state automatically; named presets are explicit recall points.
+      duration_ms: 3500

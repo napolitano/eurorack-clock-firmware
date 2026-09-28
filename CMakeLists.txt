@@ -215,6 +215,15 @@ target_compile_definitions(clock-storybook-runner-tests PRIVATE
 )
 target_compile_options(clock-storybook-runner-tests PRIVATE ${CLOCK_WARNING_FLAGS})
 
+add_executable(clock-storybook-reference-stories-tests
+    sim/storybook_reference_stories_tests.cpp
+)
+target_link_libraries(clock-storybook-reference-stories-tests PRIVATE clock-storybook-runner)
+target_compile_definitions(clock-storybook-reference-stories-tests PRIVATE
+    CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_compile_options(clock-storybook-reference-stories-tests PRIVATE ${CLOCK_WARNING_FLAGS})
+
 add_executable(clock-storybook-panel-presentation-tests
     sim/storybook_panel_presentation_tests.cpp
 )
@@ -347,6 +356,7 @@ add_test(NAME storybook_contract_tests COMMAND clock-storybook-contract-tests)
 add_test(NAME storybook_simulator_port_tests COMMAND clock-storybook-simulator-port-tests)
 add_test(NAME storybook_parser_tests COMMAND clock-storybook-parser-tests)
 add_test(NAME storybook_runner_tests COMMAND clock-storybook-runner-tests)
+add_test(NAME storybook_reference_stories_tests COMMAND clock-storybook-reference-stories-tests)
 add_test(NAME storybook_panel_presentation_tests COMMAND clock-storybook-panel-presentation-tests)
 add_test(NAME storybook_renderer_tests COMMAND clock-storybook-renderer-tests)
 add_test(NAME storybook_frame_pipeline_tests COMMAND clock-storybook-frame-pipeline-tests)

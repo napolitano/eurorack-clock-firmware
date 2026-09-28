@@ -76,15 +76,25 @@ Recorded module controls represent visible physical operation plus real simulato
     direction: clockwise
     detents: 2
 - encoder_push: {}
+- encoder_push:
+    hold_ms: 800
 - button:
     name: PLAY
+# Optional explicit levels support real modifier gestures. Omitting state remains a normal click.
+- button:
+    name: TAP
+    state: down
+- encoder_push: {}
+- button:
+    name: TAP
+    state: up
 - power:
     state: off
 - power:
     state: on
 ```
 
-Stable control spellings are `encoder`, `encoder_push`, `PLAY`, `TAP`, `STOP_BACK`, and `power`.
+Stable control spellings are `encoder`, `encoder_push`, `PLAY`, `TAP`, `STOP_BACK`, and `power`. `encoder_push.hold_ms` records the real press duration and therefore supports existing long-push workflows without bypassing CLOCK navigation. `button.state` is optional; `down`/`up` keeps the physical button held across following actions so real CLOCK modifier chords can be recorded. Every explicit `down` must be balanced by `up` before the story ends.
 
 ## Patch Actions
 

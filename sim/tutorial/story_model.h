@@ -58,6 +58,10 @@ struct StoryAction {
     int encoderDirection = 0;
     std::uint16_t detents = 1U;
     ModuleControl moduleControl = ModuleControl::Play;
+    /** Optional explicit button level. Missing means one normal press/release click. */
+    std::optional<bool> buttonState;
+    /** Optional explicit encoder-push hold duration; missing uses the interaction-profile short push. */
+    std::optional<std::uint32_t> holdMs;
     bool state = false;
     std::optional<std::uint32_t> bpm;
     std::optional<std::uint8_t> ppqn;

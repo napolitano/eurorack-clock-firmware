@@ -1,0 +1,54 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: selecting-operating-topology
+title: "Selecting an Operating Topology"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Operating Topology"
+      subtitle: "One Clock, Divider Bank, or Independent"
+      duration_ms: 2800
+  - text:
+      title: "The mode carousel"
+      body: |
+        The carousel contains One Clock, Divider, Clock, Euclid, Sequencer, and Off.
+        Choosing Clock, Euclid, Sequencer, or Off enters Independent topology for the selected channel.
+      duration_ms: 4300
+  - tutorial:
+      subtitle: "Press the encoder to open the channel overview."
+      actions:
+        - wait_ms: 1100
+        - encoder_push: {}
+        - subtitle:
+            text: "Hold TAP and turn one detent to select Divider Bank."
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - button:
+            name: TAP
+            state: up
+        - subtitle:
+            text: "Confirm the topology change."
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - wait_ms: 700
+        - button:
+            name: STOP_BACK
+  - callout:
+      type: tip
+      title: "Independent is channel-based"
+      body: |
+        In Independent topology each output can be Clock, Euclid, Sequencer, or Off.
+      duration_ms: 3300
