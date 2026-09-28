@@ -1,0 +1,96 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+# SB-3 reference story. This is executed against the production simulator boundary.
+
+schema: 1
+id: external-sync
+title: "Using External Sync"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+defaults:
+  transition:
+    type: cut
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "External Sync"
+      subtitle: "Following another clock source"
+      duration_ms: 3000
+  - text:
+      title: "AUTO mode"
+      body: |
+        AUTO is CLOCK's factory clock-source setting.
+        Connecting an external source does not change that setting.
+      duration_ms: 4500
+  - tutorial:
+      subtitle: "Connect an external clock to SYNC."
+      actions:
+        - wait_ms: 1100
+        - sync_cable:
+            state: connect
+        - wait_until:
+            external_sync: locked
+            timeout_ms: 3000
+        - assert:
+            clock_source: auto
+        - assert:
+            transport: playing
+        - wait_ms: 800
+  - callout:
+      type: tip
+      title: "Two edges establish lock"
+      body: |
+        The first accepted edge starts acquisition.
+        The second establishes the first measurable period.
+      duration_ms: 3000
+  - tutorial:
+      subtitle: "Stop the external source while leaving the cable connected."
+      actions:
+        - sync_generator:
+            state: hold
+        - wait_until:
+            external_sync: unlocked
+            timeout_ms: 5000
+        - wait_ms: 600
+        - subtitle:
+            text: "Start the external source again."
+        - sync_generator:
+            state: run
+        - wait_until:
+            external_sync: locked
+            timeout_ms: 3000
+        - assert:
+            clock_source: auto
+  - callout:
+      type: warning
+      title: "Manual STOP takes precedence"
+      body: |
+        Incoming external SYNC must not silently restart CLOCK
+        after an explicit manual STOP or PAUSE.
+      duration_ms: 3500
+  - tutorial:
+      subtitle: "Press STOP."
+      actions:
+        - button:
+            name: STOP
+        - assert:
+            transport: stopped
+        - wait_ms: 1000
+        - assert:
+            clock_source: auto
+        - wait_ms: 1000
+        - assert:
+            transport: stopped
+  - callout:
+      type: recipe
+      title: "External Sync recipe"
+      steps:
+        - "Select AUTO or EXTERNAL on CLOCK."
+        - "Connect the external clock to SYNC."
+        - "Wait for lock."
+        - "Use STOP whenever manual transport control is required."
+      duration_ms: 4500

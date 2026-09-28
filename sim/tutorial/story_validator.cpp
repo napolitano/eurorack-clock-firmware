@@ -1,0 +1,221 @@
+/**
+ * @file story_validator.cpp
+ * @brief Enforces Phase-1 Storybook semantics after strict YAML decoding.
+ * @author Axel Napolitano
+ * @copyright 2026 Axel Napolitano
+ * @license PolyForm-Noncommercial-1.0.0
+ */
+#include "tutorial/story_validator.h"
+
+#include <algorithm>
+#include <array>
+#include <cctype>
+#include <fstream>
+#include <set>
+#include <sstream>
+#include <string>
+#include <unordered_set>
+
+#include "tutorial/story_yaml.h"
+
+namespace clockfw::sim::tutorial {
+namespace {
+
+bool validStoryId(const std::string& id) {
+    if (id.empty() || ((!std::islower(static_cast<unsigned char>(id.front()))) && (!std::isdigit(static_cast<unsigned char>(id.front()))))) {
+        return false;
+    }
+    return std::all_of(id.begin(), id.end(), [](const unsigned char ch) {
+        return std::islower(ch) != 0 || std::isdigit(ch) != 0 || ch == '-';
+    });
+}
+
+bool validHexColour(const std::string& value) {
+    if (value.size() != 7U || value.front() != '#') {
+        return false;
+    }
+    return std::all_of(value.begin() + 1, value.end(), [](const unsigned char ch) { return std::isxdigit(ch) != 0; });
+}
+
+std::optional<StoryYamlNode> loadYaml(const std::filesystem::path& path, std::vector<StoryIssue>& issues,
+                                      const Story& story, const std::string& label) {
+    std::ifstream input(path, std::ios::binary);
+    if (!input) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, 0U, label + " not found: " + path.string()});
+        return std::nullopt;
+    }
+    std::ostringstream buffer;
+    buffer << input.rdbuf();
+    const StoryYamlResult parsed = parseStoryYaml(buffer.str());
+    if (!parsed) {
+        for (const auto& issue : parsed.issues) {
+            issues.push_back({story.id, std::nullopt, std::nullopt, issue.line, label + ": " + issue.reason});
+        }
+        return std::nullopt;
+    }
+    return parsed.root;
+}
+
+void validateTheme(const Story& story, const std::filesystem::path& root, std::vector<StoryIssue>& issues) {
+    const auto node = loadYaml(root / "themes" / (story.theme + ".yaml"), issues, story, "theme");
+    if (!node || node->type != StoryYamlNode::Type::Mapping) return;
+    const StoryYamlNode* id = node->find("id");
+    const StoryYamlNode* fonts = node->find("fonts");
+    const StoryYamlNode* colours = node->find("colours");
+    if (id == nullptr || id->type != StoryYamlNode::Type::Scalar || id->scalar != story.theme) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, node->line, "theme id does not match story theme"});
+    }
+    const std::array<const char*, 5U> fontKeys = {"body", "heading", "chapter", "subtitle", "monospace"};
+    if (fonts == nullptr || fonts->type != StoryYamlNode::Type::Mapping) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, node->line, "theme.fonts mapping is required"});
+    } else {
+        for (const char* key : fontKeys) {
+            const StoryYamlNode* font = fonts->find(key);
+            if (font == nullptr || font->type != StoryYamlNode::Type::Scalar || font->scalar.empty()) {
+                issues.push_back({story.id, std::nullopt, std::nullopt, fonts->line, std::string("theme.fonts.") + key + " is required"});
+            }
+        }
+    }
+    const std::array<const char*, 10U> colourKeys = {
+        "background", "foreground", "muted", "accent", "tip_background", "tip_foreground",
+        "warning_background", "warning_foreground", "recipe_background", "recipe_foreground"};
+    if (colours == nullptr || colours->type != StoryYamlNode::Type::Mapping) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, node->line, "theme.colours mapping is required"});
+    } else {
+        for (const char* key : colourKeys) {
+            const StoryYamlNode* colour = colours->find(key);
+            if (colour == nullptr || colour->type != StoryYamlNode::Type::Scalar || !validHexColour(colour->scalar)) {
+                issues.push_back({story.id, std::nullopt, std::nullopt, colours->line,
+                                  std::string("theme.colours.") + key + " must use #RRGGBB syntax"});
+            }
+        }
+    }
+}
+
+void validateProfile(const Story& story, const std::filesystem::path& root, std::vector<StoryIssue>& issues) {
+    const auto node = loadYaml(root / "interaction_profiles.yaml", issues, story, "interaction profiles");
+    if (!node || node->type != StoryYamlNode::Type::Mapping) return;
+    const StoryYamlNode* profiles = node->find("interaction_profiles");
+    if (profiles == nullptr || profiles->type != StoryYamlNode::Type::Mapping) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, node->line, "interaction_profiles mapping is required"});
+        return;
+    }
+    const std::string name(interactionProfileName(story.interactionProfile));
+    const StoryYamlNode* profile = profiles->find(name);
+    if (profile == nullptr || profile->type != StoryYamlNode::Type::Mapping) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, profiles->line, "interaction profile is not defined: " + name});
+        return;
+    }
+    const std::array<const char*, 11U> required = {
+        "encoder_detent_ms", "encoder_fast_detent_ms", "button_down_ms", "button_release_pause_ms",
+        "encoder_push_down_ms", "encoder_push_release_pause_ms", "patch_action_ms", "before_action_ms",
+        "after_navigation_ms", "after_value_change_ms", "after_major_screen_change_ms"};
+    for (const char* key : required) {
+        const StoryYamlNode* value = profile->find(key);
+        if (value == nullptr || value->type != StoryYamlNode::Type::Scalar || value->scalar.empty() ||
+            !std::all_of(value->scalar.begin(), value->scalar.end(), [](const unsigned char ch) { return std::isdigit(ch) != 0; })) {
+            issues.push_back({story.id, std::nullopt, std::nullopt, profile->line,
+                              std::string("interaction profile field is missing/invalid: ") + key});
+        }
+    }
+}
+
+bool expectedValid(const StoryAction& action) {
+    if (action.waitCondition) {
+        switch (*action.waitCondition) {
+            case WaitCondition::ExternalSync: return action.expected == "locked" || action.expected == "unlocked";
+            case WaitCondition::Transport: return action.expected == "playing" || action.expected == "paused" || action.expected == "stopped";
+            case WaitCondition::Power: return action.expected == "on" || action.expected == "off";
+        }
+    }
+    if (action.assertion) {
+        switch (*action.assertion) {
+            case AssertionKind::ClockSource: return action.expected == "auto" || action.expected == "internal" || action.expected == "external";
+            case AssertionKind::Transport: return action.expected == "playing" || action.expected == "paused" || action.expected == "stopped";
+            case AssertionKind::Power: return action.expected == "on" || action.expected == "off";
+            case AssertionKind::SyncCable:
+            case AssertionKind::ResetCable: return action.expected == "connected" || action.expected == "disconnected";
+        }
+    }
+    return true;
+}
+
+}  // namespace
+
+std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem::path& tutorialRoot) {
+    std::vector<StoryIssue> issues;
+    if (story.schema != currentSchemaVersion()) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, 0U, "unsupported schema version " + std::to_string(story.schema)});
+    }
+    if (!validStoryId(story.id)) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, 0U, "story id must use lower-case kebab-case"});
+    }
+    if (story.scenes.empty()) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, 0U, "story must contain at least one scene"});
+    }
+    if (!phase1SupportsTransition(story.defaultTransition)) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, 0U, "Phase 1 supports CUT transitions only"});
+    }
+    validateTheme(story, tutorialRoot, issues);
+    validateProfile(story, tutorialRoot, issues);
+
+    bool syncCable = false;
+    bool resetCable = false;
+    for (std::size_t sceneIndex = 0U; sceneIndex < story.scenes.size(); ++sceneIndex) {
+        const StoryScene& scene = story.scenes[sceneIndex];
+        if (!phase1SupportsTransition(scene.transition)) {
+            issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "Phase 1 supports CUT transitions only"});
+        }
+        if (scene.kind == SceneKind::Chapter && (scene.number == 0U || scene.title.empty())) {
+            issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "chapter requires number and title"});
+        }
+        if (scene.kind == SceneKind::Text && (scene.title.empty() || scene.body.empty())) {
+            issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "text scene requires title and body"});
+        }
+        if (scene.kind == SceneKind::Callout) {
+            if (!scene.calloutKind || scene.title.empty()) {
+                issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "callout requires type and title"});
+            } else if (*scene.calloutKind == CalloutKind::Recipe && scene.recipeSteps.empty()) {
+                issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "RECIPE requires at least one step"});
+            } else if (*scene.calloutKind != CalloutKind::Recipe && scene.body.empty()) {
+                issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "TIP/WARNING requires body text"});
+            }
+        }
+        if (scene.kind == SceneKind::Tutorial && scene.actions.empty()) {
+            issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "tutorial scene requires actions"});
+        }
+        for (std::size_t actionIndex = 0U; actionIndex < scene.actions.size(); ++actionIndex) {
+            const StoryAction& action = scene.actions[actionIndex];
+            auto semanticIssue = [&](const std::string& reason) {
+                issues.push_back({story.id, sceneIndex, actionIndex, action.sourceLine, reason});
+            };
+            switch (action.kind) {
+                case StoryActionKind::SyncCable: syncCable = action.state; break;
+                case StoryActionKind::ResetCable: resetCable = action.state; break;
+                case StoryActionKind::SyncGenerator:
+                    if (!syncCable) semanticIssue("sync_generator requires a connected SYNC cable");
+                    break;
+                case StoryActionKind::ResetGenerator:
+                case StoryActionKind::ResetPulse:
+                    if (!resetCable) semanticIssue("RST stimulus requires a connected RST cable");
+                    break;
+                default: break;
+            }
+            if (!expectedValid(action)) semanticIssue("invalid expected state for wait_until/assert");
+        }
+    }
+    return issues;
+}
+
+std::vector<StoryIssue> validateUniqueStoryIds(const std::vector<Story>& stories) {
+    std::vector<StoryIssue> issues;
+    std::unordered_set<std::string> ids;
+    for (const Story& story : stories) {
+        if (!ids.emplace(story.id).second) {
+            issues.push_back({story.id, std::nullopt, std::nullopt, 0U, "duplicate story id"});
+        }
+    }
+    return issues;
+}
+
+}  // namespace clockfw::sim::tutorial

@@ -355,6 +355,8 @@ def check_header_colocation(errors: list[str]) -> None:
         "simulator_tests.cpp",
         "storybook_contract_tests.cpp",
         "storybook_simulator_port_tests.cpp",
+        "storybook_parser_tests.cpp",
+        "storybook_runner_tests.cpp",
     }
     implementation_roots = (ROOT / "src", ROOT / "sim")
     for implementation_root in implementation_roots:

@@ -82,11 +82,11 @@ The deterministic contract covers logical event timing, lossless frame pixels, a
 
 Lossless intermediate frames are PNG/RGBA8 unless a later schema explicitly changes that contract.
 
-## Story parser dependency
+## Story parser
 
-The planned C++ story parser uses `yaml-cpp` as an **explicit host-only dependency**. It will be enabled only for Storybook tooling and must not become a PlatformIO, embedded firmware, `src/`, or `lib/clock_core` dependency. Normal firmware and ordinary simulator builds must remain possible without `yaml-cpp` installed.
+Schema 1 uses a **project-local strict YAML subset parser** in `sim/tutorial/story_yaml.*`. The accepted authoring surface is deliberately narrower than generic YAML: block mappings/sequences, quoted/plain scalars, literal `|` text, and empty `{}` / `[]` collections. Tabs, anchors, aliases, tags and non-empty flow collections fail explicitly.
 
-No build step may silently download a YAML parser for an embedded build.
+This removes an otherwise unnecessary host package dependency while retaining YAML authoring. The parser remains host-only and must never enter PlatformIO, embedded firmware, `src/`, or `lib/clock_core`. Normal firmware and simulator builds require no external YAML library.
 
 ## Fonts
 
@@ -151,3 +151,22 @@ The repository `.gitignore` defines the local generated paths.
 - exact source parameters are reached only through existing simulator source controls.
 
 This adapter does not own firmware behaviour. It rejects invalid orchestration and delegates accepted operations to the existing simulator boundary.
+
+
+## SB-3 deterministic Story Runner
+
+`sim/tutorial/story_runner.*` now executes validated schema-1 stories against `StorySimulatorPort`. It owns orchestration only and emits a deterministic logical trace for later presentation/render synchronization.
+
+Runner timing obeys the three-domain contract:
+
+- pure `chapter`, `text`, and `callout` duration advances presentation time only;
+- physical controls, patch actions, external stimulus pacing, explicit `wait_ms`, and `wait_until` advance presentation and the real simulator clock together;
+- POWER OFF naturally stops firmware-time advancement because `SimulatorRuntime` is powered down, while presentation timing continues;
+- `wait_until` uses a fixed 1 ms observation cadence and fails with story/scene/action context on timeout;
+- assertions read production/simulator telemetry only and never repair state to make a story pass.
+
+The runner emits stable trace events for scene/action boundaries, physical control down/up, encoder detents, patch state, generator state, external-source configuration, RST pulses, subtitles, scope visibility, successful waits, and successful assertions. The trace is not an alternate firmware state model; it is an orchestration/presentation synchronization record.
+
+The schema-1 setup boundary now has an explicit host implementation: `factory_reset: true` clears the simulator persistence image to the erased/factory precondition and reboots through the existing simulator lifecycle. It does not write `ClockState` directly.
+
+`docs/tutorials/stories/external-sync.yaml` is the SB-3 reference story. Automated integration runs it twice from independent fresh simulator instances and requires identical logical traces while proving AUTO acquisition/lock, real firmware auto-start, generator hold/reacquisition, unchanged CLOCK `SOURCE`, and manual STOP precedence while incoming SYNC remains locked.

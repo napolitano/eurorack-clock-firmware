@@ -281,6 +281,9 @@ def check_storybook_sb0_contract(errors: list[str]) -> None:
         ROOT / 'docs/tutorials/stories/examples/schema1-power-scope-publication.yaml',
         ROOT / 'docs/tutorials/stories/examples/schema1-invalid-fade.yaml',
         ROOT / 'docs/tutorials/stories/examples/schema1-invalid-generator-without-cable.yaml',
+        ROOT / 'docs/tutorials/stories/README.md',
+        ROOT / 'docs/tutorials/interaction_profiles.yaml',
+        ROOT / 'docs/tutorials/themes/south-signal-lab-default.yaml',
     )
     for path in required:
         if not path.is_file():
@@ -295,7 +298,7 @@ def check_storybook_sb0_contract(errors: list[str]) -> None:
         '1920×1080 at 30 fps',
         'MP4/H.264',
         'intro video?',
-        'yaml-cpp',
+        'project-local strict YAML subset parser',
         'freezes firmware time',
     ):
         if needle not in architecture:

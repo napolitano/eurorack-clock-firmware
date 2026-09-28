@@ -1,0 +1,23 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+# Rendering uses exact font resolution later in SB-5; these are requested families, not fallbacks.
+
+schema: 1
+id: south-signal-lab-default
+fonts:
+  body: "Ubuntu"
+  heading: "Ubuntu"
+  chapter: "Ubuntu"
+  subtitle: "Ubuntu"
+  monospace: "Ubuntu Mono"
+colours:
+  background: "#FFFFFF"
+  foreground: "#111111"
+  muted: "#666666"
+  accent: "#0B4FC0"
+  tip_background: "#EAF0FF"
+  tip_foreground: "#12213A"
+  warning_background: "#FFF2CC"
+  warning_foreground: "#2A2416"
+  recipe_background: "#E8F5EE"
+  recipe_foreground: "#123328"

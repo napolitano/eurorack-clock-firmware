@@ -85,6 +85,19 @@ target_include_directories(clock-storybook-contract PUBLIC
 )
 target_compile_options(clock-storybook-contract PRIVATE ${CLOCK_WARNING_FLAGS})
 
+add_library(clock-storybook-model STATIC
+    sim/tutorial/story_model.cpp
+    sim/tutorial/story_yaml.cpp
+    sim/tutorial/story_parser.cpp
+    sim/tutorial/story_validator.cpp
+    sim/tutorial/interaction_profile_loader.cpp
+)
+target_link_libraries(clock-storybook-model PUBLIC clock-storybook-contract)
+target_include_directories(clock-storybook-model PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim"
+)
+target_compile_options(clock-storybook-model PRIVATE ${CLOCK_WARNING_FLAGS})
+
 add_library(clock-storybook-simulator-port STATIC
     sim/tutorial/story_simulator_port.cpp
 )
@@ -97,6 +110,18 @@ target_include_directories(clock-storybook-simulator-port PUBLIC
 )
 target_compile_options(clock-storybook-simulator-port PRIVATE ${CLOCK_WARNING_FLAGS})
 
+add_library(clock-storybook-runner STATIC
+    sim/tutorial/story_runner.cpp
+)
+target_link_libraries(clock-storybook-runner PUBLIC
+    clock-storybook-model
+    clock-storybook-simulator-port
+)
+target_include_directories(clock-storybook-runner PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim"
+)
+target_compile_options(clock-storybook-runner PRIVATE ${CLOCK_WARNING_FLAGS})
+
 add_executable(clock-storybook-contract-tests
     sim/storybook_contract_tests.cpp
 )
@@ -108,6 +133,24 @@ add_executable(clock-storybook-simulator-port-tests
 )
 target_link_libraries(clock-storybook-simulator-port-tests PRIVATE clock-storybook-simulator-port)
 target_compile_options(clock-storybook-simulator-port-tests PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_executable(clock-storybook-parser-tests
+    sim/storybook_parser_tests.cpp
+)
+target_link_libraries(clock-storybook-parser-tests PRIVATE clock-storybook-model)
+target_compile_definitions(clock-storybook-parser-tests PRIVATE
+    CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_compile_options(clock-storybook-parser-tests PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_executable(clock-storybook-runner-tests
+    sim/storybook_runner_tests.cpp
+)
+target_link_libraries(clock-storybook-runner-tests PRIVATE clock-storybook-runner)
+target_compile_definitions(clock-storybook-runner-tests PRIVATE
+    CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_compile_options(clock-storybook-runner-tests PRIVATE ${CLOCK_WARNING_FLAGS})
 
 add_library(clock-vcv-runtime-adapter STATIC
     vcv/clock_vcv_runtime.cpp
@@ -199,5 +242,7 @@ enable_testing()
 add_test(NAME simulator_headless_smoke COMMAND clock-simulator-headless)
 add_test(NAME storybook_contract_tests COMMAND clock-storybook-contract-tests)
 add_test(NAME storybook_simulator_port_tests COMMAND clock-storybook-simulator-port-tests)
+add_test(NAME storybook_parser_tests COMMAND clock-storybook-parser-tests)
+add_test(NAME storybook_runner_tests COMMAND clock-storybook-runner-tests)
 add_test(NAME simulator_runtime_tests COMMAND clock-simulator-tests)
 add_test(NAME vcv_runtime_adapter_tests COMMAND clock-vcv-runtime-tests)

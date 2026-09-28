@@ -21,8 +21,15 @@ class StorybookToolingTests(unittest.TestCase):
         platformio = (ROOT / "platformio.ini").read_text(encoding="utf-8")
         self.assertIn("clock-storybook-contract", cmake)
         self.assertIn("clock-storybook-simulator-port", cmake)
+        self.assertIn("clock-storybook-model", cmake)
+        self.assertIn("clock-storybook-parser-tests", cmake)
+        self.assertIn("clock-storybook-runner", cmake)
+        self.assertIn("clock-storybook-runner-tests", cmake)
         self.assertNotIn("storybook", platformio.lower())
         self.assertNotIn("yaml-cpp", platformio.lower())
+        self.assertTrue((ROOT / "docs/tutorials/stories/README.md").is_file())
+        self.assertTrue((ROOT / "docs/tutorials/interaction_profiles.yaml").is_file())
+        self.assertTrue((ROOT / "docs/tutorials/themes/south-signal-lab-default.yaml").is_file())
 
     def test_architecture_guard_forbids_embedded_storybook_media_dependencies(self) -> None:
         """The architecture gate must reject reverse dependencies into embedded code."""
@@ -55,6 +62,20 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertNotIn("state().source =", source)
         self.assertNotIn("setClockSource", source)
         self.assertNotIn("ClockSource::Auto;", source)
+
+    def test_story_sources_live_under_docs_not_simulator_code(self) -> None:
+        """Authored stories/themes belong under docs/tutorials; sim/tutorial is implementation only."""
+        self.assertTrue((ROOT / "docs/tutorials/stories/external-sync.yaml").is_file())
+        self.assertFalse(any((ROOT / "sim/tutorial").rglob("*.yaml")))
+
+    def test_sb3_runner_keeps_firmware_behaviour_behind_story_port(self) -> None:
+        """The runner must orchestrate the strict port rather than mutate production state directly."""
+        runner = (ROOT / "sim/tutorial/story_runner.cpp").read_text(encoding="utf-8")
+        self.assertIn("StorySimulatorPort", runner)
+        self.assertIn("wait_until timeout", runner)
+        self.assertNotIn("state().source =", runner)
+        self.assertNotIn("setClockSource", runner)
+        self.assertNotIn("setTransport", runner)
 
 
 if __name__ == "__main__":

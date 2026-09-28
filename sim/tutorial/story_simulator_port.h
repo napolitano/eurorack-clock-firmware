@@ -53,6 +53,9 @@ public:
     /** @brief Sets virtual module power through the existing simulator power boundary. */
     StoryPortResult setPower(bool powered);
 
+    /** @brief Clears simulator persistence to the erased/factory precondition image and reboots if needed. */
+    StoryPortResult resetPersistenceToFactory();
+
     /** @brief Connects/disconnects SYNC or RST through existing virtual-cable semantics. */
     StoryPortResult setPatchConnected(PatchAction action, bool connected);
 

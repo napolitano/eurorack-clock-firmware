@@ -20,6 +20,15 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add an end-to-end Storybook boundary regression proving factory AUTO -> SYNC connect -> acquisition -> lock -> production auto-start -> real STOP -> incoming locked SYNC does not override manual STOP.
 - Make POWER scriptable only through the existing simulator power-cycle boundary and reserve optional scope presentation for real simulator telemetry of the visible channel.
 - Add architecture guards preventing Storybook/YAML/media dependencies from entering embedded `src/` or `lib/clock_core`, plus generated-media ignore rules so frames/videos/subtitles/reports never enter source bundles.
+- Keep Storybook authoring sources under `docs/tutorials/`: versioned stories in `stories/`, shared theme data in `themes/`, and deterministic interaction timing in `interaction_profiles.yaml`; `sim/tutorial/` contains host implementation only.
+- Implement the schema-1 typed Story model, strict project-local YAML subset parser, structural decoder and semantic validator without adding an external YAML dependency to firmware or simulator builds.
+- Reject unknown fields, scenes, actions and CLOCK buttons; reject unsupported schema/transition semantics, undefined theme/profile resources, malformed colours, duplicate story IDs and invalid wait/assert values with story/scene/action context.
+- Enforce cable/source semantics before execution: SYNC generator operations require a patched SYNC input, RST generator/pulses require a patched RST input, while external source parameters remain independent from CLOCK `SOURCE`.
+- Add `storybook_parser_tests` to the Headless CMake/CTest matrix and cover literal text blocks, publication references, POWER/scope parsing, Phase-1 FADE rejection and deliberately unsupported YAML constructs.
+- Add the deterministic SB-3 `StoryRunner`, central HUMAN_SLOW/NORMAL/FAST interaction-profile loading, explicit presentation-vs-firmware time handling, fixed-cadence `wait_until`, assertions and stable execution traces for later rendering.
+- Add the executable `docs/tutorials/stories/external-sync.yaml` reference story and require two independent runs to produce the same logical trace while proving AUTO acquisition/lock, firmware auto-start, generator hold/reacquisition and manual STOP precedence.
+- Implement `setup.factory_reset` through an erased simulator-persistence precondition and the existing power lifecycle rather than direct `ClockState` mutation.
+- Add runner coverage for encoder direction/detents, encoder push, TAP, POWER, SYNC source/patch/generator, RST patch/generator/pulse, subtitles, visible-channel scope, explicit waits, timeout failures and assertion failures.
 
 ### Sequencer 2.0 foundation
 

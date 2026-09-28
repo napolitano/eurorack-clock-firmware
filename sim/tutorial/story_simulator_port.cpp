@@ -75,6 +75,13 @@ StoryPortResult StorySimulatorPort::setPower(const bool powered) {
     return {};
 }
 
+StoryPortResult StorySimulatorPort::resetPersistenceToFactory() {
+    auto erased = runtime_.persistenceImage();
+    erased.fill(0xFFU);
+    runtime_.restorePersistenceImage(erased);
+    return {};
+}
+
 StoryPortResult StorySimulatorPort::setPatchConnected(
     const PatchAction action,
     const bool connected) {

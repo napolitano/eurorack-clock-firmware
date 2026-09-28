@@ -2,7 +2,7 @@
 
 # CLOCK Storybook Schema 1
 
-Status: **PROPOSED / SB-0 frozen interface**. Parser implementation follows in SB-2.
+Status: **CURRENT development interface / SB-2 parser and validator implemented**.
 
 ## Required story fields
 
@@ -75,8 +75,7 @@ Recorded module controls represent visible physical operation plus real simulato
 - encoder:
     direction: clockwise
     detents: 2
-- encoder_push:
-    state: press
+- encoder_push: {}
 - button:
     name: PLAY
 - power:
@@ -161,8 +160,17 @@ Schema 1 reserves the deterministic profile names:
 - `HUMAN_NORMAL`
 - `HUMAN_FAST`
 
-Exact durations are defined centrally by Storybook configuration, not duplicated in every story.
+Exact durations are defined centrally in [`interaction_profiles.yaml`](interaction_profiles.yaml), not duplicated in every story. All three reserved Phase-1 profiles are currently defined and deterministic; no random jitter is permitted.
 
 ## Publication result
 
 The generated tutorial is composed first. Optional pre-produced intro/outro clips are concatenated only in the publication stage. Default final media is MP4/H.264; WebM is optional.
+
+
+## Execution contract
+
+SB-3 executes validated stories through `StoryRunner` and `StorySimulatorPort`. The runner produces a deterministic logical trace; the same story, firmware/simulator revision, resource files, and starting simulator state must produce the same trace timestamps and events.
+
+Physical actions use the selected interaction profile. `wait_ms` advances the real simulator clock for exactly the requested duration. `wait_until` polls the relevant read-only telemetry at a deterministic 1 ms cadence until the expected state is observed or `timeout_ms` expires. A timeout or failed assertion aborts execution with story, scene, action, and source-line context.
+
+`factory_reset: true` is a pre-recording simulator-persistence precondition. It does not represent visible user interaction and does not directly write CLOCK application state. Recorded product changes still occur only through the module-control, patch, and external-stimulus action classes.
