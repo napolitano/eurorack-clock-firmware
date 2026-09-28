@@ -2,7 +2,7 @@
 
 # CLOCK Storybook Schema 1
 
-Status: **CURRENT development interface / SB-2 parser and validator implemented**.
+Status: **CURRENT development interface / SB-5 renderer implemented**.
 
 ## Required story fields
 
@@ -180,3 +180,30 @@ SB-3 executes validated stories through `StoryRunner` and `StorySimulatorPort`. 
 Physical actions use the selected interaction profile. `wait_ms` advances the real simulator clock for exactly the requested duration. `wait_until` polls the relevant read-only telemetry at a deterministic 1 ms cadence until the expected state is observed or `timeout_ms` expires. A timeout or failed assertion aborts execution with story, scene, action, and source-line context.
 
 `factory_reset: true` is a pre-recording simulator-persistence precondition. It does not represent visible user interaction and does not directly write CLOCK application state. Recorded product changes still occur only through the module-control, patch, and external-stimulus action classes.
+
+## Theme and text-layout contract
+
+Phase-1 themes are stored under `docs/tutorials/themes/`. Font entries are explicit mappings:
+
+```yaml
+fonts:
+  body:
+    family: "CLOCK UI"
+    size_px: 28
+  monospace:
+    family: "CLOCK Mono"
+    size_px: 21
+line_spacing_px: 12
+```
+
+Supported deterministic Phase-1 faces are `CLOCK UI` and `CLOCK Mono`. Sizes must be positive multiples of 7 pixels because they scale the project-owned 5×7 glyph source by exact integer factors. Unsupported requested fonts fail; there is no implicit system-font substitution.
+
+Chapter, text, callout and subtitle strings are measured and wrapped before rasterization. Horizontal or vertical overflow is a generation error.
+
+## Phase-1 frame composition
+
+Tutorial frames use the story output profile (default 1920×1080). OLED pixels always come from the real production framebuffer and are enlarged only by an integer nearest-neighbour factor. The panel side reuses `PanelLayout` geometry and shows the same production OLED framebuffer inside the simulated module.
+
+When `scope: {state: show, channel: visible}` is active, only the current production-UI selected channel is shown. Scope traces come from real gate-transition telemetry and the existing transport-referenced scope timeline. Storybook does not infer a waveform from BPM, steps, or story content.
+
+The subtitle strip is outside the tutorial content area and therefore never obscures CLOCK.

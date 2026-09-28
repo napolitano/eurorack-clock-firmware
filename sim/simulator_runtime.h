@@ -115,6 +115,9 @@ public:
     /** @brief Returns current rolling gate telemetry for all eight physical outputs. */
     const std::array<ChannelTelemetry, kChannelCount>& telemetry() const;
 
+    /** @brief Returns the currently selected production-UI channel for host presentation. */
+    std::uint8_t selectedChannelForPresentation() const;
+
     /** @brief Returns current virtual MCU time in microseconds. */
     std::uint64_t nowMicroseconds() const;
 

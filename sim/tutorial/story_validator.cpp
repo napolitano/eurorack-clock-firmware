@@ -16,6 +16,7 @@
 #include <string>
 #include <unordered_set>
 
+#include "tutorial/story_theme.h"
 #include "tutorial/story_yaml.h"
 
 namespace clockfw::sim::tutorial {
@@ -30,12 +31,6 @@ bool validStoryId(const std::string& id) {
     });
 }
 
-bool validHexColour(const std::string& value) {
-    if (value.size() != 7U || value.front() != '#') {
-        return false;
-    }
-    return std::all_of(value.begin() + 1, value.end(), [](const unsigned char ch) { return std::isxdigit(ch) != 0; });
-}
 
 std::optional<StoryYamlNode> loadYaml(const std::filesystem::path& path, std::vector<StoryIssue>& issues,
                                       const Story& story, const std::string& label) {
@@ -57,38 +52,10 @@ std::optional<StoryYamlNode> loadYaml(const std::filesystem::path& path, std::ve
 }
 
 void validateTheme(const Story& story, const std::filesystem::path& root, std::vector<StoryIssue>& issues) {
-    const auto node = loadYaml(root / "themes" / (story.theme + ".yaml"), issues, story, "theme");
-    if (!node || node->type != StoryYamlNode::Type::Mapping) return;
-    const StoryYamlNode* id = node->find("id");
-    const StoryYamlNode* fonts = node->find("fonts");
-    const StoryYamlNode* colours = node->find("colours");
-    if (id == nullptr || id->type != StoryYamlNode::Type::Scalar || id->scalar != story.theme) {
-        issues.push_back({story.id, std::nullopt, std::nullopt, node->line, "theme id does not match story theme"});
-    }
-    const std::array<const char*, 5U> fontKeys = {"body", "heading", "chapter", "subtitle", "monospace"};
-    if (fonts == nullptr || fonts->type != StoryYamlNode::Type::Mapping) {
-        issues.push_back({story.id, std::nullopt, std::nullopt, node->line, "theme.fonts mapping is required"});
-    } else {
-        for (const char* key : fontKeys) {
-            const StoryYamlNode* font = fonts->find(key);
-            if (font == nullptr || font->type != StoryYamlNode::Type::Scalar || font->scalar.empty()) {
-                issues.push_back({story.id, std::nullopt, std::nullopt, fonts->line, std::string("theme.fonts.") + key + " is required"});
-            }
-        }
-    }
-    const std::array<const char*, 10U> colourKeys = {
-        "background", "foreground", "muted", "accent", "tip_background", "tip_foreground",
-        "warning_background", "warning_foreground", "recipe_background", "recipe_foreground"};
-    if (colours == nullptr || colours->type != StoryYamlNode::Type::Mapping) {
-        issues.push_back({story.id, std::nullopt, std::nullopt, node->line, "theme.colours mapping is required"});
-    } else {
-        for (const char* key : colourKeys) {
-            const StoryYamlNode* colour = colours->find(key);
-            if (colour == nullptr || colour->type != StoryYamlNode::Type::Scalar || !validHexColour(colour->scalar)) {
-                issues.push_back({story.id, std::nullopt, std::nullopt, colours->line,
-                                  std::string("theme.colours.") + key + " must use #RRGGBB syntax"});
-            }
-        }
+    try {
+        (void)loadStoryTheme(root, story.theme);
+    } catch (const std::exception& exception) {
+        issues.push_back({story.id, std::nullopt, std::nullopt, 0U, std::string("theme: ") + exception.what()});
     }
 }
 

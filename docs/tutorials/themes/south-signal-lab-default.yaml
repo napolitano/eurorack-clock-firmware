@@ -1,15 +1,27 @@
 # Author: Axel Napolitano
 # License: PolyForm-Noncommercial-1.0.0
-# Rendering uses exact font resolution later in SB-5; these are requested families, not fallbacks.
+# Phase-1 Storybook uses deterministic project-local bitmap faces. Unknown requested
+# faces fail validation/rendering rather than silently substituting a system font.
 
 schema: 1
 id: south-signal-lab-default
+line_spacing_px: 12
 fonts:
-  body: "Ubuntu"
-  heading: "Ubuntu"
-  chapter: "Ubuntu"
-  subtitle: "Ubuntu"
-  monospace: "Ubuntu Mono"
+  body:
+    family: "CLOCK UI"
+    size_px: 28
+  heading:
+    family: "CLOCK UI"
+    size_px: 42
+  chapter:
+    family: "CLOCK UI"
+    size_px: 56
+  subtitle:
+    family: "CLOCK UI"
+    size_px: 28
+  monospace:
+    family: "CLOCK Mono"
+    size_px: 21
 colours:
   background: "#FFFFFF"
   foreground: "#111111"

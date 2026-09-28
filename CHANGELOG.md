@@ -32,6 +32,12 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add the SB-4 one-way front-panel presentation layer: synchronized visible button/encoder states, deterministic SYNC/RST plug insertion/removal, scriptable scope state, real POWER/cable telemetry, and PanelLayout-only geometry.
 - Move shared activity-LED visual persistence into `panel_led_visual.*` so both the native panel and Storybook derive visible LED state from the same real gate telemetry without synthesizing pulses.
 - Add a deterministic headless RGBA dynamic panel layer and regressions proving custom PanelLayout coordinates, PLAY down/up synchronization, half-progress SYNC/RST insertion, visible patch plugs, real encoder telemetry, POWER OFF agreement, and actual LED-source ownership.
+- Add the SB-5 full-frame software renderer for deterministic 1920x1080 RGBA8 tutorial output without desktop capture.
+- Compose the real production OLED framebuffer at strict integer nearest-neighbour scale, reuse the same framebuffer inside the PanelLayout-derived module view, and keep developer instrumentation out of tutorial frames.
+- Add an optional visible-channel scope backed by the existing transport-referenced scope timing model and the selected channel's real gate-transition telemetry.
+- Add deterministic data-driven Storybook themes, project-local `CLOCK UI`/`CLOCK Mono` faces, explicit font sizes/line spacing/colours, and hard failure for unavailable requested fonts.
+- Add measured wrapping and hard horizontal/vertical overflow rejection for chapters, explanatory text, subtitles, TIP, WARNING and RECIPE presentation.
+- Add `storybook_renderer_tests` covering all Phase-1 scene kinds, theme styling/font failure, overflow rejection, exact OLED pixel ownership/scaling, subtitle isolation and real visible-channel scope traces.
 
 ### Sequencer 2.0 foundation
 

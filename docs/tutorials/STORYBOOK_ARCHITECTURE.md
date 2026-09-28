@@ -189,3 +189,20 @@ Recorded patch actions now invoke the real simulator cable operation at the **st
 
 The interactive SDL panel and Storybook now share the same LED visual-persistence helper so short real gate pulses are presented consistently without either renderer synthesizing gate activity.
 
+## SB-5 full-frame renderer
+
+`clock-storybook-renderer` is a host-only software compositor. Its dependency direction remains one-way: parsed Story + presentation state + `SimulatorRuntime` telemetry + `PanelLayout` → RGBA8 frame. It has no path back into CLOCK controls or application state.
+
+The renderer owns presentation only:
+
+- `tutorial_surface.*` provides deterministic RGBA8 drawing/composition primitives;
+- `story_text_renderer.*` measures, wraps and draws project-owned bitmap glyphs;
+- `story_theme.*` loads fonts, sizes, line spacing and colours from `docs/tutorials/themes/`;
+- `tutorial_renderer.*` composes tutorial, chapter, text and callout frames;
+- `scope::Session`/`scope_timeline` remain the source for transport-relative scope timing, while gate traces come from `SimulatorRuntime::telemetry()`.
+
+The primary tutorial layout reserves a dedicated bottom subtitle strip. The left content region contains the real integer-scaled OLED and, when requested, the scope for exactly the production UI's selected channel. The right region contains the front panel. The panel representation uses only `PanelLayout` geometry and embeds the same real OLED framebuffer rather than a semantic screen mockup.
+
+Text is fully measured before drawing. An unbreakable line wider than its layout box, excessive wrapped height, a missing theme, an unavailable font face, or an invalid theme value aborts rendering.
+
+No developer timing panel, debug status text, or eight-channel developer scope is composed into tutorial frames. The optional Storybook scope is deliberately reduced to the requested visible channel.

@@ -163,6 +163,13 @@ const std::array<ChannelTelemetry, kChannelCount>& SimulatorRuntime::telemetry()
     return telemetry_;
 }
 
+std::uint8_t SimulatorRuntime::selectedChannelForPresentation() const {
+    if (application_ == nullptr) {
+        return 0U;
+    }
+    return application_->navigationForSimulator().selectedChannel;
+}
+
 std::uint64_t SimulatorRuntime::nowMicroseconds() const {
     return simfw::nowUs;
 }
