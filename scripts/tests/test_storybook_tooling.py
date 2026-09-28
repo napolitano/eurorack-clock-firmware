@@ -142,6 +142,12 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("No second Story replay", architecture)
         self.assertFalse(any((ROOT / "src").rglob("*storybook*")))
 
+    def test_windows_host_process_macros_are_idempotent(self) -> None:
+        """Windows SDK compatibility macros must not trigger MinGW/MSVC redefinition warnings."""
+        source = (ROOT / "sim/tutorial/external_process.cpp").read_text(encoding="utf-8")
+        self.assertIn("#ifndef WIN32_LEAN_AND_MEAN\n#define WIN32_LEAN_AND_MEAN\n#endif", source)
+        self.assertIn("#ifndef NOMINMAX\n#define NOMINMAX\n#endif", source)
+
     def test_sb7_publication_is_external_media_only(self) -> None:
         """Final video composition may invoke ffmpeg/ffprobe but must not feed media state back into CLOCK."""
         publication = (ROOT / "sim/tutorial/publication_pipeline.cpp").read_text(encoding="utf-8")

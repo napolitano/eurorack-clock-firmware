@@ -10,6 +10,10 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Fixed
+
+- Guarded the Windows `WIN32_LEAN_AND_MEAN` and `NOMINMAX` definitions in the Storybook host-process launcher so MinGW/UCRT64 builds remain clean under `-Werror` when the toolchain already defines `NOMINMAX`.
+
 ### Automated tutorial / Storybook infrastructure
 
 - Start the host-only CLOCK Storybook implementation with a versioned **schema 1** contract and explicit separation between Module Controls, Patch Actions, External Stimulus, Presentation Actions and Flow/Validation.
