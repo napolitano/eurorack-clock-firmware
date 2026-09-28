@@ -1,33 +1,33 @@
 # Author: Axel Napolitano
 # License: PolyForm-Noncommercial-1.0.0
-# Deterministic CLOCK Storybook interaction timings. No random jitter is permitted.
+# Deterministic CLOCK Storybook interaction timings. Tuned for tutorial legibility, not UI benchmark speed.
 
 schema: 1
 interaction_profiles:
   HUMAN_SLOW:
-    encoder_detent_ms: 240
-    encoder_fast_detent_ms: 130
-    button_down_ms: 220
-    button_release_pause_ms: 350
-    encoder_push_down_ms: 220
-    encoder_push_release_pause_ms: 400
-    patch_action_ms: 650
-    before_action_ms: 450
-    after_navigation_ms: 900
-    after_value_change_ms: 650
-    after_major_screen_change_ms: 1200
+    encoder_detent_ms: 460
+    encoder_fast_detent_ms: 280
+    button_down_ms: 260
+    button_release_pause_ms: 850
+    encoder_push_down_ms: 260
+    encoder_push_release_pause_ms: 950
+    patch_action_ms: 1200
+    before_action_ms: 900
+    after_navigation_ms: 1900
+    after_value_change_ms: 1400
+    after_major_screen_change_ms: 2600
   HUMAN_NORMAL:
-    encoder_detent_ms: 160
-    encoder_fast_detent_ms: 85
-    button_down_ms: 180
-    button_release_pause_ms: 250
-    encoder_push_down_ms: 180
-    encoder_push_release_pause_ms: 300
-    patch_action_ms: 450
-    before_action_ms: 300
-    after_navigation_ms: 650
-    after_value_change_ms: 450
-    after_major_screen_change_ms: 900
+    encoder_detent_ms: 320
+    encoder_fast_detent_ms: 200
+    button_down_ms: 220
+    button_release_pause_ms: 650
+    encoder_push_down_ms: 220
+    encoder_push_release_pause_ms: 750
+    patch_action_ms: 900
+    before_action_ms: 650
+    after_navigation_ms: 1450
+    after_value_change_ms: 1050
+    after_major_screen_change_ms: 2000
   HUMAN_FAST:
     encoder_detent_ms: 100
     encoder_fast_detent_ms: 55

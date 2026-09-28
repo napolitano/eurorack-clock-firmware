@@ -16,26 +16,25 @@
 
 #include "scope_timeline.h"
 #include "tutorial/panel_dynamic_layer.h"
+#include "tutorial/story_background_image.h"
+#include "tutorial/tutorial_scene_renderer.h"
 #include "tutorial/story_text_renderer.h"
 #include "tutorial/story_theme.h"
-
 namespace clockfw::sim::tutorial {
 namespace {
-
-constexpr int kFrameMargin = 56;
-constexpr int kSubtitleHeight = 120;
-constexpr int kTutorialGap = 56;
+constexpr int kFrameMargin = 64;
+constexpr int kSubtitleHeight = 128;
+constexpr int kTutorialGap = 48;
 constexpr int kScopeHeight = 250;
+constexpr int kCardInset = 26;
+constexpr int kCardHeader = 56;
 constexpr int kPanelInternalTextPx = 14;
-
 int rounded(const float value) {
     return static_cast<int>(std::lround(value));
 }
-
 TutorialColor colour(const layout::Color value, const std::uint8_t alpha = 255U) {
     return {value.red, value.green, value.blue, alpha};
 }
-
 TutorialSurface dynamicLayerToSurface(const PanelDynamicLayer& layer) {
     TutorialSurface surface(layer.width(), layer.height(), {0U, 0U, 0U, 0U});
     for (std::size_t y = 0U; y < layer.height(); ++y) {
@@ -48,7 +47,6 @@ TutorialSurface dynamicLayerToSurface(const PanelDynamicLayer& layer) {
     }
     return surface;
 }
-
 void drawJack(
     TutorialSurface& surface,
     const layout::Point center,
@@ -57,7 +55,6 @@ void drawJack(
     surface.fillCircle(rounded(center.x), rounded(center.y), rounded(jack.bushingRadius), {45U, 47U, 51U, 255U});
     surface.fillCircle(rounded(center.x), rounded(center.y), rounded(jack.openingRadius), {5U, 6U, 8U, 255U});
 }
-
 TutorialSurface renderPanelBase(const layout::PanelLayout& layout, const SimulatorRuntime& runtime) {
     TutorialSurface surface(
         static_cast<std::size_t>(layout.windowWidth),
@@ -68,7 +65,6 @@ TutorialSurface renderPanelBase(const layout::PanelLayout& layout, const Simulat
         rounded(layout.panel.width), rounded(layout.panel.height)};
     surface.fillRect(panel, {24U, 27U, 34U, 255U});
     surface.strokeRect(panel, {61U, 66U, 78U, 255U}, 2);
-
     const int oledScale = layout.displayPixelScale;
     const int oledWidth = 128 * oledScale;
     const int oledHeight = 64 * oledScale;
@@ -87,12 +83,10 @@ TutorialSurface renderPanelBase(const layout::PanelLayout& layout, const Simulat
             }
         }
     }
-
     surface.fillCircle(rounded(layout.encoderCenter.x), rounded(layout.encoderCenter.y), rounded(layout.encoderRadius), {55U, 58U, 65U, 255U});
     surface.strokeRect({rounded(layout.encoderCenter.x - layout.encoderRadius), rounded(layout.encoderCenter.y - layout.encoderRadius),
                         rounded(layout.encoderRadius * 2.0F), rounded(layout.encoderRadius * 2.0F)},
                        {84U, 88U, 97U, 80U}, 1);
-
     const auto drawButton = [&](const layout::CircleControl& button) {
         surface.fillCircle(rounded(button.center.x), rounded(button.center.y), rounded(button.bodyRadius), {12U, 13U, 16U, 255U});
         surface.fillCircle(rounded(button.center.x), rounded(button.center.y), rounded(button.radius), colour(button.color));
@@ -100,7 +94,6 @@ TutorialSurface renderPanelBase(const layout::PanelLayout& layout, const Simulat
     drawButton(layout.playButton);
     drawButton(layout.tapButton);
     drawButton(layout.stopButton);
-
     drawJack(surface, layout.syncInputCenter, layout.jackGeometry(layout.syncJackType));
     drawJack(surface, layout.resetInputCenter, layout.jackGeometry(layout.resetJackType));
     for (std::size_t index = 0U; index < layout.outputCenters.size(); ++index) {
@@ -108,7 +101,6 @@ TutorialSurface renderPanelBase(const layout::PanelLayout& layout, const Simulat
         surface.fillCircle(rounded(layout.ledCenters[index].x), rounded(layout.ledCenters[index].y),
                            rounded(layout.ledRadius), colour(layout.ledOffColor));
     }
-
     const StoryFontStyle labelFont{"CLOCK UI", static_cast<std::uint32_t>(kPanelInternalTextPx)};
     const TutorialColor label{218U, 220U, 224U, 255U};
     (void)drawStoryTextLine(surface, "CLOCK", labelFont, panel.x + 18, panel.y + 36, label);
@@ -131,7 +123,6 @@ TutorialSurface renderPanelBase(const layout::PanelLayout& layout, const Simulat
     }
     return surface;
 }
-
 void renderOled(
     TutorialSurface& frame,
     const SimulatorRuntime& runtime,
@@ -157,7 +148,6 @@ void renderOled(
         }
     }
 }
-
 void renderPanel(
     TutorialSurface& frame,
     const layout::PanelLayout& layout,
@@ -169,7 +159,6 @@ void renderPanel(
     const PanelPresentationSnapshot snapshot = makePanelPresentationSnapshot(layout, runtime, physicalState, speedMultiplier);
     const TutorialSurface dynamic = dynamicLayerToSurface(renderPanelDynamicLayer(layout, snapshot));
     panel.composite(dynamic, 0, 0);
-
     const TutorialRect source{
         rounded(layout.panel.x), rounded(layout.panel.y),
         rounded(layout.panel.width), rounded(layout.panel.height)};
@@ -182,7 +171,6 @@ void renderPanel(
     const TutorialRect destination{box.x + (box.width - width) / 2, box.y + (box.height - height) / 2, width, height};
     frame.blitNearest(panel, source, destination);
 }
-
 void renderScope(
     TutorialSurface& frame,
     SimulatorRuntime& runtime,
@@ -198,13 +186,12 @@ void renderScope(
     }
     frame.fillRect(box, {16U, 18U, 22U, 255U});
     frame.strokeRect(box, theme.muted, 2);
-
     const std::uint8_t selected = std::min<std::uint8_t>(runtime.selectedChannelForPresentation(), 7U);
     const ChannelTelemetry& channel = runtime.telemetry()[selected];
-    const StoryFontStyle labelFont{"CLOCK Mono", 14U};
+    StoryFontStyle labelFont = theme.monospace;
+    labelFont.sizePx = labelFont.backend == StoryFontBackend::Builtin ? 14U : 18U;
     const std::string label = "CH" + std::to_string(static_cast<unsigned>(selected + 1U)) + "  VISIBLE CHANNEL";
     (void)drawStoryTextLine(frame, label, labelFont, box.x + 18, box.y + 16, theme.muted);
-
     const int graphLeft = box.x + 24;
     const int graphRight = box.x + box.width - 24;
     const int graphTop = box.y + 52;
@@ -212,12 +199,10 @@ void renderScope(
     const int highY = graphTop + 20;
     const int lowY = graphBottom - 18;
     frame.drawLine(graphLeft, lowY, graphRight, lowY, {64U, 68U, 76U, 255U});
-
     if (!view.started) {
         (void)drawStoryTextLine(frame, "ARMED", labelFont, graphRight - 72, box.y + 16, theme.muted);
         return;
     }
-
     const std::uint64_t windowUs = std::clamp<std::uint64_t>(
         view.windowUs, scope::kWindowOptionsUs.front(), scope::kWindowOptionsUs.back());
     const ClockState& state = runtime.state();
@@ -238,7 +223,6 @@ void renderScope(
             frame.drawLine(x, graphTop, x, graphBottom, {48U, 52U, 59U, 255U});
         }
     }
-
     const std::int64_t gateReferenceUs = static_cast<std::int64_t>(view.referenceUs);
     const std::int64_t gateStartUs = gateReferenceUs - static_cast<std::int64_t>(windowUs);
     bool high = false;
@@ -262,89 +246,6 @@ void renderScope(
     frame.drawLine(previousX, high ? highY : lowY, graphRight, high ? highY : lowY, {150U, 220U, 168U, 255U}, 2);
     frame.drawLine(graphRight, graphTop, graphRight, graphBottom, theme.accent, 2);
 }
-
-void renderSubtitle(
-    TutorialSurface& frame,
-    const std::string& subtitle,
-    const StoryTheme& theme) {
-    const int width = static_cast<int>(frame.width());
-    const int height = static_cast<int>(frame.height());
-    const TutorialRect strip{0, height - kSubtitleHeight, width, kSubtitleHeight};
-    frame.fillRect(strip, theme.background);
-    frame.fillRect({0, strip.y, width, 3}, theme.accent);
-    if (subtitle.empty()) return;
-    const StoryTextLayout layout = layoutStoryText(
-        subtitle, theme.subtitle, width - 2 * kFrameMargin, kSubtitleHeight - 28, theme.lineSpacingPx);
-    const int x = (width - layout.widthPx) / 2;
-    const int y = strip.y + (strip.height - layout.heightPx) / 2;
-    drawStoryText(frame, layout, theme.subtitle, x, y, theme.foreground);
-}
-
-void renderChapter(TutorialSurface& frame, const StoryScene& scene, const StoryTheme& theme) {
-    const int width = static_cast<int>(frame.width());
-    const int contentBottom = static_cast<int>(frame.height()) - kSubtitleHeight;
-    const StoryFontStyle numberFont{"CLOCK Mono", 42U};
-    const std::string number = std::to_string(scene.number);
-    const int numberWidth = measureStoryTextWidth(number, numberFont);
-    (void)drawStoryTextLine(frame, number, numberFont, (width - numberWidth) / 2, 250, theme.accent);
-    const StoryTextLayout title = layoutStoryText(scene.title, theme.chapter, width - 320, 180, theme.lineSpacingPx);
-    drawStoryText(frame, title, theme.chapter, (width - title.widthPx) / 2, 360, theme.foreground);
-    if (!scene.subtitle.empty()) {
-        const StoryTextLayout subtitle = layoutStoryText(scene.subtitle, theme.heading, width - 360, 160, theme.lineSpacingPx);
-        drawStoryText(frame, subtitle, theme.heading, (width - subtitle.widthPx) / 2,
-                      std::min(contentBottom - subtitle.heightPx - 140, 520), theme.muted);
-    }
-}
-
-void renderTextScene(TutorialSurface& frame, const StoryScene& scene, const StoryTheme& theme) {
-    const int width = static_cast<int>(frame.width());
-    const int contentBottom = static_cast<int>(frame.height()) - kSubtitleHeight;
-    const int x = 180;
-    const int maxWidth = width - 360;
-    const StoryTextLayout title = layoutStoryText(scene.title, theme.heading, maxWidth, 140, theme.lineSpacingPx);
-    drawStoryText(frame, title, theme.heading, x, 150, theme.foreground);
-    const int bodyY = 150 + title.heightPx + 70;
-    const StoryTextLayout body = layoutStoryText(scene.body, theme.body, maxWidth,
-                                                 contentBottom - bodyY - 100, theme.lineSpacingPx);
-    drawStoryText(frame, body, theme.body, x, bodyY, theme.foreground);
-}
-
-void renderCallout(TutorialSurface& frame, const StoryScene& scene, const StoryTheme& theme) {
-    if (!scene.calloutKind) throw std::runtime_error("callout scene has no type");
-    TutorialColor background{};
-    TutorialColor foreground{};
-    std::string label;
-    switch (*scene.calloutKind) {
-        case CalloutKind::Tip:
-            background = theme.tipBackground; foreground = theme.tipForeground; label = "TIP"; break;
-        case CalloutKind::Warning:
-            background = theme.warningBackground; foreground = theme.warningForeground; label = "WARNING"; break;
-        case CalloutKind::Recipe:
-            background = theme.recipeBackground; foreground = theme.recipeForeground; label = "RECIPE"; break;
-    }
-    const int width = static_cast<int>(frame.width());
-    const int contentBottom = static_cast<int>(frame.height()) - kSubtitleHeight;
-    const TutorialRect box{180, 140, width - 360, contentBottom - 260};
-    frame.fillRect(box, background);
-    frame.fillRect({box.x, box.y, 8, box.height}, theme.accent);
-    const StoryFontStyle labelFont{"CLOCK Mono", 21U};
-    (void)drawStoryTextLine(frame, label, labelFont, box.x + 56, box.y + 48, theme.accent);
-    const StoryTextLayout title = layoutStoryText(scene.title, theme.heading, box.width - 112, 120, theme.lineSpacingPx);
-    drawStoryText(frame, title, theme.heading, box.x + 56, box.y + 110, foreground);
-    std::string content = scene.body;
-    if (*scene.calloutKind == CalloutKind::Recipe) {
-        content.clear();
-        for (std::size_t index = 0U; index < scene.recipeSteps.size(); ++index) {
-            if (!content.empty()) content += '\n';
-            content += std::to_string(index + 1U) + ". " + scene.recipeSteps[index];
-        }
-    }
-    const int bodyY = box.y + 110 + title.heightPx + 58;
-    const StoryTextLayout body = layoutStoryText(content, theme.body, box.width - 112,
-                                                 box.y + box.height - bodyY - 48, theme.lineSpacingPx);
-    drawStoryText(frame, body, theme.body, box.x + 56, bodyY, foreground);
-}
-
 void renderTutorial(
     TutorialSurface& frame,
     SimulatorRuntime& runtime,
@@ -359,32 +260,63 @@ void renderTutorial(
         30U};
     const bool scopeVisible = physicalState.scopeMode == ScopeMode::VisibleChannel;
     const TutorialCompositionLayout composition = resolveTutorialComposition(output, scopeVisible);
+    const TutorialColor cardFill{
+        theme.tutorialSurface.red, theme.tutorialSurface.green, theme.tutorialSurface.blue, 236U};
+    const int leftBottom = std::max(
+        composition.oledBox.y + composition.oledBox.height,
+        composition.scopeBox.y + composition.scopeBox.height);
+    const TutorialRect leftCard{
+        composition.oledBox.x - kCardInset,
+        composition.oledBox.y - kCardHeader,
+        composition.oledBox.width + 2 * kCardInset,
+        leftBottom - (composition.oledBox.y - kCardHeader) + kCardInset};
+    const TutorialRect rightCard{
+        composition.panelBox.x - kCardInset,
+        composition.panelBox.y - kCardHeader,
+        composition.panelBox.width + 2 * kCardInset,
+        composition.panelBox.height + kCardHeader + kCardInset};
+    frame.fillRect(leftCard, cardFill);
+    frame.strokeRect(leftCard, theme.tutorialSurfaceBorder, 2);
+    frame.fillRect(rightCard, cardFill);
+    frame.strokeRect(rightCard, theme.tutorialSurfaceBorder, 2);
+    frame.fillRect({leftCard.x, leftCard.y, 6, leftCard.height}, theme.accent);
+    frame.fillRect({rightCard.x, rightCard.y, 6, rightCard.height}, theme.accent);
+    (void)drawStoryTextLine(frame, "CLOCK DISPLAY", theme.monospace,
+                            leftCard.x + 24, leftCard.y + 16, theme.muted);
+    (void)drawStoryTextLine(frame, "MODULE", theme.monospace,
+                            rightCard.x + 24, rightCard.y + 16, theme.muted);
     renderOled(frame, runtime, composition.oledBox, theme);
-    if (scopeVisible) {
-        renderScope(frame, runtime, scopeSession, composition.scopeBox, theme);
-    }
+    if (scopeVisible) renderScope(frame, runtime, scopeSession, composition.scopeBox, theme);
     renderPanel(frame, panelLayout, runtime, physicalState, speedMultiplier, composition.panelBox);
 }
-
 }  // namespace
-
 TutorialCompositionLayout resolveTutorialComposition(const OutputProfile& output, const bool scopeVisible) {
     const int width = static_cast<int>(output.width);
     const int height = static_cast<int>(output.height);
     const int contentHeight = height - kSubtitleHeight - 2 * kFrameMargin;
     if (width < 1280 || contentHeight < 600) {
-        throw std::runtime_error("tutorial output is too small for Phase-1 side-by-side composition");
+        throw std::runtime_error("tutorial output is too small for side-by-side composition");
     }
     const int contentWidth = width - 2 * kFrameMargin;
     const int leftWidth = (contentWidth * 62) / 100;
     const int rightWidth = contentWidth - leftWidth - kTutorialGap;
     TutorialCompositionLayout layout{};
     layout.content = {kFrameMargin, kFrameMargin, contentWidth, contentHeight};
-    const TutorialRect left{kFrameMargin, kFrameMargin, leftWidth, contentHeight};
-    layout.panelBox = {kFrameMargin + leftWidth + kTutorialGap, kFrameMargin, rightWidth, contentHeight};
+    const TutorialRect leftCard{kFrameMargin, kFrameMargin, leftWidth, contentHeight};
+    const TutorialRect rightCard{kFrameMargin + leftWidth + kTutorialGap, kFrameMargin, rightWidth, contentHeight};
+    const TutorialRect left{
+        leftCard.x + kCardInset,
+        leftCard.y + kCardHeader,
+        leftCard.width - 2 * kCardInset,
+        leftCard.height - kCardHeader - kCardInset};
+    layout.panelBox = {
+        rightCard.x + kCardInset,
+        rightCard.y + kCardHeader,
+        rightCard.width - 2 * kCardInset,
+        rightCard.height - kCardHeader - kCardInset};
     if (scopeVisible) {
         layout.oledBox = {left.x, left.y, left.width, left.height - kScopeHeight - 24};
-        layout.scopeBox = {left.x + 20, left.y + left.height - kScopeHeight, left.width - 40, kScopeHeight};
+        layout.scopeBox = {left.x, left.y + left.height - kScopeHeight, left.width, kScopeHeight};
     } else {
         layout.oledBox = left;
     }
@@ -402,12 +334,62 @@ TutorialCompositionLayout resolveTutorialComposition(const OutputProfile& output
     layout.subtitleStrip = {0, height - kSubtitleHeight, width, kSubtitleHeight};
     return layout;
 }
-
+namespace {
+void paintTutorialBackground(
+    TutorialSurface& frame,
+    const TutorialColor solid,
+    const TutorialSurface* image,
+    const StoryBackgroundImageMode mode) {
+    frame.clear(solid);
+    if (image == nullptr) return;
+    const TutorialRect source{0, 0, static_cast<int>(image->width()), static_cast<int>(image->height())};
+    const TutorialRect destination{0, 0, static_cast<int>(frame.width()), static_cast<int>(frame.height())};
+    if (mode == StoryBackgroundImageMode::Stretch) {
+        frame.blitNearest(*image, source, destination);
+        return;
+    }
+    const double scaleX = static_cast<double>(destination.width) / static_cast<double>(source.width);
+    const double scaleY = static_cast<double>(destination.height) / static_cast<double>(source.height);
+    if (mode == StoryBackgroundImageMode::Contain) {
+        const double scale = std::min(scaleX, scaleY);
+        const int width = std::max(1, static_cast<int>(std::lround(static_cast<double>(source.width) * scale)));
+        const int height = std::max(1, static_cast<int>(std::lround(static_cast<double>(source.height) * scale)));
+        frame.blitNearest(*image, source,
+                          {(destination.width - width) / 2, (destination.height - height) / 2, width, height});
+        return;
+    }
+    const double scale = std::max(scaleX, scaleY);
+    const int cropWidth = std::max(1, static_cast<int>(std::floor(static_cast<double>(destination.width) / scale)));
+    const int cropHeight = std::max(1, static_cast<int>(std::floor(static_cast<double>(destination.height) / scale)));
+    const TutorialRect crop{
+        (source.width - cropWidth) / 2,
+        (source.height - cropHeight) / 2,
+        cropWidth,
+        cropHeight};
+    frame.blitNearest(*image, crop, destination);
+}
+}  // namespace
 TutorialRenderer::TutorialRenderer(
     std::filesystem::path tutorialRoot,
     layout::PanelLayout panelLayout)
     : tutorialRoot_(std::move(tutorialRoot)), panelLayout_(std::move(panelLayout)) {}
-
+const StoryTheme& TutorialRenderer::resolveTheme(const std::string& themeId) {
+    if (!cachedTheme_ || cachedThemeId_ != themeId) {
+        cachedTheme_ = loadStoryTheme(tutorialRoot_, themeId);
+        cachedThemeId_ = themeId;
+        cachedBackground_.reset();
+        cachedBackgroundPath_.reset();
+    }
+    return *cachedTheme_;
+}
+const TutorialSurface* TutorialRenderer::resolveBackgroundImage(const StoryTheme& theme) {
+    if (!theme.tutorialBackgroundImage) return nullptr;
+    if (!cachedBackground_ || !cachedBackgroundPath_ || *cachedBackgroundPath_ != *theme.tutorialBackgroundImage) {
+        cachedBackground_ = loadStoryBackgroundImage(*theme.tutorialBackgroundImage);
+        cachedBackgroundPath_ = *theme.tutorialBackgroundImage;
+    }
+    return &*cachedBackground_;
+}
 TutorialSurface TutorialRenderer::renderScene(
     const Story& story,
     const StoryScene& scene,
@@ -415,27 +397,28 @@ TutorialSurface TutorialRenderer::renderScene(
     const PhysicalPresentationState& physicalState,
     const std::string& activeSubtitle,
     const double speedMultiplier) {
-    const StoryTheme theme = loadStoryTheme(tutorialRoot_, story.theme);
+    const StoryTheme& theme = resolveTheme(story.theme);
     TutorialSurface frame(story.output.width, story.output.height, theme.background);
     switch (scene.kind) {
         case SceneKind::Chapter:
-            renderChapter(frame, scene, theme);
+            renderStoryChapter(frame, scene, theme);
             break;
         case SceneKind::Text:
-            renderTextScene(frame, scene, theme);
+            renderStoryTextScene(frame, scene, theme);
             break;
         case SceneKind::Callout:
-            renderCallout(frame, scene, theme);
+            renderStoryCallout(frame, scene, theme);
             break;
         case SceneKind::Tutorial:
+            paintTutorialBackground(frame, theme.tutorialBackground, resolveBackgroundImage(theme),
+                                    theme.tutorialBackgroundImageMode);
             renderTutorial(frame, runtime, panelLayout_, physicalState, scopeSession_, theme, speedMultiplier);
             break;
     }
     if (scene.kind == SceneKind::Tutorial) {
         const std::string subtitle = !activeSubtitle.empty() ? activeSubtitle : scene.subtitle;
-        renderSubtitle(frame, subtitle, theme);
+        renderStorySubtitle(frame, subtitle, theme);
     }
     return frame;
 }
-
 }  // namespace clockfw::sim::tutorial

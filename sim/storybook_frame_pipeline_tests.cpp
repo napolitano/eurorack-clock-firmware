@@ -106,7 +106,7 @@ schema: 1
 id: frame-pipeline-smoke
 title: "Frame Pipeline Smoke"
 language: en
-theme: south-signal-lab-default
+theme: south-signal-lab-ci
 interaction_profile: HUMAN_NORMAL
 output:
   width: 1280

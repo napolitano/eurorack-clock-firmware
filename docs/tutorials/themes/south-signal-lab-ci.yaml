@@ -1,0 +1,50 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+# Deterministic dependency-free renderer-test theme. Publication stories use south-signal-lab-default.
+
+schema: 1
+id: south-signal-lab-ci
+line_spacing_px: 12
+fonts:
+  body:
+    backend: builtin
+    family: "CLOCK UI"
+    size_px: 28
+  heading:
+    backend: builtin
+    family: "CLOCK UI"
+    size_px: 42
+  chapter:
+    backend: builtin
+    family: "CLOCK UI"
+    size_px: 56
+  subtitle:
+    backend: builtin
+    family: "CLOCK UI"
+    size_px: 28
+  monospace:
+    backend: builtin
+    family: "CLOCK Mono"
+    size_px: 21
+colours:
+  background: "#FFFFFF"
+  foreground: "#111111"
+  muted: "#666666"
+  accent: "#0B4FC0"
+  tutorial_background: "#000000"
+  tutorial_surface: "#111318"
+  tutorial_surface_border: "#303744"
+  chapter_background: "#0B4FC0"
+  chapter_foreground: "#FFFFFF"
+  chapter_muted: "#D7E3FF"
+  subtitle_background: "#090B0F"
+  subtitle_foreground: "#F4F6F8"
+  tip_background: "#EAF0FF"
+  tip_foreground: "#12213A"
+  warning_background: "#FFF2CC"
+  warning_foreground: "#2A2416"
+  recipe_background: "#E8F5EE"
+  recipe_foreground: "#123328"
+presentation:
+  background_image: ""
+  background_image_mode: cover

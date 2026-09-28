@@ -10,6 +10,14 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Changed
+
+- Refined Storybook publication visuals: Ubuntu/Ubuntu Mono are now the configurable default publication fonts, chapter/interstitial screens use the manual CLOCK Blue `#0B4FC0`, normal tutorial views default to black, and OLED/panel content sits on a cleaner dark card layout with a dedicated subtitle bar.
+- Added optional theme-driven tutorial background images with `cover` / `contain` / `stretch`; the SDL-free renderer accepts uncompressed 24/32-bit BMP without introducing an image-codec dependency.
+- Slowed `HUMAN_NORMAL` and `HUMAN_SLOW` substantially for instructional legibility while preserving `HUMAN_FAST` for semantically timed interactions such as Tap Tempo.
+- Added a separate `south-signal-lab-ci` theme so renderer CI remains dependency-free and deterministic while publication typography uses installed system fonts.
+
+
 ### Fixed
 
 - Guarded the Windows `WIN32_LEAN_AND_MEAN` and `NOMINMAX` definitions in the Storybook host-process launcher so MinGW/UCRT64 builds remain clean under `-Werror` when the toolchain already defines `NOMINMAX`.

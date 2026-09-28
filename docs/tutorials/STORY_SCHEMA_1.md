@@ -195,20 +195,37 @@ Physical actions use the selected interaction profile. `wait_ms` advances the re
 
 ## Theme and text-layout contract
 
-Phase-1 themes are stored under `docs/tutorials/themes/`. Font entries are explicit mappings:
+Themes live under `docs/tutorials/themes/`. Typography is explicit and configurable per role:
 
 ```yaml
 fonts:
   body:
-    family: "CLOCK UI"
-    size_px: 28
-  monospace:
-    family: "CLOCK Mono"
-    size_px: 21
-line_spacing_px: 12
+    backend: system
+    family: "Ubuntu"
+    weight: 400
+    size_px: 30
+  heading:
+    backend: system
+    family: "Ubuntu"
+    weight: 700
+    size_px: 46
 ```
 
-Supported deterministic Phase-1 faces are `CLOCK UI` and `CLOCK Mono`. Sizes must be positive multiples of 7 pixels because they scale the project-owned 5×7 glyph source by exact integer factors. Unsupported requested fonts fail; there is no implicit system-font substitution.
+`backend: system` requests the named installed host family exactly. The current publication raster backend is implemented for Windows and must fail rather than silently substitute another face. `backend: builtin` retains the deterministic `CLOCK UI` / `CLOCK Mono` 5x7 renderer used by dependency-free CI; builtin sizes remain positive multiples of seven.
+
+The default publication theme uses Ubuntu and Ubuntu Mono, matching the manual typography. Font files are external workstation resources and are never source-bundle assets.
+
+Colours distinguish presentation from product footage. The default chapter/interstitial background is the CLOCK manual blue `#0B4FC0`; ordinary tutorial frames use `#000000`. The subtitle strip has its own background/foreground pair.
+
+A tutorial background image is optional theme data:
+
+```yaml
+presentation:
+  background_image: "assets/backgrounds/tutorial-background.bmp"
+  background_image_mode: cover
+```
+
+Relative paths resolve from `docs/tutorials/`. `cover`, `contain`, and `stretch` are valid image modes. The SDL-free Phase-1.1 loader supports uncompressed 24/32-bit BMP. Omitting the path leaves the normal tutorial background black.
 
 Chapter, text, callout and subtitle strings are measured and wrapped before rasterization. Horizontal or vertical overflow is a generation error.
 

@@ -5,7 +5,7 @@ id: saving-loading-preset
 title: "Saving and Loading a Preset"
 language: en
 theme: south-signal-lab-default
-interaction_profile: HUMAN_FAST
+interaction_profile: HUMAN_NORMAL
 setup:
   factory_reset: true
   power: on

@@ -142,6 +142,8 @@ add_library(clock-storybook-presentation STATIC
 add_library(clock-storybook-renderer STATIC
     sim/tutorial/tutorial_surface.cpp
     sim/tutorial/story_text_renderer.cpp
+    sim/tutorial/story_background_image.cpp
+    sim/tutorial/tutorial_scene_renderer.cpp
     sim/tutorial/tutorial_renderer.cpp
 )
 target_link_libraries(clock-storybook-renderer PUBLIC
@@ -151,6 +153,9 @@ target_include_directories(clock-storybook-renderer PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/sim"
 )
 target_compile_options(clock-storybook-renderer PRIVATE ${CLOCK_WARNING_FLAGS})
+if(WIN32)
+    target_link_libraries(clock-storybook-renderer PRIVATE gdi32)
+endif()
 
 add_library(clock-storybook-frame-pipeline STATIC
     sim/tutorial/png_writer.cpp

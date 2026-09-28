@@ -4,7 +4,7 @@
 
 CLOCK Storybook is the project-local, host-only documentation-video system for deterministic how-to material. It drives the production CLOCK application through existing simulator boundaries and composes documentation frames from real firmware output rather than reproducing firmware behaviour.
 
-Current implementation status: **SB-0 through SB-7 complete; SB-8 reference Storybook/CI integration next**.
+Current implementation status: **Phase 1 SB-0 through SB-8 complete; post-Phase-1 authoring/visual polish active.**
 
 - [`STORYBOOK_ARCHITECTURE.md`](STORYBOOK_ARCHITECTURE.md) defines ownership, dependency, timing, stream, and publication boundaries.
 - [`STORY_SCHEMA_1.md`](STORY_SCHEMA_1.md) defines the initial authoring interface and stable action spellings.
@@ -17,6 +17,13 @@ Current implementation status: **SB-0 through SB-7 complete; SB-8 reference Stor
 
 Generated videos, frames, subtitles, manifests, coverage output, and local publication artifacts belong under ignored build/output locations. They are not source artifacts and must not be included in source bundles.
 
+
+
+## Publication visual defaults
+
+The default publication theme now follows the manual more closely: Ubuntu/Ubuntu Mono typography, CLOCK Blue `#0B4FC0` chapter cards, black tutorial backgrounds, dark framed content surfaces, and a dedicated subtitle bar. Typography, font weights/sizes, colours, and the optional tutorial background image are theme data. Normal tutorial pacing uses the deliberately slower `HUMAN_NORMAL` profile; `HUMAN_FAST` remains available for timing-sensitive gestures such as Tap Tempo.
+
+Final publication system-font rendering currently uses the native Windows host font rasterizer and refuses silent face substitution. The separate `south-signal-lab-ci` theme keeps the dependency-free project bitmap font for deterministic CI renderer tests.
 
 ## SB-5 deterministic tutorial renderer
 

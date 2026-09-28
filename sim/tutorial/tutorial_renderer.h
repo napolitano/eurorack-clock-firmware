@@ -8,6 +8,7 @@
 #pragma once
 
 #include <filesystem>
+#include <optional>
 #include <string>
 
 #include "panel_layout.h"
@@ -15,6 +16,7 @@
 #include "simulator_runtime.h"
 #include "tutorial/panel_presentation.h"
 #include "tutorial/story_model.h"
+#include "tutorial/story_theme.h"
 #include "tutorial/tutorial_surface.h"
 
 namespace clockfw::sim::tutorial {
@@ -56,9 +58,16 @@ public:
         double speedMultiplier = 1.0);
 
 private:
+    const StoryTheme& resolveTheme(const std::string& themeId);
+    const TutorialSurface* resolveBackgroundImage(const StoryTheme& theme);
+
     std::filesystem::path tutorialRoot_;
     layout::PanelLayout panelLayout_;
     scope::Session scopeSession_{};
+    std::string cachedThemeId_{};
+    std::optional<StoryTheme> cachedTheme_{};
+    std::optional<std::filesystem::path> cachedBackgroundPath_{};
+    std::optional<TutorialSurface> cachedBackground_{};
 };
 
 }  // namespace clockfw::sim::tutorial

@@ -190,7 +190,64 @@ cmake --build --preset simulator-headless --target clock-storybook
 
 Then retry the same `video` command. The CLI prints the frame-render stage, frame count and resolved FFmpeg/FFprobe executable paths before publication starts.
 
-## 10. Record the source revision in the manifest
+## 10. Publication typography, colours and backgrounds
+
+The publication theme is [`themes/south-signal-lab-default.yaml`](themes/south-signal-lab-default.yaml). Its defaults follow the CLOCK manual visual language:
+
+- **Ubuntu** for body/headings/subtitles;
+- **Ubuntu Mono** for technical labels;
+- **CLOCK Blue `#0B4FC0`** for chapter/interstitial screens;
+- **black** for the normal tutorial background.
+
+Font families, weights and pixel sizes are theme data rather than renderer constants:
+
+```yaml
+fonts:
+  body:
+    backend: system
+    family: "Ubuntu"
+    weight: 400
+    size_px: 30
+  heading:
+    backend: system
+    family: "Ubuntu"
+    weight: 700
+    size_px: 46
+```
+
+The current publication system-font raster backend uses native Windows GDI and rejects substitution: if the requested family is not installed, rendering fails with an explicit message. Install Ubuntu/Ubuntu Mono on the publication workstation or change the configured family to another installed face. Font files themselves are workstation assets and are not bundled with CLOCK.
+
+The dependency-free CI renderer continues to use `south-signal-lab-ci`, which deliberately keeps the project-owned bitmap faces. Do not use that theme for final publication unless the pixel-font look is intentional.
+
+A normal tutorial may optionally replace the black background with an image:
+
+```yaml
+presentation:
+  background_image: "assets/backgrounds/tutorial-background.bmp"
+  background_image_mode: cover
+```
+
+The path is relative to `docs/tutorials/`. Supported image mode values are `cover`, `contain`, and `stretch`. The current SDL-free image loader accepts uncompressed 24-bit or 32-bit Windows BMP so background images do not add an image-codec dependency to the headless renderer. Leaving `background_image` empty uses pure black.
+
+## 11. Tutorial pacing
+
+Interaction speed is controlled centrally by [`interaction_profiles.yaml`](interaction_profiles.yaml), not by video playback speed. `HUMAN_NORMAL` and `HUMAN_SLOW` are intentionally paced for viewers to follow the OLED and physical control movement. `HUMAN_FAST` remains reserved for interactions whose timing is semantically meaningful, especially Tap Tempo.
+
+For ordinary instructional material use:
+
+```yaml
+interaction_profile: HUMAN_NORMAL
+```
+
+For especially dense menu/navigation explanations use:
+
+```yaml
+interaction_profile: HUMAN_SLOW
+```
+
+Do not slow Tap Tempo by changing its profile unless the demonstrated tap interval is updated accordingly; the taps are real CLOCK input and therefore change the measured BPM.
+
+## 12. Record the source revision in the manifest
 
 The default manifest revision is `working-tree`. For an archived or release-oriented render, pass the Git revision explicitly:
 
@@ -211,7 +268,7 @@ $revision = git rev-parse HEAD
   --source-revision $revision
 ```
 
-## 11. Recommended authoring loop
+## 13. Recommended authoring loop
 
 Use this order while developing a Story:
 
@@ -225,7 +282,7 @@ Use this order while developing a Story:
 
 Do not replace physical UI actions with direct product-state setters. If a workflow cannot be expressed through the existing module controls, patch actions and external stimuli, extend the Storybook contract explicitly and regression-test that addition first.
 
-## 12. Useful verification commands
+## 14. Useful verification commands
 
 Validate the full native Storybook/test matrix:
 

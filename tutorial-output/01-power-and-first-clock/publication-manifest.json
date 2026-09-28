@@ -1,0 +1,9 @@
+{
+  "publication_schema": 1,
+  "story_id": "example-power-and-first-clock",
+  "intro_duration_us": 0,
+  "tutorial_duration_us": 16266667,
+  "outro_duration_us": 0,
+  "audio_present": false,
+  "formats": ["mp4-h264"]
+}

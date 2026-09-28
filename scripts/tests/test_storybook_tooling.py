@@ -142,6 +142,24 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("No second Story replay", architecture)
         self.assertFalse(any((ROOT / "src").rglob("*storybook*")))
 
+
+    def test_publication_theme_tracks_manual_visual_contract(self) -> None:
+        """Publication Storybook defaults must follow the CLOCK manual identity and slower tutorial pacing."""
+        theme = (ROOT / "docs/tutorials/themes/south-signal-lab-default.yaml").read_text(encoding="utf-8")
+        ci_theme = (ROOT / "docs/tutorials/themes/south-signal-lab-ci.yaml").read_text(encoding="utf-8")
+        profiles = (ROOT / "docs/tutorials/interaction_profiles.yaml").read_text(encoding="utf-8")
+        self.assertIn('family: "Ubuntu"', theme)
+        self.assertIn('family: "Ubuntu Mono"', theme)
+        self.assertIn('chapter_background: "#0B4FC0"', theme)
+        self.assertIn('tutorial_background: "#000000"', theme)
+        self.assertIn('background_image_mode: cover', theme)
+        self.assertIn('family: "CLOCK UI"', ci_theme)
+        self.assertIn('HUMAN_NORMAL:', profiles)
+        self.assertIn('encoder_detent_ms: 320', profiles)
+        self.assertIn('after_major_screen_change_ms: 2000', profiles)
+        self.assertIn('HUMAN_FAST:', profiles)
+        self.assertIn('patch_action_ms: 300', profiles)
+
     def test_windows_host_process_macros_are_idempotent(self) -> None:
         """Windows SDK compatibility macros must not trigger MinGW/MSVC redefinition warnings."""
         source = (ROOT / "sim/tutorial/external_process.cpp").read_text(encoding="utf-8")

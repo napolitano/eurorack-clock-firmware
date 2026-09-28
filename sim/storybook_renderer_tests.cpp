@@ -15,6 +15,7 @@
 #include "panel_layout.h"
 #include "simulator_runtime.h"
 #include "tutorial/panel_presentation.h"
+#include "tutorial/story_background_image.h"
 #include "tutorial/story_parser.h"
 #include "tutorial/story_runner.h"
 #include "tutorial/story_simulator_port.h"
@@ -32,7 +33,9 @@ using clockfw::sim::tutorial::PanelPresentationTimeline;
 using clockfw::sim::tutorial::SceneKind;
 using clockfw::sim::tutorial::ScopeMode;
 using clockfw::sim::tutorial::Story;
+using clockfw::sim::tutorial::StoryFontBackend;
 using clockfw::sim::tutorial::StoryFontStyle;
+using clockfw::sim::tutorial::loadStoryBackgroundImage;
 using clockfw::sim::tutorial::StoryParseResult;
 using clockfw::sim::tutorial::StoryRunner;
 using clockfw::sim::tutorial::StoryScene;
@@ -71,13 +74,26 @@ bool throwsContaining(const Callable& callable, const std::string& needle) {
     return false;
 }
 
+
+void writeSolidBmp(const std::filesystem::path& path) {
+    const unsigned char bytes[] = {
+        'B','M', 70,0,0,0, 0,0,0,0, 54,0,0,0,
+        40,0,0,0, 2,0,0,0, 2,0,0,0, 1,0, 24,0, 0,0,0,0, 16,0,0,0,
+        0,0,0,0, 0,0,0,0, 0,0,0,0, 0,0,0,0,
+        0,0,255, 0,0,255, 0,0,
+        0,0,255, 0,0,255, 0,0
+    };
+    std::ofstream output(path, std::ios::binary);
+    output.write(reinterpret_cast<const char*>(bytes), static_cast<std::streamsize>(sizeof(bytes)));
+}
+
 Story baseStory() {
     Story story{};
     story.schema = 1U;
     story.id = "renderer-contract";
     story.title = "Renderer contract";
     story.language = "en";
-    story.theme = "south-signal-lab-default";
+    story.theme = "south-signal-lab-ci";
     return story;
 }
 
@@ -87,13 +103,21 @@ int main() {
     const std::filesystem::path sourceRoot = CLOCK_SOURCE_ROOT;
     const std::filesystem::path tutorialRoot = sourceRoot / "docs" / "tutorials";
     const auto panelLayout = loadPanelLayout(sourceRoot / "sim" / "panel_layout.ini");
-    const auto theme = loadStoryTheme(tutorialRoot, "south-signal-lab-default");
+    const auto publicationTheme = loadStoryTheme(tutorialRoot, "south-signal-lab-default");
+    const auto theme = loadStoryTheme(tutorialRoot, "south-signal-lab-ci");
     bool ok = true;
 
+    ok &= require(publicationTheme.body.family == "Ubuntu" && publicationTheme.body.backend == StoryFontBackend::System &&
+                  publicationTheme.monospace.family == "Ubuntu Mono",
+                  "publication theme must use configurable Ubuntu-family system fonts by default");
+    ok &= require(publicationTheme.chapterBackground == TutorialColor{11U, 79U, 192U, 255U},
+                  "publication chapter background must use the CLOCK manual blue #0B4FC0");
+    ok &= require(publicationTheme.tutorialBackground == TutorialColor{0U, 0U, 0U, 255U},
+                  "publication tutorial background must default to black");
     ok &= require(theme.body.family == "CLOCK UI" && theme.monospace.family == "CLOCK Mono",
-                  "default theme must use deterministic project-local font faces");
+                  "CI theme must retain deterministic project-local font faces");
     ok &= require(theme.body.sizePx == 28U && theme.chapter.sizePx == 56U,
-                  "theme font sizes must be data-driven");
+                  "theme font sizes must remain data-driven");
 
     const StoryFontStyle bodyFont{"CLOCK UI", 28U};
     const auto wrapped = layoutStoryText(
@@ -147,6 +171,14 @@ colours:
     ok &= require(throwsContaining([&]() { (void)loadStoryTheme(badRoot, "bad"); }, "not available"),
                   "missing requested font must fail without silent substitution");
     std::filesystem::remove_all(badRoot);
+
+    const std::filesystem::path bmpPath = ".clock-storybook-background-test.bmp";
+    writeSolidBmp(bmpPath);
+    const TutorialSurface background = loadStoryBackgroundImage(bmpPath);
+    ok &= require(background.width() == 2U && background.height() == 2U &&
+                  background.pixel(0U, 0U) == TutorialColor{255U, 0U, 0U, 255U},
+                  "configurable tutorial background loader must decode uncompressed RGB BMP data");
+    std::filesystem::remove(bmpPath);
 
     const std::filesystem::path statePath = ".clock-storybook-renderer-state.bin";
     std::filesystem::remove(statePath);
@@ -210,7 +242,7 @@ schema: 1
 id: renderer-live-contract
 title: "Renderer live contract"
 language: en
-theme: south-signal-lab-default
+theme: south-signal-lab-ci
 interaction_profile: HUMAN_FAST
 setup:
   factory_reset: true
