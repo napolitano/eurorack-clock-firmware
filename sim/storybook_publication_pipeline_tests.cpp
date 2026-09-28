@@ -80,7 +80,21 @@ bool probeHasStreams(const std::filesystem::path& ffprobe, const std::filesystem
 
 }  // namespace
 
-int main() {
+int main(const int argc, char** argv) {
+    if (argc > 1 && std::string(argv[1]) == "--process-child") {
+        if (argc != 6) return 41;
+        if (std::string(argv[2]) != "value with spaces") return 42;
+        if (std::string(argv[3]) != "quote\"inside") return 43;
+        if (std::string(argv[4]) != "trailing\\") return 44;
+        if (std::string(argv[5]) != "plain") return 45;
+        return 23;
+    }
+
+    const auto self = std::filesystem::absolute(argv[0]);
+    const int processExit = runHostProcess(
+        {self.string(), "--process-child", "value with spaces", "quote\"inside", "trailing\\", "plain"});
+    if (!require(processExit == 23, "host process argv/exit-code round-trip failed")) return 1;
+
     const auto ffmpeg = findHostExecutable("ffmpeg");
     const auto ffprobe = findHostExecutable("ffprobe");
     if (!ffmpeg || !ffprobe) {

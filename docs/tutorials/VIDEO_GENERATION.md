@@ -177,7 +177,20 @@ Normally the CLI finds both programs on `PATH`. To select specific binaries:
 
 This is useful on Windows systems with multiple FFmpeg installations or in controlled CI environments.
 
-## 9. Record the source revision in the manifest
+
+## 9. Windows process-launch troubleshooting
+
+If `clock-storybook video` exits immediately on Windows with process status `0xC0000139` / `-1073741511`, use a source revision containing the Storybook Windows process-launch fix (r48j or later) and rebuild `clock-storybook`. The fixed implementation invokes `ffmpeg`/`ffprobe` through `CreateProcessW` rather than the CRT `_wspawnv` path and preserves arguments containing spaces, embedded quotes and trailing backslashes.
+
+After replacing/updating the source, remove the old Storybook executable by rebuilding the target:
+
+```powershell
+cmake --build --preset simulator-headless --target clock-storybook
+```
+
+Then retry the same `video` command. The CLI prints the frame-render stage, frame count and resolved FFmpeg/FFprobe executable paths before publication starts.
+
+## 10. Record the source revision in the manifest
 
 The default manifest revision is `working-tree`. For an archived or release-oriented render, pass the Git revision explicitly:
 
@@ -198,7 +211,7 @@ $revision = git rev-parse HEAD
   --source-revision $revision
 ```
 
-## 10. Recommended authoring loop
+## 11. Recommended authoring loop
 
 Use this order while developing a Story:
 
@@ -212,7 +225,7 @@ Use this order while developing a Story:
 
 Do not replace physical UI actions with direct product-state setters. If a workflow cannot be expressed through the existing module controls, patch actions and external stimuli, extend the Storybook contract explicitly and regression-test that addition first.
 
-## 11. Useful verification commands
+## 12. Useful verification commands
 
 Validate the full native Storybook/test matrix:
 

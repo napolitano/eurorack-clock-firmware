@@ -170,6 +170,7 @@ int execute(const CliOptions& options) {
     StorySimulatorPort port(runtime);
     const auto panelLayout = layout::loadPanelLayout(sourceRoot / "sim" / "panel_layout.ini");
     StoryFramePipeline framePipeline(tutorialRoot, panelLayout, options.sourceRevision);
+    std::cout << "Rendering Storybook frames for " << story->id << "..." << std::endl;
     const StoryFramePipelineResult generated = framePipeline.generate(*story, port, framesDirectory);
     runtime.flushPersistence();
     std::filesystem::remove(statePath, ignored);
@@ -187,8 +188,11 @@ int execute(const CliOptions& options) {
         return EXIT_SUCCESS;
     }
 
+    std::cout << "Generated " << generated.frames.size() << " frames. Starting publication..." << std::endl;
     const auto ffmpeg = resolveExecutable(options.ffmpeg, "ffmpeg");
     const auto ffprobe = resolveExecutable(options.ffprobe, "ffprobe");
+    std::cout << "FFmpeg: " << ffmpeg.string() << std::endl;
+    std::cout << "FFprobe: " << ffprobe.string() << std::endl;
     StoryPublicationPipeline publication(ffmpeg, ffprobe);
     const StoryPublicationResult published = publication.publish(
         *story, storyPath, generated, output, options.formats);

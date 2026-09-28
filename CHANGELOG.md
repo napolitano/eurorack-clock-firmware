@@ -57,6 +57,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add the user-facing `clock-storybook` headless CLI with `validate`, `frames`, and `video` commands, MP4/WebM selection, optional frame retention, explicit ffmpeg/ffprobe paths, and source-revision stamping.
 - Add ten copy-and-edit didactic example Stories under `docs/tutorials/examples/` plus `docs/tutorials/VIDEO_GENERATION.md` covering the complete build, validation, frame-only and final-video workflow without changing the canonical 13-Story CI catalog.
 - Add `storybook_example_stories_tests` and a CLI validation CTest so all ten examples are parsed, semantically validated, and executed through the real simulator/product UI without generating publication media.
+- Fix Windows Storybook publication process launch by replacing CRT `_wspawnv` with direct `CreateProcessW`, preserving argv-safe execution while correctly handling spaces, quotes and trailing backslashes; add a self-spawn regression and visible CLI progress before FFmpeg publication.
 
 ### Sequencer 2.0 foundation
 
