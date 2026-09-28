@@ -94,4 +94,8 @@ Phase 1 ships 13 didactic stories under [`stories/`](stories/README.md). The imp
 - [`VIDEO_GENERATION.md`](VIDEO_GENERATION.md) documents the `clock-storybook` host CLI for validation, frame generation and final MP4/WebM publication.
 - The CLI is built from the headless CMake preset and does not require SDL3. FFmpeg/ffprobe are required only for the final `video` command.
 
+### Readability and focus overlays
+
+The publication renderer treats the large OLED as the primary readable CLOCK UI. The right side is split into a magnified **CONTROL DETAIL** crop and a smaller **LOCATION** view of the complete module. Real encoder/button/patch actions automatically highlight the relevant hardware. Stories may add presentation-only `focus` actions for explanatory arrows, including arbitrary regions of the canonical 128x64 OLED framebuffer. Burned-in subtitles use a configurable lower safe margin so common video-player controls do not cover them.
+
 <h6 align="center">From Munich with &#9829;</h6>

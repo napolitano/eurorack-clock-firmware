@@ -27,12 +27,15 @@ struct TutorialCompositionLayout {
     TutorialRect oledBox{};
     TutorialRect oledRaster{};
     TutorialRect scopeBox{};
+    TutorialRect detailBox{};
     TutorialRect panelBox{};
     TutorialRect subtitleStrip{};
 };
 
 /** @brief Resolves fixed side-by-side composition without reading simulator state. */
-TutorialCompositionLayout resolveTutorialComposition(const OutputProfile& output, bool scopeVisible);
+TutorialCompositionLayout resolveTutorialComposition(
+    const OutputProfile& output, bool scopeVisible,
+    std::uint32_t subtitleHeightPx = 132U, std::uint32_t subtitleSafeBottomPx = 150U);
 
 /** @brief Deterministic scene renderer combining production OLED, panel telemetry and Story presentation. */
 class TutorialRenderer final {

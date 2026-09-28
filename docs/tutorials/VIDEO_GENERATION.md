@@ -301,3 +301,18 @@ python scripts/tests/test_storybook_tooling.py
 The publication integration test automatically skips only when `ffmpeg`/`ffprobe` are unavailable; all non-publication Storybook and firmware/simulator targets remain independent of those tools.
 
 <h6 align="center">From Munich with &#9829;</h6>
+
+## Focus overlays and subtitle safe area
+
+The default publication theme keeps burned-in subtitles above a 150-pixel lower player-control safe area at 1080p. Adjust `presentation.subtitle_safe_bottom_px` in the selected theme if the target player requires more or less clearance.
+
+Physical actions are highlighted automatically. For explanatory pauses, add a presentation-only focus action. For example:
+
+```yaml
+- focus:
+    target: oled_top_bar
+    label: "Top bar: status, musical context, transport"
+    duration_ms: 2800
+```
+
+For a specific UI element use `target: oled_region` with `x`, `y`, `width`, and `height` in the real 128x64 OLED coordinate system. Focus actions do not advance CLOCK firmware time.

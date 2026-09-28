@@ -265,6 +265,30 @@ struct Decoder final {
             } else if (action.scopeMode == ScopeMode::VisibleChannel) {
                 issue(node, "scope show requires channel: visible", sceneIndex, actionIndex);
             }
+        } else if (name == "focus") {
+            action.kind = StoryActionKind::Focus;
+            rejectUnknown(node, {"target", "label", "duration_ms", "x", "y", "width", "height"}, "focus", sceneIndex, actionIndex);
+            if (const Node* value = required(node, "target", "focus", sceneIndex, actionIndex)) {
+                const auto text = scalar(*value, "focus.target", sceneIndex, actionIndex);
+                if (text && *text == "encoder") action.focusTarget = FocusTarget::Encoder;
+                else if (text && *text == "play") action.focusTarget = FocusTarget::Play;
+                else if (text && *text == "tap") action.focusTarget = FocusTarget::Tap;
+                else if (text && (*text == "stop" || *text == "stop_back")) action.focusTarget = FocusTarget::StopBack;
+                else if (text && *text == "sync") action.focusTarget = FocusTarget::Sync;
+                else if (text && (*text == "rst" || *text == "reset")) action.focusTarget = FocusTarget::Reset;
+                else if (text && *text == "oled_top_bar") { action.focusTarget = FocusTarget::OledRegion; action.focusX = 0; action.focusY = 0; action.focusWidth = 128; action.focusHeight = 12; }
+                else if (text && *text == "oled_region") action.focusTarget = FocusTarget::OledRegion;
+                else if (text) issue(*value, "focus.target: expected encoder/play/tap/stop/sync/rst/oled_top_bar/oled_region", sceneIndex, actionIndex);
+            }
+            if (const Node* value = node.find("label")) if (const auto parsed = scalar(*value, "focus.label", sceneIndex, actionIndex)) action.text = *parsed;
+            if (const Node* value = node.find("duration_ms")) if (const auto parsed = uintValue(*value, "focus.duration_ms", 100U, 60000U, sceneIndex, actionIndex)) action.durationMs = *parsed;
+            if (action.durationMs == 0U) action.durationMs = 2200U;
+            if (action.focusTarget == FocusTarget::OledRegion && action.focusWidth == 0) {
+                if (const Node* value = required(node, "x", "focus", sceneIndex, actionIndex)) if (const auto parsed = uintValue(*value, "focus.x", 0U, 127U, sceneIndex, actionIndex)) action.focusX = static_cast<int>(*parsed);
+                if (const Node* value = required(node, "y", "focus", sceneIndex, actionIndex)) if (const auto parsed = uintValue(*value, "focus.y", 0U, 63U, sceneIndex, actionIndex)) action.focusY = static_cast<int>(*parsed);
+                if (const Node* value = required(node, "width", "focus", sceneIndex, actionIndex)) if (const auto parsed = uintValue(*value, "focus.width", 1U, 128U, sceneIndex, actionIndex)) action.focusWidth = static_cast<int>(*parsed);
+                if (const Node* value = required(node, "height", "focus", sceneIndex, actionIndex)) if (const auto parsed = uintValue(*value, "focus.height", 1U, 64U, sceneIndex, actionIndex)) action.focusHeight = static_cast<int>(*parsed);
+            }
         } else if (name == "wait_until") {
             action.kind = StoryActionKind::WaitUntil;
             rejectUnknown(node, {"external_sync", "transport", "power", "timeout_ms"}, "wait_until", sceneIndex, actionIndex);

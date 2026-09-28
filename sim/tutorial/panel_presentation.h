@@ -10,6 +10,7 @@
 #include <array>
 #include <cstddef>
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "panel_layout.h"
@@ -30,6 +31,15 @@ struct PhysicalPresentationState {
     bool stopPressed = false;
     bool recordedPowerOn = true;
     ScopeMode scopeMode = ScopeMode::Hidden;
+    FocusTarget automaticFocus = FocusTarget::None;
+    std::uint64_t automaticFocusSinceUs = 0ULL;
+    std::uint64_t automaticFocusAgeUs = 0ULL;
+    FocusTarget explicitFocus = FocusTarget::None;
+    int focusX = 0;
+    int focusY = 0;
+    int focusWidth = 0;
+    int focusHeight = 0;
+    std::string focusLabel;
 
     PatchMotion syncMotion = PatchMotion::None;
     PatchMotion resetMotion = PatchMotion::None;
@@ -113,9 +123,12 @@ public:
         std::uint64_t durationUs) override;
     void onPatchSettled(std::uint64_t presentationUs, PatchAction patch, bool connected) override;
     void onScopeState(std::uint64_t presentationUs, ScopeMode mode) override;
+    void onFocusState(
+        std::uint64_t presentationUs, FocusTarget target, bool visible,
+        int x, int y, int width, int height, const std::string& label) override;
 
 private:
-    enum class EventKind : std::uint8_t { Encoder, Control, Power, PatchMotion, PatchSettled, Scope };
+    enum class EventKind : std::uint8_t { Encoder, Control, Power, PatchMotion, PatchSettled, Scope, Focus };
 
     struct Event {
         EventKind kind = EventKind::Encoder;
@@ -126,6 +139,12 @@ private:
         int direction = 0;
         bool state = false;
         std::uint64_t durationUs = 0ULL;
+        FocusTarget focusTarget = FocusTarget::None;
+        int x = 0;
+        int y = 0;
+        int width = 0;
+        int height = 0;
+        std::string label;
     };
 
     std::vector<Event> events_{};

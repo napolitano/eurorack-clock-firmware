@@ -289,6 +289,31 @@ scenes:
                       validateStory(*longPush.story, tutorialRoot).empty(),
                   "encoder_push.hold_ms must preserve a real long-push duration");
 
+    const StoryParseResult focusAction = parseStoryText(R"YAML(
+schema: 1
+id: focus-action
+title: "Focus action"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - tutorial:
+      actions:
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 64
+            height: 12
+            label: "Top bar"
+            duration_ms: 2400
+)YAML");
+    ok &= require(focusAction && focusAction.story->scenes[0].actions[0].focusTarget == FocusTarget::OledRegion &&
+                      focusAction.story->scenes[0].actions[0].focusWidth == 64 &&
+                      focusAction.story->scenes[0].actions[0].durationMs == 2400U &&
+                      validateStory(*focusAction.story, tutorialRoot).empty(),
+                  "presentation-only focus action must decode and validate OLED regions");
+
     const StoryParseResult orphanRelease = parseStoryText(R"YAML(
 schema: 1
 id: orphan-button-release

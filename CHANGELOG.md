@@ -2147,3 +2147,11 @@ CLOCK 1.0.0 is the first stable firmware release. It freezes the V1 feature set 
 - SSD1306 I2C display support.
 - Central tempo display and basic clock UI.
 
+
+### Storybook tutorial readability polish (post-r48m)
+
+- Moved burned-in tutorial subtitles into a configurable player-safe lower-third strip; the default 1080p theme reserves 150 px below subtitles for playback controls.
+- Rebalanced the tutorial composition around the primary readable OLED, a magnified CONTROL DETAIL view and a smaller LOCATION panel.
+- Added automatic high-contrast focus rings/arrows for real encoder, PLAY/TAP/STOP and SYNC/RST actions, with configurable focus linger.
+- Added presentation-only `focus` story actions for physical controls and arbitrary canonical 128x64 OLED regions, including the `oled_top_bar` convenience target.
+- Focus actions freeze firmware time and therefore explain UI regions without altering CLOCK behavior.

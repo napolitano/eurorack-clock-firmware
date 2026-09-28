@@ -181,6 +181,14 @@ std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem:
                 case StoryActionKind::ResetPulse:
                     if (!resetCable) semanticIssue("RST stimulus requires a connected RST cable");
                     break;
+                case StoryActionKind::Focus:
+                    if (action.focusTarget == FocusTarget::None) semanticIssue("focus requires a valid target");
+                    if (action.focusTarget == FocusTarget::OledRegion &&
+                        (action.focusX < 0 || action.focusY < 0 || action.focusWidth <= 0 || action.focusHeight <= 0 ||
+                         action.focusX + action.focusWidth > 128 || action.focusY + action.focusHeight > 64)) {
+                        semanticIssue("focus OLED region must stay inside the 128x64 framebuffer");
+                    }
+                    break;
                 default: break;
             }
             if (!expectedValid(action)) semanticIssue("invalid expected state for wait_until/assert");

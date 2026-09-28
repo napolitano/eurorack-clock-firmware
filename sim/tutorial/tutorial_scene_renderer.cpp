@@ -16,19 +16,23 @@ namespace clockfw::sim::tutorial {
 namespace {
 
 constexpr int kFrameMargin = 64;
-constexpr int kSubtitleHeight = 128;
 
 }  // namespace
 
 void renderStorySubtitle(TutorialSurface& frame, const std::string& subtitle, const StoryTheme& theme) {
     const int width = static_cast<int>(frame.width());
     const int height = static_cast<int>(frame.height());
-    const TutorialRect strip{0, height - kSubtitleHeight, width, kSubtitleHeight};
+    const int stripHeight = static_cast<int>(theme.subtitleHeightPx);
+    const int safeBottom = static_cast<int>(theme.subtitleSafeBottomPx);
+    if (stripHeight <= 0 || safeBottom < 0 || stripHeight + safeBottom >= height) {
+        throw std::runtime_error("subtitle safe-area configuration does not fit output frame");
+    }
+    const TutorialRect strip{0, height - safeBottom - stripHeight, width, stripHeight};
     frame.fillRect(strip, theme.subtitleBackground);
     frame.fillRect({0, strip.y, width, 3}, theme.accent);
     if (subtitle.empty()) return;
     const StoryTextLayout layout = layoutStoryText(
-        subtitle, theme.subtitle, width - 2 * kFrameMargin, kSubtitleHeight - 28, theme.lineSpacingPx);
+        subtitle, theme.subtitle, width - 2 * kFrameMargin, stripHeight - 28, theme.lineSpacingPx);
     const int x = (width - layout.widthPx) / 2;
     const int y = strip.y + (strip.height - layout.heightPx) / 2;
     drawStoryText(frame, layout, theme.subtitle, x, y, theme.subtitleForeground);
@@ -58,7 +62,7 @@ void renderStoryChapter(TutorialSurface& frame, const StoryScene& scene, const S
 void renderStoryTextScene(TutorialSurface& frame, const StoryScene& scene, const StoryTheme& theme) {
     frame.clear(theme.background);
     const int width = static_cast<int>(frame.width());
-    const int contentBottom = static_cast<int>(frame.height()) - kSubtitleHeight;
+    const int contentBottom = static_cast<int>(frame.height());
     const int x = 200;
     const int maxWidth = width - 400;
     frame.fillRect({x, 132, 92, 5}, theme.accent);
@@ -85,7 +89,7 @@ void renderStoryCallout(TutorialSurface& frame, const StoryScene& scene, const S
             background = theme.recipeBackground; foreground = theme.recipeForeground; label = "RECIPE"; break;
     }
     const int width = static_cast<int>(frame.width());
-    const int contentBottom = static_cast<int>(frame.height()) - kSubtitleHeight;
+    const int contentBottom = static_cast<int>(frame.height());
     const TutorialRect box{180, 140, width - 360, contentBottom - 260};
     frame.fillRect(box, background);
     frame.strokeRect(box, theme.tutorialSurfaceBorder, 2);

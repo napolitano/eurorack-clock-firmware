@@ -37,7 +37,7 @@ enum class ExternalStimulus : std::uint8_t {
 };
 
 /** @brief Presentation-only actions that never mutate firmware or simulator product state. */
-enum class PresentationAction : std::uint8_t { Subtitle, Scope };
+enum class PresentationAction : std::uint8_t { Subtitle, Scope, Focus };
 
 /** @brief Flow and validation operations owned by the deterministic story runner. */
 enum class FlowAction : std::uint8_t { Wait, WaitUntil, Assert };
@@ -47,6 +47,9 @@ enum class TransitionKind : std::uint8_t { Cut, Fade };
 
 /** @brief Scope presentation modes supported by Phase 1. */
 enum class ScopeMode : std::uint8_t { Hidden, VisibleChannel };
+
+/** @brief Presentation-only focus targets for tutorial guidance overlays. */
+enum class FocusTarget : std::uint8_t { None, Encoder, Play, Tap, StopBack, Sync, Reset, OledRegion };
 
 /** @brief Publication containers supported by the planned media encoder stage. */
 enum class PublicationFormat : std::uint8_t { Mp4H264, WebM };

@@ -33,6 +33,10 @@ scenes:
         - wait_ms: 1100
         - assert:
             transport: stopped
+        - focus:
+            target: oled_top_bar
+            label: "Top bar: status, musical context, transport"
+            duration_ms: 2800
         - subtitle:
             text: "Press PLAY."
         - button:

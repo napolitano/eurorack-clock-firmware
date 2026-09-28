@@ -251,3 +251,42 @@ manifest.json
 ```
 
 Frame timestamps are exact rational presentation timestamps (`floor(frame_index * 1,000,000 / fps)`). Burned-in subtitles, SRT, and WebVTT are generated from the same timed Story subtitle events. Intro/outro offsets are not applied at this stage; the SB-7 publication compositor applies those after probing the actual pre-produced intro duration.
+
+## Tutorial focus and player-safe subtitles
+
+Tutorial guidance is presentation-only. Real module actions automatically create a short-lived visible focus on the operated control (encoder, PLAY, TAP, STOP/BACK, SYNC or RST). The focus is rendered as a high-contrast ring/arrow in the control-detail view and as a matching locator highlight on the full module. It never changes CLOCK state.
+
+Manual explanations use `focus`:
+
+```yaml
+- focus:
+    target: oled_top_bar
+    label: "Top bar: status, musical context, transport"
+    duration_ms: 2800
+```
+
+Supported physical targets are `encoder`, `play`, `tap`, `stop`, `sync` and `rst`. `oled_top_bar` is the complete top 12-pixel band. Any OLED sub-region can be addressed without changing firmware coordinates:
+
+```yaml
+- focus:
+    target: oled_region
+    x: 0
+    y: 0
+    width: 42
+    height: 12
+    label: "Left side of the top bar"
+    duration_ms: 2200
+```
+
+`x/y/width/height` use the canonical 128x64 production framebuffer coordinate system. A focus action advances presentation time only; firmware/simulator time is frozen for its duration.
+
+Burned-in subtitles are not placed against the bottom video edge. Theme presentation settings reserve a configurable player-control safe area:
+
+```yaml
+presentation:
+  subtitle_height_px: 132
+  subtitle_safe_bottom_px: 150
+  focus_linger_ms: 1200
+```
+
+At the default 1920x1080 profile, the subtitle strip therefore sits above the bottom 150 pixels. SRT/WebVTT timings are unchanged and remain derived from the same subtitle timeline.

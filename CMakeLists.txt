@@ -144,6 +144,7 @@ add_library(clock-storybook-renderer STATIC
     sim/tutorial/story_text_renderer.cpp
     sim/tutorial/story_background_image.cpp
     sim/tutorial/tutorial_scene_renderer.cpp
+    sim/tutorial/tutorial_focus_renderer.cpp
     sim/tutorial/tutorial_renderer.cpp
 )
 target_link_libraries(clock-storybook-renderer PUBLIC

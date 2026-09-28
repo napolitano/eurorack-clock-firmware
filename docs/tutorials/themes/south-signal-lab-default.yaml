@@ -45,6 +45,7 @@ colours:
   chapter_muted: "#D7E3FF"
   subtitle_background: "#090B0F"
   subtitle_foreground: "#F4F6F8"
+  focus_foreground: "#FFFFFF"
   tip_background: "#101A2D"
   tip_foreground: "#EAF0FF"
   warning_background: "#2A2110"
@@ -56,3 +57,6 @@ presentation:
   # Phase 1.1 intentionally accepts dependency-free uncompressed 24/32-bit BMP files.
   background_image: ""
   background_image_mode: cover
+  subtitle_height_px: 132
+  subtitle_safe_bottom_px: 150
+  focus_linger_ms: 1200

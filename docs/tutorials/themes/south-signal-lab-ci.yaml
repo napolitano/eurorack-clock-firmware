@@ -39,6 +39,7 @@ colours:
   chapter_muted: "#D7E3FF"
   subtitle_background: "#090B0F"
   subtitle_foreground: "#F4F6F8"
+  focus_foreground: "#FFFFFF"
   tip_background: "#EAF0FF"
   tip_foreground: "#12213A"
   warning_background: "#FFF2CC"
@@ -48,3 +49,6 @@ colours:
 presentation:
   background_image: ""
   background_image_mode: cover
+  subtitle_height_px: 132
+  subtitle_safe_bottom_px: 150
+  focus_linger_ms: 1200

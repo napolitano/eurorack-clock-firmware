@@ -40,6 +40,7 @@ enum class StoryActionKind : std::uint8_t {
     ResetPulse,
     Subtitle,
     Scope,
+    Focus,
     Wait,
     WaitUntil,
     Assert,
@@ -68,6 +69,11 @@ struct StoryAction {
     std::optional<StoryWaveform> waveform;
     std::string text;
     ScopeMode scopeMode = ScopeMode::Hidden;
+    FocusTarget focusTarget = FocusTarget::None;
+    int focusX = 0;
+    int focusY = 0;
+    int focusWidth = 0;
+    int focusHeight = 0;
     std::uint32_t durationMs = 0U;
     std::uint32_t timeoutMs = 0U;
     std::optional<WaitCondition> waitCondition;

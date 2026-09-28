@@ -28,6 +28,7 @@ namespace {
 using clockfw::sim::SimulatorRuntime;
 using clockfw::sim::layout::loadPanelLayout;
 using clockfw::sim::tutorial::CalloutKind;
+using clockfw::sim::tutorial::FocusTarget;
 using clockfw::sim::tutorial::PhysicalPresentationState;
 using clockfw::sim::tutorial::PanelPresentationTimeline;
 using clockfw::sim::tutorial::SceneKind;
@@ -237,6 +238,17 @@ colours:
     ok &= require(throwsContaining([&]() { (void)renderer.renderScene(story, overflow, runtime, {}); }, "overflow"),
                   "renderer must reject scene overflow instead of clipping");
 
+    const auto readabilityLayout = resolveTutorialComposition(
+        story.output, false, theme.subtitleHeightPx, theme.subtitleSafeBottomPx);
+    ok &= require(readabilityLayout.oledRaster.width >= 1152 && readabilityLayout.oledRaster.height >= 576,
+                  "default 1080p tutorial composition must keep the primary OLED readable at 9x scale");
+    ok &= require(readabilityLayout.subtitleStrip.y + readabilityLayout.subtitleStrip.height <=
+                      static_cast<int>(story.output.height) - static_cast<int>(theme.subtitleSafeBottomPx),
+                  "burned-in subtitles must remain above the configured player-control safe area");
+    ok &= require(readabilityLayout.detailBox.width > readabilityLayout.panelBox.width / 2 &&
+                      readabilityLayout.detailBox.height > readabilityLayout.panelBox.height,
+                  "tutorial composition must reserve a readable control-detail area above the locator panel");
+
     const StoryParseResult tutorialParsed = parseStoryText(R"YAML(
 schema: 1
 id: renderer-live-contract
@@ -311,6 +323,22 @@ scenes:
 
         ok &= require(tutorialFrame.pixel(0U, static_cast<std::size_t>(composition.subtitleStrip.y)) == theme.accent,
                       "subtitle strip must be dedicated below tutorial content");
+
+        PhysicalPresentationState focusState = physical;
+        focusState.explicitFocus = FocusTarget::OledRegion;
+        focusState.focusX = 0;
+        focusState.focusY = 0;
+        focusState.focusWidth = 128;
+        focusState.focusHeight = 12;
+        focusState.focusLabel = "Top bar";
+        const TutorialSurface focusedFrame = renderer.renderScene(
+            *tutorialParsed.story, tutorialScene, runtime, focusState, "Watch the real CLOCK state.");
+        std::size_t changedPixels = 0U;
+        for (std::size_t index = 0U; index < focusedFrame.pixels().size(); ++index) {
+            if (!(focusedFrame.pixels()[index] == tutorialFrame.pixels()[index])) ++changedPixels;
+        }
+        ok &= require(changedPixels > 1000U,
+                      "manual OLED focus must render a clearly visible explanatory arrow/highlight overlay");
     }
 
     runtime.flushPersistence();

@@ -80,6 +80,14 @@ TutorialColor parseColour(const std::string& text, const std::string& context) {
     return {component(1U), component(3U), component(5U), 255U};
 }
 
+
+std::uint32_t optionalUnsigned(
+    const Node& parent, const char* key, const std::string& context,
+    const std::uint32_t fallback, const std::uint32_t maximum) {
+    const auto value = optionalScalar(parent, key, context);
+    return value ? parseUnsigned(*value, context + "." + key, maximum) : fallback;
+}
+
 TutorialColor optionalColour(const Node& colours, const char* key, const TutorialColor fallback) {
     const auto value = optionalScalar(colours, key, "theme.colours");
     return value ? parseColour(*value, std::string("theme.colours.") + key) : fallback;
@@ -167,6 +175,7 @@ StoryTheme loadStoryTheme(const std::filesystem::path& tutorialRoot, const std::
     theme.chapterMuted = optionalColour(colours, "chapter_muted", theme.muted);
     theme.subtitleBackground = optionalColour(colours, "subtitle_background", theme.background);
     theme.subtitleForeground = optionalColour(colours, "subtitle_foreground", theme.foreground);
+    theme.focusForeground = optionalColour(colours, "focus_foreground", theme.chapterForeground);
     theme.tipBackground = parseColour(requireScalar(colours, "tip_background", "theme.colours"), "theme.colours.tip_background");
     theme.tipForeground = parseColour(requireScalar(colours, "tip_foreground", "theme.colours"), "theme.colours.tip_foreground");
     theme.warningBackground = parseColour(requireScalar(colours, "warning_background", "theme.colours"), "theme.colours.warning_background");
@@ -183,6 +192,9 @@ StoryTheme loadStoryTheme(const std::filesystem::path& tutorialRoot, const std::
         if (const auto mode = optionalScalar(*presentation, "background_image_mode", "theme.presentation")) {
             theme.tutorialBackgroundImageMode = parseImageMode(*mode);
         }
+        theme.subtitleHeightPx = optionalUnsigned(*presentation, "subtitle_height_px", "theme.presentation", theme.subtitleHeightPx, 400U);
+        theme.subtitleSafeBottomPx = optionalUnsigned(*presentation, "subtitle_safe_bottom_px", "theme.presentation", theme.subtitleSafeBottomPx, 400U);
+        theme.focusLingerMs = optionalUnsigned(*presentation, "focus_linger_ms", "theme.presentation", theme.focusLingerMs, 10000U);
     }
     return theme;
 }

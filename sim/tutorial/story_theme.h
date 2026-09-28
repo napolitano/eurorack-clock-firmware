@@ -49,6 +49,7 @@ struct StoryTheme {
     TutorialColor chapterMuted{};
     TutorialColor subtitleBackground{};
     TutorialColor subtitleForeground{};
+    TutorialColor focusForeground{};
     TutorialColor tipBackground{};
     TutorialColor tipForeground{};
     TutorialColor warningBackground{};
@@ -58,6 +59,9 @@ struct StoryTheme {
 
     std::optional<std::filesystem::path> tutorialBackgroundImage;
     StoryBackgroundImageMode tutorialBackgroundImageMode = StoryBackgroundImageMode::Cover;
+    std::uint32_t subtitleHeightPx = 132U;
+    std::uint32_t subtitleSafeBottomPx = 150U;
+    std::uint32_t focusLingerMs = 1200U;
 };
 
 /** @brief Returns whether the named backend/family combination is structurally supported. */

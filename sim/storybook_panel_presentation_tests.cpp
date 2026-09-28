@@ -27,6 +27,7 @@ using clockfw::sim::layout::Point;
 using clockfw::sim::layout::makeDefaultPanelLayout;
 using clockfw::sim::panelLedVisuallyLit;
 using clockfw::sim::tutorial::PanelPresentationTimeline;
+using clockfw::sim::tutorial::FocusTarget;
 using clockfw::sim::tutorial::PatchMotion;
 using clockfw::sim::tutorial::ScopeMode;
 using clockfw::sim::tutorial::StoryParseResult;
@@ -108,6 +109,10 @@ scenes:
         - scope:
             state: show
             channel: visible
+        - focus:
+            target: oled_top_bar
+            label: "Top bar"
+            duration_ms: 400
         - wait_ms: 100
 )YAML");
 
@@ -151,6 +156,24 @@ scenes:
         ok &= require(resetMid.resetMotion == PatchMotion::Inserting &&
                       std::fabs(resetMid.resetInsertion - 0.5F) < 0.01F,
                       "RST insertion must use the same deterministic physical contract");
+    }
+
+    const StoryTraceEvent* focusEvent = findTrace(run, StoryTraceKind::Focus, "focus", "Top bar");
+    ok &= require(focusEvent != nullptr, "manual focus trace must exist");
+    if (focusEvent != nullptr) {
+        const auto focused = timeline.stateAt(focusEvent->presentationUs + 200000ULL);
+        ok &= require(focused.explicitFocus == FocusTarget::OledRegion && focused.focusWidth == 128 &&
+                      focused.focusHeight == 12 && focused.focusLabel == "Top bar",
+                      "manual OLED focus must remain presentation-only for its requested duration");
+        ok &= require(timeline.stateAt(focusEvent->presentationUs + 400000ULL).explicitFocus == FocusTarget::None,
+                      "manual focus must clear at the end of its presentation interval");
+    }
+    const StoryTraceEvent* encoderTrace = nullptr;
+    for (const StoryTraceEvent& event : run.trace) if (event.kind == StoryTraceKind::EncoderDetent) { encoderTrace = &event; break; }
+    if (encoderTrace != nullptr) {
+        const auto automatic = timeline.stateAt(encoderTrace->presentationUs);
+        ok &= require(automatic.automaticFocus == FocusTarget::Encoder && automatic.automaticFocusAgeUs == 0ULL,
+                      "real encoder motion must automatically drive a visible focus target");
     }
 
     const StoryTraceEvent* scopeVisible = findTrace(run, StoryTraceKind::Scope, "scope", "visible_channel");

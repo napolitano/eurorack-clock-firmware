@@ -8,6 +8,7 @@
 #pragma once
 
 #include <cstdint>
+#include <string>
 
 #include "tutorial/story_contract.h"
 
@@ -57,6 +58,17 @@ public:
 
     /** @brief Reports optional tutorial-scope visibility state. */
     virtual void onScopeState(std::uint64_t presentationUs, ScopeMode mode) = 0;
+
+    /** @brief Starts or clears one presentation-only explanatory focus overlay. */
+    virtual void onFocusState(
+        std::uint64_t presentationUs,
+        FocusTarget target,
+        bool visible,
+        int x,
+        int y,
+        int width,
+        int height,
+        const std::string& label) = 0;
 };
 
 }  // namespace clockfw::sim::tutorial

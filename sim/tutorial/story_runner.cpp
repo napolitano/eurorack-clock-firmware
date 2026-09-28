@@ -14,8 +14,7 @@
 #include "tutorial/interaction_profile_loader.h"
 #include "tutorial/story_runner_support.h"
 #include "tutorial/story_validator.h"
-namespace clockfw::sim::tutorial {
-namespace {
+namespace clockfw::sim::tutorial { namespace {
 constexpr std::uint64_t kUsPerMs = 1000ULL;
 constexpr std::uint64_t kWaitPollUs = 1000ULL;
 using detail::isPacedAction;
@@ -216,6 +215,14 @@ private:
                 }
                 emit(StoryTraceKind::Scope, sceneIndex, actionIndex, "scope",
                      action.scopeMode == ScopeMode::VisibleChannel ? "visible_channel" : "hidden");
+                return true;
+            case StoryActionKind::Focus:
+                if (presentationSink_ != nullptr) presentationSink_->onFocusState(
+                    presentationUs_, action.focusTarget, true, action.focusX, action.focusY, action.focusWidth, action.focusHeight, action.text);
+                emit(StoryTraceKind::Focus, sceneIndex, actionIndex, "focus", action.text);
+                advancePresentationMs(action.durationMs);
+                if (presentationSink_ != nullptr) presentationSink_->onFocusState(
+                    presentationUs_, action.focusTarget, false, 0, 0, 0, 0, {});
                 return true;
             case StoryActionKind::Wait:
                 advanceActiveMs(action.durationMs);

@@ -36,6 +36,7 @@ enum class StoryTraceKind : std::uint8_t {
     ResetPulse,
     Subtitle,
     Scope,
+    Focus,
     WaitSatisfied,
     AssertionPassed,
 };

@@ -17,17 +17,17 @@
 #include "scope_timeline.h"
 #include "tutorial/panel_dynamic_layer.h"
 #include "tutorial/story_background_image.h"
+#include "tutorial/tutorial_focus_renderer.h"
 #include "tutorial/tutorial_scene_renderer.h"
 #include "tutorial/story_text_renderer.h"
 #include "tutorial/story_theme.h"
 namespace clockfw::sim::tutorial {
 namespace {
-constexpr int kFrameMargin = 64;
-constexpr int kSubtitleHeight = 128;
-constexpr int kTutorialGap = 48;
-constexpr int kScopeHeight = 250;
-constexpr int kCardInset = 26;
-constexpr int kCardHeader = 56;
+constexpr int kFrameMargin = 40;
+constexpr int kTutorialGap = 36;
+constexpr int kScopeHeight = 220;
+constexpr int kCardInset = 22;
+constexpr int kCardHeader = 48;
 constexpr int kPanelInternalTextPx = 14;
 int rounded(const float value) {
     return static_cast<int>(std::lround(value));
@@ -148,20 +148,17 @@ void renderOled(
         }
     }
 }
-void renderPanel(
+TutorialRect renderPanelRegion(
     TutorialSurface& frame,
     const layout::PanelLayout& layout,
     const SimulatorRuntime& runtime,
     const PhysicalPresentationState& physicalState,
     const double speedMultiplier,
+    const TutorialRect source,
     const TutorialRect box) {
     TutorialSurface panel = renderPanelBase(layout, runtime);
     const PanelPresentationSnapshot snapshot = makePanelPresentationSnapshot(layout, runtime, physicalState, speedMultiplier);
-    const TutorialSurface dynamic = dynamicLayerToSurface(renderPanelDynamicLayer(layout, snapshot));
-    panel.composite(dynamic, 0, 0);
-    const TutorialRect source{
-        rounded(layout.panel.x), rounded(layout.panel.y),
-        rounded(layout.panel.width), rounded(layout.panel.height)};
+    panel.composite(dynamicLayerToSurface(renderPanelDynamicLayer(layout, snapshot)), 0, 0);
     const double scale = std::min(
         static_cast<double>(box.width) / static_cast<double>(source.width),
         static_cast<double>(box.height) / static_cast<double>(source.height));
@@ -170,6 +167,7 @@ void renderPanel(
     const int height = std::max(1, static_cast<int>(std::floor(static_cast<double>(source.height) * scale)));
     const TutorialRect destination{box.x + (box.width - width) / 2, box.y + (box.height - height) / 2, width, height};
     frame.blitNearest(panel, source, destination);
+    return destination;
 }
 void renderScope(
     TutorialSurface& frame,
@@ -254,14 +252,14 @@ void renderTutorial(
     scope::Session& scopeSession,
     const StoryTheme& theme,
     const double speedMultiplier) {
-    const OutputProfile output{
-        static_cast<std::uint16_t>(frame.width()),
-        static_cast<std::uint16_t>(frame.height()),
-        30U};
+    const OutputProfile output{static_cast<std::uint16_t>(frame.width()),
+                               static_cast<std::uint16_t>(frame.height()), 30U};
     const bool scopeVisible = physicalState.scopeMode == ScopeMode::VisibleChannel;
-    const TutorialCompositionLayout composition = resolveTutorialComposition(output, scopeVisible);
-    const TutorialColor cardFill{
-        theme.tutorialSurface.red, theme.tutorialSurface.green, theme.tutorialSurface.blue, 236U};
+    const TutorialCompositionLayout composition = resolveTutorialComposition(
+        output, scopeVisible, theme.subtitleHeightPx, theme.subtitleSafeBottomPx);
+    const ResolvedTutorialFocus focus = resolveTutorialFocus(physicalState, theme);
+    const TutorialColor cardFill{theme.tutorialSurface.red, theme.tutorialSurface.green,
+                                 theme.tutorialSurface.blue, 236U};
     const int leftBottom = std::max(
         composition.oledBox.y + composition.oledBox.height,
         composition.scopeBox.y + composition.scopeBox.height);
@@ -271,10 +269,10 @@ void renderTutorial(
         composition.oledBox.width + 2 * kCardInset,
         leftBottom - (composition.oledBox.y - kCardHeader) + kCardInset};
     const TutorialRect rightCard{
-        composition.panelBox.x - kCardInset,
-        composition.panelBox.y - kCardHeader,
-        composition.panelBox.width + 2 * kCardInset,
-        composition.panelBox.height + kCardHeader + kCardInset};
+        composition.detailBox.x - kCardInset,
+        composition.detailBox.y - kCardHeader,
+        composition.detailBox.width + 2 * kCardInset,
+        composition.panelBox.y + composition.panelBox.height - (composition.detailBox.y - kCardHeader) + kCardInset};
     frame.fillRect(leftCard, cardFill);
     frame.strokeRect(leftCard, theme.tutorialSurfaceBorder, 2);
     frame.fillRect(rightCard, cardFill);
@@ -282,40 +280,66 @@ void renderTutorial(
     frame.fillRect({leftCard.x, leftCard.y, 6, leftCard.height}, theme.accent);
     frame.fillRect({rightCard.x, rightCard.y, 6, rightCard.height}, theme.accent);
     (void)drawStoryTextLine(frame, "CLOCK DISPLAY", theme.monospace,
-                            leftCard.x + 24, leftCard.y + 16, theme.muted);
-    (void)drawStoryTextLine(frame, "MODULE", theme.monospace,
-                            rightCard.x + 24, rightCard.y + 16, theme.muted);
+                            leftCard.x + 24, leftCard.y + 14, theme.muted);
+    (void)drawStoryTextLine(frame, "CONTROL DETAIL", theme.monospace,
+                            rightCard.x + 24, rightCard.y + 14, theme.muted);
+    (void)drawStoryTextLine(frame, "LOCATION", theme.monospace,
+                            rightCard.x + 24, composition.panelBox.y - 30, theme.muted);
     renderOled(frame, runtime, composition.oledBox, theme);
     if (scopeVisible) renderScope(frame, runtime, scopeSession, composition.scopeBox, theme);
-    renderPanel(frame, panelLayout, runtime, physicalState, speedMultiplier, composition.panelBox);
+
+    const TutorialRect fullPanel{rounded(panelLayout.panel.x), rounded(panelLayout.panel.y),
+                                 rounded(panelLayout.panel.width), rounded(panelLayout.panel.height)};
+    TutorialRect detailSource{fullPanel.x, fullPanel.y, fullPanel.width, std::min(fullPanel.height, 420)};
+    if (panelFocusPoint(panelLayout, focus.target)) {
+        detailSource = panelFocusSourceRect(panelLayout, focus.target);
+    }
+    const TutorialRect detailDestination = renderPanelRegion(
+        frame, panelLayout, runtime, physicalState, speedMultiplier, detailSource, composition.detailBox);
+    const TutorialRect locatorDestination = renderPanelRegion(
+        frame, panelLayout, runtime, physicalState, speedMultiplier, fullPanel, composition.panelBox);
+
+    if (const auto target = panelFocusDestinationRect(panelLayout, focus.target, detailSource, detailDestination)) {
+        const int cx = target->x + target->width / 2;
+        const int cy = target->y + target->height / 2;
+        drawTutorialFocusRing(frame, cx, cy, target->width / 2, theme);
+        drawTutorialFocusArrow(
+            frame, *target, focus.label.empty() ? focusTargetLabel(focus.target) : focus.label, theme, false);
+    }
+    if (const auto target = panelFocusDestinationRect(panelLayout, focus.target, fullPanel, locatorDestination)) {
+        drawTutorialFocusRing(frame, target->x + target->width / 2,
+                              target->y + target->height / 2, target->width / 2, theme);
+    }
+    drawOledRegionFocus(frame, composition.oledRaster, focus, theme);
 }
 }  // namespace
-TutorialCompositionLayout resolveTutorialComposition(const OutputProfile& output, const bool scopeVisible) {
+TutorialCompositionLayout resolveTutorialComposition(
+    const OutputProfile& output, const bool scopeVisible,
+    const std::uint32_t subtitleHeightPx, const std::uint32_t subtitleSafeBottomPx) {
     const int width = static_cast<int>(output.width);
     const int height = static_cast<int>(output.height);
-    const int contentHeight = height - kSubtitleHeight - 2 * kFrameMargin;
-    if (width < 1280 || contentHeight < 600) {
-        throw std::runtime_error("tutorial output is too small for side-by-side composition");
+    const int subtitleHeight = static_cast<int>(subtitleHeightPx);
+    const int safeBottom = static_cast<int>(subtitleSafeBottomPx);
+    const int contentHeight = height - subtitleHeight - safeBottom - 2 * kFrameMargin;
+    if (width < 1280 || contentHeight < 420 || subtitleHeight <= 0 || safeBottom < 0) {
+        throw std::runtime_error("tutorial output is too small for readable safe-area composition");
     }
     const int contentWidth = width - 2 * kFrameMargin;
-    const int leftWidth = (contentWidth * 62) / 100;
+    const int leftWidth = (contentWidth * 67) / 100;
     const int rightWidth = contentWidth - leftWidth - kTutorialGap;
     TutorialCompositionLayout layout{};
     layout.content = {kFrameMargin, kFrameMargin, contentWidth, contentHeight};
     const TutorialRect leftCard{kFrameMargin, kFrameMargin, leftWidth, contentHeight};
     const TutorialRect rightCard{kFrameMargin + leftWidth + kTutorialGap, kFrameMargin, rightWidth, contentHeight};
-    const TutorialRect left{
-        leftCard.x + kCardInset,
-        leftCard.y + kCardHeader,
-        leftCard.width - 2 * kCardInset,
-        leftCard.height - kCardHeader - kCardInset};
-    layout.panelBox = {
-        rightCard.x + kCardInset,
-        rightCard.y + kCardHeader,
-        rightCard.width - 2 * kCardInset,
-        rightCard.height - kCardHeader - kCardInset};
+    const TutorialRect left{leftCard.x + kCardInset, leftCard.y + kCardHeader,
+                            leftCard.width - 2 * kCardInset, leftCard.height - kCardHeader - kCardInset};
+    const TutorialRect right{rightCard.x + kCardInset, rightCard.y + kCardHeader,
+                             rightCard.width - 2 * kCardInset, rightCard.height - kCardHeader - kCardInset};
+    const int detailHeight = (right.height * 62) / 100;
+    layout.detailBox = {right.x, right.y, right.width, detailHeight};
+    layout.panelBox = {right.x, right.y + detailHeight + 42, right.width, right.height - detailHeight - 42};
     if (scopeVisible) {
-        layout.oledBox = {left.x, left.y, left.width, left.height - kScopeHeight - 24};
+        layout.oledBox = {left.x, left.y, left.width, left.height - kScopeHeight - 20};
         layout.scopeBox = {left.x, left.y + left.height - kScopeHeight, left.width, kScopeHeight};
     } else {
         layout.oledBox = left;
@@ -331,7 +355,7 @@ TutorialCompositionLayout resolveTutorialComposition(const OutputProfile& output
         layout.oledBox.y + (layout.oledBox.height - rasterHeight) / 2,
         rasterWidth,
         rasterHeight};
-    layout.subtitleStrip = {0, height - kSubtitleHeight, width, kSubtitleHeight};
+    layout.subtitleStrip = {0, height - safeBottom - subtitleHeight, width, subtitleHeight};
     return layout;
 }
 namespace {
