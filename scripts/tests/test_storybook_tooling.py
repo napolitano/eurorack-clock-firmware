@@ -31,12 +31,16 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("clock-storybook-frame-pipeline-tests", cmake)
         self.assertIn("clock-storybook-publication", cmake)
         self.assertIn("clock-storybook-publication-pipeline-tests", cmake)
+        self.assertIn("add_executable(clock-storybook", cmake)
+        self.assertIn("clock-storybook-example-stories-tests", cmake)
         self.assertNotIn("storybook", platformio.lower())
         self.assertNotIn("yaml-cpp", platformio.lower())
         self.assertTrue((ROOT / "docs/tutorials/stories/README.md").is_file())
         self.assertTrue((ROOT / "docs/tutorials/interaction_profiles.yaml").is_file())
         self.assertTrue((ROOT / "docs/tutorials/themes/south-signal-lab-default.yaml").is_file())
         self.assertTrue((ROOT / "docs/tutorials/assets/video/README.md").is_file())
+        self.assertTrue((ROOT / "docs/tutorials/VIDEO_GENERATION.md").is_file())
+        self.assertTrue((ROOT / "docs/tutorials/examples/README.md").is_file())
 
     def test_architecture_guard_forbids_embedded_storybook_media_dependencies(self) -> None:
         """The architecture gate must reject reverse dependencies into embedded code."""
@@ -81,6 +85,22 @@ class StorybookToolingTests(unittest.TestCase):
         actual = {path.name for path in (ROOT / "docs/tutorials/stories").glob("*.yaml")}
         self.assertEqual(expected, actual)
         self.assertFalse(any((ROOT / "sim/tutorial").rglob("*.yaml")))
+
+    def test_teaching_examples_are_separate_and_complete(self) -> None:
+        """Ten editable examples must exist outside the canonical reference-story directory."""
+        examples = ROOT / "docs/tutorials/examples"
+        expected = {
+            "01-power-and-first-clock.yaml", "02-transport-basics.yaml", "03-encoder-tempo.yaml",
+            "04-tap-tempo.yaml", "05-topology-and-channel.yaml", "06-clock-mode.yaml",
+            "07-euclidean-rhythm.yaml", "08-sequencer-basics.yaml", "09-divider-bank.yaml",
+            "10-external-sync.yaml",
+        }
+        self.assertEqual(expected, {path.name for path in examples.glob("*.yaml")})
+        guide = (ROOT / "docs/tutorials/VIDEO_GENERATION.md").read_text(encoding="utf-8")
+        self.assertIn("clock-storybook validate", guide)
+        self.assertIn("clock-storybook video", guide)
+        self.assertIn("--format both", guide)
+        self.assertIn("intro_video:", guide)
 
     def test_phase1_acceptance_matrix_has_exactly_40_evidence_rows(self) -> None:
         """SB-8 closes the frozen 40-point Phase-1 implementation gate with repository evidence."""

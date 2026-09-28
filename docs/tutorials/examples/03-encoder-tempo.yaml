@@ -1,0 +1,38 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-encoder-tempo
+title: "Example 03 — Encoder Tempo"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Changing Tempo"
+      subtitle: "The encoder controls master BPM"
+      duration_ms: 2500
+  - tutorial:
+      subtitle: "Turn clockwise to increase BPM."
+      actions:
+        - wait_ms: 1100
+        - encoder:
+            direction: clockwise
+            detents: 8
+        - wait_ms: 900
+        - subtitle:
+            text: "Turn counter-clockwise to reduce BPM."
+        - encoder:
+            direction: counter_clockwise
+            detents: 3
+        - wait_ms: 900
+  - callout:
+      type: tip
+      title: "One master timeline"
+      body: |
+        Tempo changes move the shared master timeline; channels remain musically related.
+      duration_ms: 3000

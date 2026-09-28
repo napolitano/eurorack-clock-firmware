@@ -176,6 +176,18 @@ target_include_directories(clock-storybook-publication PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/sim"
 )
 target_compile_options(clock-storybook-publication PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_executable(clock-storybook
+    sim/storybook_cli.cpp
+)
+target_link_libraries(clock-storybook PRIVATE
+    clock-storybook-publication
+    clock-simulator-panel-layout
+)
+target_compile_definitions(clock-storybook PRIVATE
+    CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_compile_options(clock-storybook PRIVATE ${CLOCK_WARNING_FLAGS})
 target_link_libraries(clock-storybook-presentation PUBLIC
     clock-storybook-runner
     clock-simulator-panel-layout
@@ -223,6 +235,15 @@ target_compile_definitions(clock-storybook-reference-stories-tests PRIVATE
     CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
 )
 target_compile_options(clock-storybook-reference-stories-tests PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_executable(clock-storybook-example-stories-tests
+    sim/storybook_example_stories_tests.cpp
+)
+target_link_libraries(clock-storybook-example-stories-tests PRIVATE clock-storybook-runner)
+target_compile_definitions(clock-storybook-example-stories-tests PRIVATE
+    CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_compile_options(clock-storybook-example-stories-tests PRIVATE ${CLOCK_WARNING_FLAGS})
 
 add_executable(clock-storybook-panel-presentation-tests
     sim/storybook_panel_presentation_tests.cpp
@@ -357,10 +378,15 @@ add_test(NAME storybook_simulator_port_tests COMMAND clock-storybook-simulator-p
 add_test(NAME storybook_parser_tests COMMAND clock-storybook-parser-tests)
 add_test(NAME storybook_runner_tests COMMAND clock-storybook-runner-tests)
 add_test(NAME storybook_reference_stories_tests COMMAND clock-storybook-reference-stories-tests)
+add_test(NAME storybook_example_stories_tests COMMAND clock-storybook-example-stories-tests)
 add_test(NAME storybook_panel_presentation_tests COMMAND clock-storybook-panel-presentation-tests)
 add_test(NAME storybook_renderer_tests COMMAND clock-storybook-renderer-tests)
 add_test(NAME storybook_frame_pipeline_tests COMMAND clock-storybook-frame-pipeline-tests)
 add_test(NAME storybook_publication_pipeline_tests COMMAND clock-storybook-publication-pipeline-tests)
+add_test(
+    NAME storybook_cli_validate
+    COMMAND clock-storybook validate ${CMAKE_CURRENT_SOURCE_DIR}/docs/tutorials/examples/01-power-and-first-clock.yaml
+)
 set_tests_properties(storybook_publication_pipeline_tests PROPERTIES SKIP_RETURN_CODE 77)
 add_test(NAME simulator_runtime_tests COMMAND clock-simulator-tests)
 add_test(NAME vcv_runtime_adapter_tests COMMAND clock-vcv-runtime-tests)

@@ -1,0 +1,71 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-external-sync-and-rst
+title: "Example 10 — External SYNC and RST"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "External SYNC and RST"
+      subtitle: "Follow external timing and reset phase independently"
+      duration_ms: 3000
+  - text:
+      title: "Two different jobs"
+      body: |
+        SYNC supplies timing. In factory AUTO mode, two accepted edges establish lock.
+        RST changes phase only; it does not take ownership of PLAY or STOP.
+      duration_ms: 4800
+  - tutorial:
+      subtitle: "Patch the external clock to SYNC and wait for lock."
+      actions:
+        - wait_ms: 1100
+        - sync_cable:
+            state: connect
+        - wait_until:
+            external_sync: locked
+            timeout_ms: 3000
+        - assert:
+            clock_source: auto
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 1000
+        - scope:
+            state: hide
+  - tutorial:
+      subtitle: "Patch RST, hold its generator, then inject one reset pulse."
+      actions:
+        - rst_cable:
+            state: connect
+        - rst_generator:
+            state: hold
+        - rst_pulse: {}
+        - assert:
+            transport: playing
+        - wait_ms: 800
+        - subtitle:
+            text: "Now press STOP. External SYNC must not override it."
+        - button:
+            name: STOP_BACK
+        - assert:
+            transport: stopped
+        - wait_ms: 1000
+        - assert:
+            transport: stopped
+  - callout:
+      type: recipe
+      title: "External timing recipe"
+      steps:
+        - "Use SYNC for timing and wait for lock."
+        - "Use RST when you need a phase restart."
+        - "Use CLOCK's transport controls for manual PLAY/STOP authority."
+      duration_ms: 4300

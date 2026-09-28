@@ -54,6 +54,9 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add a 40-point Phase-1 acceptance-evidence matrix under `docs/tutorials/PHASE1_ACCEPTANCE.md`, backed by implementation/test references rather than prose-only claims.
 - Run the canonical reference catalog explicitly in the native simulator CI job on Linux, Windows and macOS in addition to normal CTest coverage.
 - Extend Storybook repository policy so the exact canonical story set, physical modifier/long-push authoring contracts and 40-row Phase-1 evidence matrix cannot silently regress.
+- Add the user-facing `clock-storybook` headless CLI with `validate`, `frames`, and `video` commands, MP4/WebM selection, optional frame retention, explicit ffmpeg/ffprobe paths, and source-revision stamping.
+- Add ten copy-and-edit didactic example Stories under `docs/tutorials/examples/` plus `docs/tutorials/VIDEO_GENERATION.md` covering the complete build, validation, frame-only and final-video workflow without changing the canonical 13-Story CI catalog.
+- Add `storybook_example_stories_tests` and a CLI validation CTest so all ten examples are parsed, semantically validated, and executed through the real simulator/product UI without generating publication media.
 
 ### Sequencer 2.0 foundation
 

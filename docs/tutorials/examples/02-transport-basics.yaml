@@ -1,0 +1,57 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-transport-basics
+title: "Example 02 — Transport Basics"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "PLAY / PAUSE / STOP"
+      subtitle: "Transport without surprises"
+      duration_ms: 2500
+  - tutorial:
+      subtitle: "CLOCK always starts in STOP."
+      actions:
+        - wait_ms: 1100
+        - assert:
+            transport: stopped
+        - subtitle:
+            text: "Press PLAY to start."
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - wait_ms: 900
+        - subtitle:
+            text: "Press PLAY again to pause."
+        - button:
+            name: PLAY
+        - assert:
+            transport: paused
+        - wait_ms: 700
+        - subtitle:
+            text: "Press PLAY to resume."
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - wait_ms: 700
+        - subtitle:
+            text: "Press STOP/BACK to stop and reset global phase."
+        - button:
+            name: STOP_BACK
+        - assert:
+            transport: stopped
+  - callout:
+      type: warning
+      title: "STOP is authoritative"
+      body: |
+        A manual STOP remains authoritative even when external SYNC is present.
+      duration_ms: 3000

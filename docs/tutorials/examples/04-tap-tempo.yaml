@@ -1,0 +1,40 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-tap-tempo
+title: "Example 04 — Tap Tempo"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_FAST
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Tap Tempo"
+      subtitle: "Set the internal tempo by feel"
+      duration_ms: 2500
+  - tutorial:
+      subtitle: "The first TAP starts a new measurement."
+      actions:
+        - wait_ms: 1100
+        - button:
+            name: TAP
+        - wait_ms: 120
+        - subtitle:
+            text: "Tap again at the new pulse."
+        - button:
+            name: TAP
+        - wait_ms: 120
+        - button:
+            name: TAP
+        - wait_ms: 700
+  - callout:
+      type: tip
+      title: "AUTO stays AUTO"
+      body: |
+        Tap Tempo changes the internal fallback BPM only.
+        It never changes the selected clock source.
+      duration_ms: 3500

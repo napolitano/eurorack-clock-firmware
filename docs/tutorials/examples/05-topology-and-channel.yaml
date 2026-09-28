@@ -1,0 +1,57 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-topology-and-channel
+title: "Example 05 — Topology and Channel"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Topology and Channel"
+      subtitle: "Move from One Clock to one Independent output"
+      duration_ms: 2800
+  - text:
+      title: "Two related choices"
+      body: |
+        First choose the operating topology.
+        In Independent topology, then choose which of the eight outputs you want to edit.
+      duration_ms: 4200
+  - tutorial:
+      subtitle: "Open the overview, then use TAP + encoder to select Clock."
+      actions:
+        - wait_ms: 1100
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - wait_ms: 600
+        - subtitle:
+            text: "Open the Independent overview and select channel 3."
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - wait_ms: 900
+  - callout:
+      type: tip
+      title: "Independent does not mean unrelated"
+      body: |
+        Each output can use its own rhythmic function while all channels remain anchored to CLOCK's master timeline.
+      duration_ms: 3800

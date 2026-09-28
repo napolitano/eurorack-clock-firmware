@@ -1,0 +1,75 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-euclidean-rhythm
+title: "Example 07 — Euclidean Rhythm"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Euclidean Mode"
+      subtitle: "Distribute hits across a cycle"
+      duration_ms: 2800
+  - tutorial:
+      subtitle: "Select Euclid from the mode carousel."
+      actions:
+        - wait_ms: 1100
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 3
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - subtitle:
+            text: "Set the cycle to 12 steps."
+        - encoder_push: {}
+        - encoder:
+            direction: counter_clockwise
+            detents: 4
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - subtitle:
+            text: "Increase the number of hits to 5."
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 1500
+        - scope:
+            state: hide
+        - button:
+            name: STOP_BACK
+  - callout:
+      type: tip
+      title: "Three core parameters"
+      body: |
+        STEPS sets cycle length, HITS sets event count, and ROTATE shifts the pattern.
+      duration_ms: 3500
