@@ -91,3 +91,10 @@ sim/*-panel.local.jpeg
 
 # Native simulator screenshots
 clock-simulator-screenshot*.bmp
+
+# CLOCK Storybook generated/publication output
+# Source stories/themes stay tracked; rendered media and verification output do not.
+docs/tutorials/generated/
+docs/tutorials/.cache/
+*.storybook-manifest.json
+*.storybook-probe.json

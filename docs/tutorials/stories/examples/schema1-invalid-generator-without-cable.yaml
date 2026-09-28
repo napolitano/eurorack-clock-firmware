@@ -1,0 +1,15 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+# Expected result: INVALID because generator run requires a connected SYNC cable.
+
+schema: 1
+id: invalid-generator-without-cable
+title: "Invalid SYNC Generator Use"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - tutorial:
+      actions:
+        - sync_generator:
+            state: run

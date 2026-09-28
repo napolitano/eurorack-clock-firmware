@@ -10,6 +10,17 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Automated tutorial / Storybook infrastructure
+
+- Start the host-only CLOCK Storybook implementation with a versioned **schema 1** contract and explicit separation between Module Controls, Patch Actions, External Stimulus, Presentation Actions and Flow/Validation.
+- Freeze Phase-1 presentation defaults at 1920x1080/30 fps, hard cuts only, firmware time frozen during pure chapter/text/callout scenes, and MP4/H.264 as the default publication target with optional WebM output.
+- Define optional pre-produced intro/outro videos as publication assets rather than Storybook-rendered scenes; final subtitle sidecars will be offset by the probed intro duration.
+- Add a host-only `StorySimulatorPort` that delegates accepted actions to the existing `SimulatorRuntime` while rejecting ambiguous recorded semantics: generator run/hold requires an already connected cable, RST pulses require an RST cable, controls other than POWER are rejected while powered off, and one encoder action represents exactly one detent.
+- Preserve existing simulator cable semantics: connecting SYNC/RST starts the configured generator, while later generator hold/run leaves the cable state unchanged. Environment actions never mutate the production firmware `SOURCE` setting.
+- Add an end-to-end Storybook boundary regression proving factory AUTO -> SYNC connect -> acquisition -> lock -> production auto-start -> real STOP -> incoming locked SYNC does not override manual STOP.
+- Make POWER scriptable only through the existing simulator power-cycle boundary and reserve optional scope presentation for real simulator telemetry of the visible channel.
+- Add architecture guards preventing Storybook/YAML/media dependencies from entering embedded `src/` or `lib/clock_core`, plus generated-media ignore rules so frames/videos/subtitles/reports never enter source bundles.
+
 ### Sequencer 2.0 foundation
 
 - Add a compact Sequencer 2.0 pattern model with **1-128 steps**, two fixed 64-bit gate words, eight pattern slots per physical channel, and pattern-local `FORWARD`, `REVERSE`, `PINGPONG`, and deterministic `RANDOM` traversal plus `LOOP`/`ONCE` end behavior.

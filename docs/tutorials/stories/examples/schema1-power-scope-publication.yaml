@@ -1,0 +1,37 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+# Expected result: VALID once the SB-2 parser/validator exists.
+
+schema: 1
+id: power-and-scope
+title: "Power and Scope"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+output:
+  width: 1920
+  height: 1080
+  fps: 30
+publication:
+  intro_video: "../assets/video/south-signal-lab-intro.mp4"
+  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+defaults:
+  transition:
+    type: cut
+setup:
+  power: off
+scenes:
+  - tutorial:
+      subtitle: "Power CLOCK on."
+      actions:
+        - power:
+            state: on
+        - wait_ms: 1200
+        - scope:
+            state: show
+            channel: visible
+        - button:
+            name: PLAY
+        - wait_ms: 1600
+        - scope:
+            state: hide

@@ -271,6 +271,48 @@ def check_project_metadata(errors: list[str]) -> None:
 
 
 
+def check_storybook_sb0_contract(errors: list[str]) -> None:
+    """Require the frozen Storybook SB-0 architecture/schema artifacts and examples."""
+    required = (
+        ROOT / 'docs/tutorials/README.md',
+        ROOT / 'docs/tutorials/STORYBOOK_ARCHITECTURE.md',
+        ROOT / 'docs/tutorials/STORY_SCHEMA_1.md',
+        ROOT / 'docs/tutorials/stories/examples/schema1-minimal.yaml',
+        ROOT / 'docs/tutorials/stories/examples/schema1-power-scope-publication.yaml',
+        ROOT / 'docs/tutorials/stories/examples/schema1-invalid-fade.yaml',
+        ROOT / 'docs/tutorials/stories/examples/schema1-invalid-generator-without-cable.yaml',
+    )
+    for path in required:
+        if not path.is_file():
+            errors.append(f'{path.relative_to(ROOT)}: required Storybook SB-0 artifact is missing')
+    if any(not path.is_file() for path in required):
+        return
+
+    architecture = (ROOT / 'docs/tutorials/STORYBOOK_ARCHITECTURE.md').read_text(encoding='utf-8')
+    schema = (ROOT / 'docs/tutorials/STORY_SCHEMA_1.md').read_text(encoding='utf-8')
+    for needle in (
+        'StorySimulatorPort',
+        '1920×1080 at 30 fps',
+        'MP4/H.264',
+        'intro video?',
+        'yaml-cpp',
+        'freezes firmware time',
+    ):
+        if needle not in architecture:
+            errors.append(f'docs/tutorials/STORYBOOK_ARCHITECTURE.md: missing frozen contract text {needle!r}')
+    for needle in (
+        'schema: 1',
+        'sync_cable',
+        'sync_generator',
+        'channel: visible',
+        'publication:',
+        'intro_video',
+        'outro_video',
+    ):
+        if needle not in schema:
+            errors.append(f'docs/tutorials/STORY_SCHEMA_1.md: missing schema-1 contract text {needle!r}')
+
+
 def check_user_guide_chapter_contract(errors: list[str]) -> None:
     """Keep the browser/Wiki guide aligned with the 24-chapter publication manual."""
     chapter_dir = ROOT / 'docs' / 'user-guide'
@@ -386,6 +428,7 @@ def main() -> int:
     check_hil_qualification_contract(errors)
     check_project_metadata(errors)
     check_manual_archive_contract(errors)
+    check_storybook_sb0_contract(errors)
     check_user_guide_chapter_contract(errors)
     check_wiki_publication_contract(errors)
     if errors:

@@ -1,0 +1,19 @@
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+# Expected result: INVALID in Phase 1 because FADE is not supported yet.
+
+schema: 1
+id: invalid-fade
+title: "Invalid Fade"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+defaults:
+  transition:
+    type: fade
+    duration_ms: 400
+scenes:
+  - chapter:
+      number: 1
+      title: "Must fail"
+      duration_ms: 1000

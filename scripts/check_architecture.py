@@ -93,6 +93,11 @@ RACK_API_INCLUDE_PATTERN = re.compile(
 )
 RACK_API_NAMESPACE_PATTERN = re.compile(r"\brack::")
 
+STORYBOOK_INCLUDE_PATTERN = re.compile(
+    r'^\s*#\s*include\s*[<"](?:tutorial/|sim/tutorial/)',
+    re.MULTILINE,
+)
+
 # Static strings beginning with a letter are assumed to be user-visible when
 # they appear in implementation code. Format-only literals such as "%u" are
 # deliberately excluded. All UI prose belongs in src/ui_text.h.
@@ -278,6 +283,31 @@ def check_hardware_boundaries(errors: list[str]) -> None:
             )
 
 
+def check_storybook_dependency_boundary(errors: list[str]) -> None:
+    """Keep Storybook/parser/media dependencies out of embedded production code."""
+    candidates = sorted(
+        list((ROOT / "src").rglob("*.h"))
+        + list((ROOT / "src").rglob("*.hpp"))
+        + list((ROOT / "src").rglob("*.cpp"))
+        + list((ROOT / "lib").rglob("*.h"))
+        + list((ROOT / "lib").rglob("*.hpp"))
+        + list((ROOT / "lib").rglob("*.cpp"))
+    )
+    forbidden_tokens = ("yaml-cpp", "ffmpeg", "libavcodec", "libavformat")
+    for path in candidates:
+        text = path.read_text(encoding="utf-8")
+        if STORYBOOK_INCLUDE_PATTERN.search(text):
+            errors.append(
+                f"{repository_relative(path)}: embedded production code must not depend on sim/tutorial Storybook headers"
+            )
+        lowered = text.lower()
+        for token in forbidden_tokens:
+            if token in lowered:
+                errors.append(
+                    f"{repository_relative(path)}: embedded production code must not depend on Storybook/media token {token!r}"
+                )
+
+
 def check_vcv_api_boundary(errors: list[str]) -> None:
     """Confine VCV Rack API use to the dedicated vcv/ platform shell."""
     candidates = sorted(
@@ -323,6 +353,8 @@ def check_header_colocation(errors: list[str]) -> None:
         "native_smoke_main.cpp",
         "headless_main.cpp",
         "simulator_tests.cpp",
+        "storybook_contract_tests.cpp",
+        "storybook_simulator_port_tests.cpp",
     }
     implementation_roots = (ROOT / "src", ROOT / "sim")
     for implementation_root in implementation_roots:
@@ -426,6 +458,7 @@ def main() -> int:
     check_api_briefs(errors)
     check_text_metadata(errors)
     check_hardware_boundaries(errors)
+    check_storybook_dependency_boundary(errors)
     check_vcv_api_boundary(errors)
     check_header_colocation(errors)
     check_ui_text_centralization(errors)
@@ -446,6 +479,7 @@ def main() -> int:
     print("  Static UI text: centralized in src/ui_text.h")
     print("  Third-party PlatformIO libraries: none")
     print("  VCV Rack API: confined to vcv/; Rack SDK must remain external")
+    print("  Storybook/media dependencies: confined to host-only simulator/publication tooling")
     print("  Embedded heap allocation: prohibited in src/ and lib/")
     print("  Headers: explicit @file/@brief metadata and production API briefs; colocated implementations; executable header-only logic prohibited")
     return 0
