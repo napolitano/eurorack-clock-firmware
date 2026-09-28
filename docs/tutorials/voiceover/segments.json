@@ -592,6 +592,149 @@
           ]
         }
       ]
+    },
+    "12-groove-editor-walkthrough": {
+      "voiceover": "12-groove-editor-walkthrough.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            3
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            4
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            5
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            6
+          ]
+        },
+        {
+          "id": "s07",
+          "paragraphs": [
+            7
+          ]
+        },
+        {
+          "id": "s08",
+          "paragraphs": [
+            8
+          ]
+        },
+        {
+          "id": "s09",
+          "paragraphs": [
+            9
+          ]
+        },
+        {
+          "id": "s10",
+          "paragraphs": [
+            10
+          ]
+        },
+        {
+          "id": "s11",
+          "paragraphs": [
+            11
+          ]
+        },
+        {
+          "id": "s12",
+          "paragraphs": [
+            12
+          ]
+        },
+        {
+          "id": "s13",
+          "paragraphs": [
+            13
+          ]
+        },
+        {
+          "id": "s14",
+          "paragraphs": [
+            14
+          ]
+        },
+        {
+          "id": "s15",
+          "paragraphs": [
+            15
+          ]
+        },
+        {
+          "id": "s16",
+          "paragraphs": [
+            16
+          ]
+        },
+        {
+          "id": "s17",
+          "paragraphs": [
+            17
+          ]
+        },
+        {
+          "id": "s18",
+          "paragraphs": [
+            18
+          ]
+        },
+        {
+          "id": "s19",
+          "paragraphs": [
+            19
+          ]
+        },
+        {
+          "id": "s20",
+          "paragraphs": [
+            20
+          ]
+        },
+        {
+          "id": "s21",
+          "paragraphs": [
+            21
+          ]
+        },
+        {
+          "id": "s22",
+          "paragraphs": [
+            22
+          ]
+        },
+        {
+          "id": "s23",
+          "paragraphs": [
+            23
+          ]
+        }
+      ]
     }
   }
 }

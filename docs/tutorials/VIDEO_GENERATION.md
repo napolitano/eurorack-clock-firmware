@@ -102,7 +102,7 @@ Render one complete narrated master:
 python scripts/render_tutorials.py 11
 ```
 
-Render all eleven examples as a local evening/nightly job:
+Render all twelve examples as a local evening/nightly job:
 
 ```bash
 python scripts/render_tutorials.py --all
@@ -146,7 +146,7 @@ On Windows the file has the usual `.exe` suffix.
 
 ## 4. Start with the examples
 
-Eleven editable teaching examples live in [`examples/`](examples/README.md). They are intentionally separate from the canonical CI reference catalog under [`stories/`](stories/README.md).
+Twelve editable teaching examples live in [`examples/`](examples/README.md). They are intentionally separate from the canonical CI reference catalog under [`stories/`](stories/README.md).
 
 Validate one Story before doing any expensive rendering:
 

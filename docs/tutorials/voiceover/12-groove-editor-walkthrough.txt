@@ -1,0 +1,45 @@
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you the Groove Editor in CLOCK — how to reach it, how to read it, the gestures it uses, how Custom Groove timing actually works, and how to save the result. [conversational] This video follows naturally from Tutorial 11, where we turned the factory One Clock setup into eight individually configurable Clock channels.
+
+[thoughtful] If you have already watched Tutorial 11, the first part will look familiar. I’m starting again from the factory state so this video also works on its own, but I’ll repeat only the minimum navigation. The important part begins once channel four reaches its Groove page. From there, we stay focused on the graphical editor and its workflow.
+
+[conversational] Let’s power CLOCK up. It starts stopped at 120 BPM in the factory One Clock topology, with the clock source on AUTO. Nothing special has been prepared behind the scenes; this is the same clean starting point you would have after a factory reset.
+
+[confidently] Tutorial 11 explained this topology change in detail, so here is the short version. Press the encoder to open the overview, hold TAP and turn to Clock, release TAP, choose YES on the confirmation screen, and press the encoder. CLOCK is now in Independent topology, which gives us eight separately configurable channels while they still share one musical timing reference.
+
+[conversational] Open the channel overview again, turn three clicks to channel four, and press the encoder. Now hold the encoder for about eight tenths of a second. That long press opens the context settings for channel four: MODE, TIMING, CLOCK, and OUTPUT. Everything we do from here belongs to the selected channel unless I say otherwise.
+
+[confidently] Turn one click to TIMING and press. Then move down to GROOVE and press again. This is the Groove settings page. It is the bridge between factory groove shapes, saved Custom Grooves, and the graphical editor we are about to use.
+
+[thoughtful] At the top are PRESET, AMOUNT, and ROTATE. PRESET chooses the deterministic groove source. AMOUNT scales the groove from straight timing toward the full stored shape. ROTATE shifts where that repeating shape begins. LOAD recalls a saved Custom Groove, and EDITOR opens the graphical workspace where we can move individual events earlier or later.
+
+[conversational] Further down, RECORD is a separate capture workflow that lets you create a groove from tapped timing. RENAME and DELETE manage saved Custom Groove slots. I’m not going into the recorder in this tutorial because it has its own interaction model. Here we’re concentrating on the editor, so I’ll move back to EDITOR and open it.
+
+[confidently] This is the Groove Editor. The draft you see here is live-previewed by the clock engine while the editor is open, so you can shape timing and immediately hear or measure the result without first saving every change. In Independent mode that preview belongs to the selected channel — channel four in our case.
+
+[thoughtful] The horizontal grid represents the repeating Custom Groove pattern. Each diamond is one event position. The filled diamond is the selected step. At the bottom, S zero one means step one, the signed number is that step’s microtiming offset, and L sixteen is the current pattern length. On the right, FIT means the complete pattern fits in the editor view. A Z value means we are looking at a smaller window in more detail. [pause] Internally, one offset unit is one two-hundred-and-fifty-sixth of the nominal event interval.
+
+[slowly] Turn the encoder clockwise and the selected marker moves later in time. One encoder step changes the offset by one unit, so this is the fine-edit gesture. I’ll move it later, then back past zero into a negative value. Negative offsets move the event earlier; positive offsets move it later. The allowed range is deliberately bounded so extreme edits cannot collapse neighbouring events into an invalid schedule.
+
+[conversational] TAP has a simple job in the editor: it advances the selection to the next groove step. That makes it possible to work through a pattern without using the encoder for navigation. I’m moving from step one to step two now.
+
+[confidently] There is also a faster edit gesture. Hold TAP while turning the encoder and each encoder step changes the selected offset by four units instead of one. That is the coarse adjustment. [with emphasis] When I release TAP, TAP also performs its normal step-advance action, so after the coarse edit the cursor moves on to the next marker. That detail is worth knowing because it makes TAP-plus-turn useful as a fast edit-and-advance workflow.
+
+[conversational] PLAY is the zoom modifier. Hold PLAY and turn clockwise to show fewer steps and get a more detailed view; turn the other way to zoom back out toward FIT. Because the encoder moved while PLAY was held, CLOCK consumes that PLAY press as a zoom gesture, so releasing the button does not start or stop transport by accident. PLAY by itself still controls transport normally.
+
+[thoughtful] A short encoder press intentionally has no direct action in this workspace. The important encoder gesture is the long press. Hold it, and the Groove Editor menu opens with SAVE, LOAD, ZOOM, and LENGTH. SAVE and LOAD deal with the Custom Groove library; ZOOM provides the same view control as the PLAY-plus-turn shortcut; LENGTH changes the actual size of the repeating pattern.
+
+[confidently] I’ll edit ZOOM once from the menu, then move to LENGTH. Zoom only changes how much of the pattern we can see at once; it does not change the rhythm. LENGTH is different. A Custom Groove can contain from one up to sixty-four steps. I’ll change this draft from sixteen to twenty steps. The existing offsets stay in place, and the repeating pattern now has twenty positions.
+
+[conversational] Press STOP slash BACK once and we return to the graphical editor. Notice the status line now says L twenty. This is the same draft, with the same marker edits we already made, but the pattern itself now repeats over twenty steps instead of sixteen.
+
+[confidently] Now let’s save it. Long-press the encoder, choose SAVE, and CLOCK opens one of ten persistent Custom Groove slots. I’ll use the first empty slot. CLOCK generates a musical default name immediately; the name is editable with the encoder and short presses if you want to change it. A long encoder press commits the name and the groove. [with emphasis] Saving also activates that slot as the current Custom Groove, at one hundred percent Amount and Rotate zero.
+
+[thoughtful] Back on the Groove page, AMOUNT and ROTATE let us use the saved pattern without rewriting it. I’ll reduce AMOUNT to eighty percent. That scales every signed offset toward straight timing while preserving the shape. Then I’ll set ROTATE to one. Rotation changes which stored step lines up with the start of the channel’s event sequence; it shifts the groove phase without moving the markers in the saved pattern itself.
+
+[conversational] There is one more safety behaviour worth seeing. I’ll reopen the editor and make a small unsaved marker change. If I press STOP slash BACK now, CLOCK does not silently throw the draft away. It asks whether to discard the changes. NO returns to the editor with the draft intact. I’ll choose YES here, which removes only the unsaved edit and leaves our previously saved Custom Groove active.
+
+[confidently] Now I’ll return to Performance and start the clock. On the scope, the master timing reference is still the same, but channel four no longer places every event exactly on the straight grid. The saved pattern deterministically moves specific events earlier or later, scaled to eighty percent and rotated by one step. Unlike Humanize, this is not random: the same groove state produces the same timing shape every cycle.
+
+[thoughtful] That is the Groove Editor in one picture. The markers define signed per-step microtiming. Encoder turn is fine adjustment. TAP selects the next step, and TAP-plus-turn gives coarse adjustment. PLAY-plus-turn controls zoom. Long encoder press opens Save, Load, Zoom, and Length. AMOUNT scales the finished shape, ROTATE changes its starting position, and unsaved drafts are protected by an explicit discard confirmation.
+
+[warmly] And that brings us to the end of this Groove Editor walkthrough. Thank you very much for your interest and your time. If you like what you’ve seen, want to stay up to date, or would like to support me, follow South Signal Lab here or on Ko-fi and get exclusive behind-the-scenes insights into the development of my Eurorack modules and tools. [softly] Bye for now, and see you soon.

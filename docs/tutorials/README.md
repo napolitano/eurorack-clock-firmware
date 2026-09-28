@@ -90,7 +90,7 @@ Publication uses a sibling staging directory and replaces the requested output o
 Phase 1 ships 13 didactic stories under [`stories/`](stories/README.md). The implementation evidence for the frozen 40-point Phase-1 gate is maintained in [`PHASE1_ACCEPTANCE.md`](PHASE1_ACCEPTANCE.md). The catalog is executable documentation: CI parses, validates and runs every story twice through the real simulator boundary and requires deterministic logical traces. Story files remain documentation assets under `docs/tutorials/`; generated frames/videos remain ignored publication output.
 ## Authoring examples and command-line generation
 
-- [`examples/`](examples/README.md) contains eleven copy-and-edit teaching Stories covering the main CLOCK workflows. They are examples, not a second canonical CI catalog.
+- [`examples/`](examples/README.md) contains twelve copy-and-edit teaching Stories covering the main CLOCK workflows. They are examples, not a second canonical CI catalog.
 - [`VIDEO_GENERATION.md`](VIDEO_GENERATION.md) documents the `clock-storybook` host CLI for validation, frame generation and final MP4/WebM publication.
 - The CLI is built from the headless CMake preset and does not require SDL3. FFmpeg/ffprobe are required only for the final `video` command.
 

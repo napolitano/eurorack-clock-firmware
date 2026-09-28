@@ -2,7 +2,7 @@
 
 # CLOCK Storybook example stories
 
-These eleven files are a didactic, copy-and-edit Storybook starter set. They are deliberately separate from the canonical CI reference catalog in `../stories/`.
+These twelve files are a didactic, copy-and-edit Storybook starter set. They are deliberately separate from the canonical CI reference catalog in `../stories/`.
 
 1. `01-power-and-first-clock.yaml` — power-up, PLAY, tempo and STOP.
 2. `02-transport-basics.yaml` — PLAY, PAUSE, resume and STOP.
@@ -15,6 +15,7 @@ These eleven files are a didactic, copy-and-edit Storybook starter set. They are
 9. `09-divider-bank.yaml` — Divider Bank and divider-family selection.
 10. `10-external-sync.yaml` — external SYNC lock plus independent RST phase reset.
 11. `11-eight-independent-clocks-walkthrough.yaml` — full One Clock → eight Independent Clocks workflow, channel selection, long-press settings, and a separate on-screen explanation for MODE and each TIMING, CLOCK, and OUTPUT row.
+12. `12-groove-editor-walkthrough.yaml` — standalone Custom Groove Editor walkthrough: minimal hand-off from Example 11, editor entry, fine/coarse microtiming gestures, step navigation, zoom, context menu, pattern length, save, Amount/Rotate and discard protection.
 
 All examples change CLOCK only through recorded physical controls, patch actions or external stimuli. `setup:` establishes only pre-recording factory/power conditions.
 
@@ -31,7 +32,7 @@ The preferred publication path is local:
 python scripts/render_tutorials.py 11
 ```
 
-For all eleven videos:
+For all twelve videos:
 
 ```bash
 python scripts/render_tutorials.py --all

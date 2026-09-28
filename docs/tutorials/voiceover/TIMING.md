@@ -84,3 +84,24 @@ Every setting actually shown on screen receives its own explanation and narratio
 The final scope view demonstrates the two actual edits: channel 4 at ×2 with a 20-ms gate while the other seven Clock channels retain their original settings.
 
 <h6 align="center">From Munich with &#9829;</h6>
+
+## Example 12: Groove Editor walkthrough
+
+Example 12 deliberately continues the teaching sequence from Example 11 without requiring the viewer to have watched it. The opening names Tutorial 11, restates only the minimum Independent/channel-selection path, and then treats the Groove Editor as the sole subject.
+
+The implementation source is authoritative for the gestures shown in the video:
+
+| Gesture / control | Implemented Groove Editor behaviour |
+| --- | --- |
+| Encoder turn | Fine edit of the selected signed timing offset, one 1/256-interval unit per encoder step |
+| TAP | Advance to the next groove step |
+| TAP + encoder turn | Coarse offset edit at four units per encoder step; releasing TAP then performs the normal step advance |
+| PLAY + encoder turn | Change editor zoom; the PLAY release is consumed and does not toggle transport after a zoom gesture |
+| PLAY without encoder movement | Normal transport toggle |
+| Encoder short press | No direct action in the graphical editor workspace |
+| Encoder long press | Open the Groove Editor context menu: SAVE, LOAD, ZOOM, LENGTH |
+| STOP/BACK | Leave the workspace; dirty drafts require explicit discard confirmation |
+
+The screen explanation covers the beat grid, marker diamonds, selected marker, `Snn` step indicator, signed offset, `Lnn` pattern length and `FIT`/`Znn` zoom state. The walkthrough also demonstrates that Custom Groove editing is previewed live, that pattern length is 1–64 steps, and that ten persistent Custom Groove slots are available.
+
+After SAVE, the stored slot becomes the active `Custom` groove at Amount 100% and Rotate 0. The walkthrough then demonstrates Amount as scaling of the stored signed offsets and Rotate as a phase shift of the pattern start without rewriting the saved marker positions. The final scope view reinforces that Custom Groove is deterministic per-step microtiming, not stochastic Humanize.

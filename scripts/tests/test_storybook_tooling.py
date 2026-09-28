@@ -93,7 +93,7 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("tutorial-frames.ffconcat", (ROOT / "sim/tutorial/publication_pipeline.cpp").read_text(encoding="utf-8"))
         self.assertIn("python scripts/render_tutorials.py --all", guide)
         self.assertEqual(1, segments.get("schema"))
-        self.assertEqual(11, len(segments.get("stories", {})))
+        self.assertEqual(12, len(segments.get("stories", {})))
         for stem, entry in segments["stories"].items():
             story = (ROOT / "docs/tutorials/examples" / f"{stem}.yaml").read_text(encoding="utf-8")
             ids = [str(item["id"]) for item in entry["segments"]]
@@ -158,13 +158,14 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertFalse(any((ROOT / "sim/tutorial").rglob("*.yaml")))
 
     def test_teaching_examples_are_separate_and_complete(self) -> None:
-        """Eleven editable examples must exist outside the canonical reference-story directory."""
+        """Twelve editable examples must exist outside the canonical reference-story directory."""
         examples = ROOT / "docs/tutorials/examples"
         expected = {
             "01-power-and-first-clock.yaml", "02-transport-basics.yaml", "03-encoder-tempo.yaml",
             "04-tap-tempo.yaml", "05-topology-and-channel.yaml", "06-clock-mode.yaml",
             "07-euclidean-rhythm.yaml", "08-sequencer-basics.yaml", "09-divider-bank.yaml",
             "10-external-sync.yaml", "11-eight-independent-clocks-walkthrough.yaml",
+            "12-groove-editor-walkthrough.yaml",
         }
         self.assertEqual(expected, {path.name for path in examples.glob("*.yaml")})
         guide = (ROOT / "docs/tutorials/VIDEO_GENERATION.md").read_text(encoding="utf-8")
@@ -183,8 +184,8 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertTrue(outro.is_file() and outro.stat().st_size > 0)
         stories = sorted(examples.glob("*.yaml"))
         scripts = sorted(voiceover.glob("*.txt"))
-        self.assertEqual(11, len(stories))
-        self.assertEqual(11, len(scripts))
+        self.assertEqual(12, len(stories))
+        self.assertEqual(12, len(scripts))
         for story in stories:
             text = story.read_text(encoding="utf-8")
             self.assertIn('intro_video: ../assets/video/south-signal-lab-intro.mp4', text)
@@ -201,6 +202,12 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn('label: MODE · TIMING · CLOCK · OUTPUT', detailed)
         self.assertIn('label: Probability · Gate · Phase · Reset · Mute', detailed)
         self.assertIn('text: Change channel 4 from ×1 to ×2.', detailed)
+        groove = (examples / "12-groove-editor-walkthrough.yaml").read_text(encoding="utf-8")
+        self.assertIn('title: Example 12 — Groove Editor Walkthrough', groove)
+        self.assertIn('label: TAP + turn · four offset units per encoder step', groove)
+        self.assertIn('label: PLAY release is consumed after a zoom gesture', groove)
+        self.assertIn('label: SAVE · LOAD · ZOOM · LENGTH', groove)
+        self.assertIn('label: DISCARD CHANGES? · NO returns to the draft · YES discards it', groove)
 
     def test_phase1_acceptance_matrix_has_exactly_40_evidence_rows(self) -> None:
         """SB-8 closes the frozen 40-point Phase-1 implementation gate with repository evidence."""

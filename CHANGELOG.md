@@ -12,6 +12,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Storybook publication assets, narration and repository hygiene
 
+- Expand the editable teaching set from eleven to twelve examples with a standalone Groove Editor walkthrough that boots from factory state, references Example 11, enters channel-four Groove settings through the real UI, and demonstrates editor anatomy, fine/coarse offsets, TAP step advance, PLAY-modified zoom, long-press context actions, pattern length, Custom Groove save/activation, Amount/Rotate and dirty-draft discard protection.
 - Add the approved South Signal Lab 1080p intro and outro as the only intentionally tracked Storybook MP4 source assets, and reference both from every editable teaching example.
 - Ignore generated tutorial videos, audio renders, subtitle sidecars, retained frame trees, staging directories and Storybook frame PNG/RGBA intermediates so publication output cannot drift into source control.
 - Rework all eleven US-English ElevenLabs narration scripts around the full South Signal Lab opening/sign-off contract, explicit viewer orientation before detailed operation, and purposeful Audio Tags for warmer, more natural delivery.

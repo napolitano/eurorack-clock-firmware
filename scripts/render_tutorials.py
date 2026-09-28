@@ -626,7 +626,7 @@ def select_stories(target: str | None, render_all: bool, catalog: dict[str, dict
     normalized = target.strip().lower()
     matches = [stem for stem in stems if normalized in {stem.lower(), story_number(stem), story_number(stem).lstrip("0")}]
     if len(matches) != 1:
-        raise RenderError(f"cannot resolve tutorial {target!r}; choose 01..11 or an exact example stem")
+        raise RenderError(f"cannot resolve tutorial {target!r}; choose 01..12 or an exact example stem")
     return matches
 
 
@@ -695,8 +695,8 @@ def render_one(
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Render narrated CLOCK Storybook publication masters locally")
-    parser.add_argument("tutorial", nargs="?", help="example number (01..11) or exact example filename stem")
-    parser.add_argument("--all", action="store_true", help="render all eleven editable examples")
+    parser.add_argument("tutorial", nargs="?", help="example number (01..12) or exact example filename stem")
+    parser.add_argument("--all", action="store_true", help="render all twelve editable examples")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--audio-only", action="store_true", help="render/cache narration and resolve timing, but do not render picture")
     mode.add_argument("--picture-only", action="store_true", help="reuse matching cached narration; render picture and final mux only")

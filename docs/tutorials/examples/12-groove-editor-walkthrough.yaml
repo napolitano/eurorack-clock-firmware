@@ -1,0 +1,606 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-groove-editor-walkthrough
+title: Example 12 — Groove Editor Walkthrough
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+publication:
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
+setup:
+  factory_reset: true
+  power: 'off'
+scenes:
+  - chapter:
+      number: 12
+      title: Groove Editor
+      subtitle: Custom timing, gestures, zoom, save and preview
+      narration: s01
+      duration_ms: 18000
+  - text:
+      title: Picking up after Tutorial 11
+      body: |
+        Tutorial 11 showed how to turn One Clock into eight Independent Clock channels.
+        This walkthrough repeats only the minimum setup, then focuses entirely on Custom Groove editing.
+      narration: s02
+      duration_ms: 26000
+  - tutorial:
+      subtitle: Boot CLOCK, select channel four, then enter the Groove Editor.
+      actions:
+        - beat:
+            narration: s03
+            duration_ms: 22000
+        - power:
+            state: 'on'
+        - wait_ms: 1100
+        - assert:
+            transport: stopped
+        - focus:
+            target: oled_top_bar
+            placement: right
+            label: 120 BPM · One Clock · AUTO · STOP
+            duration_ms: 0
+        - beat_end: s03
+
+        - beat:
+            narration: s04
+            duration_ms: 26000
+        - subtitle:
+            text: Repeat only the minimum topology step from Tutorial 11.
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - button:
+            name: TAP
+            state: up
+        - wait_ms: 900
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Independent Clock topology
+            duration_ms: 0
+        - beat_end: s04
+
+        - beat:
+            narration: s05
+            duration_ms: 24000
+        - subtitle:
+            text: Select channel four and open its context settings with a long press.
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 3
+        - encoder_push: {}
+        - encoder_push:
+            hold_ms: 800
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Channel 4 · MODE · TIMING · CLOCK · OUTPUT
+            duration_ms: 0
+        - beat_end: s05
+
+        - beat:
+            narration: s06
+            duration_ms: 30000
+        - subtitle:
+            text: Open TIMING, then GROOVE.
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 4
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: PRESET · AMOUNT · ROTATE · LOAD · EDITOR
+            duration_ms: 0
+        - beat_end: s06
+
+        - beat:
+            narration: s07
+            duration_ms: 32000
+        - focus:
+            target: oled_region
+            x: 0
+            y: 8
+            width: 128
+            height: 48
+            placement: right
+            label: Factory groove selection and Custom Groove controls
+            duration_ms: 0
+        - beat_end: s07
+
+        - beat:
+            narration: s08
+            duration_ms: 25000
+        - subtitle:
+            text: The lower Groove actions manage recording and the Custom Groove library.
+        - encoder:
+            direction: clockwise
+            detents: 5
+        - focus:
+            target: oled_region
+            x: 0
+            y: 36
+            width: 128
+            height: 20
+            placement: right
+            label: RECORD · RENAME · DELETE
+            duration_ms: 2200
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder:
+            direction: counter_clockwise
+            detents: 3
+        - focus:
+            target: oled_region
+            x: 0
+            y: 36
+            width: 128
+            height: 20
+            placement: right
+            label: EDITOR opens the graphical Custom Groove workspace
+            duration_ms: 0
+        - beat_end: s08
+
+        - beat:
+            narration: s09
+            duration_ms: 26000
+        - subtitle:
+            text: Open the graphical Groove Editor.
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: GROOVE EDITOR · live Custom Groove preview
+            duration_ms: 0
+        - beat_end: s09
+
+        - beat:
+            narration: s10
+            duration_ms: 34000
+        - subtitle:
+            text: Read the timing grid, selected marker, status line and zoom state.
+        - focus:
+            target: oled_region
+            x: 0
+            y: 10
+            width: 128
+            height: 40
+            placement: right
+            label: Timing grid · one diamond per Custom Groove step
+            duration_ms: 3000
+        - focus:
+            target: oled_region
+            x: 0
+            y: 53
+            width: 100
+            height: 11
+            placement: above
+            label: S01 +0 L16 · selected step, signed offset, pattern length
+            duration_ms: 2600
+        - focus:
+            target: oled_region
+            x: 100
+            y: 53
+            width: 28
+            height: 11
+            placement: above
+            label: FIT or Z<n> · visible-step zoom
+            duration_ms: 0
+        - beat_end: s10
+
+        - beat:
+            narration: s11
+            duration_ms: 30000
+        - subtitle:
+            text: Turn the encoder for fine signed microtiming changes.
+        - encoder:
+            direction: clockwise
+            detents: 12
+        - focus:
+            target: oled_region
+            x: 0
+            y: 53
+            width: 100
+            height: 11
+            placement: above
+            label: Positive offset moves the selected event later
+            duration_ms: 2200
+        - encoder:
+            direction: counter_clockwise
+            detents: 20
+        - focus:
+            target: oled_region
+            x: 0
+            y: 53
+            width: 100
+            height: 11
+            placement: above
+            label: Negative offset moves the selected event earlier
+            duration_ms: 0
+        - beat_end: s11
+
+        - beat:
+            narration: s12
+            duration_ms: 19000
+        - subtitle:
+            text: TAP advances to the next groove step.
+        - button:
+            name: TAP
+        - focus:
+            target: oled_region
+            x: 0
+            y: 53
+            width: 100
+            height: 11
+            placement: above
+            label: TAP advances the selected step · S02
+            duration_ms: 0
+        - beat_end: s12
+
+        - beat:
+            narration: s13
+            duration_ms: 30000
+        - subtitle:
+            text: Hold TAP while turning for four-times-coarser editing.
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 4
+        - focus:
+            target: oled_region
+            x: 0
+            y: 53
+            width: 100
+            height: 11
+            placement: above
+            label: TAP + turn · four offset units per encoder step
+            duration_ms: 2400
+        - button:
+            name: TAP
+            state: up
+        - focus:
+            target: oled_region
+            x: 0
+            y: 53
+            width: 100
+            height: 11
+            placement: above
+            label: Releasing TAP also advances to the next step
+            duration_ms: 0
+        - beat_end: s13
+
+        - beat:
+            narration: s14
+            duration_ms: 33000
+        - subtitle:
+            text: Hold PLAY while turning to zoom without toggling transport.
+        - button:
+            name: PLAY
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_region
+            x: 100
+            y: 53
+            width: 28
+            height: 11
+            placement: above
+            label: PLAY + clockwise turn · zoom in
+            duration_ms: 1800
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_region
+            x: 100
+            y: 53
+            width: 28
+            height: 11
+            placement: above
+            label: Fewer visible steps · more editing detail
+            duration_ms: 1800
+        - button:
+            name: PLAY
+            state: up
+        - assert:
+            transport: stopped
+        - focus:
+            target: play
+            label: PLAY release is consumed after a zoom gesture
+            duration_ms: 0
+        - beat_end: s14
+
+        - beat:
+            narration: s15
+            duration_ms: 28000
+        - subtitle:
+            text: Short encoder push does nothing here; long press opens the editor menu.
+        - encoder_push: {}
+        - focus:
+            target: encoder
+            label: Short push · no direct Groove Editor action
+            duration_ms: 1800
+        - encoder_push:
+            hold_ms: 800
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: SAVE · LOAD · ZOOM · LENGTH
+            duration_ms: 0
+        - beat_end: s15
+
+        - beat:
+            narration: s16
+            duration_ms: 34000
+        - subtitle:
+            text: ZOOM changes only the view; LENGTH changes the repeating pattern size.
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 128
+            height: 12
+            placement: right
+            label: ZOOM changes the number of visible steps
+            duration_ms: 2200
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 4
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 40
+            width: 128
+            height: 12
+            placement: right
+            label: LENGTH changes the pattern from 16 to 20 steps
+            duration_ms: 0
+        - beat_end: s16
+
+        - beat:
+            narration: s17
+            duration_ms: 18000
+        - subtitle:
+            text: Return to the editor; the pattern is now twenty steps long.
+        - button:
+            name: STOP_BACK
+        - focus:
+            target: oled_region
+            x: 0
+            y: 53
+            width: 100
+            height: 11
+            placement: above
+            label: L20 · pattern length changed, offsets preserved
+            duration_ms: 0
+        - beat_end: s17
+
+        - beat:
+            narration: s18
+            duration_ms: 42000
+        - subtitle:
+            text: Save the Custom Groove into an empty library slot.
+        - encoder_push:
+            hold_ms: 800
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Choose one of ten Custom Groove slots
+            duration_ms: 2400
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Generated name is editable; hold encoder to save
+            duration_ms: 2600
+        - encoder_push:
+            hold_ms: 800
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Saved Groove becomes active as CUSTOM · 100% · Rotate 0
+            duration_ms: 0
+        - beat_end: s18
+
+        - beat:
+            narration: s19
+            duration_ms: 35000
+        - subtitle:
+            text: Scale the saved groove with AMOUNT and shift its start with ROTATE.
+        - encoder:
+            direction: counter_clockwise
+            detents: 3
+        - encoder_push: {}
+        - encoder:
+            direction: counter_clockwise
+            detents: 20
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 18
+            width: 128
+            height: 11
+            placement: right
+            label: AMOUNT 80% · scale the timing shape toward straight
+            duration_ms: 2200
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 28
+            width: 128
+            height: 11
+            placement: right
+            label: ROTATE 1 · shift the groove start without rewriting offsets
+            duration_ms: 0
+        - beat_end: s19
+
+        - beat:
+            narration: s20
+            duration_ms: 32000
+        - subtitle:
+            text: Unsaved editor changes are protected by a discard confirmation.
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 5
+        - button:
+            name: STOP_BACK
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: DISCARD CHANGES? · NO returns to the draft · YES discards it
+            duration_ms: 2600
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Unsaved edit discarded · saved Custom Groove remains active
+            duration_ms: 0
+        - beat_end: s20
+
+        - beat:
+            narration: s21
+            duration_ms: 30000
+        - subtitle:
+            text: Return to Performance and watch the deterministic timing shape.
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 7000
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Same tempo reference · deterministic per-step microtiming
+            duration_ms: 0
+        - beat_end: s21
+        - scope:
+            state: hide
+        - button:
+            name: STOP_BACK
+        - assert:
+            transport: stopped
+
+  - callout:
+      type: tip
+      title: What the Groove Editor changes
+      body: |
+        Custom Groove moves individual events earlier or later on a repeating pattern.
+        AMOUNT scales that timing shape; ROTATE changes where the shape begins.
+      narration: s22
+      duration_ms: 28000
+
+  - text:
+      title: Thanks for watching
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      narration: s23
+      duration_ms: 20000

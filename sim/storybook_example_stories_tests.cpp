@@ -1,6 +1,6 @@
 /**
  * @file storybook_example_stories_tests.cpp
- * @brief Validates and executes the eleven copy-and-edit CLOCK Storybook teaching examples.
+ * @brief Validates and executes the twelve copy-and-edit CLOCK Storybook teaching examples.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -22,7 +22,7 @@ using namespace clockfw;
 using namespace clockfw::sim;
 using namespace clockfw::sim::tutorial;
 
-constexpr std::array<const char*, 11U> kExamples{{
+constexpr std::array<const char*, 12U> kExamples{{
     "01-power-and-first-clock.yaml",
     "02-transport-basics.yaml",
     "03-encoder-tempo.yaml",
@@ -34,6 +34,7 @@ constexpr std::array<const char*, 11U> kExamples{{
     "09-divider-bank.yaml",
     "10-external-sync.yaml",
     "11-eight-independent-clocks-walkthrough.yaml",
+    "12-groove-editor-walkthrough.yaml",
 }};
 
 bool require(const bool condition, const std::string& message) {
@@ -90,11 +91,34 @@ int main() {
                               "Example 11 must edit only channel 4 gate to 20 ms");
             }
         }
+        if (std::string(filename) == "12-groove-editor-walkthrough.yaml" && result) {
+            const ClockState& state = runtime.state();
+            ok &= require(state.operatingMode == OperatingMode::Independent,
+                          "Example 12 must end in Independent topology");
+            ok &= require(runtime.selectedChannelForPresentation() == 3U,
+                          "Example 12 must leave channel 4 selected");
+            const GrooveSettings& groove = state.channels[3U].common.groove;
+            ok &= require(groove.preset == GroovePreset::Custom,
+                          "Example 12 must activate the saved Custom Groove");
+            ok &= require(groove.customSlot == 0U,
+                          "Example 12 must save and activate Custom Groove slot 1");
+            ok &= require(groove.amountPercent == 80U,
+                          "Example 12 must leave Custom Groove Amount at 80 percent");
+            ok &= require(groove.rotation == 1U,
+                          "Example 12 must leave Custom Groove Rotate at one step");
+            for (std::size_t channel = 0U; channel < kChannelCount; ++channel) {
+                if (channel == 3U) continue;
+                ok &= require(state.channels[channel].common.groove.preset == GroovePreset::Off,
+                              "Example 12 must not assign Groove to the other channels");
+            }
+            ok &= require(state.transport == TransportState::Stopped,
+                          "Example 12 must finish with transport stopped");
+        }
         runtime.flushPersistence();
         std::filesystem::remove(statePath);
     }
 
     if (!ok) return EXIT_FAILURE;
-    std::cout << "CLOCK Storybook teaching examples: 11/11 PASS\n";
+    std::cout << "CLOCK Storybook teaching examples: 12/12 PASS\n";
     return EXIT_SUCCESS;
 }
