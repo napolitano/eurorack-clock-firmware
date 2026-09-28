@@ -8,8 +8,8 @@ Voice-over is recorded after the Storybook picture and mixed in the editor. The 
 
 - The tracked intro and outro clips measure **4.5 s** and **5.5 s** respectively (`ffprobe` on the bundled MP4s).
 - The provided spoken opening and sign-off examples took roughly **15 s** and **16 s**. For rough planning, use **195 spoken words/minute** (about 3.25 words/s), then allow for natural pauses and watching a control action.
-- Every story has an **18 s** opening card after the intro. All revised scripts fit that card at the reference pace.
-- Every story now has a **24 s** closing card before the outro. The current closings are longer than the reference recording, so the previous universal 20 s assumption was too tight.
+- Examples 01–10 have **18 s** opening cards and **20 s** closing cards. The longer example 11 uses **16 s** and **22 s**. Each current paragraph fits its card at the reference pace with a small editing margin.
+- Eleven v3 accepts natural-language Audio Tags, but the tags can also be spoken aloud when a delivery does not suit the voice. Use only a few delivery cues, and check the generated result. Natural punctuation and paragraph breaks usually do the work. See the official [Audio Tags 101](https://elevenlabs.io/blog/v3-audiotags).
 - Eleven v3 delivery tags are cues, not words to speak. Record a paragraph at a time when a control action needs a more precise edit. Speech duration must ultimately be measured from the recorded take or generated audio; the numbers below are planning values, not audio measurements.
 
 ## Revised planning lengths
@@ -18,17 +18,17 @@ Voice-over is recorded after the Storybook picture and mixed in the editor. The 
 
 | Example | Spoken words | Speech | Picture | With bumpers |
 | --- | ---: | ---: | ---: | ---: |
-| 01 · First Clock | 250 | 1:17 | ~1:25 | ~1:35 |
-| 02 · Transport | 228 | 1:10 | ~1:16 | ~1:26 |
-| 03 · Encoder tempo | 212 | 1:05 | ~1:09 | ~1:19 |
-| 04 · Tap Tempo | 213 | 1:06 | ~1:08 | ~1:18 |
-| 05 · Topology / channel | 280 | 1:26 | ~1:28 | ~1:38 |
-| 06 · Clock mode | 219 | 1:07 | ~1:14 | ~1:24 |
-| 07 · Euclid | 341 | 1:45 | ~1:52 | ~2:02 |
-| 08 · Sequencer | 314 | 1:37 | ~1:39 | ~1:49 |
-| 09 · Divider Bank | 290 | 1:29 | ~1:32 | ~1:42 |
-| 10 · External SYNC / RST | 279 | 1:26 | ~1:27* | ~1:37* |
-| 11 · Eight Clock channels | 1,042 | 5:21 | ~6:00 | ~6:10 |
+| 01 · First Clock | 248 | 1:16 | ~1:21 | ~1:31 |
+| 02 · Transport | 231 | 1:11 | ~1:14 | ~1:24 |
+| 03 · Encoder tempo | 210 | 1:05 | ~1:07 | ~1:17 |
+| 04 · Tap Tempo | 207 | 1:04 | ~1:08 | ~1:18 |
+| 05 · Topology / channel | 259 | 1:20 | ~1:24 | ~1:34 |
+| 06 · Clock mode | 245 | 1:15 | ~1:17 | ~1:27 |
+| 07 · Euclid | 315 | 1:37 | ~1:43 | ~1:53 |
+| 08 · Sequencer | 277 | 1:25 | ~1:31 | ~1:41 |
+| 09 · Divider Bank | 266 | 1:22 | ~1:28 | ~1:38 |
+| 10 · External SYNC / RST | 274 | 1:24 | ~1:27* | ~1:37* |
+| 11 · Eight Clock channels | 901 | 4:37 | ~5:16 | ~5:26 |
 
 \* Includes an assumed ~1 s acquisition of external lock. The actual picture duration depends on the accepted incoming edges.
 
@@ -54,6 +54,6 @@ The chapter introduces the goal; the factory-state card explains why eight Clock
 
 Each selection gets a separately timed focus on the corresponding OLED row. The focus freezes firmware time while it is presented; physical encoder and button actions still run under `HUMAN_NORMAL`. The final scope view runs with firmware time active so the changed rate can be seen. A one-row focus on GROOVE explains the entry point, not the eight subsettings inside its separate groove editor; that editor is outside this Clock-channel walkthrough.
 
-At the reference pace the 1,042-word script needs roughly **5:21 of speech**, before pauses. The revised story plans roughly **6:00 of picture plus 10 seconds of bumper clips**. This is a working edit budget, not a promise that a particular ElevenLabs take will fit without an NLE adjustment. If a take differs, retime its corresponding hold or action beat and regenerate the video and subtitle sidecars together. Preserve the 18 s opening, 24 s closing and bumper boundaries unless the recorded take requires a documented change.
+At the reference pace the 901-word script needs roughly **4:37 of speech**, before pauses. The revised story plans roughly **5:16 of picture plus 10 seconds of bumper clips**. This is a working edit budget, not a measured ElevenLabs take. Its individually timed focus holds allow roughly a second after each row, plus the real control-action time. If a take differs, retime the corresponding hold or action beat and regenerate the video and subtitle sidecars together.
 
 <h6 align="center">From Munich with &#9829;</h6>

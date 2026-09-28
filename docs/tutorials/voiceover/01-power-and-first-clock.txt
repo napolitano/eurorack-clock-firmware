@@ -1,11 +1,11 @@
-[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how to power up CLOCK, read the essential status information, start the transport, change the master tempo, and stop again from a clean, defined state. [short pause]
+[warmly] Hi, I’m Axel from South Signal Lab. Let’s power up CLOCK, make it tick, change the tempo, and stop it again. I’ll also show you what to look for on the display when it first comes on.
 
-CLOCK always boots in STOP. In the factory state it starts at 120 BPM, uses One Clock, and keeps SOURCE on AUTO. The top bar gives you the most important status information at a glance, including the current musical context and transport state.
+There it is. CLOCK starts stopped, at 120 BPM. One Clock is selected, and the source says AUTO. Across the top of the display you can check the transport and the musical context. Those are the things I glance at before touching anything else.
 
-Press PLAY and the transport starts. In One Clock, all eight outputs follow the same master timing. Turn the encoder clockwise and you raise that shared BPM, so every output stays related to the same timing reference.
+Now press PLAY. All eight outputs follow this one clock. I’ll turn the encoder a few clicks clockwise, and you can see the BPM rise. Because we’re in One Clock, that tempo change applies to the whole set of outputs.
 
-Press STOP slash BACK to stop. STOP also resets the global phase, which means the next start begins from a defined musical boundary rather than from an arbitrary point in the previous cycle.
+Press STOP slash BACK. The gates stop, and the global phase resets as well. So when I press PLAY next time, the pattern starts from a known point. That’s useful when several things are patched to CLOCK and need to come back together.
 
-[thoughtful] One Clock is the simplest place to learn CLOCK. Independent mode comes later, when you want different rhythmic functions or settings on individual outputs without giving up the shared master timeline.
+For now, One Clock is a good place to start. We can give outputs different jobs later, but there’s no need to tackle that while we’re learning the three controls on the front.
 
-[warmly] And that already brings us to the end. Thank you for your interest, and for taking the time to watch. If you liked what you saw, want to stay up to date, or would like to support my work, follow South Signal Lab here or on Ko-fi for exclusive insights into the development of my Eurorack modules and components. Bye for now, and see you soon.
+That’s our first clock. Thanks for spending a few minutes with me. Next I’ll look at what PLAY, PAUSE, and STOP each do. I’m documenting the build here at South Signal Lab; you can follow along, and Ko-fi is there if you’d like to support the work. See you next time.

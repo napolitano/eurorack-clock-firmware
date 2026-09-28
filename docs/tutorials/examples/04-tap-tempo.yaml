@@ -46,7 +46,7 @@ scenes:
             height: 10
             placement: right
             label: "AUTO stays selected; internal BPM is updated"
-            duration_ms: 8500
+            duration_ms: 12500
         - focus:
             target: oled_region
             x: 0
@@ -68,4 +68,4 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      duration_ms: 24000
+      duration_ms: 20000

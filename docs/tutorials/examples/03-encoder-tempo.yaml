@@ -50,7 +50,7 @@ scenes:
             height: 10
             placement: right
             label: "Master BPM follows one shared timeline"
-            duration_ms: 9500
+            duration_ms: 11500
   - callout:
       type: tip
       title: "One master timeline"
@@ -62,4 +62,4 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      duration_ms: 24000
+      duration_ms: 20000

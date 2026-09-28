@@ -1,9 +1,9 @@
-[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how to set CLOCK’s internal tempo by feel with TAP Tempo, how the measurement sequence works, and why tapping the tempo does not silently change your selected clock source. [short pause]
+[warmly] Hi, I’m Axel from South Signal Lab. Let’s set a tempo by tapping it in. There’s one small detail I want to show you: tapping changes the internal BPM, but it doesn’t secretly switch the clock source.
 
-The first TAP starts a new measurement. Tap again on the next pulse and CLOCK now has an interval it can use. Additional taps continue refining that internal tempo, and the display gives you visual TAP feedback once a real measurement exists.
+The first tap starts a new measurement. On its own, it can’t tell CLOCK how fast I’m going. The second gives it an interval, and another tap helps settle the result. You’ll see feedback on the display once there’s enough information to measure a pulse.
 
-[slower] One detail is important: TAP Tempo changes the internal fallback BPM. It does not change the selected clock source. If SOURCE is AUTO, it stays AUTO.
+[slowly] The SOURCE setting is still AUTO after those taps. TAP is updating the internal tempo CLOCK can fall back to; it isn’t taking external SYNC out of the picture.
 
-[thoughtful] That means you can prepare a useful internal tempo by hand and still let CLOCK lock to an external source when one becomes available. The internal tempo remains available as the fallback rather than becoming a hidden source switch.
+That means I can tap in a comfortable tempo before I connect anything. If a valid external clock arrives, AUTO can lock to it. If I’m working internally, the tempo I just tapped is already there. No source setting changed behind my back.
 
-[warmly] That’s the complete Tap Tempo workflow. Thank you very much for your interest and your time. If you enjoyed the video, want to stay informed about the next CLOCK steps, or would like to support South Signal Lab, follow me here or on Ko-fi for exclusive looks at the development process behind my Eurorack modules and components. Bye, and see you soon.
+That’s Tap Tempo. Thanks for watching. The useful thing to remember is that SOURCE stays on AUTO after those taps. I’ll keep showing you the details behind CLOCK here at South Signal Lab. You can follow the build here, or support it on Ko-fi if you’d like. See you in the next one.

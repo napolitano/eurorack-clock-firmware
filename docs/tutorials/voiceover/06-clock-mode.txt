@@ -1,11 +1,11 @@
-[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how to use Clock mode on one Independent output, and why an Independent Clock channel is still part of CLOCK’s common musical timing system. [short pause]
+[warmly] Hi, I’m Axel from South Signal Lab. Let’s set up a regular Clock channel in Independent mode and look at what actually comes out of that one jack. We’ll use the actual front-panel controls, so you can repeat it on the module.
 
-First we enter Independent operation and select Clock from the mode carousel. Clock mode is the straightforward choice when one output should deliver a regular derived clock instead of a Euclidean pattern or an edited step sequence.
+Open the overview and use TAP with the encoder to select Clock. Confirm the change. We’re now looking at an Independent channel in Clock mode: a regular clock derived from CLOCK’s main timing reference. It’s the simple choice when this output doesn’t need a Euclidean pattern or a hand-edited sequence.
 
-Press PLAY and the selected channel begins running. The scope view makes the resulting gate activity easier to see and gives us a clean visual reference for the selected output.
+Press PLAY. I’ll bring up the scope so the gates are easier to see than they are on a little OLED. Watch that selected output pulse while the transport runs.
 
-[thoughtful] Even though this is an Independent channel, it is not a second free-running master clock. Its events are still derived from CLOCK’s common musical reference, which keeps different outputs musically related even when their rates and channel settings differ.
+“Independent” describes the channel settings, not a separate free-running tempo. If we give another output a different rate later, both channels still follow the same reference. That makes it possible to build related rhythms without chasing two drifting clocks.
 
-Press STOP slash BACK when you are finished and CLOCK returns to a defined stopped state.
+And now STOP slash BACK. The transport stops and returns to a defined phase. That’s the basic Clock mode workflow: pick the channel, start it, watch the gates, and stop.
 
-[warmly] And that’s Clock mode in its simplest form. Thanks for your interest and your time. If you liked the walkthrough, want to keep up with development, or want to support South Signal Lab, follow me here or on Ko-fi for exclusive behind-the-scenes material from the development of my Eurorack modules and components. Bye, and I’ll see you soon.
+That’s a regular Clock channel running on its own output. Thanks for watching. Next I’ll use a Euclidean pattern so you can see what changes when that channel makes a rhythm instead. I’m documenting CLOCK here at South Signal Lab. You can follow along, or support the build on Ko-fi. See you next time.

@@ -1,11 +1,11 @@
-[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you the difference between choosing CLOCK’s operating topology and choosing an individual output channel — two related actions that are easy to confuse at first. [short pause]
+[warmly] Hi, I’m Axel from South Signal Lab. Today I’m going to change how CLOCK uses its eight outputs, then pick just one of them to work on. Those are two different choices, so let’s do them in order.
 
-CLOCK has three high-level topologies: One Clock, Independent, and Divider Bank. One Clock distributes the same clock to the eight outputs. Divider Bank gives you a coordinated set of divisions. Independent gives each output its own channel configuration. Choose the overall topology first; the selected output channel is a separate choice inside Independent.
+At the top level, there’s One Clock, Divider Bank, and Independent. One Clock sends the same clock to all eight outputs. Divider Bank gives you a family of related divisions. Independent lets each output have its own settings. That’s the one we’re heading for.
 
-Press the encoder to open the overview. Hold TAP while turning the encoder to Clock in the mode carousel. Release TAP to see the confirmation, move to YES and press the encoder. Selecting Clock here enters Independent operation. Wait for the performance screen, then press the encoder again to open the eight-channel overview. Turn two detents to channel three and press to select it.
+Press the encoder to open the overview. Hold TAP while you turn to Clock, then let go. CLOCK asks for confirmation; it starts on NO. Turn to YES and press the encoder. We’re now in Independent, but we haven’t chosen which output to edit yet.
 
-From this point on, changes apply to that selected output instead of to the shared One Clock configuration. The overview shows which output you are about to edit; its eight tiles do not represent eight separate master tempos.
+Press the encoder again and you’ll see eight tiles. Turn two clicks to channel three, then press to select it. Now when we open channel settings, we’ll be working on output three. We haven’t changed the other seven just by selecting this one.
 
-[thoughtful] Independent does not mean unrelated. Each output can use its own mode and settings while the active channels remain anchored to CLOCK’s common master timeline.
+One point to keep in mind: Independent doesn’t give you eight unrelated master clocks. The outputs can have different modes and rates, but they still refer back to the same timing system. That’s how the patterns stay musically connected.
 
-[warmly] That wraps up topology and channel selection. Thank you for your interest and for taking the time to watch. If you want to keep following the project, see more engineering detail, or support future work, follow South Signal Lab here or on Ko-fi for exclusive insight into the development of my Eurorack modules and components. Bye for now, and see you soon.
+That’s the distinction: choose the layout, then choose the output. Thanks for watching. We’ll put an Independent Clock channel to work in the next video. I’ll keep sharing the build at South Signal Lab; follow along, and Ko-fi is there if you’d like to support the project. See you soon.

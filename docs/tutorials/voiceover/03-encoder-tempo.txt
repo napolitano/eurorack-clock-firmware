@@ -1,9 +1,9 @@
-[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you the most direct way to change CLOCK’s master tempo with the encoder, and also explain what that master BPM actually means once you start using several outputs. [short pause]
+[warmly] Hi, I’m Axel from South Signal Lab. Here’s a quick one: changing CLOCK’s tempo with the encoder, and why that single BPM number still matters when the outputs are doing different things. I’ll keep the performance screen in view so you can follow every click.
 
-Turn the encoder clockwise and the BPM goes up. Turn it counter-clockwise and the BPM comes back down. The value changes directly on the performance screen, so there is no menu between you and the master tempo.
+On the performance screen, turn clockwise and the BPM goes up. Turn the other way and it comes back down. No menu, no edit mode. You can see the value change while your hand is still on the encoder.
 
-[thoughtful] The important part is that this BPM belongs to one shared musical timeline. Even when you later use Independent outputs with different rates or rhythmic functions, those channels remain anchored to the same master reference instead of becoming unrelated free-running clocks.
+That number is the master tempo. The channels can divide it, multiply it, or make patterns from it, but they’re still working from the same musical reference. When I change the BPM here, those relationships move with it.
 
-So a tempo change moves the common timing reference while preserving the musical relationship between channels. It is a simple control, but it changes the whole timing system in a predictable way.
+That’s useful if you have several patches running. I can speed the whole thing up without visiting eight channel menus. Each output keeps its own rate or pattern; I’ve just moved the tempo they share.
 
-[warmly] And with that, we’re finished for this one. Thank you for watching and for spending the time with me. If you like this kind of detailed Eurorack development work, want to keep up with CLOCK, or want to support what I’m building, follow South Signal Lab here or on Ko-fi for exclusive development insights. Bye for now — see you soon.
+And that’s the master tempo control. Thanks for watching. In the next example I’ll tap in a tempo instead of turning the encoder. I’m building CLOCK here at South Signal Lab and sharing the decisions along the way. Follow along, or visit Ko-fi if you’d like to support the project. See you soon.

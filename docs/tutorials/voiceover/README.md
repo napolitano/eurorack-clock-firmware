@@ -4,14 +4,11 @@
 
 This directory contains the US-English narration scripts for the eleven editable Storybook examples. Voice-over is deliberately a **post-production layer**: Storybook renders the deterministic tutorial and bumper composition first; narration generated from these scripts is added afterwards in the video editor.
 
-The `.txt` files are written for **Eleven v3**. They use sparse natural-language Audio Tags in square brackets and punctuation/paragraph structure for pacing. Do not convert those scripts to SSML `<break>` markup when using Eleven v3. Generate paragraph-by-paragraph when tighter editorial timing is required; this also makes it easier to regenerate one sentence without changing the rest of the narration.
+The `.txt` files are written for **Eleven v3**. They sound like Axel explaining what he does at the front panel, rather than reciting UI labels. Audio Tags are limited to moments when the delivery actually changes: `[warmly]` at the opening, occasional `[slowly]` for a distinction, and a single `[pause]` before the reset result. Natural punctuation and paragraph breaks carry most of the rhythm. See ElevenLabs’ [Audio Tags 101](https://elevenlabs.io/blog/v3-audiotags) for v3 usage. Do not convert these scripts to SSML `<break>` markup. Generate paragraph by paragraph when a line needs a different take, and listen for any tag that gets read aloud instead of performed.
 
-Every script follows the same South Signal Lab framing, but the closing wording is intentionally varied slightly from video to video:
+The opening identifies Axel and the one thing this video demonstrates. The closing refers to what was just shown, usually points to the next topic, and mentions South Signal Lab and Ko-fi once. The wording changes with the subject; it is not a fixed promo read.
 
-- opening: `Hi, this is South Signal Lab. My name is Axel, and today I’ll show you ...`
-- closing: the same thank-you / follow / Ko-fi message, lightly varied so repeated videos do not sound templated.
-
-After the 4.5-second pre-produced intro, every example reserves an 18-second opening card. The current closing scripts need up to roughly 20 seconds at the reference pace, so the final Storybook scene now holds for 24 seconds before the 5.5-second outro. The measured 16-second sign-off is a pacing reference, not the measured duration of these newly written scripts.
+After the 4.5-second pre-produced intro, examples 01–10 reserve 18 seconds for the opening and 20 seconds for the sign-off. The detailed example 11 reserves 16 seconds for the opening and 22 seconds for its longer sign-off. The measured reference is a pacing guide, not the duration of these unrecorded scripts.
 
 Generated narration audio (`.wav`, `.mp3`, `.m4a`, `.aac`, `.flac`) is intentionally ignored by Git and must not be added to source packages.
 

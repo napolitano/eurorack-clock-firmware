@@ -1,11 +1,11 @@
-[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how CLOCK’s transport works — specifically the difference between PLAY, PAUSE, and STOP, and why STOP deliberately does a little more than simply silence the outputs. [short pause]
+[warmly] Hi, I’m Axel from South Signal Lab. This time I want to show you what CLOCK actually does when you press PLAY, press it again, and then use STOP. The difference matters when you’re running several outputs together.
 
-CLOCK always starts in STOP. Press PLAY once and the transport starts. Press PLAY again while it is running and CLOCK pauses. Press PLAY one more time and it resumes from the paused transport state.
+We start in STOP. One press of PLAY gets things moving. Press PLAY again and it pauses. Press it a third time and CLOCK resumes. It’s the same button, but what it does depends on whether the transport is running or paused.
 
-[slower] STOP is deliberately different. Press STOP slash BACK and CLOCK stops and resets the global phase. That makes the next start begin from a defined phase reference, which is especially useful when several outputs have to restart together.
+Now press STOP slash BACK. [slowly] This one is different: it stops the run and resets the global phase. The next start has a defined beginning. You don’t have to guess where the different outputs will pick up again.
 
-A manual STOP also remains authoritative when external SYNC is present. External timing may provide the pulse reference, but it does not cancel an explicit stop command from the front panel.
+There’s one other case worth knowing. Even if an external clock is connected to SYNC, a manual STOP stays in charge. The incoming pulses can still be there; CLOCK won’t quietly restart just because it sees another one.
 
-[thoughtful] So the mental model is straightforward: PLAY starts or resumes, PLAY while running pauses, and STOP ends the run and resets phase.
+So: PLAY starts, PLAY again pauses, and PLAY resumes. STOP ends the run and resets phase. Once you’ve got that distinction, the front-panel transport is pretty straightforward.
 
-[warmly] That’s it for this transport walkthrough. Thanks very much for your interest and your time. If this was useful, if you want to follow the project, or if you’d like to support further development, follow South Signal Lab here or on Ko-fi and get exclusive behind-the-scenes insight into how my Eurorack modules and components are developed. Bye, and see you next time.
+That’s transport covered. Thanks for watching. In the next video I’ll use the encoder to change the master tempo. I’ll keep sharing the details of CLOCK here at South Signal Lab. You can follow the build, and there’s Ko-fi if you’d like to support it. See you soon.

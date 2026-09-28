@@ -79,7 +79,7 @@ scenes:
             height: 10
             placement: right
             label: "Pattern blocks extend beyond 16 steps"
-            duration_ms: 14500
+            duration_ms: 10500
         - button:
             name: STOP_BACK
         - button:
@@ -97,4 +97,4 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      duration_ms: 24000
+      duration_ms: 20000

@@ -21,8 +21,8 @@ All examples change CLOCK only through recorded physical controls, patch actions
 Every example also:
 
 - prepends the tracked South Signal Lab intro and appends the tracked South Signal Lab outro from `../assets/video/`;
-- starts with an 18-second narration-safe title window after the intro bumper;
-- ends with a 24-second narration-safe hold before the outro;
+- starts with an 18-second title window after the intro bumper (16 seconds in the long walkthrough);
+- ends with a 20-second closing card before the outro (22 seconds in the long walkthrough);
 - has a matching US-English Eleven v3 voice-over script under [`../voiceover/`](../voiceover/README.md).
 
 Picture timing is planned from the actual script length and the control-action profile. See [`../voiceover/TIMING.md`](../voiceover/TIMING.md) for all eleven estimates and the Example 11 setting checklist. Final cuts must be adjusted against the recorded narration.
