@@ -164,7 +164,9 @@ Exact durations are defined centrally in [`interaction_profiles.yaml`](interacti
 
 ## Publication result
 
-The generated tutorial is composed first. Optional pre-produced intro/outro clips are concatenated only in the publication stage. Default final media is MP4/H.264; WebM is optional.
+The generated tutorial is composed first. Optional pre-produced intro/outro clips are concatenated only in the publication stage. Default final media is MP4/H.264; WebM/VP9 is optional. Relative publication-asset paths resolve from the Story YAML file.
+
+SB-7 probes every referenced clip before composition. Video is aspect-preserving scaled/padded to the Story output geometry and normalized to the Story FPS while preserving the probed source duration. If any intro/outro has audio, publication normalizes to 48 kHz stereo and inserts silence only into otherwise silent segments; otherwise final media has no audio stream. Final SRT/WebVTT cue times are offset by the normalized intro duration only.
 
 
 ## Physical panel presentation

@@ -360,6 +360,7 @@ def check_header_colocation(errors: list[str]) -> None:
         "storybook_panel_presentation_tests.cpp",
         "storybook_renderer_tests.cpp",
         "storybook_frame_pipeline_tests.cpp",
+        "storybook_publication_pipeline_tests.cpp",
     }
     implementation_roots = (ROOT / "src", ROOT / "sim")
     for implementation_root in implementation_roots:

@@ -4,13 +4,14 @@
 
 CLOCK Storybook is the project-local, host-only documentation-video system for deterministic how-to material. It drives the production CLOCK application through existing simulator boundaries and composes documentation frames from real firmware output rather than reproducing firmware behaviour.
 
-Current implementation status: **SB-0 through SB-6 complete; SB-7 publication/media encoding next**.
+Current implementation status: **SB-0 through SB-7 complete; SB-8 reference Storybook/CI integration next**.
 
 - [`STORYBOOK_ARCHITECTURE.md`](STORYBOOK_ARCHITECTURE.md) defines ownership, dependency, timing, stream, and publication boundaries.
 - [`STORY_SCHEMA_1.md`](STORY_SCHEMA_1.md) defines the initial authoring interface and stable action spellings.
 - [`stories/external-sync.yaml`](stories/external-sync.yaml) is the first executable end-to-end reference story and proves the SYNC/cable/SOURCE/manual-STOP boundary through the real simulator.
 - [`stories/examples/`](stories/examples/) contains contract examples used during implementation and validation.
 - [`interaction_profiles.yaml`](interaction_profiles.yaml) defines the deterministic `HUMAN_SLOW`, `HUMAN_NORMAL`, and `HUMAN_FAST` timing profiles consumed by the runner.
+- [`assets/video/`](assets/video/) is the canonical location for optional pre-produced intro/outro publication assets.
 - `sim/tutorial/panel_presentation.*` records one-way physical presentation events and combines them with the real `SimulatorRuntime`/`PanelLayout` state.
 - `sim/tutorial/panel_dynamic_layer.*` provides a deterministic headless RGBA interaction/LED layer for regression and later video composition.
 
@@ -58,5 +59,23 @@ SRT, WebVTT, and burned-in subtitles all derive from the same Story Runner subti
 The manifest records the Story/schema identity, firmware version, caller-supplied simulator source revision, theme, interaction profile, output profile, presentation duration, frame count, subtitle count, and an FNV-1a-64 digest of each raw RGBA8 frame. The digest is a deterministic regression identity, not a security checksum.
 
 Generation writes to a sibling staging directory first. A parser, runner, renderer, subtitle, PNG, or filesystem failure removes that staging output and does not replace a previously successful output directory.
+
+## SB-7 publication pipeline
+
+`sim/tutorial/publication_pipeline.*` is the host-only media stage. It consumes one already successful SB-6 frame-pipeline result and never executes CLOCK again. `ffprobe` validates referenced pre-produced media and obtains the duration that is actually used for subtitle offsetting; `ffmpeg` performs normalization and encoding.
+
+Publication order is fixed:
+
+```text
+intro clip? -> generated tutorial frames -> outro clip? -> final media
+```
+
+The default result is `<story-id>.mp4` encoded as H.264/yuv420p. WebM is optional and uses VP9; when publication audio exists it uses Opus. Intro/outro video is scaled down preserving aspect ratio and padded to the Story output geometry, then converted to the Story frame rate. Source clip duration is explicitly preserved during normalization so audio padding cannot extend the visible clip.
+
+If any intro/outro contains audio, all composed segments receive a normalized 48 kHz stereo audio stream. Existing intro/outro audio is preserved; an otherwise silent tutorial or silent clip receives deterministic silence only for composition compatibility. If no publication clip contains audio, the final tutorial stays audio-free.
+
+Final SRT/WebVTT sidecars are regenerated from the SB-6 cue list with the measured normalized intro duration added to every tutorial cue. Outro duration never offsets tutorial subtitles. No intro/outro content is added to the Story Runner trace.
+
+Publication uses a sibling staging directory and replaces the requested output only after all requested encodes and sidecars succeed. If an older successful output exists, it is first renamed to a sibling backup and restored if the final staged-directory swap fails. Missing media, probe failure, normalization failure, codec failure or final composition failure therefore leaves a previous successful publication untouched. Missing `ffmpeg`/`ffprobe` affects only this media-publication stage; firmware and non-publication simulator/Storybook targets do not depend on them.
 
 <h6 align="center">From Munich with &#9829;</h6>

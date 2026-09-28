@@ -112,7 +112,7 @@ The Storybook controls visibility and timing but does not manufacture product st
 
 ## Publication
 
-The default final format is **MP4/H.264**. WebM is additionally supported by the planned publication stage.
+The default final format is **MP4/H.264**. WebM/VP9 is additionally supported by the implemented host-only publication stage.
 
 Optional pre-produced intro/outro clips are publication assets, not Storybook-rendered scenes:
 
@@ -120,9 +120,11 @@ Optional pre-produced intro/outro clips are publication assets, not Storybook-re
 intro video? → generated CLOCK tutorial → outro video? → final MP4/WebM
 ```
 
-The publication compositor probes and normalizes referenced clips to the selected output profile. Intro/outro may carry their own audio. The generated tutorial body is initially audio-free. Final SRT/WebVTT timestamps are offset by the actual intro duration.
+The SB-7 publication compositor uses `ffprobe` to validate referenced clips and measure source/normalized duration, then `ffmpeg` to normalize video to the Story resolution/frame rate. Normalization preserves source duration explicitly; it must not allow padded audio to extend the visible intro/outro.
 
-A missing/unreadable referenced media asset is a publication failure, not a reason to publish a partial result.
+Intro/outro may carry their own audio. If any publication clip contains audio, the compositor normalizes all segments to 48 kHz stereo, preserves existing clip audio and supplies silence to otherwise audio-free segments. If neither clip carries audio, the generated tutorial remains audio-free. Final SRT/WebVTT timestamps are regenerated from the SB-6 cue list with the **normalized intro duration** added to tutorial cue times. Outro duration does not shift tutorial cues.
+
+The publication stage uses atomic staging. A missing/unreadable referenced media asset, failed probe, unavailable codec/encoder, failed normalization or failed composition is a publication failure and must not replace a previous successful output. `ffmpeg`/`ffprobe` are publication-tool dependencies only and are not required by firmware or unrelated simulator/Storybook tests.
 
 ## Generated-artifact policy
 

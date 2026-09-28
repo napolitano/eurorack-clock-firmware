@@ -164,6 +164,18 @@ target_include_directories(clock-storybook-frame-pipeline PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/sim"
 )
 target_compile_options(clock-storybook-frame-pipeline PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_library(clock-storybook-publication STATIC
+    sim/tutorial/external_process.cpp
+    sim/tutorial/publication_pipeline.cpp
+)
+target_link_libraries(clock-storybook-publication PUBLIC
+    clock-storybook-frame-pipeline
+)
+target_include_directories(clock-storybook-publication PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim"
+)
+target_compile_options(clock-storybook-publication PRIVATE ${CLOCK_WARNING_FLAGS})
 target_link_libraries(clock-storybook-presentation PUBLIC
     clock-storybook-runner
     clock-simulator-panel-layout
@@ -235,6 +247,14 @@ target_compile_definitions(clock-storybook-frame-pipeline-tests PRIVATE
     CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
 )
 target_compile_options(clock-storybook-frame-pipeline-tests PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_executable(clock-storybook-publication-pipeline-tests
+    sim/storybook_publication_pipeline_tests.cpp
+)
+target_link_libraries(clock-storybook-publication-pipeline-tests PRIVATE
+    clock-storybook-publication
+)
+target_compile_options(clock-storybook-publication-pipeline-tests PRIVATE ${CLOCK_WARNING_FLAGS})
 
 add_library(clock-vcv-runtime-adapter STATIC
     vcv/clock_vcv_runtime.cpp
@@ -330,5 +350,7 @@ add_test(NAME storybook_runner_tests COMMAND clock-storybook-runner-tests)
 add_test(NAME storybook_panel_presentation_tests COMMAND clock-storybook-panel-presentation-tests)
 add_test(NAME storybook_renderer_tests COMMAND clock-storybook-renderer-tests)
 add_test(NAME storybook_frame_pipeline_tests COMMAND clock-storybook-frame-pipeline-tests)
+add_test(NAME storybook_publication_pipeline_tests COMMAND clock-storybook-publication-pipeline-tests)
+set_tests_properties(storybook_publication_pipeline_tests PROPERTIES SKIP_RETURN_CODE 77)
 add_test(NAME simulator_runtime_tests COMMAND clock-simulator-tests)
 add_test(NAME vcv_runtime_adapter_tests COMMAND clock-vcv-runtime-tests)

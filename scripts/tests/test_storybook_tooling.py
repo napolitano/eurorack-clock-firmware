@@ -27,11 +27,14 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("clock-storybook-runner-tests", cmake)
         self.assertIn("clock-storybook-frame-pipeline", cmake)
         self.assertIn("clock-storybook-frame-pipeline-tests", cmake)
+        self.assertIn("clock-storybook-publication", cmake)
+        self.assertIn("clock-storybook-publication-pipeline-tests", cmake)
         self.assertNotIn("storybook", platformio.lower())
         self.assertNotIn("yaml-cpp", platformio.lower())
         self.assertTrue((ROOT / "docs/tutorials/stories/README.md").is_file())
         self.assertTrue((ROOT / "docs/tutorials/interaction_profiles.yaml").is_file())
         self.assertTrue((ROOT / "docs/tutorials/themes/south-signal-lab-default.yaml").is_file())
+        self.assertTrue((ROOT / "docs/tutorials/assets/video/README.md").is_file())
 
     def test_architecture_guard_forbids_embedded_storybook_media_dependencies(self) -> None:
         """The architecture gate must reject reverse dependencies into embedded code."""
@@ -90,6 +93,21 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("writeSubtitleSidecars", pipeline)
         self.assertIn("No second Story replay", architecture)
         self.assertFalse(any((ROOT / "src").rglob("*storybook*")))
+
+    def test_sb7_publication_is_external_media_only(self) -> None:
+        """Final video composition may invoke ffmpeg/ffprobe but must not feed media state back into CLOCK."""
+        publication = (ROOT / "sim/tutorial/publication_pipeline.cpp").read_text(encoding="utf-8")
+        header = (ROOT / "sim/tutorial/publication_pipeline.h").read_text(encoding="utf-8")
+        architecture = (ROOT / "docs/tutorials/STORYBOOK_ARCHITECTURE.md").read_text(encoding="utf-8")
+        self.assertIn("ffprobe", publication)
+        self.assertIn("libx264", publication)
+        self.assertIn("libvpx-vp9", publication)
+        self.assertIn("libopus", publication)
+        self.assertIn("StoryFramePipelineResult", header)
+        self.assertNotIn("SimulatorRuntime", publication)
+        self.assertNotIn("StoryRunner", publication)
+        self.assertIn("normalized intro duration", architecture)
+        self.assertFalse(any((ROOT / "src").rglob("*publication_pipeline*")))
 
 
 if __name__ == "__main__":

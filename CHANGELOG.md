@@ -42,6 +42,12 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Generate deterministic lossless PNG/RGBA8 frames, raw-RGBA frame digests, atomic staging, and a source/revision/output manifest without adding an image-codec package dependency.
 - Generate SRT and WebVTT from the same timed tutorial subtitle events used for the burned-in subtitle strip; publication-time intro offsets remain an SB-7 media-composition concern.
 - Add frame-pipeline regressions for exact timestamps, byte-identical repeated PNG generation, sidecar timing, manifests, and cleanup/preservation after render failure.
+- Add the SB-7 host-only publication compositor: probe optional pre-produced intro/outro assets with `ffprobe`, normalize them to the Story resolution/FPS, encode the generated tutorial as MP4/H.264, and optionally transcode the final publication to WebM/VP9.
+- Preserve intro/outro audio when present by normalizing publication audio to 48 kHz stereo and inserting deterministic silence only into otherwise silent segments; keep tutorial-only publication audio-free.
+- Shift final SRT/WebVTT cues by the measured normalized intro duration while leaving outro-only/tutorial-only cue timing unchanged.
+- Execute `ffmpeg`/`ffprobe` through argv-safe host process calls without shell interpolation; missing tools or referenced media fail only the publication stage.
+- Publish through staging plus previous-output backup/rollback so failed media work cannot replace or discard the last successful publication.
+- Add integration coverage for intro+outro, intro-only, outro-only, no-clips, MP4/H.264, WebM/VP9, audio/no-audio, subtitle offsets, media normalization, and missing-asset failure preservation.
 
 ### Sequencer 2.0 foundation
 
