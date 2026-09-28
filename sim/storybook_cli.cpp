@@ -171,7 +171,9 @@ int execute(const CliOptions& options) {
     const auto panelLayout = layout::loadPanelLayout(sourceRoot / "sim" / "panel_layout.ini");
     StoryFramePipeline framePipeline(tutorialRoot, panelLayout, options.sourceRevision);
     std::cout << "Rendering Storybook frames for " << story->id << "..." << std::endl;
-    const StoryFramePipelineResult generated = framePipeline.generate(*story, port, framesDirectory);
+    const StoryFramePipelineResult generated = framePipeline.generate(
+        *story, port, framesDirectory,
+        options.command == "video" ? FrameStorageMode::SparseForPublication : FrameStorageMode::Materialized);
     runtime.flushPersistence();
     std::filesystem::remove(statePath, ignored);
 

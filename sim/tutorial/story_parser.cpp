@@ -6,7 +6,6 @@
  * @license PolyForm-Noncommercial-1.0.0
  */
 #include "tutorial/story_parser.h"
-
 #include <algorithm>
 #include <charconv>
 #include <fstream>
@@ -14,21 +13,17 @@
 #include <string>
 #include <system_error>
 #include <unordered_set>
-
 #include "tutorial/story_yaml.h"
-
 namespace clockfw::sim::tutorial {
 namespace {
 using Node = StoryYamlNode;
 struct Decoder final {
     Story story;
     std::vector<StoryIssue> issues;
-
     void issue(const Node& node, const std::string& reason, std::optional<std::size_t> scene = std::nullopt,
                std::optional<std::size_t> action = std::nullopt) {
         issues.push_back({story.id, scene, action, node.line, reason});
     }
-
     bool mapping(const Node& node, const char* context, std::optional<std::size_t> scene = std::nullopt,
                  std::optional<std::size_t> action = std::nullopt) {
         if (node.type == Node::Type::Mapping) {
@@ -37,7 +32,6 @@ struct Decoder final {
         issue(node, std::string(context) + " must be a mapping", scene, action);
         return false;
     }
-
     void rejectUnknown(const Node& node, std::initializer_list<const char*> allowed, const char* context,
                        std::optional<std::size_t> scene = std::nullopt,
                        std::optional<std::size_t> action = std::nullopt) {
@@ -51,7 +45,6 @@ struct Decoder final {
             }
         }
     }
-
     const Node* required(const Node& node, const char* key, const char* context,
                          std::optional<std::size_t> scene = std::nullopt,
                          std::optional<std::size_t> action = std::nullopt) {
@@ -61,7 +54,6 @@ struct Decoder final {
         }
         return value;
     }
-
     std::optional<std::string> scalar(const Node& node, const char* context,
                                       std::optional<std::size_t> scene = std::nullopt,
                                       std::optional<std::size_t> action = std::nullopt) {
@@ -71,7 +63,6 @@ struct Decoder final {
         }
         return node.scalar;
     }
-
     std::optional<std::uint32_t> uintValue(const Node& node, const char* context, const std::uint32_t min,
                                            const std::uint32_t max, std::optional<std::size_t> scene = std::nullopt,
                                            std::optional<std::size_t> action = std::nullopt) {
@@ -90,7 +81,6 @@ struct Decoder final {
         }
         return value;
     }
-
     std::optional<bool> boolValue(const Node& node, const char* context, std::optional<std::size_t> scene = std::nullopt,
                                   std::optional<std::size_t> action = std::nullopt) {
         const auto text = scalar(node, context, scene, action);
@@ -102,7 +92,6 @@ struct Decoder final {
         issue(node, std::string(context) + " must be true or false", scene, action);
         return std::nullopt;
     }
-
     std::optional<TransitionKind> transition(const Node& node, std::optional<std::size_t> scene = std::nullopt) {
         if (!mapping(node, "transition", scene)) return std::nullopt;
         rejectUnknown(node, {"type", "duration_ms"}, "transition", scene);
@@ -115,7 +104,6 @@ struct Decoder final {
         issue(*type, "transition.type: unsupported transition '" + *text + "'", scene);
         return std::nullopt;
     }
-
     std::optional<InteractionProfile> profile(const Node& node) {
         const auto text = scalar(node, "interaction_profile");
         if (!text) return std::nullopt;
@@ -125,7 +113,6 @@ struct Decoder final {
         issue(node, "interaction_profile: unknown profile '" + *text + "'");
         return std::nullopt;
     }
-
     std::optional<StoryWaveform> waveform(const Node& node, std::size_t scene, std::size_t action) {
         const auto text = scalar(node, "waveform", scene, action);
         if (!text) return std::nullopt;
@@ -135,7 +122,6 @@ struct Decoder final {
         issue(node, "waveform: expected square, sine or triangle", scene, action);
         return std::nullopt;
     }
-
     void decodeOutput(const Node& node) {
         if (!mapping(node, "output")) return;
         rejectUnknown(node, {"width", "height", "fps"}, "output");
@@ -149,14 +135,12 @@ struct Decoder final {
             if (const auto parsed = uintValue(*value, "output.fps", 1U, 240U)) story.output.framesPerSecond = static_cast<std::uint16_t>(*parsed);
         }
     }
-
     void decodePublication(const Node& node) {
         if (!mapping(node, "publication")) return;
         rejectUnknown(node, {"intro_video", "outro_video"}, "publication");
         if (const Node* value = node.find("intro_video")) story.publication.introVideo = scalar(*value, "publication.intro_video");
         if (const Node* value = node.find("outro_video")) story.publication.outroVideo = scalar(*value, "publication.outro_video");
     }
-
     void decodeSetup(const Node& node) {
         if (!mapping(node, "setup")) return;
         rejectUnknown(node, {"factory_reset", "power"}, "setup");
@@ -169,7 +153,6 @@ struct Decoder final {
             else if (text) issue(*value, "setup.power must be 'on' or 'off'");
         }
     }
-
     StoryAction decodeAction(const std::string& name, const Node& node, const std::size_t sceneIndex, const std::size_t actionIndex) {
         StoryAction action;
         action.sourceLine = node.line;
@@ -265,7 +248,7 @@ struct Decoder final {
             }
         } else if (name == "focus") {
             action.kind = StoryActionKind::Focus;
-            rejectUnknown(node, {"target", "label", "placement", "duration_ms", "x", "y", "width", "height"}, "focus", sceneIndex, actionIndex);
+            rejectUnknown(node, {"target", "label", "placement", "duration_ms", "x", "y", "width", "height", "narration"}, "focus", sceneIndex, actionIndex);
             if (const Node* value = required(node, "target", "focus", sceneIndex, actionIndex)) {
                 const auto text = scalar(*value, "focus.target", sceneIndex, actionIndex);
                 if (text && *text == "encoder") action.focusTarget = FocusTarget::Encoder;
@@ -279,6 +262,7 @@ struct Decoder final {
                 else if (text) issue(*value, "focus.target: expected encoder/play/tap/stop/sync/rst/oled_top_bar/oled_region", sceneIndex, actionIndex);
             }
             if (const Node* value = node.find("label")) if (const auto parsed = scalar(*value, "focus.label", sceneIndex, actionIndex)) action.text = *parsed;
+            if (const Node* value = node.find("narration")) if (const auto parsed = scalar(*value, "focus.narration", sceneIndex, actionIndex)) action.narrationId = *parsed;
             if (const Node* value = node.find("placement")) if (const auto parsed = scalar(*value, "focus.placement", sceneIndex, actionIndex)) {
                 if (*parsed == "auto") action.focusPlacement = FocusPlacement::Auto;
                 else if (*parsed == "left") action.focusPlacement = FocusPlacement::Left;
@@ -333,26 +317,40 @@ struct Decoder final {
         if (!mapping(node, name.c_str(), sceneIndex)) return scene;
         if (name == "tutorial") {
             scene.kind = SceneKind::Tutorial;
-            rejectUnknown(node, {"subtitle", "actions", "transition"}, "tutorial", sceneIndex);
+            rejectUnknown(node, {"subtitle", "actions", "transition", "narration"}, "tutorial", sceneIndex);
             if (const Node* value = node.find("subtitle")) if (const auto parsed = scalar(*value, "tutorial.subtitle", sceneIndex)) scene.subtitle = *parsed;
             if (const Node* value = node.find("transition")) if (const auto parsed = transition(*value, sceneIndex)) scene.transition = *parsed;
+            if (const Node* value = node.find("narration")) if (const auto parsed = scalar(*value, "tutorial.narration", sceneIndex)) scene.narrationId = *parsed;
             const Node* actions = required(node, "actions", "tutorial", sceneIndex);
             if (actions != nullptr) {
                 if (actions->type != Node::Type::Sequence) issue(*actions, "tutorial.actions must be a sequence", sceneIndex);
                 else {
                     for (std::size_t i = 0U; i < actions->sequence.size(); ++i) {
                         const Node& item = actions->sequence[i];
-                        if (item.type != Node::Type::Mapping || item.mapping.size() != 1U) {
-                            issue(item, "tutorial action must contain exactly one action type", sceneIndex, i);
+                        if (item.type != Node::Type::Mapping) {
+                            issue(item, "tutorial action must be a mapping", sceneIndex, i);
                             continue;
                         }
-                        scene.actions.push_back(decodeAction(item.mapping.front().first, item.mapping.front().second, sceneIndex, i));
+                        const Node* narration = item.find("narration");
+                        const std::size_t actionFieldCount = item.mapping.size() - (narration != nullptr ? 1U : 0U);
+                        if (actionFieldCount != 1U) {
+                            issue(item, "tutorial action must contain exactly one action type plus optional narration", sceneIndex, i);
+                            continue;
+                        }
+                        const auto actionEntry = std::find_if(item.mapping.begin(), item.mapping.end(), [](const auto& entry) {
+                            return entry.first != "narration";
+                        });
+                        StoryAction action = decodeAction(actionEntry->first, actionEntry->second, sceneIndex, i);
+                        if (narration != nullptr) {
+                            if (const auto parsed = scalar(*narration, "action.narration", sceneIndex, i)) action.narrationId = *parsed;
+                        }
+                        scene.actions.push_back(std::move(action));
                     }
                 }
             }
             return scene;
         }
-        rejectUnknown(node, {"number", "type", "title", "subtitle", "body", "steps", "duration_ms", "transition"}, name.c_str(), sceneIndex);
+        rejectUnknown(node, {"number", "type", "title", "subtitle", "body", "steps", "duration_ms", "transition", "narration"}, name.c_str(), sceneIndex);
         if (name == "chapter") scene.kind = SceneKind::Chapter;
         else if (name == "text") scene.kind = SceneKind::Text;
         else if (name == "callout") scene.kind = SceneKind::Callout;
@@ -364,6 +362,7 @@ struct Decoder final {
         if (const Node* value = node.find("title")) if (const auto parsed = scalar(*value, (name + ".title").c_str(), sceneIndex)) scene.title = *parsed;
         if (const Node* value = node.find("subtitle")) if (const auto parsed = scalar(*value, (name + ".subtitle").c_str(), sceneIndex)) scene.subtitle = *parsed;
         if (const Node* value = node.find("body")) if (const auto parsed = scalar(*value, (name + ".body").c_str(), sceneIndex)) scene.body = *parsed;
+        if (const Node* value = node.find("narration")) if (const auto parsed = scalar(*value, (name + ".narration").c_str(), sceneIndex)) scene.narrationId = *parsed;
         if (const Node* value = required(node, "duration_ms", name.c_str(), sceneIndex)) if (const auto parsed = uintValue(*value, "duration_ms", 1U, 3600000U, sceneIndex)) scene.durationMs = *parsed;
         if (const Node* value = node.find("transition")) if (const auto parsed = transition(*value, sceneIndex)) scene.transition = *parsed;
         if (scene.kind == SceneKind::Callout) {

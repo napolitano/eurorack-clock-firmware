@@ -18,12 +18,14 @@ scenes:
       number: 1
       title: "Eight Independent Clocks"
       subtitle: "Topology, channel selection, long-press settings"
+      narration: "s01"
       duration_ms: 18000
   - text:
       title: "Start from the factory state"
       body: |
         Factory state uses One Clock, but every stored channel starts in Clock mode.
         Selecting Clock therefore changes the topology to Independent and exposes eight individual Clock channels.
+      narration: "s02"
       duration_ms: 50000
   - tutorial:
       subtitle: "Independent Clock, one setting at a time."
@@ -55,6 +57,7 @@ scenes:
             height: 64
             placement: right
             label: "Clock selected · Independent confirmed"
+            narration: "s03"
             duration_ms: 20000
         # Voice-over beat 02: Open the channel overview. All eight channels begin in Clock mode.
         - subtitle:
@@ -68,6 +71,7 @@ scenes:
             height: 64
             placement: right
             label: "Eight Clock channels in the overview"
+            narration: "s04"
             duration_ms: 14000
         # Voice-over beat 03: Turn to channel four and confirm with a short encoder press.
         - subtitle:
@@ -84,6 +88,7 @@ scenes:
             height: 64
             placement: right
             label: "Channel 4 selected"
+            narration: "s05"
             duration_ms: 13000
         # Voice-over beat 04: Long-press to open the four channel-settings groups.
         - subtitle:
@@ -98,6 +103,7 @@ scenes:
             height: 64
             placement: right
             label: "MODE · TIMING · CLOCK · OUTPUT"
+            narration: "s06"
             duration_ms: 27000
         # Voice-over beat 05: MODE selects this channel’s function without changing its neighbours.
         - subtitle:
@@ -110,6 +116,7 @@ scenes:
             height: 10
             placement: right
             label: "MODE: Clock, Euclid, Sequencer or Off"
+            narration: "s07"
             duration_ms: 20000
         # Voice-over beat 06: Open TIMING to inspect each timing setting.
         - subtitle:
@@ -126,6 +133,7 @@ scenes:
             height: 64
             placement: right
             label: "TIMING: five separate settings"
+            narration: "s08"
             duration_ms: 7000
         # Voice-over beat 07: Edit DIV/MULT to make channel four twice as fast.
         - subtitle:
@@ -143,6 +151,7 @@ scenes:
             height: 10
             placement: right
             label: "DIV/MULT: integer rate now ×2"
+            narration: "s09"
             duration_ms: 20000
         # Voice-over beat 08: NUMERATOR gives the upper part of a rational timing ratio.
         - subtitle:
@@ -158,6 +167,7 @@ scenes:
             height: 10
             placement: right
             label: "NUMERATOR: upper part of the ratio"
+            narration: "s10"
             duration_ms: 14500
         # Voice-over beat 09: DENOMINATOR gives the lower part of a rational timing ratio.
         - subtitle:
@@ -173,6 +183,7 @@ scenes:
             height: 10
             placement: right
             label: "DENOMINATOR: lower part of the ratio"
+            narration: "s11"
             duration_ms: 14500
         # Voice-over beat 10: SWING alternates longer and shorter intervals.
         - subtitle:
@@ -188,6 +199,7 @@ scenes:
             height: 10
             placement: right
             label: "SWING: alternate timing displacement"
+            narration: "s12"
             duration_ms: 17000
         # Voice-over beat 11: GROOVE opens the deterministic pattern timing page.
         - subtitle:
@@ -203,6 +215,7 @@ scenes:
             height: 10
             placement: right
             label: "GROOVE: pattern-based timing"
+            narration: "s13"
             duration_ms: 19000
         # Voice-over beat 12: Open CLOCK to inspect both meter settings.
         - subtitle:
@@ -221,6 +234,7 @@ scenes:
             height: 64
             placement: right
             label: "CLOCK: meter settings"
+            narration: "s14"
             duration_ms: 8000
         # Voice-over beat 13: METER BEATS determines the number of beats in this channel’s measure.
         - subtitle:
@@ -233,6 +247,7 @@ scenes:
             height: 10
             placement: right
             label: "METER BEATS: beats per measure"
+            narration: "s15"
             duration_ms: 12000
         # Voice-over beat 14: METER UNIT determines which note value counts as one beat.
         - subtitle:
@@ -248,6 +263,7 @@ scenes:
             height: 10
             placement: right
             label: "METER UNIT: beat note value"
+            narration: "s16"
             duration_ms: 12500
         # Voice-over beat 15: Open OUTPUT. Probability is the first output setting.
         - subtitle:
@@ -266,6 +282,7 @@ scenes:
             height: 64
             placement: right
             label: "Probability · Gate · Phase · Reset · Mute"
+            narration: "s17"
             duration_ms: 10000
         - focus:
             target: oled_region
@@ -275,6 +292,7 @@ scenes:
             height: 10
             placement: right
             label: "PROBABILITY: chance of a gate event"
+            narration: "s18"
             duration_ms: 15000
         # Voice-over beat 16: Change GATE from ten to twenty milliseconds.
         - subtitle:
@@ -295,6 +313,7 @@ scenes:
             height: 10
             placement: right
             label: "GATE: HIGH time now 20 ms"
+            narration: "s19"
             duration_ms: 17000
         # Voice-over beat 17: PHASE offsets this channel against the shared clock reference.
         - subtitle:
@@ -310,6 +329,7 @@ scenes:
             height: 10
             placement: right
             label: "PHASE: offset against shared reference"
+            narration: "s20"
             duration_ms: 15500
         # Voice-over beat 18: RESET decides whether this channel follows a global phase reset.
         - subtitle:
@@ -325,6 +345,7 @@ scenes:
             height: 10
             placement: right
             label: "RESET: Global or Sync Free"
+            narration: "s21"
             duration_ms: 16000
         # Voice-over beat 19: MUTE silences this output without deleting its configuration.
         - subtitle:
@@ -340,6 +361,7 @@ scenes:
             height: 10
             placement: right
             label: "MUTE: silence without losing settings"
+            narration: "s22"
             duration_ms: 15000
         # Voice-over beat 20: Return to Performance and start channel four at its new rate.
         - subtitle:
@@ -355,7 +377,8 @@ scenes:
         - scope:
             state: show
             channel: visible
-        - wait_ms: 15000
+        - narration: "s23"
+          wait_ms: 15000
         - scope:
             state: hide
         - button:
@@ -367,10 +390,12 @@ scenes:
       title: "Independent means individually configurable"
       body: |
         Each output keeps its own mode and channel settings while CLOCK preserves one shared musical reference.
+      narration: "s24"
       duration_ms: 19000
   - text:
       title: "Thanks for watching"
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
+      narration: "s25"
       duration_ms: 20000

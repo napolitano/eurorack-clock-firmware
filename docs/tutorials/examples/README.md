@@ -21,28 +21,24 @@ All examples change CLOCK only through recorded physical controls, patch actions
 Every example also:
 
 - prepends the tracked South Signal Lab intro and appends the tracked South Signal Lab outro from `../assets/video/`;
-- starts with an 18-second title window after the intro bumper (16 seconds in the long walkthrough);
-- ends with a 20-second closing card before the outro (22 seconds in the long walkthrough);
-- has a matching US-English Eleven v3 voice-over script under [`../voiceover/`](../voiceover/README.md).
+- has a matching US-English expressive voice-over script under [`../voiceover/`](../voiceover/README.md);
+- carries stable `narration:` IDs that map those script paragraphs to concrete visible Story states via `../voiceover/segments.json`;
+- retains readable authored timing, while the local publication job derives the final holds from measured narration audio.
 
-Picture timing is planned from the actual script length and the control-action profile. See [`../voiceover/TIMING.md`](../voiceover/TIMING.md) for all eleven estimates and the Example 11 setting checklist. Final cuts must be adjusted against the recorded narration.
-
-The bumper MP4s are approved authored source assets. Generated tutorial video/audio, retained frames, sidecars and manifests are ignored by Git and are not repository source.
-
-Validate one example before rendering:
+The preferred publication path is local:
 
 ```bash
-./build/simulator-headless/clock-storybook validate docs/tutorials/examples/01-power-and-first-clock.yaml
+python scripts/render_tutorials.py 11
 ```
 
-Generate a final MP4 only when you actually want the media output:
+For all eleven videos:
 
 ```bash
-./build/simulator-headless/clock-storybook video docs/tutorials/examples/01-power-and-first-clock.yaml \
-  --output docs/tutorials/generated/example-01 \
-  --format mp4
+python scripts/render_tutorials.py --all
 ```
 
-See [`../VIDEO_GENERATION.md`](../VIDEO_GENERATION.md) for the complete workflow.
+The local runner creates ElevenLabs speech first, measures the actual segment duration, writes ignored resolved Story copies, uses the optimized sparse Storybook renderer, then aligns narration to the publication cue sidecar. Generated audio/video, resolved stories, frame data, sidecars and manifests stay under ignored `tutorial-output/` and are not repository source.
+
+For local `.env`/ElevenLabs configuration and low-level Storybook commands, see [`../VIDEO_GENERATION.md`](../VIDEO_GENERATION.md).
 
 <h6 align="center">From Munich with &#9829;</h6>

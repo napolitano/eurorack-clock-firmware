@@ -21,12 +21,14 @@ scenes:
       number: 1
       title: "Getting Started"
       subtitle: "Power, PLAY, tempo, STOP"
+      narration: "s01"
       duration_ms: 18000
   - text:
       title: "Factory state"
       body: |
         CLOCK powers up in STOP at 120 BPM.
         One Clock is the factory topology and SOURCE is AUTO.
+      narration: "s02"
       duration_ms: 7500
   - tutorial:
       subtitle: "Power CLOCK on."
@@ -44,6 +46,7 @@ scenes:
         - focus:
             target: oled_top_bar
             label: "120 BPM · One Clock · AUTO · STOP"
+            narration: "s03"
             duration_ms: 14100
         - subtitle:
             text: "Press PLAY."
@@ -70,6 +73,7 @@ scenes:
             height: 10
             placement: right
             label: "Master tempo controls the shared clock"
+            narration: "s04"
             duration_ms: 11100
         - subtitle:
             text: "Press STOP/BACK to stop and reset phase."
@@ -80,6 +84,7 @@ scenes:
         - focus:
             target: stop
             label: "STOP resets the global phase"
+            narration: "s05"
             duration_ms: 9200
   - callout:
       type: tip
@@ -87,10 +92,12 @@ scenes:
       body: |
         One Clock sends the same master timing to all eight outputs.
         Use Independent when each output needs its own rhythmic function.
+      narration: "s06"
       duration_ms: 7500
   - text:
       title: "Thanks for watching"
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
+      narration: "s07"
       duration_ms: 20000

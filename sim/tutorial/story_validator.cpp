@@ -22,6 +22,13 @@
 namespace clockfw::sim::tutorial {
 namespace {
 
+bool validNarrationId(const std::string& id) {
+    if (id.empty()) return false;
+    return std::all_of(id.begin(), id.end(), [](const unsigned char ch) {
+        return std::islower(ch) != 0 || std::isdigit(ch) != 0 || ch == '-';
+    });
+}
+
 bool validStoryId(const std::string& id) {
     if (id.empty() || ((!std::islower(static_cast<unsigned char>(id.front()))) && (!std::isdigit(static_cast<unsigned char>(id.front()))))) {
         return false;
@@ -129,10 +136,20 @@ std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem:
     bool syncCable = false;
     bool resetCable = false;
     std::array<bool, 3U> heldButtons{};
+    std::unordered_set<std::string> narrationIds;
     for (std::size_t sceneIndex = 0U; sceneIndex < story.scenes.size(); ++sceneIndex) {
         const StoryScene& scene = story.scenes[sceneIndex];
         if (!phase1SupportsTransition(scene.transition)) {
             issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "Phase 1 supports CUT transitions only"});
+        }
+        if (scene.narrationId) {
+            if (!validNarrationId(*scene.narrationId)) {
+                issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine,
+                                  "narration id must use lower-case kebab-case"});
+            } else if (!narrationIds.emplace(*scene.narrationId).second) {
+                issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine,
+                                  "duplicate narration id: " + *scene.narrationId});
+            }
         }
         if (scene.kind == SceneKind::Chapter && (scene.number == 0U || scene.title.empty())) {
             issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "chapter requires number and title"});
@@ -152,11 +169,22 @@ std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem:
         if (scene.kind == SceneKind::Tutorial && scene.actions.empty()) {
             issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "tutorial scene requires actions"});
         }
+        if (scene.kind == SceneKind::Tutorial && scene.narrationId) {
+            issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine,
+                              "tutorial scene narration must be attached to a timed action"});
+        }
         for (std::size_t actionIndex = 0U; actionIndex < scene.actions.size(); ++actionIndex) {
             const StoryAction& action = scene.actions[actionIndex];
             auto semanticIssue = [&](const std::string& reason) {
                 issues.push_back({story.id, sceneIndex, actionIndex, action.sourceLine, reason});
             };
+            if (action.narrationId) {
+                if (!validNarrationId(*action.narrationId)) {
+                    semanticIssue("narration id must use lower-case kebab-case");
+                } else if (!narrationIds.emplace(*action.narrationId).second) {
+                    semanticIssue("duplicate narration id: " + *action.narrationId);
+                }
+            }
             switch (action.kind) {
                 case StoryActionKind::Button:
                     if (action.buttonState.has_value()) {

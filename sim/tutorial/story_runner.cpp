@@ -22,7 +22,6 @@ using detail::portErrorName;
 using detail::toSimulatorWaveform;
 using detail::traceActionName;
 using detail::traceSceneName;
-
 class RunContext final {
 public:
     RunContext(
@@ -33,7 +32,6 @@ public:
         StoryExecutionObserver* executionObserver)
         : port_(port), story_(story), timing_(timing), presentationSink_(presentationSink),
           executionObserver_(executionObserver) {}
-
     StoryRunResult execute() {
         if (!applySetup()) {
             finish();
@@ -47,7 +45,6 @@ public:
         finish();
         return std::move(result_);
     }
-
 private:
     bool applySetup() {
         if (story_.setup.factoryReset) {
@@ -71,32 +68,34 @@ private:
         }
         return true;
     }
-
     bool executeScene(const StoryScene& scene, const std::size_t sceneIndex) {
         currentScene_ = &scene;
         currentSceneIndex_ = sceneIndex;
         activeSubtitle_ = scene.kind == SceneKind::Tutorial ? scene.subtitle : std::string{};
         emit(StoryTraceKind::SceneBegin, sceneIndex, std::nullopt, traceSceneName(scene.kind), scene.title);
         if (scene.kind != SceneKind::Tutorial) {
+            if (scene.narrationId) emit(StoryTraceKind::NarrationBegin, sceneIndex, std::nullopt, *scene.narrationId, {});
             advancePresentationMs(scene.durationMs);
+            if (scene.narrationId) emit(StoryTraceKind::NarrationEnd, sceneIndex, std::nullopt, *scene.narrationId, {});
             emit(StoryTraceKind::SceneEnd, sceneIndex, std::nullopt, traceSceneName(scene.kind), scene.title);
             currentScene_ = nullptr;
             activeSubtitle_.clear();
             return true;
         }
-
         if (!scene.subtitle.empty()) {
             emit(StoryTraceKind::Subtitle, sceneIndex, std::nullopt, "subtitle", scene.subtitle);
         }
         for (std::size_t actionIndex = 0U; actionIndex < scene.actions.size(); ++actionIndex) {
             const StoryAction& action = scene.actions[actionIndex];
             emit(StoryTraceKind::ActionBegin, sceneIndex, actionIndex, traceActionName(action.kind), {});
+            if (action.narrationId) emit(StoryTraceKind::NarrationBegin, sceneIndex, actionIndex, *action.narrationId, {});
             if (isPacedAction(action.kind)) {
                 advanceActiveMs(timing_.beforeActionMs);
             }
             if (!executeAction(action, sceneIndex, actionIndex)) {
                 return false;
             }
+            if (action.narrationId) emit(StoryTraceKind::NarrationEnd, sceneIndex, actionIndex, *action.narrationId, {});
             emit(StoryTraceKind::ActionEnd, sceneIndex, actionIndex, traceActionName(action.kind), {});
         }
         emit(StoryTraceKind::SceneEnd, sceneIndex, std::nullopt, traceSceneName(scene.kind), scene.title);

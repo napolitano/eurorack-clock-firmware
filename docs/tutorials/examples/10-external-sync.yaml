@@ -18,12 +18,14 @@ scenes:
       number: 1
       title: "External SYNC and RST"
       subtitle: "Follow external timing and reset phase independently"
+      narration: "s01"
       duration_ms: 18000
   - text:
       title: "Two different jobs"
       body: |
         SYNC supplies timing. In factory AUTO mode, two accepted edges establish lock.
         RST changes phase only; it does not take ownership of PLAY or STOP.
+      narration: "s02"
       duration_ms: 9600
   - tutorial:
       subtitle: "Patch the external clock to SYNC and wait for lock."
@@ -47,6 +49,7 @@ scenes:
         - focus:
             target: oled_top_bar
             label: "AUTO locks to valid external SYNC"
+            narration: "s03"
             duration_ms: 20900
   - tutorial:
       subtitle: "Patch RST, hold its generator, then inject one reset pulse."
@@ -62,6 +65,7 @@ scenes:
         - focus:
             target: rst
             label: "RST restarts phase; transport stays playing"
+            narration: "s04"
             duration_ms: 13700
         - subtitle:
             text: "Now press STOP. External SYNC must not override it."
@@ -75,6 +79,7 @@ scenes:
         - focus:
             target: stop
             label: "Manual STOP stays authoritative"
+            narration: "s05"
             duration_ms: 19500
   - callout:
       type: recipe
@@ -83,10 +88,12 @@ scenes:
         - "Use SYNC for timing and wait for lock."
         - "Use RST when you need a phase restart."
         - "Use CLOCK's transport controls for manual PLAY/STOP authority."
+      narration: "s06"
       duration_ms: 8600
   - text:
       title: "Thanks for watching"
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
+      narration: "s07"
       duration_ms: 20000

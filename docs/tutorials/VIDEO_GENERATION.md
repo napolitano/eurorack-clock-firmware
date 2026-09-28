@@ -4,13 +4,20 @@
 
 CLOCK Storybook is a host-only documentation tool. It runs the production firmware through the native simulator, renders deterministic tutorial frames, writes SRT/WebVTT from the same subtitle timeline, and optionally publishes MP4/H.264 and WebM/VP9.
 
-The normal workflow is:
+For narrated teaching examples the preferred local workflow is narration-first:
 
 ```text
-Story YAML -> validate -> one deterministic CLOCK run -> PNG/SRT/VTT -> MP4/WebM
+authored Story + voice-over
+        -> ElevenLabs segments
+        -> measured audio durations
+        -> resolved Story timing
+        -> sparse/change-driven CLOCK render
+        -> intro/tutorial/outro
+        -> cue-aligned narration mix
+        -> local publication master
 ```
 
-The video encoder never changes CLOCK behaviour and is not part of the embedded build.
+The video encoder and ElevenLabs client never change CLOCK behaviour and are not part of the embedded build.
 
 ## 1. Prerequisites
 
@@ -34,7 +41,84 @@ ffmpeg -version
 ffprobe -version
 ```
 
-## 2. Build the Storybook CLI
+## 2. Configure local ElevenLabs access
+
+Generated narration is intentionally a workstation concern. Secrets never belong in Story YAML, `segments.json`, render manifests, source bundles or CI configuration for this local workflow.
+
+Copy the tracked template once:
+
+```bash
+cp .env.example .env
+```
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+```
+
+Then edit only `.env` locally:
+
+```dotenv
+ELEVENLABS_API_KEY=your-local-secret
+ELEVENLABS_VOICE_ID=your-cloned-voice-id
+ELEVENLABS_MODEL_ID=auto-v4
+```
+
+`.gitignore` rejects `.env` and `.env.*` while explicitly allowing only `.env.example`. The renderer reads repository-root `.env` automatically; already exported environment variables override values from the file. The API key is never copied to cache metadata or render reports.
+
+Treat `.env` as a local secret container, not as project configuration:
+
+- never rename `.env.example` itself and put secrets into it; copy it to `.env`;
+- never paste the API key into YAML, JSON, command lines, screenshots, issues or CI logs;
+- keep `.env` in the repository root so the standard local runner finds it;
+- if a different secret file is needed, keep it outside the repository and pass it with `--env-file`;
+- revoke/rotate the ElevenLabs key immediately if it is ever committed or otherwise exposed.
+
+The Voice ID and selected model are also kept in `.env` for one-place local configuration. They are not authentication secrets, but generated render output remains ignored and should not be treated as source.
+
+You can verify the ignore rule without exposing the file contents:
+
+```bash
+git check-ignore -v .env
+```
+
+`ELEVENLABS_MODEL_ID=auto-v4` asks the ElevenLabs `/v1/models` endpoint at runtime and selects the one accessible text-to-speech model whose ID or display name contains `v4`. If the account exposes zero or more than one matching model, the job stops before synthesis and asks for the exact model ID in `.env`; it never guesses a provider-specific identifier.
+
+The tracked `.env.example` also contains local timing policy. These values are publication defaults, not firmware state:
+
+```dotenv
+CLOCK_TUTORIAL_BODY_HEADROOM_MS=1200
+CLOCK_TUTORIAL_OPENING_MIN_MS=18000
+CLOCK_TUTORIAL_CLOSING_MIN_MS=20000
+CLOCK_TUTORIAL_ROUNDING_MS=100
+```
+
+### Preferred commands
+
+Render one complete narrated master:
+
+```bash
+python scripts/render_tutorials.py 11
+```
+
+Render all eleven examples as a local evening/nightly job:
+
+```bash
+python scripts/render_tutorials.py --all
+```
+
+Useful partial passes:
+
+```bash
+python scripts/render_tutorials.py 11 --audio-only
+python scripts/render_tutorials.py 11 --picture-only
+python scripts/render_tutorials.py 11 --force-tts
+```
+
+The runner builds the optimized `simulator-headless-release` Storybook target unless `--skip-build` is specified. All generated audio, resolved YAML, timing plans, intermediate publication media and final masters live under ignored `tutorial-output/`.
+
+## 3. Build the Storybook CLI
 
 From the repository root:
 
@@ -50,7 +134,7 @@ cmake --preset simulator-headless-release
 cmake --build --preset simulator-headless-release --target clock-storybook
 ```
 
-Use `build/simulator-headless-release/clock-storybook` in the commands below when rendering with this build (or append `.exe` on Windows). The default `simulator-headless` preset builds in Debug mode, which makes per-frame PNG encoding substantially slower. Consecutive frames of a chapter, text, or callout scene reuse the same image data while retaining a separate numbered PNG path and manifest entry for each frame. Tutorial scenes continue to render at every presentation sample.
+Use `build/simulator-headless-release/clock-storybook` in the commands below when rendering with this build (or append `.exe` on Windows). The default `simulator-headless` preset builds in Debug mode and is not the publication-performance path. `clock-storybook video` uses sparse frame storage: unchanged logical frames share one PNG, and publication writes an FFconcat run list so a long frozen explanation does not require thousands of duplicate PNG encodes. Dynamic tutorial intervals still retain the requested constant-frame-rate output semantics.
 
 The executable is then:
 
@@ -60,7 +144,7 @@ build/simulator-headless/clock-storybook
 
 On Windows the file has the usual `.exe` suffix.
 
-## 3. Start with the examples
+## 4. Start with the examples
 
 Eleven editable teaching examples live in [`examples/`](examples/README.md). They are intentionally separate from the canonical CI reference catalog under [`stories/`](stories/README.md).
 
@@ -80,7 +164,7 @@ Windows PowerShell:
 
 A successful validation prints the Story ID and title and exits with status 0. The most complete teaching example is `11-eight-independent-clocks-walkthrough.yaml`, which demonstrates Independent topology, channel selection, long-press context settings, and Clock-channel configuration.
 
-## 4. Generate frames only
+## 5. Generate frames only
 
 Use this while authoring text, timings or presentation layout. It does **not** encode a video:
 
@@ -103,7 +187,7 @@ manifest.json
 
 `docs/tutorials/generated/` is intentionally ignored by Git and must not be included in source bundles.
 
-## 5. Generate an MP4
+## 6. Generate an MP4
 
 For the normal publication case:
 
@@ -128,7 +212,7 @@ To keep the intermediate frames for inspection:
 
 The retained intermediate directory is a sibling named `<output>.frames`.
 
-## 6. Generate WebM or both formats
+## 7. Generate WebM or both formats
 
 WebM only:
 
@@ -150,7 +234,7 @@ MP4 and WebM in one publication run:
 
 MP4/H.264 is the default publication format and should normally be used for the documentation videos.
 
-## 7. Add a pre-produced intro or outro
+## 8. Add a pre-produced intro or outro
 
 Intro and outro are optional **pre-produced videos**, not Storybook scenes. Put reusable clips under `docs/tutorials/assets/video/` or another stable project location and reference them from the Story YAML:
 
@@ -172,19 +256,22 @@ The clips are probed before use and normalized to the Story resolution and FPS w
 
 Final SRT/WebVTT cues are shifted by the measured normalized intro duration. Outro duration never shifts tutorial cues.
 
-## 8. Add post-production voice-over
+## 9. Narration-first publication details
 
-The editable example set has matching US-English narration under [`voiceover/`](voiceover/README.md). These scripts are intended for post-production rather than the deterministic Storybook render itself. The normal workflow is therefore:
+The editable examples have matching US-English narration under [`voiceover/`](voiceover/README.md). The checked-in `.txt` scripts remain human-authored spoken copy. [`voiceover/segments.json`](voiceover/segments.json) maps their paragraphs to stable `narration:` IDs embedded in the matching Story.
 
-```text
-Storybook + intro/outro -> final silent tutorial section -> ElevenLabs narration -> NLE/audio mix -> publication master
-```
+The local runner performs two passes before expensive video work:
 
-The scripts target Eleven v3 and use purposeful Audio Tags in square brackets together with punctuation and paragraph structure for a more natural, sympathetic delivery. Tags direct real changes in tone or pacing — for example `[warmly]`, `[conversational]`, `[thoughtful]`, `[slowly]`, `[with emphasis]` and `[pause]` — rather than appearing mechanically on every sentence. They deliberately avoid SSML `<break>` markup because Eleven v3 uses Audio Tags and text structure instead. Generate paragraph-by-paragraph when a section needs a different take or tighter editorial control.
+1. synthesize or reuse each narration segment and measure its encoded duration with `ffprobe`;
+2. create an ignored resolved Story copy whose narration-linked `duration_ms`/`wait_ms` values are the measured duration plus local visual headroom.
 
-The tracked intro is 4.5 seconds and the tracked outro is 5.5 seconds. All eleven examples reserve 18 seconds for the spoken opening and 20 seconds for the full sign-off, based on Axel's measured reference delivery of roughly 15 and 16 seconds respectively. The opening must identify South Signal Lab/Axel, state what the video will show, and orient the viewer before detailed operation begins. The closing keeps the full thank-you, follow/stay-current, Ko-fi/support, development-insight and goodbye intent. Plan body holds from the actual voice-over text at roughly 195 spoken words per minute plus expressive and visual margin; see [`voiceover/TIMING.md`](voiceover/TIMING.md). Final cuts must still be checked against the generated narration. Generated narration audio is local post-production output and is ignored by Git.
+The authored Story is never rewritten by the local job. After validation, Storybook executes the resolved copy once and records exact `NarrationBegin`/`NarrationEnd` presentation timestamps. Publication shifts those cues by the probed intro duration and writes `<story-id>.narration.json`. The Python runner uses that sidecar to place the cached audio segments and copies the already encoded video stream into the final narrated master.
 
-## 9. Use explicit ffmpeg/ffprobe paths when needed
+This means the actual generated voice — including Audio Tags, punctuation and pauses — controls timing. The historical ~195 wpm planning value is only an authoring estimate and is not used to overrule measured audio.
+
+Audio cache identity includes the segment text hash, voice ID, resolved model ID and output format. Unchanged segments are therefore reused; `--force-tts` explicitly invalidates that convenience. No API key is stored in the cache.
+
+## 10. Use explicit ffmpeg/ffprobe paths when needed
 
 Normally the CLI finds both programs on `PATH`. To select specific binaries:
 
@@ -199,7 +286,7 @@ Normally the CLI finds both programs on `PATH`. To select specific binaries:
 This is useful on Windows systems with multiple FFmpeg installations or in controlled CI environments.
 
 
-## 10. Windows process-launch troubleshooting
+## 11. Windows process-launch troubleshooting
 
 If `clock-storybook video` exits immediately on Windows with process status `0xC0000139` / `-1073741511`, use a source revision containing the Storybook Windows process-launch fix (r48j or later) and rebuild `clock-storybook`. The fixed implementation invokes `ffmpeg`/`ffprobe` through `CreateProcessW` rather than the CRT `_wspawnv` path and preserves arguments containing spaces, embedded quotes and trailing backslashes.
 
@@ -211,7 +298,7 @@ cmake --build --preset simulator-headless --target clock-storybook
 
 Then retry the same `video` command. The CLI prints the frame-render stage, frame count and resolved FFmpeg/FFprobe executable paths before publication starts.
 
-## 11. Publication typography, colours and backgrounds
+## 12. Publication typography, colours and backgrounds
 
 The publication theme is [`themes/south-signal-lab-default.yaml`](themes/south-signal-lab-default.yaml). Its defaults follow the CLOCK manual visual language:
 
@@ -250,7 +337,7 @@ presentation:
 
 The path is relative to `docs/tutorials/`. Supported image mode values are `cover`, `contain`, and `stretch`. The current SDL-free image loader accepts uncompressed 24-bit or 32-bit Windows BMP so background images do not add an image-codec dependency to the headless renderer. Leaving `background_image` empty uses pure black.
 
-## 12. Tutorial pacing
+## 13. Tutorial pacing
 
 Interaction speed is controlled centrally by [`interaction_profiles.yaml`](interaction_profiles.yaml), not by video playback speed. `HUMAN_NORMAL` and `HUMAN_SLOW` are intentionally paced for viewers to follow the OLED and physical control movement. `HUMAN_FAST` remains reserved for interactions whose timing is semantically meaningful, especially Tap Tempo.
 
@@ -268,7 +355,7 @@ interaction_profile: HUMAN_SLOW
 
 Do not slow Tap Tempo by changing its profile unless the demonstrated tap interval is updated accordingly; the taps are real CLOCK input and therefore change the measured BPM.
 
-## 13. Record the source revision in the manifest
+## 14. Record the source revision in the manifest
 
 The default manifest revision is `working-tree`. For an archived or release-oriented render, pass the Git revision explicitly:
 
@@ -289,21 +376,23 @@ $revision = git rev-parse HEAD
   --source-revision $revision
 ```
 
-## 14. Recommended authoring loop
+## 15. Recommended authoring loop
 
-Use this order while developing a Story:
+Use this order while developing a narrated teaching Story:
 
-1. Copy the closest YAML from `docs/tutorials/examples/`.
-2. Change the `id`, `title`, explanatory text and recorded actions.
-3. Run `clock-storybook validate` until the schema and semantics are clean.
-4. Run the Storybook reference/host tests if the Story exercises a new interaction pattern.
-5. Use `frames` only when visual inspection is needed.
-6. Run `video` only for the final publication candidate.
-7. Keep generated output under `docs/tutorials/generated/`; never add it to a source bundle.
+1. Copy the closest YAML from `docs/tutorials/examples/` and its voice-over script.
+2. Change the `id`, `title`, explanatory text and recorded physical actions.
+3. Split narration into editorially stable beats in `voiceover/segments.json` and attach each ID to one bounded scene or timed action with `narration:`.
+4. Run `clock-storybook validate` until schema and semantics are clean.
+5. Run `python scripts/render_tutorials.py <number> --audio-only` to hear the real takes and create measured timing.
+6. Adjust prose/tags if necessary; unchanged segment audio remains cached.
+7. Run `python scripts/render_tutorials.py <number>` for the sparse picture render and final cue-aligned master.
+8. Use the low-level `frames` command only when individual frame inspection is needed.
+9. Keep all generated output under ignored `tutorial-output/`; never add it to a source bundle.
 
 Do not replace physical UI actions with direct product-state setters. If a workflow cannot be expressed through the existing module controls, patch actions and external stimuli, extend the Storybook contract explicitly and regression-test that addition first.
 
-## 15. Useful verification commands
+## 16. Useful verification commands
 
 Validate the full native Storybook/test matrix:
 
@@ -321,7 +410,7 @@ python scripts/tests/test_storybook_tooling.py
 
 The publication integration test automatically skips only when `ffmpeg`/`ffprobe` are unavailable; all non-publication Storybook and firmware/simulator targets remain independent of those tools.
 
-## 16. Focus overlays and subtitle safe area
+## 17. Focus overlays and subtitle safe area
 
 The default publication theme keeps burned-in subtitles above a 150-pixel lower player-control safe area at 1080p. Adjust `presentation.subtitle_safe_bottom_px` in the selected theme if the target player requires more or less clearance.
 

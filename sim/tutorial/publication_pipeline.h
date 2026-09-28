@@ -35,6 +35,7 @@ struct StoryPublicationResult {
     std::filesystem::path srtPath;
     std::filesystem::path vttPath;
     std::filesystem::path manifestPath;
+    std::filesystem::path narrationPath;
     std::uint64_t introDurationUs = 0ULL;
     std::uint64_t outroDurationUs = 0ULL;
 

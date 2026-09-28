@@ -10,13 +10,18 @@
 #include <fstream>
 #include <iomanip>
 #include <optional>
+#include <set>
+#include <unordered_map>
+#include <array>
 #include <sstream>
 #include <stdexcept>
 #include <string>
 #include <utility>
 
 #include "tutorial/panel_presentation.h"
+#include "panel_led_visual.h"
 #include "tutorial/png_writer.h"
+#include "tutorial/story_theme.h"
 #include "tutorial/story_execution_observer.h"
 #include "tutorial/tutorial_renderer.h"
 #include "version.h"
@@ -68,12 +73,52 @@ void writeTextFile(const std::filesystem::path& path, const std::string& text) {
     if (!stream) throw std::runtime_error("cannot write Storybook output: " + path.string());
 }
 
+struct NarrationCue final {
+    std::string id;
+    std::uint64_t startUs = 0ULL;
+    std::uint64_t endUs = 0ULL;
+};
+
+std::vector<NarrationCue> narrationCuesFromTrace(const StoryRunResult& run) {
+    std::vector<NarrationCue> cues;
+    std::unordered_map<std::string, std::uint64_t> open;
+    for (const auto& event : run.trace) {
+        if (event.kind == StoryTraceKind::NarrationBegin) {
+            if (!open.emplace(event.name, event.presentationUs).second) {
+                throw std::runtime_error("duplicate open narration cue: " + event.name);
+            }
+        } else if (event.kind == StoryTraceKind::NarrationEnd) {
+            const auto found = open.find(event.name);
+            if (found == open.end()) throw std::runtime_error("narration cue ended without begin: " + event.name);
+            cues.push_back({event.name, found->second, event.presentationUs});
+            open.erase(found);
+        }
+    }
+    if (!open.empty()) throw std::runtime_error("narration cue did not close: " + open.begin()->first);
+    return cues;
+}
+
+std::string narrationManifest(const Story& story, const std::vector<NarrationCue>& cues) {
+    std::ostringstream out;
+    out << "{\n  \"schema\": 1,\n  \"story_id\": \"" << jsonEscape(story.id) << "\",\n  \"cues\": [\n";
+    for (std::size_t index = 0U; index < cues.size(); ++index) {
+        const auto& cue = cues[index];
+        out << "    {\"id\": \"" << jsonEscape(cue.id) << "\", \"start_us\": " << cue.startUs
+            << ", \"end_us\": " << cue.endUs << "}";
+        if (index + 1U < cues.size()) out << ',';
+        out << '\n';
+    }
+    out << "  ]\n}\n";
+    return out.str();
+}
+
 std::string makeManifest(
     const Story& story,
     const std::string& sourceRevision,
     const StoryRunResult& run,
     const std::vector<StoryFrameRecord>& frames,
-    const std::vector<SubtitleCue>& subtitles) {
+    const std::vector<SubtitleCue>& subtitles,
+    const std::vector<NarrationCue>& narration) {
     std::ostringstream out;
     out << "{\n"
         << "  \"manifest_schema\": 1,\n"
@@ -89,7 +134,9 @@ std::string makeManifest(
         << ", \"fps\": " << story.output.framesPerSecond << "},\n"
         << "  \"presentation_duration_us\": " << run.presentationDurationUs << ",\n"
         << "  \"frame_count\": " << frames.size() << ",\n"
+        << "  \"unique_frame_file_count\": " << [&]() { std::set<std::filesystem::path> paths; for (const auto& frame : frames) paths.insert(frame.relativePath); return paths.size(); }() << ",\n"
         << "  \"subtitle_count\": " << subtitles.size() << ",\n"
+        << "  \"narration_cue_count\": " << narration.size() << ",\n"
         << "  \"frame_hash_algorithm\": \"fnv1a64-rgba8\",\n"
         << "  \"frames\": [\n";
     for (std::size_t index = 0U; index < frames.size(); ++index) {
@@ -105,15 +152,100 @@ std::string makeManifest(
     return out.str();
 }
 
+bool samePhysicalStateForFrozenFrame(
+    const PhysicalPresentationState& left,
+    const PhysicalPresentationState& right,
+    const std::uint64_t focusLingerUs) {
+    if (left.encoderDetentDelta != right.encoderDetentDelta ||
+        left.encoderPressed != right.encoderPressed ||
+        left.playPressed != right.playPressed ||
+        left.tapPressed != right.tapPressed ||
+        left.stopPressed != right.stopPressed ||
+        left.recordedPowerOn != right.recordedPowerOn ||
+        left.scopeMode != right.scopeMode ||
+        left.explicitFocus != right.explicitFocus ||
+        left.focusPlacement != right.focusPlacement ||
+        left.focusX != right.focusX || left.focusY != right.focusY ||
+        left.focusWidth != right.focusWidth || left.focusHeight != right.focusHeight ||
+        left.focusLabel != right.focusLabel ||
+        left.syncMotion != right.syncMotion || left.resetMotion != right.resetMotion ||
+        left.syncInsertion != right.syncInsertion || left.resetInsertion != right.resetInsertion) {
+        return false;
+    }
+
+    // Automatic focus has no fade: age matters only at the visibility cutoff. Re-render
+    // once when the effective focus appears/disappears, not for every 30-fps sample while
+    // an already identical focus ring remains visible or after its linger has expired.
+    if (left.explicitFocus != FocusTarget::None) return true;
+    const bool leftAutomaticVisible = left.automaticFocus != FocusTarget::None &&
+        left.automaticFocusAgeUs <= focusLingerUs;
+    const bool rightAutomaticVisible = right.automaticFocus != FocusTarget::None &&
+        right.automaticFocusAgeUs <= focusLingerUs;
+    if (leftAutomaticVisible != rightAutomaticVisible) return false;
+    if (!leftAutomaticVisible) return true;
+    return left.automaticFocus == right.automaticFocus;
+}
+
+struct VisibleRuntimeState final {
+    std::array<std::uint8_t, hal::OledDisplay::kFramebufferSize> framebuffer{};
+    std::array<bool, kChannelCount> leds{};
+    std::int64_t encoderPosition = 0;
+    bool poweredOn = false;
+    bool syncConnected = false;
+    bool syncHigh = false;
+    bool resetConnected = false;
+    bool resetHigh = false;
+};
+
+VisibleRuntimeState captureVisibleRuntimeState(const SimulatorRuntime& runtime) {
+    VisibleRuntimeState state{};
+    state.framebuffer = runtime.framebuffer();
+    state.encoderPosition = runtime.encoderVisualPosition();
+    state.poweredOn = runtime.poweredOn();
+    const SyncInputTelemetry sync = runtime.syncInputTelemetry();
+    state.syncConnected = sync.cableConnected;
+    state.syncHigh = sync.signalHigh;
+    const ResetInputTelemetry reset = runtime.resetInputTelemetry();
+    state.resetConnected = reset.cableConnected;
+    state.resetHigh = reset.signalHigh;
+    const auto& channels = runtime.telemetry();
+    const std::uint64_t nowUs = runtime.nowMicroseconds();
+    for (std::size_t index = 0U; index < state.leds.size(); ++index) {
+        state.leds[index] = panelLedVisuallyLit(channels[index], nowUs, 1.0);
+    }
+    return state;
+}
+
+bool sameVisibleRuntimeState(const VisibleRuntimeState& left, const VisibleRuntimeState& right) {
+    return left.framebuffer == right.framebuffer && left.leds == right.leds &&
+        left.encoderPosition == right.encoderPosition && left.poweredOn == right.poweredOn &&
+        left.syncConnected == right.syncConnected && left.syncHigh == right.syncHigh &&
+        left.resetConnected == right.resetConnected && left.resetHigh == right.resetHigh;
+}
+
+void materializeDuplicateFrame(
+    const std::filesystem::path& source,
+    const std::filesystem::path& destination) {
+    std::error_code linkError;
+    std::filesystem::create_hard_link(source, destination, linkError);
+    if (linkError) {
+        // Some filesystems do not allow hard links. Keep the required per-frame paths.
+        std::filesystem::copy_file(source, destination);
+    }
+}
+
 class FrameObserver final : public StoryExecutionObserver {
 public:
     FrameObserver(
         const Story& story,
         TutorialRenderer& renderer,
         PanelPresentationTimeline& presentation,
-        std::filesystem::path frameDirectory)
+        std::filesystem::path frameDirectory,
+        const FrameStorageMode storageMode,
+        const std::uint64_t focusLingerUs)
         : story_(story), renderer_(renderer), presentation_(presentation),
-          frameDirectory_(std::move(frameDirectory)) {}
+          frameDirectory_(std::move(frameDirectory)), storageMode_(storageMode),
+          focusLingerUs_(focusLingerUs) {}
 
     std::optional<std::uint64_t> nextPresentationSampleUs() const override {
         return frameTimestampUs(frameIndex_, story_.output.framesPerSecond);
@@ -124,31 +256,57 @@ public:
             throw std::runtime_error("frame sample is missing scene/runtime state");
         }
         lastSceneIndex_ = sample.sceneIndex;
-        const std::filesystem::path relative = std::filesystem::path("frames") / frameFileName(frameIndex_);
-        const std::filesystem::path destination = frameDirectory_ / relative.filename();
+        const std::filesystem::path logicalRelative =
+            std::filesystem::path("frames") / frameFileName(frameIndex_);
+        const std::filesystem::path destination = frameDirectory_ / logicalRelative.filename();
+        const bool sparse = storageMode_ == FrameStorageMode::SparseForPublication;
         const bool staticScene = sample.scene->kind != SceneKind::Tutorial;
+
         if (staticScene && cachedStaticSceneIndex_ == sample.sceneIndex) {
-            std::error_code linkError;
-            std::filesystem::create_hard_link(cachedStaticFramePath_, destination, linkError);
-            if (linkError) {
-                // Some filesystems do not allow hard links. Keep the required per-frame paths.
-                std::filesystem::copy_file(cachedStaticFramePath_, destination);
-            }
+            const std::filesystem::path relative = sparse ? cachedStaticRelativePath_ : logicalRelative;
+            if (!sparse) materializeDuplicateFrame(cachedStaticFramePath_, destination);
             frames_.push_back({frameIndex_, sample.presentationUs, relative, cachedStaticDigest_});
+            previousRelativePath_ = relative;
+            previousDigest_ = cachedStaticDigest_;
         } else {
             const PhysicalPresentationState physical = presentation_.stateAt(sample.presentationUs);
-            const TutorialSurface frame = renderer_.renderScene(
-                story_, *sample.scene, *sample.runtime, physical, std::string(sample.activeSubtitle), 1.0);
-            writeTutorialPng(destination, frame);
-            const std::string digest = formatDigest64(tutorialRgbaFnv1a64(frame));
-            frames_.push_back({frameIndex_, sample.presentationUs, relative, digest});
-            if (staticScene) {
-                cachedStaticSceneIndex_ = sample.sceneIndex;
-                cachedStaticFramePath_ = destination;
-                cachedStaticDigest_ = digest;
+            const std::string subtitle(sample.activeSubtitle);
+            const VisibleRuntimeState visibleRuntime = captureVisibleRuntimeState(*sample.runtime);
+            const bool unchangedVisualReuse = !staticScene && sparse && previousSceneIndex_ == sample.sceneIndex &&
+                previousSubtitle_ == subtitle && previousPhysical_.has_value() &&
+                samePhysicalStateForFrozenFrame(*previousPhysical_, physical, focusLingerUs_) &&
+                previousVisibleRuntime_.has_value() &&
+                physical.scopeMode != ScopeMode::VisibleChannel &&
+                sameVisibleRuntimeState(*previousVisibleRuntime_, visibleRuntime) &&
+                !previousRelativePath_.empty();
+
+            if (unchangedVisualReuse) {
+                frames_.push_back({frameIndex_, sample.presentationUs, previousRelativePath_, previousDigest_});
             } else {
-                cachedStaticSceneIndex_.reset();
+                const TutorialSurface frame = renderer_.renderScene(
+                    story_, *sample.scene, *sample.runtime, physical, subtitle, 1.0);
+                const std::string digest = formatDigest64(tutorialRgbaFnv1a64(frame));
+                const bool identicalToPrevious = sparse && digest == previousDigest_ && !previousRelativePath_.empty();
+                const std::filesystem::path relative = identicalToPrevious ? previousRelativePath_ : logicalRelative;
+                if (!identicalToPrevious) writeTutorialPng(destination, frame);
+                frames_.push_back({frameIndex_, sample.presentationUs, relative, digest});
+                previousRelativePath_ = relative;
+                previousDigest_ = digest;
+
+                if (staticScene) {
+                    cachedStaticSceneIndex_ = sample.sceneIndex;
+                    cachedStaticFramePath_ = destination;
+                    cachedStaticRelativePath_ = relative;
+                    cachedStaticDigest_ = digest;
+                } else {
+                    cachedStaticSceneIndex_.reset();
+                }
             }
+
+            previousSceneIndex_ = sample.sceneIndex;
+            previousSubtitle_ = subtitle;
+            previousPhysical_ = physical;
+            previousVisibleRuntime_ = visibleRuntime;
         }
         ++frameIndex_;
     }
@@ -167,6 +325,15 @@ private:
     std::optional<std::size_t> cachedStaticSceneIndex_;
     std::filesystem::path cachedStaticFramePath_;
     std::string cachedStaticDigest_;
+    std::filesystem::path cachedStaticRelativePath_;
+    FrameStorageMode storageMode_ = FrameStorageMode::Materialized;
+    std::uint64_t focusLingerUs_ = 0ULL;
+    std::optional<std::size_t> previousSceneIndex_;
+    std::string previousSubtitle_;
+    std::optional<PhysicalPresentationState> previousPhysical_;
+    std::optional<VisibleRuntimeState> previousVisibleRuntime_;
+    std::filesystem::path previousRelativePath_;
+    std::string previousDigest_;
 };
 
 std::filesystem::path stagingPathFor(const std::filesystem::path& outputDirectory) {
@@ -195,7 +362,8 @@ StoryFramePipeline::StoryFramePipeline(
 StoryFramePipelineResult StoryFramePipeline::generate(
     const Story& story,
     StorySimulatorPort& port,
-    const std::filesystem::path& outputDirectory) {
+    const std::filesystem::path& outputDirectory,
+    const FrameStorageMode storageMode) {
     StoryFramePipelineResult result;
     result.outputDirectory = outputDirectory;
     const std::filesystem::path staging = stagingPathFor(outputDirectory);
@@ -207,7 +375,9 @@ StoryFramePipelineResult StoryFramePipeline::generate(
         std::filesystem::create_directories(staging / "frames");
         PanelPresentationTimeline presentation;
         TutorialRenderer renderer(tutorialRoot_, panelLayout_);
-        FrameObserver observer(story, renderer, presentation, staging / "frames");
+        const StoryTheme theme = loadStoryTheme(tutorialRoot_, story.theme);
+        const std::uint64_t focusLingerUs = static_cast<std::uint64_t>(theme.focusLingerMs) * 1000ULL;
+        FrameObserver observer(story, renderer, presentation, staging / "frames", storageMode, focusLingerUs);
         StoryRunner runner(port, tutorialRoot_, &presentation, &observer);
         result.run = runner.run(story);
         renderSceneIndex = observer.lastSceneIndex();
@@ -225,11 +395,14 @@ StoryFramePipelineResult StoryFramePipeline::generate(
         }
 
         result.subtitles = subtitleCuesFromTrace(result.run);
+        const auto narration = narrationCuesFromTrace(result.run);
         const std::filesystem::path srtName = story.id + ".srt";
         const std::filesystem::path vttName = story.id + ".vtt";
+        const std::filesystem::path narrationName = "narration.json";
         writeSubtitleSidecars(staging / srtName, staging / vttName, result.subtitles);
+        writeTextFile(staging / narrationName, narrationManifest(story, narration));
         writeTextFile(staging / "manifest.json",
-                      makeManifest(story, simulatorSourceRevision_, result.run, result.frames, result.subtitles));
+                      makeManifest(story, simulatorSourceRevision_, result.run, result.frames, result.subtitles, narration));
 
         if (!outputDirectory.parent_path().empty()) {
             std::filesystem::create_directories(outputDirectory.parent_path());
@@ -239,6 +412,7 @@ StoryFramePipelineResult StoryFramePipeline::generate(
         result.srtPath = outputDirectory / srtName;
         result.vttPath = outputDirectory / vttName;
         result.manifestPath = outputDirectory / "manifest.json";
+        result.narrationPath = outputDirectory / narrationName;
         return result;
     } catch (const std::exception& error) {
         std::filesystem::remove_all(staging, ignored);

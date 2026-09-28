@@ -26,6 +26,7 @@ using clockfw::sim::layout::loadPanelLayout;
 using clockfw::sim::tutorial::Story;
 using clockfw::sim::tutorial::StoryFramePipeline;
 using clockfw::sim::tutorial::StoryFramePipelineResult;
+using clockfw::sim::tutorial::FrameStorageMode;
 using clockfw::sim::tutorial::StoryParseResult;
 using clockfw::sim::tutorial::StorySimulatorPort;
 using clockfw::sim::tutorial::parseStoryText;
@@ -77,7 +78,8 @@ StoryFramePipelineResult generate(
     const Story& story,
     const std::filesystem::path& tutorialRoot,
     const std::filesystem::path& output,
-    const std::filesystem::path& statePath) {
+    const std::filesystem::path& statePath,
+    const FrameStorageMode storageMode = FrameStorageMode::Materialized) {
     std::filesystem::remove(statePath);
     SimulatorRuntime runtime(statePath);
     runtime.begin();
@@ -86,7 +88,7 @@ StoryFramePipelineResult generate(
         tutorialRoot,
         loadPanelLayout(std::filesystem::path(CLOCK_SOURCE_ROOT) / "sim" / "panel_layout.ini"),
         "r48f-test");
-    StoryFramePipelineResult result = pipeline.generate(story, port, output);
+    StoryFramePipelineResult result = pipeline.generate(story, port, output, storageMode);
     runtime.flushPersistence();
     std::filesystem::remove(statePath);
     return result;
@@ -120,11 +122,13 @@ scenes:
       number: 1
       title: "Frame Pipeline"
       subtitle: "One deterministic execution"
+      narration: "s01"
       duration_ms: 100
   - tutorial:
       subtitle: "Press PLAY."
       actions:
-        - wait_ms: 200
+        - narration: "s02"
+          wait_ms: 200
 )YAML");
 
     const std::filesystem::path outA = temp / "run-a";
@@ -169,9 +173,14 @@ scenes:
     const std::string manifestB = readText(b.manifestPath);
     ok &= require(manifestA == manifestB, "generation manifests must be byte-identical across deterministic runs");
     ok &= require(manifestA.find("\"frame_count\": 3") != std::string::npos &&
+                  manifestA.find("\"narration_cue_count\": 2") != std::string::npos &&
                   manifestA.find("\"simulator_source_revision\": \"r48f-test\"") != std::string::npos &&
                   manifestA.find("\"frame_hash_algorithm\": \"fnv1a64-rgba8\"") != std::string::npos,
-                  "manifest must record deterministic output identity and frame-hash contract");
+                  "manifest must record deterministic output identity, narration and frame-hash contract");
+    const std::string narrationA = readText(a.narrationPath);
+    ok &= require(narrationA.find("\"id\": \"s01\"") != std::string::npos &&
+                  narrationA.find("\"id\": \"s02\"") != std::string::npos,
+                  "narration sidecar must preserve both scene and action timing anchors");
 
     Story staticStory = story;
     staticStory.id = "frame-pipeline-static-scenes";
@@ -209,6 +218,17 @@ scenes:
         ok &= require(staticResult.frames[1].rgbaFnv1a64 != staticResult.frames[2].rgbaFnv1a64 &&
                       readBytes(repeated) != readBytes(changed),
                       "a new static scene must render a new image");
+    }
+
+    const std::filesystem::path sparseOutput = temp / "static-scenes-sparse";
+    const StoryFramePipelineResult sparseResult = generate(
+        staticStory, tutorialRoot, sparseOutput, temp / "state-sparse.bin", FrameStorageMode::SparseForPublication);
+    ok &= require(static_cast<bool>(sparseResult) && sparseResult.frames.size() == 3U,
+                  "sparse publication mode must preserve the logical frame timeline");
+    if (sparseResult.frames.size() == 3U) {
+        ok &= require(sparseResult.frames[0].relativePath == sparseResult.frames[1].relativePath &&
+                      sparseResult.frames[1].relativePath != sparseResult.frames[2].relativePath,
+                      "sparse publication mode must share one PNG across an unchanged frame run");
     }
 
     Story overflow = story;

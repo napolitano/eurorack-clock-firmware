@@ -6,6 +6,7 @@ License: PolyForm-Noncommercial-1.0.0
 
 from __future__ import annotations
 
+import json
 import unittest
 from pathlib import Path
 
@@ -42,6 +43,9 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertTrue((ROOT / "docs/tutorials/VIDEO_GENERATION.md").is_file())
         self.assertTrue((ROOT / "docs/tutorials/examples/README.md").is_file())
         self.assertTrue((ROOT / "docs/tutorials/voiceover/README.md").is_file())
+        self.assertTrue((ROOT / "docs/tutorials/voiceover/segments.json").is_file())
+        self.assertTrue((ROOT / "scripts/render_tutorials.py").is_file())
+        self.assertTrue((ROOT / ".env.example").is_file())
 
     def test_architecture_guard_forbids_embedded_storybook_media_dependencies(self) -> None:
         """The architecture gate must reject reverse dependencies into embedded code."""
@@ -64,6 +68,37 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("!docs/tutorials/assets/video/south-signal-lab-intro.mp4", gitignore)
         self.assertIn("!docs/tutorials/assets/video/south-signal-lab-outro.mp4", gitignore)
 
+    def test_local_narration_pipeline_keeps_secrets_and_generated_media_out_of_source(self) -> None:
+        """Local ElevenLabs publication must be reproducible without committing secrets or rendered media."""
+        gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
+        env_example = (ROOT / ".env.example").read_text(encoding="utf-8")
+        runner = (ROOT / "scripts/render_tutorials.py").read_text(encoding="utf-8")
+        guide = (ROOT / "docs/tutorials/VIDEO_GENERATION.md").read_text(encoding="utf-8")
+        segments = json.loads((ROOT / "docs/tutorials/voiceover/segments.json").read_text(encoding="utf-8"))
+        self.assertIn(".env", gitignore)
+        self.assertIn(".env.*", gitignore)
+        self.assertIn("!.env.example", gitignore)
+        self.assertFalse((ROOT / ".env").exists(), "source tree must not ship a real .env")
+        self.assertIn("ELEVENLABS_API_KEY=", env_example)
+        self.assertIn("ELEVENLABS_VOICE_ID=", env_example)
+        self.assertIn("ELEVENLABS_MODEL_ID=auto-v4", env_example)
+        self.assertNotRegex(env_example, r"ELEVENLABS_API_KEY=\S+")
+        self.assertIn("/v1/models", runner)
+        self.assertIn("/with-timestamps", runner)
+        self.assertIn("cache_key", runner)
+        self.assertIn("SparseForPublication", (ROOT / "sim/tutorial/frame_pipeline.h").read_text(encoding="utf-8"))
+        self.assertIn("tutorial-frames.ffconcat", (ROOT / "sim/tutorial/publication_pipeline.cpp").read_text(encoding="utf-8"))
+        self.assertIn("python scripts/render_tutorials.py --all", guide)
+        self.assertEqual(1, segments.get("schema"))
+        self.assertEqual(11, len(segments.get("stories", {})))
+        for stem, entry in segments["stories"].items():
+            story = (ROOT / "docs/tutorials/examples" / f"{stem}.yaml").read_text(encoding="utf-8")
+            ids = [str(item["id"]) for item in entry["segments"]]
+            self.assertTrue(ids)
+            self.assertEqual(len(ids), len(set(ids)))
+            for narration_id in ids:
+                self.assertIn(f'narration: "{narration_id}"', story)
+
     def test_publication_assets_and_scope_are_schema_contracts(self) -> None:
         """Schema 1 must retain optional media assets and visible-channel scope semantics."""
         schema = (ROOT / "docs/tutorials/STORY_SCHEMA_1.md").read_text(encoding="utf-8")
@@ -72,6 +107,8 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn('channel: visible', schema)
         self.assertIn('state: off', schema)
         self.assertIn('state: on', schema)
+        self.assertIn('narration: "s03"', schema)
+        self.assertIn('<story-id>.narration.json', schema)
 
     def test_story_port_never_sets_clock_source_directly(self) -> None:
         """The semantic adapter may observe SOURCE but must not assign it."""
@@ -232,6 +269,8 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("libvpx-vp9", publication)
         self.assertIn("libopus", publication)
         self.assertIn("StoryFramePipelineResult", header)
+        self.assertIn("publicationNarrationCues", publication)
+        self.assertIn("writeSparseFrameConcat", publication)
         self.assertNotIn("SimulatorRuntime", publication)
         self.assertNotIn("StoryRunner", publication)
         self.assertIn("normalized intro duration", architecture)

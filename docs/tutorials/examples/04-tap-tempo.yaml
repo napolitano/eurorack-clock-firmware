@@ -18,6 +18,7 @@ scenes:
       number: 1
       title: "Tap Tempo"
       subtitle: "Set the internal tempo by feel"
+      narration: "s01"
       duration_ms: 18000
   - tutorial:
       subtitle: "The first TAP starts a new measurement."
@@ -29,6 +30,7 @@ scenes:
         - focus:
             target: tap
             label: "First TAP starts a measurement"
+            narration: "s02"
             duration_ms: 10200
         - subtitle:
             text: "Tap again at the new pulse."
@@ -46,6 +48,7 @@ scenes:
             height: 10
             placement: right
             label: "AUTO stays selected; internal BPM is updated"
+            narration: "s03"
             duration_ms: 27600
         - focus:
             target: oled_region
@@ -55,6 +58,7 @@ scenes:
             height: 10
             placement: right
             label: "Subsequent taps refine the internal BPM"
+            narration: "s04"
             duration_ms: 12400
   - callout:
       type: tip
@@ -62,10 +66,12 @@ scenes:
       body: |
         Tap Tempo changes the internal fallback BPM only.
         It never changes the selected clock source.
+      narration: "s05"
       duration_ms: 7700
   - text:
       title: "Thanks for watching"
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
+      narration: "s06"
       duration_ms: 20000

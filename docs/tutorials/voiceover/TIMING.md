@@ -2,41 +2,54 @@
 
 # CLOCK tutorial voice-over and picture timing
 
-Voice-over is recorded after the Storybook picture and mixed in the editor. The scripts in this directory are the authoritative spoken copy. Story YAML contains real control actions plus presentation-only holds at the states being explained. Subtitles remain short action labels rather than transcripts.
+The authored scripts are the spoken source of truth; **measured generated audio is the publication timing source of truth**. Checked-in Story YAML keeps readable editorial holds, while the local publication runner creates a resolved copy whose narration-linked holds are calculated from the actual ElevenLabs audio files.
 
-## Reference pace and framing
+## Timing pipeline
 
-- The tracked intro and outro clips measure **4.5 s** and **5.5 s** respectively (`ffprobe` on the bundled MP4 assets).
-- The provided spoken opening and sign-off references take roughly **15 s** and **16 s**.
-- Planning therefore uses approximately **195 spoken words/minute** (3.25 words/s), but this is only a baseline. Audio Tags, punctuation, breathing and visual explanation add time.
-- Every example reserves **18 s** for the opening card and **20 s** for the closing card.
-- Body holds are sized from the actual script rather than from a fixed tutorial-length target. The narration dictates the edit; it is not squeezed into an arbitrary picture duration.
-- Eleven v3 uses inline Audio Tags, punctuation and text structure for performance direction. SSML `<break>` markup is not part of the v3 contract.
-- Final publication timing must still be checked against the actual generated or recorded take. If a take differs materially, retime the corresponding Story hold and regenerate the video/subtitle sidecars together.
+```text
+voice-over paragraphs
+        ↓ segments.json
+ElevenLabs TTS segments
+        ↓ ffprobe actual duration
+resolved Story YAML
+        ↓ Story Runner narration cues
+sparse/change-driven picture render
+        ↓
+intro + tutorial + outro
+        ↓ cue-aligned narration mix
+final local master
+```
 
-## Current planning values
+For each narration segment the local runner uses:
 
-`Speech` is the plain spoken word count at 195 wpm and therefore excludes additional expressive pauses. `Explicit Story time` is the exact sum of authored scene/focus durations and explicit waits in the YAML. It does **not** include the additional deterministic time consumed by encoder turns, pushes, button actions, patch motions or `wait_until`, so the final StoryRunner duration is longer. `+ bumpers` adds the fixed 10 seconds from the 4.5-s intro and 5.5-s outro.
+```text
+story budget = measured audio duration + visual headroom
+```
 
-| Example | Spoken words | Speech | Explicit Story time | + bumpers |
-| --- | ---: | ---: | ---: | ---: |
-| 01 · First Clock | 301 | 1:33 | 1:47 | 1:57 |
-| 02 · Transport | 299 | 1:32 | 1:48 | 1:58 |
-| 03 · Encoder tempo | 253 | 1:18 | 1:32 | 1:42 |
-| 04 · Tap Tempo | 274 | 1:24 | 1:38 | 1:48 |
-| 05 · Topology / channel | 308 | 1:35 | 1:51 | 2:01 |
-| 06 · Clock mode | 302 | 1:33 | 1:46 | 1:56 |
-| 07 · Euclid | 339 | 1:44 | 2:01 | 2:11 |
-| 08 · Sequencer | 318 | 1:38 | 1:52 | 2:02 |
-| 09 · Divider Bank | 300 | 1:32 | 1:48 | 1:58 |
-| 10 · External SYNC / RST | 322 | 1:39 | 1:54 | 2:04 |
-| 11 · Eight Clock channels | 1295 | 6:38 | 7:12 | 7:22 |
+and rounds upward to a deterministic timing quantum. The first and last narration segments additionally retain configurable minimum budgets for the established South Signal Lab opening and sign-off.
 
-These are edit budgets, not measured ElevenLabs output lengths.
+Default local policy from `.env.example`:
+
+- body headroom: **1200 ms**;
+- opening minimum: **18000 ms**;
+- closing minimum: **20000 ms**;
+- rounding quantum: **100 ms**.
+
+These defaults can be changed locally without modifying source. The generated resolved stories and timing plans live under `tutorial-output/` and remain untracked.
+
+## Authoring estimate only
+
+The measured reference delivery — roughly 15 seconds for the opening, 16 seconds for the sign-off and about **195 spoken words/minute** overall — remains useful before TTS exists. It is not allowed to override a real rendered duration. Audio Tags, punctuation, breathing and the selected voice/model can all materially change the result.
+
+## Stable narration IDs
+
+[`segments.json`](segments.json) groups one or more adjacent script paragraphs under stable IDs (`s01`, `s02`, ...). Each ID occurs exactly once in the matching Story YAML on a bounded scene or timed tutorial action. Storybook records begin/end presentation timestamps for those anchors and publishes a `<story-id>.narration.json` sidecar after shifting the cue positions by the measured intro duration.
+
+That sidecar, not frame counting or YAML guesswork, positions the audio in the final master.
 
 ## Example 11: narrative structure
 
-Example 11 is intentionally a full walkthrough rather than a fast feature demo. It now starts with a proper orientation before the first control action:
+Example 11 is intentionally a full walkthrough rather than a fast feature demo. It starts with a proper orientation before the first control action:
 
 - what South Signal Lab is showing;
 - what CLOCK is;
@@ -46,7 +59,7 @@ Example 11 is intentionally a full walkthrough rather than a fast feature demo. 
 
 The tutorial then shows the real topology switch and confirmation, the eight-channel overview, channel-four selection, the short encoder push versus long encoder press, and the four channel-setting groups `MODE · TIMING · CLOCK · OUTPUT`.
 
-Every setting that is actually shown on screen receives its own explanation and visual hold:
+Every setting actually shown on screen receives its own explanation and narration anchor:
 
 | Selected menu row | Narration purpose | Picture state |
 | --- | --- | --- |
@@ -64,7 +77,7 @@ Every setting that is actually shown on screen receives its own explanation and 
 | OUTPUT → RESET | Global versus Sync Free reset behavior | selected; unchanged |
 | OUTPUT → MUTE | silence the output without deleting its configuration | selected; unchanged |
 
-`GROOVE` is explained as the entry to its own editor but that editor is not opened in Example 11. A separate editor would add settings that are not otherwise shown in this walkthrough and would turn the example into a second tutorial.
+`GROOVE` is explained as the entry to its own editor but that editor is not opened in Example 11. A separate editor would introduce settings not otherwise shown in this walkthrough.
 
 The final scope view demonstrates the two actual edits: channel 4 at ×2 with a 20-ms gate while the other seven Clock channels retain their original settings.
 

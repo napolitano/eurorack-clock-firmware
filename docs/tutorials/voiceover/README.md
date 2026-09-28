@@ -2,11 +2,11 @@
 
 # CLOCK tutorial voice-over scripts
 
-This directory contains the US-English narration scripts for the eleven editable Storybook examples. Voice-over remains a **post-production layer**: Storybook renders the deterministic tutorial and bumper composition first; narration generated from these scripts is added afterwards in the video editor.
+This directory contains the authored US-English narration for the eleven editable Storybook examples. Narration is now a first-class **local publication input** rather than a manually aligned afterthought: the local renderer creates the speech first, measures its real duration, resolves the Story presentation holds from those measurements, renders the picture, and finally muxes the speech onto Storybook's own narration cue timeline.
 
-The scripts target **Eleven v3** and follow the official Audio Tags guidance. Tags are used as performance direction rather than decoration: `[warmly]` for the opening, `[conversational]` for normal explanation, `[thoughtful]` or `[slowly]` where a distinction needs space, `[confidently]` or `[with emphasis]` for an important rule, and `[pause]` only where an actual pause belongs. Punctuation, ellipses, paragraph boundaries and normal sentence rhythm remain part of the direction. Do not convert the scripts to SSML `<break>` markup; Eleven v3 does not use SSML break tags.
+The human-readable `.txt` files remain the spoken source of truth. [`segments.json`](segments.json) maps stable Storybook narration IDs such as `s01` and `s02` to one or more script paragraphs. The Story YAML contains the same IDs on bounded scenes or timed tutorial actions. This keeps prose, visible state and media timing explicitly related without storing generated audio in the repository.
 
-The intended delivery is friendly, technically precise and human rather than announcer-like. Audio Tags must support that delivery, not turn the tutorials into a dramatic performance. Generate paragraph by paragraph when a section needs a different take or tighter synchronization, and always listen for a tag that the chosen voice interprets badly or reads aloud.
+The scripts use purposeful Eleven expressive Audio Tags in square brackets together with punctuation and paragraph structure. Tags are performance direction rather than decoration: `[warmly]` for the opening, `[conversational]` for normal explanation, `[thoughtful]` or `[slowly]` where a distinction needs space, `[confidently]` or `[with emphasis]` for an important rule, and `[pause]` only where an actual pause belongs. The configured ElevenLabs TTS model must support the authored tags; the local pipeline does not silently rewrite them.
 
 ## Opening contract
 
@@ -33,15 +33,17 @@ Every tutorial keeps the full sign-off intent rather than collapsing it into a s
 - refer to behind-the-scenes development insight;
 - end with a natural goodbye.
 
-Wording may vary slightly from video to video, but those elements stay present. The closing is deliberately given enough screen time to be spoken naturally.
+Wording may vary slightly from video to video, but those elements stay present.
 
 ## Timing contract
 
-The user's measured reference delivery is roughly **15 seconds for the opening** and **16 seconds for the closing**. Storybook therefore reserves **18 seconds for the opening card** and **20 seconds for the closing card** in all eleven examples. The body timing is derived from the actual narration length at roughly **195 spoken words per minute**, then padded for Audio Tags, natural pauses, control actions and visual comprehension.
+The user's measured reference delivery remains useful while authoring: roughly **15 seconds for the opening**, **16 seconds for the sign-off**, and approximately **195 spoken words/minute** as a planning pace. These values are no longer the final publication clock.
 
-Generated narration audio (`.wav`, `.mp3`, `.m4a`, `.aac`, `.flac`) is intentionally ignored by Git and must not be added to source packages.
+For an actual local render, `scripts/render_tutorials.py` calls ElevenLabs segment by segment, measures each encoded audio file with `ffprobe`, and makes that real duration authoritative. The resolved Story adds a small visual headroom to every segment and keeps minimum opening/closing budgets of 18/20 seconds unless local configuration raises them. The checked-in Story YAML remains editable source; resolved timing lives only under ignored `tutorial-output/`.
 
-See [`TIMING.md`](TIMING.md) for the per-example planning values and the detailed Example 11 setting checklist.
+Generated narration audio and its local cache are intentionally ignored by Git and must never be added to source packages.
+
+See [`TIMING.md`](TIMING.md) for the timing model and Example 11 setting checklist. See [`../VIDEO_GENERATION.md`](../VIDEO_GENERATION.md) for `.env`, ElevenLabs and local rendering setup.
 
 ## Script map
 

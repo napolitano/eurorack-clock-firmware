@@ -148,17 +148,11 @@ void renderOled(
         }
     }
 }
-TutorialRect renderPanelRegion(
+TutorialRect blitPanelRegion(
     TutorialSurface& frame,
-    const layout::PanelLayout& layout,
-    const SimulatorRuntime& runtime,
-    const PhysicalPresentationState& physicalState,
-    const double speedMultiplier,
+    const TutorialSurface& panel,
     const TutorialRect source,
     const TutorialRect box) {
-    TutorialSurface panel = renderPanelBase(layout, runtime);
-    const PanelPresentationSnapshot snapshot = makePanelPresentationSnapshot(layout, runtime, physicalState, speedMultiplier);
-    panel.composite(dynamicLayerToSurface(renderPanelDynamicLayer(layout, snapshot)), 0, 0);
     const double scale = std::min(
         static_cast<double>(box.width) / static_cast<double>(source.width),
         static_cast<double>(box.height) / static_cast<double>(source.height));
@@ -294,10 +288,14 @@ void renderTutorial(
     if (panelFocusPoint(panelLayout, focus.target)) {
         detailSource = panelFocusSourceRect(panelLayout, focus.target);
     }
-    const TutorialRect detailDestination = renderPanelRegion(
-        frame, panelLayout, runtime, physicalState, speedMultiplier, detailSource, composition.detailBox);
-    const TutorialRect locatorDestination = renderPanelRegion(
-        frame, panelLayout, runtime, physicalState, speedMultiplier, fullPanel, composition.panelBox);
+    TutorialSurface panel = renderPanelBase(panelLayout, runtime);
+    const PanelPresentationSnapshot panelSnapshot =
+        makePanelPresentationSnapshot(panelLayout, runtime, physicalState, speedMultiplier);
+    panel.composite(dynamicLayerToSurface(renderPanelDynamicLayer(panelLayout, panelSnapshot)), 0, 0);
+    const TutorialRect detailDestination = blitPanelRegion(
+        frame, panel, detailSource, composition.detailBox);
+    const TutorialRect locatorDestination = blitPanelRegion(
+        frame, panel, fullPanel, composition.panelBox);
 
     if (const auto target = panelFocusDestinationRect(panelLayout, focus.target, detailSource, detailDestination)) {
         const int cx = target->x + target->width / 2;

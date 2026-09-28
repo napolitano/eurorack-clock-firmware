@@ -21,6 +21,9 @@
 
 namespace clockfw::sim::tutorial {
 
+/** @brief Controls whether every logical frame is materialized or repeated frames share one PNG. */
+enum class FrameStorageMode : std::uint8_t { Materialized, SparseForPublication };
+
 /** @brief One lossless generated frame and its deterministic logical identity. */
 struct StoryFrameRecord {
     std::size_t index = 0U;
@@ -39,6 +42,7 @@ struct StoryFramePipelineResult {
     std::filesystem::path srtPath;
     std::filesystem::path vttPath;
     std::filesystem::path manifestPath;
+    std::filesystem::path narrationPath;
 
     /** @brief True only when the story and every generated artifact completed successfully. */
     explicit operator bool() const;
@@ -58,7 +62,8 @@ public:
     StoryFramePipelineResult generate(
         const Story& story,
         StorySimulatorPort& port,
-        const std::filesystem::path& outputDirectory);
+        const std::filesystem::path& outputDirectory,
+        FrameStorageMode storageMode = FrameStorageMode::Materialized);
 
 private:
     std::filesystem::path tutorialRoot_;

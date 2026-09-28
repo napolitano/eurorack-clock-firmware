@@ -37,6 +37,8 @@ enum class StoryTraceKind : std::uint8_t {
     Subtitle,
     Scope,
     Focus,
+    NarrationBegin,
+    NarrationEnd,
     WaitSatisfied,
     AssertionPassed,
 };

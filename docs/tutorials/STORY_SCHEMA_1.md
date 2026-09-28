@@ -162,6 +162,41 @@ Timeouts and failed assertions abort generation.
 
 `chapter`, `text`, and `callout` scene duration advances presentation time but not firmware time in Phase 1. This prevents invisible product evolution behind full-frame explanatory material.
 
+## Narration timing anchors
+
+Editable narrated examples may attach an optional stable `narration` ID to a bounded non-tutorial scene or to one timed tutorial action. The ID is publication metadata only; it does not change CLOCK state, firmware time semantics, subtitle text or interaction behaviour.
+
+Non-tutorial scene:
+
+```yaml
+- text:
+    title: "What the display tells us"
+    body: "A spoken explanation belongs here."
+    narration: "s02"
+    duration_ms: 12000
+```
+
+Timed tutorial action:
+
+```yaml
+- focus:
+    target: oled_top_bar
+    label: "Source and lock state"
+    narration: "s03"
+    duration_ms: 8000
+```
+
+or:
+
+```yaml
+- narration: "s04"
+  wait_ms: 5000
+```
+
+Narration IDs are lower-case stable identifiers and must be unique inside one Story. A tutorial scene itself cannot carry `narration` because it has no single bounded duration; attach the ID to the concrete timed action that owns the spoken beat. Story Runner emits begin/end trace events at the exact presentation times.
+
+The checked-in teaching examples pair these IDs with [`voiceover/segments.json`](voiceover/segments.json). Local publication may lengthen the matching `duration_ms`/`wait_ms` in an ignored resolved Story copy after measuring real TTS audio; authored source remains unchanged.
+
 ## Interaction profiles
 
 Schema 1 reserves the deterministic profile names:
@@ -176,7 +211,7 @@ Exact durations are defined centrally in [`interaction_profiles.yaml`](interacti
 
 The generated tutorial is composed first. Optional pre-produced intro/outro clips are concatenated only in the publication stage. Default final media is MP4/H.264; WebM/VP9 is optional. Relative publication-asset paths resolve from the Story YAML file.
 
-SB-7 probes every referenced clip before composition. Video is aspect-preserving scaled/padded to the Story output geometry and normalized to the Story FPS while preserving the probed source duration. If any intro/outro has audio, publication normalizes to 48 kHz stereo and inserts silence only into otherwise silent segments; otherwise final media has no audio stream. Final SRT/WebVTT cue times are offset by the normalized intro duration only.
+SB-7 probes every referenced clip before composition. Video is aspect-preserving scaled/padded to the Story output geometry and normalized to the Story FPS while preserving the probed source duration. If any intro/outro has audio, publication normalizes to 48 kHz stereo and inserts silence only into otherwise silent segments; otherwise final media has no audio stream. Final SRT/WebVTT cue times are offset by the normalized intro duration only. Publication also writes `<story-id>.narration.json`; its narration begin/end times use the same publication timeline and therefore include the normalized intro offset.
 
 
 ## Physical panel presentation
@@ -247,6 +282,7 @@ frames/frame-000001.png
 ...
 <story-id>.srt
 <story-id>.vtt
+<story-id>.narration.json
 manifest.json
 ```
 

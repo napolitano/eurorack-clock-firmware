@@ -45,6 +45,15 @@ StoryFramePipelineResult generatedResult(const std::filesystem::path& directory)
     StoryFramePipelineResult generated;
     generated.outputDirectory = directory;
     generated.run.presentationDurationUs = 300000ULL;
+    generated.run.trace = {
+        {StoryTraceKind::NarrationBegin, 50000ULL, 0ULL, std::nullopt, std::nullopt, "s01", {}},
+        {StoryTraceKind::NarrationEnd, 200000ULL, 0ULL, std::nullopt, std::nullopt, "s01", {}},
+    };
+    generated.frames = {
+        {0U, 0ULL, "frames/frame-000000.png", "hash-a"},
+        {1U, 100000ULL, "frames/frame-000001.png", "hash-b"},
+        {2U, 200000ULL, "frames/frame-000002.png", "hash-c"},
+    };
     generated.subtitles = {{50000ULL, 200000ULL, "Tutorial subtitle"}};
     generated.srtPath = directory / "demo.srt";
     generated.vttPath = directory / "demo.vtt";
@@ -152,8 +161,15 @@ int main(const int argc, char** argv) {
     if (!require(readText(result.srtPath) == renderSrt(expected), "SRT intro offset mismatch")) return 1;
     if (!require(readText(result.vttPath) == renderWebVtt(expected), "WebVTT intro offset mismatch")) return 1;
     const std::string manifest = readText(result.manifestPath);
-    if (!require(manifest.find("\"audio_present\": true") != std::string::npos,
-                 "publication manifest lost audio state")) return 1;
+    if (!require(manifest.find("\"audio_present\": true") != std::string::npos &&
+                 manifest.find("\"narration_cue_count\": 1") != std::string::npos,
+                 "publication manifest lost audio/narration state")) return 1;
+    const std::string narration = readText(result.narrationPath);
+    if (!require(narration.find("\"timeline\": \"publication\"") != std::string::npos &&
+                 narration.find("\"id\": \"s01\"") != std::string::npos &&
+                 narration.find(std::to_string(50000ULL + result.introDurationUs)) != std::string::npos &&
+                 narration.find(std::to_string(200000ULL + result.introDurationUs)) != std::string::npos,
+                 "publication narration cue must include normalized intro offset")) return 1;
 
     Story introOnly = story;
     introOnly.id = "publication-intro-only";

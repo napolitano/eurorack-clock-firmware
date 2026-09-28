@@ -18,6 +18,7 @@ scenes:
       number: 1
       title: "PLAY / PAUSE / STOP"
       subtitle: "Transport without surprises"
+      narration: "s01"
       duration_ms: 18000
   - tutorial:
       subtitle: "CLOCK always starts in STOP."
@@ -35,6 +36,7 @@ scenes:
         - focus:
             target: play
             label: "PLAY starts the transport"
+            narration: "s02"
             duration_ms: 12900
         - subtitle:
             text: "Press PLAY again to pause."
@@ -46,6 +48,7 @@ scenes:
         - focus:
             target: oled_top_bar
             label: "PAUSE keeps transport state"
+            narration: "s03"
             duration_ms: 13200
         - subtitle:
             text: "Press PLAY to resume."
@@ -67,16 +70,19 @@ scenes:
         - focus:
             target: stop
             label: "STOP ends the run and resets phase"
+            narration: "s04"
             duration_ms: 21200
   - callout:
       type: warning
       title: "STOP is authoritative"
       body: |
         A manual STOP remains authoritative even when external SYNC is present.
+      narration: "s05"
       duration_ms: 7500
   - text:
       title: "Thanks for watching"
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
+      narration: "s06"
       duration_ms: 20000

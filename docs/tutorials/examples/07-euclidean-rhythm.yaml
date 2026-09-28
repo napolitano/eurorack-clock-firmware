@@ -18,6 +18,7 @@ scenes:
       number: 1
       title: "Euclidean Mode"
       subtitle: "Distribute hits across a cycle"
+      narration: "s01"
       duration_ms: 18000
   - tutorial:
       subtitle: "Select Euclid from the mode carousel."
@@ -55,6 +56,7 @@ scenes:
             height: 10
             placement: right
             label: "12 steps define the cycle"
+            narration: "s02"
             duration_ms: 21400
         - subtitle:
             text: "Increase the number of hits to 5."
@@ -71,6 +73,7 @@ scenes:
             height: 10
             placement: right
             label: "Five hits are distributed across the cycle"
+            narration: "s03"
             duration_ms: 19500
         - subtitle:
             text: "Select ROTATE to inspect the position of those five hits."
@@ -85,6 +88,7 @@ scenes:
             height: 10
             placement: right
             label: "ROTATE: same hits, shifted starting position"
+            narration: "s04"
             duration_ms: 11200
         - button:
             name: STOP_BACK
@@ -110,16 +114,19 @@ scenes:
             height: 10
             placement: right
             label: "ROTATE shifts the pattern without changing its count"
+            narration: "s05"
             duration_ms: 15600
   - callout:
       type: tip
       title: "Three core parameters"
       body: |
         STEPS sets cycle length, HITS sets event count, and ROTATE shifts the pattern.
+      narration: "s06"
       duration_ms: 12700
   - text:
       title: "Thanks for watching"
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
+      narration: "s07"
       duration_ms: 20000

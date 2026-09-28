@@ -14,10 +14,14 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 - Add the approved South Signal Lab 1080p intro and outro as the only intentionally tracked Storybook MP4 source assets, and reference both from every editable teaching example.
 - Ignore generated tutorial videos, audio renders, subtitle sidecars, retained frame trees, staging directories and Storybook frame PNG/RGBA intermediates so publication output cannot drift into source control.
-- Rework all eleven US-English Eleven-v3 narration scripts around the full South Signal Lab opening/sign-off contract, explicit viewer orientation before detailed operation, and purposeful Audio Tags for warmer, more natural delivery.
+- Rework all eleven US-English ElevenLabs narration scripts around the full South Signal Lab opening/sign-off contract, explicit viewer orientation before detailed operation, and purposeful Audio Tags for warmer, more natural delivery.
 - Recalculate every editable example from the actual narration length at the measured ~195 wpm reference pace; retain 18-second opening and 20-second closing windows while substantially extending body holds where the explanation needs room.
 - Expand the editable teaching set from ten to eleven examples with a full eight-Independent-Clocks walkthrough covering product orientation, topology change, short-push channel selection, the real encoder long-press, and a separately timed explanation of every MODE / TIMING / CLOCK / OUTPUT setting actually shown on screen.
 - Keep subtitles concise while the post-production voice-over explains intent, context and parameter meaning in more detail.
+- Add a local narration-first publication orchestrator: synthesize/cache ElevenLabs segments, measure real audio duration, resolve Story timing from those measurements, render the picture only afterwards, and mux narration against Storybook-authored cue positions.
+- Make ElevenLabs model selection local and runtime-resolved through `/v1/models`, preferring an accessible v4 TTS model via `ELEVENLABS_MODEL_ID=auto-v4` without hard-coding a provider model identifier.
+- Add a tracked `.env.example` while hard-ignoring real `.env`/`.env.*` files; API keys remain workstation-only and are never copied into manifests or render reports.
+- Add sparse publication-frame storage and FFconcat run-length encoding so unchanged tutorial frames reuse one PNG instead of losslessly encoding thousands of duplicates; logical output remains CFR at the Story FPS.
 
 ### Storybook focus-arrow readability
 

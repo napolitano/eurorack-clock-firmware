@@ -73,11 +73,19 @@ void TutorialSurface::blendPixel(const int x, const int y, const TutorialColor c
 }
 
 void TutorialSurface::fillRect(TutorialRect rect, const TutorialColor color) {
-    if (rect.width <= 0 || rect.height <= 0) return;
+    if (rect.width <= 0 || rect.height <= 0 || color.alpha == 0U) return;
     const int left = std::max(0, rect.x);
     const int top = std::max(0, rect.y);
     const int right = std::min(static_cast<int>(width_), rect.x + rect.width);
     const int bottom = std::min(static_cast<int>(height_), rect.y + rect.height);
+    if (left >= right || top >= bottom) return;
+    if (color.alpha == 255U) {
+        for (int y = top; y < bottom; ++y) {
+            auto first = pixels_.begin() + static_cast<std::ptrdiff_t>(static_cast<std::size_t>(y) * width_ + static_cast<std::size_t>(left));
+            std::fill(first, first + (right - left), color);
+        }
+        return;
+    }
     for (int y = top; y < bottom; ++y) {
         for (int x = left; x < right; ++x) {
             blendPixel(x, y, color);
@@ -167,16 +175,30 @@ void TutorialSurface::blitNearest(
         sourceRect.y + sourceRect.height > static_cast<int>(source.height())) {
         throw std::out_of_range("nearest blit source rectangle outside raster");
     }
+    const auto& sourcePixels = source.pixels();
     for (int dy = 0; dy < destinationRect.height; ++dy) {
+        const int destinationY = destinationRect.y + dy;
+        if (destinationY < 0 || destinationY >= static_cast<int>(height_)) continue;
         const int sy = sourceRect.y + static_cast<int>(
             (static_cast<std::int64_t>(dy) * sourceRect.height) / destinationRect.height);
+        const std::size_t sourceRow = static_cast<std::size_t>(sy) * source.width();
+        const std::size_t destinationRow = static_cast<std::size_t>(destinationY) * width_;
         for (int dx = 0; dx < destinationRect.width; ++dx) {
+            const int destinationX = destinationRect.x + dx;
+            if (destinationX < 0 || destinationX >= static_cast<int>(width_)) continue;
             const int sx = sourceRect.x + static_cast<int>(
                 (static_cast<std::int64_t>(dx) * sourceRect.width) / destinationRect.width);
-            blendPixel(
-                destinationRect.x + dx,
-                destinationRect.y + dy,
-                source.pixel(static_cast<std::size_t>(sx), static_cast<std::size_t>(sy)));
+            const TutorialColor pixel = sourcePixels[sourceRow + static_cast<std::size_t>(sx)];
+            TutorialColor& destination = pixels_[destinationRow + static_cast<std::size_t>(destinationX)];
+            if (pixel.alpha == 255U) {
+                destination = pixel;
+            } else if (pixel.alpha != 0U) {
+                destination = {
+                    blendChannel(pixel.red, destination.red, pixel.alpha),
+                    blendChannel(pixel.green, destination.green, pixel.alpha),
+                    blendChannel(pixel.blue, destination.blue, pixel.alpha),
+                    255U};
+            }
         }
     }
 }

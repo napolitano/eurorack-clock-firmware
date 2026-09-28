@@ -9,7 +9,6 @@
 
 #include <fstream>
 #include <iomanip>
-#include <optional>
 #include <sstream>
 #include <stdexcept>
 
@@ -39,32 +38,34 @@ void writeText(const std::filesystem::path& path, const std::string& text) {
 }  // namespace
 
 std::vector<SubtitleCue> subtitleCuesFromTrace(const StoryRunResult& run) {
-    struct OpenCue {
-        std::size_t sceneIndex = 0U;
-        std::uint64_t startUs = 0ULL;
-        std::string text;
-    };
-    std::optional<OpenCue> open;
+    bool open = false;
+    std::size_t openSceneIndex = 0U;
+    std::uint64_t openStartUs = 0ULL;
+    std::string openText;
     std::vector<SubtitleCue> cues;
 
     auto closeAt = [&](const std::uint64_t endUs) {
-        if (!open.has_value()) return;
-        if (endUs > open->startUs && !open->text.empty()) {
-            cues.push_back({open->startUs, endUs, open->text});
+        if (!open) return;
+        if (endUs > openStartUs && !openText.empty()) {
+            cues.push_back({openStartUs, endUs, openText});
         }
-        open.reset();
+        open = false;
+        openText.clear();
     };
 
     for (const StoryTraceEvent& event : run.trace) {
         if (event.kind == StoryTraceKind::Subtitle && event.sceneIndex.has_value()) {
             closeAt(event.presentationUs);
             if (!event.value.empty()) {
-                open = OpenCue{*event.sceneIndex, event.presentationUs, event.value};
+                open = true;
+                openSceneIndex = *event.sceneIndex;
+                openStartUs = event.presentationUs;
+                openText = event.value;
             }
             continue;
         }
         if (event.kind == StoryTraceKind::SceneEnd && event.sceneIndex.has_value() &&
-            open.has_value() && open->sceneIndex == *event.sceneIndex) {
+            open && openSceneIndex == *event.sceneIndex) {
             closeAt(event.presentationUs);
         }
     }

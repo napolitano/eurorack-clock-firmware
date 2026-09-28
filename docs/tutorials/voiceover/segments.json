@@ -1,0 +1,597 @@
+{
+  "schema": 1,
+  "description": "Narration segments map stable Storybook narration IDs to one or more paragraphs in the authored US-English voice-over scripts.",
+  "stories": {
+    "01-power-and-first-clock": {
+      "voiceover": "01-power-and-first-clock.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            3
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            4
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            5
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            6
+          ]
+        },
+        {
+          "id": "s07",
+          "paragraphs": [
+            7
+          ]
+        }
+      ]
+    },
+    "02-transport-basics": {
+      "voiceover": "02-transport-basics.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            3,
+            4
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            5
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            6,
+            7
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            8
+          ]
+        }
+      ]
+    },
+    "03-encoder-tempo": {
+      "voiceover": "03-encoder-tempo.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            4
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            5
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            6
+          ]
+        }
+      ]
+    },
+    "04-tap-tempo": {
+      "voiceover": "04-tap-tempo.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            4
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            5
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            6
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            7
+          ]
+        }
+      ]
+    },
+    "05-topology-and-channel": {
+      "voiceover": "05-topology-and-channel.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            4,
+            5
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            6
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            7
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            8
+          ]
+        }
+      ]
+    },
+    "06-clock-mode": {
+      "voiceover": "06-clock-mode.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2,
+            3,
+            4
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            5
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            6,
+            7
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            8
+          ]
+        }
+      ]
+    },
+    "07-euclidean-rhythm": {
+      "voiceover": "07-euclidean-rhythm.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            4
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            5
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            6,
+            7
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            8
+          ]
+        },
+        {
+          "id": "s07",
+          "paragraphs": [
+            9
+          ]
+        }
+      ]
+    },
+    "08-sequencer-basics": {
+      "voiceover": "08-sequencer-basics.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            4
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            5,
+            6,
+            7
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            8
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            9
+          ]
+        }
+      ]
+    },
+    "09-divider-bank": {
+      "voiceover": "09-divider-bank.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            4
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            5,
+            6
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            7
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            8
+          ]
+        }
+      ]
+    },
+    "10-external-sync": {
+      "voiceover": "10-external-sync.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            3,
+            4
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            5
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            6
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            7
+          ]
+        },
+        {
+          "id": "s07",
+          "paragraphs": [
+            8
+          ]
+        }
+      ]
+    },
+    "11-eight-independent-clocks-walkthrough": {
+      "voiceover": "11-eight-independent-clocks-walkthrough.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2,
+            3
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            4,
+            5
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            6
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            7
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            8,
+            9
+          ]
+        },
+        {
+          "id": "s07",
+          "paragraphs": [
+            10
+          ]
+        },
+        {
+          "id": "s08",
+          "paragraphs": [
+            11
+          ]
+        },
+        {
+          "id": "s09",
+          "paragraphs": [
+            12
+          ]
+        },
+        {
+          "id": "s10",
+          "paragraphs": [
+            13
+          ]
+        },
+        {
+          "id": "s11",
+          "paragraphs": [
+            14
+          ]
+        },
+        {
+          "id": "s12",
+          "paragraphs": [
+            15
+          ]
+        },
+        {
+          "id": "s13",
+          "paragraphs": [
+            16
+          ]
+        },
+        {
+          "id": "s14",
+          "paragraphs": [
+            17
+          ]
+        },
+        {
+          "id": "s15",
+          "paragraphs": [
+            18
+          ]
+        },
+        {
+          "id": "s16",
+          "paragraphs": [
+            19
+          ]
+        },
+        {
+          "id": "s17",
+          "paragraphs": [
+            20
+          ]
+        },
+        {
+          "id": "s18",
+          "paragraphs": [
+            21
+          ]
+        },
+        {
+          "id": "s19",
+          "paragraphs": [
+            22
+          ]
+        },
+        {
+          "id": "s20",
+          "paragraphs": [
+            23
+          ]
+        },
+        {
+          "id": "s21",
+          "paragraphs": [
+            24
+          ]
+        },
+        {
+          "id": "s22",
+          "paragraphs": [
+            25
+          ]
+        },
+        {
+          "id": "s23",
+          "paragraphs": [
+            26
+          ]
+        },
+        {
+          "id": "s24",
+          "paragraphs": [
+            27
+          ]
+        },
+        {
+          "id": "s25",
+          "paragraphs": [
+            28
+          ]
+        }
+      ]
+    }
+  }
+}

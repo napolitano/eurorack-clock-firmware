@@ -106,7 +106,8 @@ A tutorial frame is composed from synchronized logical streams:
 - panel/physical interaction/patch state from `PanelLayout`;
 - real gate/LED telemetry;
 - optional scope telemetry;
-- Storybook presentation/subtitle events.
+- Storybook presentation/subtitle events;
+- optional narration timing anchors for local publication.
 
 The Storybook controls visibility and timing but does not manufacture product state.
 
@@ -122,7 +123,9 @@ intro video? → generated CLOCK tutorial → outro video? → final MP4/WebM
 
 The SB-7 publication compositor uses `ffprobe` to validate referenced clips and measure source/normalized duration, then `ffmpeg` to normalize video to the Story resolution/frame rate. Normalization preserves source duration explicitly; it must not allow padded audio to extend the visible intro/outro.
 
-Intro/outro may carry their own audio. If any publication clip contains audio, the compositor normalizes all segments to 48 kHz stereo, preserves existing clip audio and supplies silence to otherwise audio-free segments. If neither clip carries audio, the generated tutorial remains audio-free. Final SRT/WebVTT timestamps are regenerated from the SB-6 cue list with the **normalized intro duration** added to tutorial cue times. Outro duration does not shift tutorial cues.
+Intro/outro may carry their own audio. If any publication clip contains audio, the compositor normalizes all segments to 48 kHz stereo, preserves existing clip audio and supplies silence to otherwise audio-free segments. If neither clip carries audio, the generated tutorial remains audio-free. Final SRT/WebVTT timestamps are regenerated from the SB-6 cue list with the **normalized intro duration** added to tutorial cue times. The same offset is applied to Story Runner narration begin/end events and written to `<story-id>.narration.json` for the local narration mixer. Outro duration does not shift tutorial or narration cues.
+
+Publication video uses **sparse frame storage**. The Story Runner still has a logical frame at every requested presentation sample, but unchanged frame runs reference one lossless PNG. SB-7 writes an FFconcat duration list from those runs and FFmpeg restores the requested constant frame rate in the encoded media. Frozen explanatory holds therefore cost one image encode per visual state rather than one PNG per 30-fps logical frame. Dynamic frames remain individually sampled.
 
 The publication stage uses atomic staging. A missing/unreadable referenced media asset, failed probe, unavailable codec/encoder, failed normalization or failed composition is a publication failure and must not replace a previous successful output. `ffmpeg`/`ffprobe` are publication-tool dependencies only and are not required by firmware or unrelated simulator/Storybook tests.
 
@@ -133,7 +136,7 @@ The following are generated/local artifacts and must stay outside source bundles
 - rendered frames;
 - MP4/WebM output;
 - generated SRT/VTT;
-- publication manifests;
+- publication manifests and narration timing sidecars;
 - local encoder/probe output;
 - coverage/sanitizer/verification reports;
 - temporary media-normalisation files.
@@ -210,6 +213,8 @@ Text is fully measured before drawing. An unbreakable line wider than its layout
 No developer timing panel, debug status text, or eight-channel developer scope is composed into tutorial frames. The optional Storybook scope is deliberately reduced to the requested visible channel.
 
 ## SB-6 frame/subtitle output pipeline
+
+`StoryFramePipeline` supports a materialized authoring mode and `SparseForPublication`. Sparse mode preserves the logical frame/timestamp records while reusing the previous PNG path whenever a frozen Story state or identical rendered RGBA digest proves that no new image is required. Narration cue timing is emitted from the same single Story execution; there is no second replay for audio alignment.
 
 SB-6 adds a read-only `StoryExecutionObserver` to the runner. It cannot deliver controls or mutate Story state. It only requests future presentation sample timestamps and receives a snapshot while the one real Story execution is already at the corresponding simulator/firmware time.
 

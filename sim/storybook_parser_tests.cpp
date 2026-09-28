@@ -223,6 +223,51 @@ scenes:
     ok &= require(validSync && validateStory(*validSync.story, tutorialRoot).empty(),
                   "valid cable/source/generator separation must validate");
 
+    const StoryParseResult narration = parseStoryText(R"YAML(
+schema: 1
+id: narration-anchors
+title: "Narration anchors"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - text:
+      title: "Opening"
+      body: "Narrated opening"
+      narration: "s01"
+      duration_ms: 18000
+  - tutorial:
+      actions:
+        - narration: "s02"
+          wait_ms: 1000
+)YAML");
+    ok &= require(narration && validateStory(*narration.story, tutorialRoot).empty(),
+                  "bounded scene/action narration anchors must parse and validate");
+    ok &= require(narration && narration.story->scenes[0].narrationId == std::optional<std::string>("s01") &&
+                      narration.story->scenes[1].actions[0].narrationId == std::optional<std::string>("s02"),
+                  "narration IDs must survive parsing on scenes and timed actions");
+
+    const StoryParseResult duplicateNarration = parseStoryText(R"YAML(
+schema: 1
+id: duplicate-narration
+title: "Duplicate narration"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - text:
+      title: "One"
+      narration: "same-id"
+      duration_ms: 1000
+  - text:
+      title: "Two"
+      narration: "same-id"
+      duration_ms: 1000
+)YAML");
+    ok &= require(duplicateNarration &&
+                      containsReason(validateStory(*duplicateNarration.story, tutorialRoot), "duplicate narration id"),
+                  "narration IDs must be unique within one story");
+
     const StoryParseResult rstWithoutCable = parseStoryText(R"YAML(
 schema: 1
 id: invalid-rst-pulse

@@ -6,7 +6,6 @@
  * @license PolyForm-Noncommercial-1.0.0
  */
 #include "tutorial/publication_pipeline.h"
-
 #include <algorithm>
 #include <cmath>
 #include <fstream>
@@ -16,33 +15,28 @@
 #include <stdexcept>
 #include <string>
 #include <utility>
-
 #include "tutorial/external_process.h"
+#include "tutorial/publication_narration.h"
 #include "tutorial/subtitle_writer.h"
-
 namespace clockfw::sim::tutorial {
 namespace {
-
 void writeText(const std::filesystem::path& path, const std::string& text) {
     std::ofstream stream(path, std::ios::binary | std::ios::trunc);
     if (!stream) throw std::runtime_error("cannot create publication file: " + path.string());
     stream.write(text.data(), static_cast<std::streamsize>(text.size()));
     if (!stream) throw std::runtime_error("cannot write publication file: " + path.string());
 }
-
 std::string readText(const std::filesystem::path& path) {
     std::ifstream stream(path, std::ios::binary);
     if (!stream) throw std::runtime_error("cannot read publication probe output: " + path.string());
     return std::string(std::istreambuf_iterator<char>(stream), std::istreambuf_iterator<char>());
 }
-
 std::string trim(std::string text) {
     const auto first = text.find_first_not_of(" \t\r\n");
     if (first == std::string::npos) return {};
     const auto last = text.find_last_not_of(" \t\r\n");
     return text.substr(first, last - first + 1U);
 }
-
 std::string jsonEscape(const std::string& text) {
     std::ostringstream out;
     for (const char raw : text) {
@@ -57,19 +51,16 @@ std::string jsonEscape(const std::string& text) {
     }
     return out.str();
 }
-
 std::filesystem::path stagingPathFor(const std::filesystem::path& outputDirectory) {
     const std::string name = outputDirectory.filename().string();
     if (name.empty()) throw std::runtime_error("publication output directory must have a filename component");
     return outputDirectory.parent_path() / (name + ".staging");
 }
-
 std::filesystem::path previousPathFor(const std::filesystem::path& outputDirectory) {
     const std::string name = outputDirectory.filename().string();
     if (name.empty()) throw std::runtime_error("publication output directory must have a filename component");
     return outputDirectory.parent_path() / (name + ".previous");
 }
-
 void publishStagingDirectory(
     const std::filesystem::path& staging,
     const std::filesystem::path& outputDirectory) {
@@ -77,13 +68,11 @@ void publishStagingDirectory(
     std::error_code error;
     std::filesystem::remove_all(previous, error);
     if (error) throw std::runtime_error("cannot clear stale publication backup: " + error.message());
-
     const bool hadPrevious = std::filesystem::exists(outputDirectory);
     if (hadPrevious) {
         std::filesystem::rename(outputDirectory, previous, error);
         if (error) throw std::runtime_error("cannot preserve previous publication output: " + error.message());
     }
-
     error.clear();
     std::filesystem::rename(staging, outputDirectory, error);
     if (error) {
@@ -98,7 +87,6 @@ void publishStagingDirectory(
         }
         throw std::runtime_error("cannot publish staged output: " + publishError);
     }
-
     if (hadPrevious) {
         error.clear();
         std::filesystem::remove_all(previous, error);
@@ -214,26 +202,75 @@ std::vector<std::string> normalizedClipCommand(
     return args;
 }
 
+std::string ffconcatQuote(const std::filesystem::path& path) {
+    const std::string raw = std::filesystem::absolute(path).generic_string();
+    std::string escaped;
+    escaped.reserve(raw.size() + 8U);
+    for (const char ch : raw) {
+        if (ch == '\'') escaped += "'\\''";
+        else escaped += ch;
+    }
+    return "'" + escaped + "'";
+}
+
+std::filesystem::path writeSparseFrameConcat(
+    const Story& story,
+    const StoryFramePipelineResult& generated,
+    const std::filesystem::path& work) {
+    if (generated.frames.empty()) throw std::runtime_error("cannot encode an empty Storybook frame sequence");
+    const auto concatPath = work / "tutorial-frames.ffconcat";
+    std::ostringstream out;
+    out << "ffconcat version 1.0\n";
+    const double frameSeconds = 1.0 / static_cast<double>(story.output.framesPerSecond);
+    std::size_t index = 0U;
+    std::filesystem::path lastPath;
+    while (index < generated.frames.size()) {
+        const StoryFrameRecord& first = generated.frames[index];
+        std::size_t runLength = 1U;
+        while (index + runLength < generated.frames.size() &&
+               generated.frames[index + runLength].rgbaFnv1a64 == first.rgbaFnv1a64) {
+            ++runLength;
+        }
+        const auto framePath = generated.outputDirectory / first.relativePath;
+        if (!std::filesystem::is_regular_file(framePath)) {
+            throw std::runtime_error("Storybook sparse frame is missing: " + framePath.string());
+        }
+        out << "file " << ffconcatQuote(framePath) << '\n';
+        out << "duration " << std::fixed << std::setprecision(9)
+            << (frameSeconds * static_cast<double>(runLength)) << '\n';
+        lastPath = framePath;
+        index += runLength;
+    }
+    // ffconcat ignores the final duration unless the final file is repeated.
+    out << "file " << ffconcatQuote(lastPath) << '\n';
+    writeText(concatPath, out.str());
+    return concatPath;
+}
+
 std::vector<std::string> tutorialClipCommand(
     const std::filesystem::path& ffmpeg,
     const Story& story,
     const StoryFramePipelineResult& generated,
+    const std::filesystem::path& concatInput,
     const std::filesystem::path& output,
     const bool requireAudio) {
-    const auto pattern = generated.outputDirectory / "frames" / "frame-%06d.png";
-    std::vector<std::string> args{ffmpeg.string(), "-y", "-v", "error", "-framerate",
-                                  std::to_string(story.output.framesPerSecond), "-start_number", "0", "-i", pattern.string()};
+    std::vector<std::string> args{ffmpeg.string(), "-y", "-v", "error", "-f", "concat", "-safe", "0",
+                                  "-i", concatInput.string()};
     if (requireAudio) {
         args.insert(args.end(), {"-f", "lavfi", "-i", "anullsrc=channel_layout=stereo:sample_rate=48000"});
     }
-    args.insert(args.end(), {"-map", "0:v:0", "-vf", "format=yuv420p", "-c:v", "libx264", "-preset", "medium",
+    args.insert(args.end(), {"-map", "0:v:0", "-vf", "fps=" + std::to_string(story.output.framesPerSecond) +
+                             ",format=yuv420p", "-c:v", "libx264", "-preset", "medium",
                              "-crf", "18", "-pix_fmt", "yuv420p"});
     if (requireAudio) {
         args.insert(args.end(), {"-map", "1:a:0", "-c:a", "aac", "-ar", "48000", "-ac", "2", "-shortest"});
     } else {
         args.push_back("-an");
     }
-    args.push_back(output.string());
+    const std::uint64_t logicalDurationUs =
+        (static_cast<std::uint64_t>(generated.frames.size()) * 1000000ULL) /
+        static_cast<std::uint64_t>(story.output.framesPerSecond);
+    args.insert(args.end(), {"-t", durationSeconds(logicalDurationUs), output.string()});
     return args;
 }
 
@@ -273,6 +310,7 @@ std::string publicationManifest(
     const std::uint64_t tutorialDurationUs,
     const std::uint64_t outroDurationUs,
     const bool withAudio,
+    const std::size_t narrationCueCount,
     const std::set<PublicationFormat>& formats) {
     std::ostringstream out;
     out << "{\n"
@@ -282,6 +320,7 @@ std::string publicationManifest(
         << "  \"tutorial_duration_us\": " << tutorialDurationUs << ",\n"
         << "  \"outro_duration_us\": " << outroDurationUs << ",\n"
         << "  \"audio_present\": " << (withAudio ? "true" : "false") << ",\n"
+        << "  \"narration_cue_count\": " << narrationCueCount << ",\n"
         << "  \"formats\": [";
     bool first = true;
     if (formats.count(PublicationFormat::Mp4H264) != 0U) { out << "\"mp4-h264\""; first = false; }
@@ -344,8 +383,9 @@ StoryPublicationResult StoryPublicationPipeline::publish(
             segments.push_back(normalizedIntro);
         }
 
+        const auto tutorialConcat = writeSparseFrameConcat(story, generated, work);
         const auto tutorialSegment = work / "tutorial-normalized.mp4";
-        runChecked(tutorialClipCommand(ffmpeg_, story, generated, tutorialSegment, withAudio),
+        runChecked(tutorialClipCommand(ffmpeg_, story, generated, tutorialConcat, tutorialSegment, withAudio),
                    "encoding generated tutorial frames");
         const auto tutorialProbe = probeMedia(ffprobe_, tutorialSegment, work, "tutorial-normalized");
         segments.push_back(tutorialSegment);
@@ -380,12 +420,15 @@ StoryPublicationResult StoryPublicationPipeline::publish(
         }
 
         const auto shifted = offsetCues(generated.subtitles, result.introDurationUs);
+        const auto narration = publicationNarrationCues(generated.run, result.introDurationUs);
         const auto srtName = story.id + ".srt";
         const auto vttName = story.id + ".vtt";
+        const auto narrationName = story.id + ".narration.json";
         writeSubtitleSidecars(staging / srtName, staging / vttName, shifted);
+        writeText(staging / narrationName, publicationNarrationManifest(story, narration));
         writeText(staging / "publication-manifest.json",
                   publicationManifest(story, result.introDurationUs, tutorialProbe.durationUs,
-                                      result.outroDurationUs, withAudio, requested));
+                                      result.outroDurationUs, withAudio, narration.size(), requested));
         std::filesystem::remove_all(work, ignored);
 
         if (!outputDirectory.parent_path().empty()) std::filesystem::create_directories(outputDirectory.parent_path());
@@ -393,6 +436,7 @@ StoryPublicationResult StoryPublicationPipeline::publish(
         result.srtPath = outputDirectory / srtName;
         result.vttPath = outputDirectory / vttName;
         result.manifestPath = outputDirectory / "publication-manifest.json";
+        result.narrationPath = outputDirectory / narrationName;
         return result;
     } catch (const std::exception& error) {
         std::filesystem::remove_all(staging, ignored);

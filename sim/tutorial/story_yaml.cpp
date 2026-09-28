@@ -337,6 +337,22 @@ private:
                     }
                 }
                 item.mapping.emplace_back(key, std::move(value));
+                const std::size_t sibling = nextSignificant(index);
+                if (sibling < lines_.size() && lines_[sibling].indent > indent &&
+                    lines_[sibling].content.rfind("-", 0U) != 0U) {
+                    index = sibling;
+                    StoryYamlNode extra = parseMapping(index, lines_[sibling].indent);
+                    for (auto& entry : extra.mapping) {
+                        const bool duplicate = std::any_of(
+                            item.mapping.begin(), item.mapping.end(),
+                            [&](const auto& existing) { return existing.first == entry.first; });
+                        if (duplicate) {
+                            issues_.push_back({entry.second.line, "duplicate mapping key '" + entry.first + "'"});
+                        } else {
+                            item.mapping.push_back(std::move(entry));
+                        }
+                    }
+                }
                 node.sequence.push_back(std::move(item));
             } else {
                 node.sequence.push_back(scalarNode(tail, line.number, issues_));

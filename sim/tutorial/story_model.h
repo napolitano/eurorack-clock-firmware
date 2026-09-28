@@ -68,6 +68,7 @@ struct StoryAction {
     std::optional<std::uint8_t> ppqn;
     std::optional<StoryWaveform> waveform;
     std::string text;
+    std::optional<std::string> narrationId;
     ScopeMode scopeMode = ScopeMode::Hidden;
     FocusTarget focusTarget = FocusTarget::None;
     FocusPlacement focusPlacement = FocusPlacement::Auto;
@@ -92,6 +93,7 @@ struct StoryScene {
     std::string body;
     std::optional<CalloutKind> calloutKind;
     std::vector<std::string> recipeSteps;
+    std::optional<std::string> narrationId;
     std::uint32_t durationMs = 0U;
     TransitionKind transition = TransitionKind::Cut;
     std::vector<StoryAction> actions;

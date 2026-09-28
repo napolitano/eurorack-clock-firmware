@@ -18,12 +18,14 @@ scenes:
       number: 1
       title: "Topology and Channel"
       subtitle: "Move from One Clock to one Independent output"
+      narration: "s01"
       duration_ms: 18000
   - text:
       title: "Two related choices"
       body: |
         First choose the operating topology.
         In Independent topology, then choose which of the eight outputs you want to edit.
+      narration: "s02"
       duration_ms: 13400
   - tutorial:
       subtitle: "Open the overview, then use TAP + encoder to select Clock."
@@ -50,6 +52,7 @@ scenes:
             height: 10
             placement: right
             label: "Independent topology is now active"
+            narration: "s03"
             duration_ms: 16300
         - encoder_push: {}
         - wait_ms: 600
@@ -69,16 +72,19 @@ scenes:
             height: 10
             placement: right
             label: "Channel 3 is the selected output"
+            narration: "s04"
             duration_ms: 28800
   - callout:
       type: tip
       title: "Independent does not mean unrelated"
       body: |
         Each output can use its own rhythmic function while all channels remain anchored to CLOCK's master timeline.
+      narration: "s05"
       duration_ms: 12200
   - text:
       title: "Thanks for watching"
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
+      narration: "s06"
       duration_ms: 20000

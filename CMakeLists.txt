@@ -173,6 +173,7 @@ target_compile_options(clock-storybook-frame-pipeline PRIVATE ${CLOCK_WARNING_FL
 
 add_library(clock-storybook-publication STATIC
     sim/tutorial/external_process.cpp
+    sim/tutorial/publication_narration.cpp
     sim/tutorial/publication_pipeline.cpp
 )
 target_link_libraries(clock-storybook-publication PUBLIC
