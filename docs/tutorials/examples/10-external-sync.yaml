@@ -44,6 +44,10 @@ scenes:
         - wait_ms: 1000
         - scope:
             state: hide
+        - focus:
+            target: oled_top_bar
+            label: "AUTO locks to valid external SYNC"
+            duration_ms: 6500
   - tutorial:
       subtitle: "Patch RST, hold its generator, then inject one reset pulse."
       actions:
@@ -55,6 +59,10 @@ scenes:
         - assert:
             transport: playing
         - wait_ms: 800
+        - focus:
+            target: rst
+            label: "RST restarts phase; transport stays playing"
+            duration_ms: 6900
         - subtitle:
             text: "Now press STOP. External SYNC must not override it."
         - button:
@@ -64,6 +72,10 @@ scenes:
         - wait_ms: 1000
         - assert:
             transport: stopped
+        - focus:
+            target: stop
+            label: "Manual STOP stays authoritative"
+            duration_ms: 9800
   - callout:
       type: recipe
       title: "External timing recipe"
@@ -77,4 +89,4 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      duration_ms: 20000
+      duration_ms: 24000

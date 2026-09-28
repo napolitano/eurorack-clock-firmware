@@ -1,25 +1,47 @@
-[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you a complete CLOCK workflow: turning the factory One Clock setup into eight individually configurable Clock channels, selecting a channel with the encoder, and using a long press to reach its detailed settings. [short pause]
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll take you from CLOCK’s factory One Clock setup to eight individual Clock channels. We’ll select channel four, open its settings with a long encoder press, and go through every setting shown in that channel menu. [short pause]
 
-We begin in the factory state. One Clock is active, so one shared clock configuration drives all eight outputs. Behind that topology, however, every stored channel starts in Clock mode. That means selecting Clock from the mode carousel switches CLOCK into Independent topology and exposes eight individual Clock channels without us having to configure each one from scratch.
+At factory settings, One Clock drives all eight outputs from one shared configuration. The stored channels themselves start in Clock mode. Switching to Independent exposes all eight of them, each with its own channel settings, while they continue to share the master musical reference.
 
-First, press the encoder to open the overview. Hold TAP and turn the encoder until Clock is selected. When you release TAP, CLOCK asks for confirmation. Move from NO to YES and press the encoder to confirm.
+Press the encoder to open the overview. Hold TAP while turning the encoder through the mode carousel until Clock is selected. Release TAP and look at the confirmation screen. It starts on NO to prevent an accidental topology change. Turn once to YES, press the encoder, and give the display a moment to return to Performance. We are now in Independent operation.
 
-Now press the encoder once more. This is the Independent channel overview. All eight tiles are visible at the same time, and at the moment all eight channels are in Clock mode. [thoughtful] This is an important distinction: we now have eight separately configurable clocks, but they still share CLOCK’s master musical reference.
+Press the encoder again to open the channel overview. Eight tiles appear, one for each output. They currently all show Clock mode. This is the point where one shared One Clock setup has become eight separately configurable Clock channels.
 
-Let’s work on channel four. Turn the encoder until channel four is highlighted, then press the encoder to select it. A short press is therefore your normal channel-selection gesture: open the overview, choose a channel, and confirm it.
+Turn the encoder three detents to highlight channel four, then give it a short press. You are now editing that output. The short press opens the overview, selects a channel and confirms your choice. The other seven tiles retain their own channel positions and settings.
 
-[slower] Now for the second encoder gesture. Long-press the encoder for about two thirds of a second. Instead of opening the channel overview, CLOCK opens the context settings for the selected channel. In Clock mode, that top-level channel menu is divided into four areas: MODE, TIMING, CLOCK, and OUTPUT.
+[slower] Hold the encoder down for about eight tenths of a second. This opens channel settings instead of the channel overview. The four entries here are MODE, TIMING, CLOCK and OUTPUT. We’ll follow them in that order.
 
-MODE changes the channel function itself. TIMING contains the musical timing relationship: the integer divide or multiply rate, the rational numerator and denominator, Swing, and Groove. CLOCK contains the parameters that are specific to a conventional Clock channel — its meter beats and meter unit. OUTPUT contains the parameters that describe what leaves the jack: Probability, gate length, Phase, reset behavior, and Mute.
+MODE chooses what this one channel does: a regular Clock, a Euclidean rhythm, a Sequencer pattern, or Off. A Euclidean channel distributes hits across steps; Sequencer places gates on selected steps; Off silences that channel. We leave channel four in Clock mode so we can look at its Clock-specific settings. Changing this channel’s mode would not change its seven neighbours.
 
-Let’s open TIMING first. The first row is the familiar divide-or-multiply rate. Press the encoder to enter edit mode, turn it one step, and press again to confirm. Channel four is now running at times two while the other channels keep their own settings. The numerator and denominator below it provide rational ratios when a simple integer multiplier is not what you need. Swing adds the regular long-short displacement, while Groove selects the deterministic timing pattern layer.
+Turn one detent to TIMING and press the encoder to open it. It contains five separate entries. We’ll move down the list so that you can see where each parameter lives. Only the first one will be changed here; the others keep their factory values.
 
-Go back once and open CLOCK. This page is intentionally small because the mode-specific part of a regular clock is simple: meter beats and meter unit. These values describe the channel’s musical meter context; the shared timing and output behavior remain in the other two groups rather than being duplicated here.
+The first row, DIV/MULT, selects an integer division or multiplication against the master timing reference. Press to edit, turn one detent from times one to times two, and press again to save. Channel four now uses a times-two rate; the other channels retain their settings.
 
-Go back again and open OUTPUT. Probability controls whether scheduled events are emitted. Gate is the absolute HIGH time of the output pulse. Phase shifts the channel against the shared reference. Reset chooses whether a global reset re-anchors the channel or allows its local cycle to stay free. Mute silences the channel without changing the rest of its configuration.
+NUMERATOR is the upper part of a rational rate. Together with the denominator it gives finer ratios than the integer DIV/MULT choices. Here it remains at one; we are only inspecting it.
 
-As a concrete example, move to Gate, press the encoder to edit, and change the value from ten to twenty milliseconds. Press again to confirm. We now have channel four at times two with a twenty-millisecond gate, while the other seven Clock channels remain independently configurable.
+DENOMINATOR is the lower part of that rational rate. Numerator and denominator work together, so, for example, a ratio of three over two is possible without pretending it is one of the integer multiplication options. We leave the value at one.
 
-Finally, return to Performance and press PLAY. The selected channel is visibly running at its new rate. [thoughtful] This is the central idea behind Independent mode: each output owns its own mode and channel settings, but CLOCK keeps those outputs anchored to one common musical timeline instead of turning them into eight unrelated oscillators.
+SWING alternates the timing of successive intervals, making one longer and the next shorter. This row controls how much of that displacement the channel receives. We leave it at its factory value in this example.
 
-[warmly] And that completes the full walkthrough. Thank you for your interest and for taking the time to follow the details. If you liked what you saw, want to stay up to date, or would like to support future development, follow South Signal Lab here or on Ko-fi for exclusive insights into my Eurorack development process. Bye for now, and see you soon.
+GROOVE leads to a separate timing-pattern page. It selects a repeatable groove shape for this channel’s events. Unlike Swing’s simple alternating displacement, a groove can follow its own pattern over a longer cycle. We are showing where that setting lives without changing it, so our times-two example stays easy to follow.
+
+Press STOP slash BACK to return to the channel menu. Turn once from TIMING to CLOCK and press the encoder. This group contains the two meter settings specific to a conventional Clock channel. It does not duplicate the five timing rows we just inspected.
+
+METER BEATS is the number of beats in the channel’s measure. The factory value is four. It gives the clock its local measure structure while the whole device still follows the master timeline.
+
+METER UNIT selects the note value counted as one beat: a half, quarter, eighth, or sixteenth note. The factory setting is the quarter note. Together with METER BEATS, it describes the channel’s musical meter.
+
+Back out, turn once to OUTPUT, and press the encoder. These five rows describe how the channel’s scheduled events become output pulses. The first is PROBABILITY, the chance that a scheduled gate actually comes out of the jack. At one hundred percent every eligible event passes; lower values can omit some events. It does not change the underlying shared timing reference.
+
+GATE sets the length of the HIGH part of a pulse, in milliseconds. Turn to GATE, press to edit, and watch the value enter editing state. Turn one detent from ten to twenty milliseconds; then press again to confirm. The channel keeps its times-two event rate. We have changed the width of each gate, not the spacing between events.
+
+PHASE shifts this channel’s event position against the common reference. It is an offset, expressed as a percentage of the channel interval. Here we leave it at zero to keep the output aligned with the reference.
+
+RESET chooses how this channel reacts to a global phase reset. GLOBAL re-anchors it with the group; SYNC FREE can preserve the local cycle instead. We leave the default in place and move on.
+
+MUTE silences the output without clearing the channel mode, timing, or other settings. Turn it back off and the configured channel can sound again. We leave MUTE off for the demonstration.
+
+Go back twice to Performance and press PLAY. The scope now shows channel four running with the times-two rate and twenty-millisecond gates we set. The other seven Clock channels are still separately configurable, with no hidden change to them from our channel-four edits.
+
+[thoughtful] That is the central idea: individual output settings on top of one shared musical timeline. TIMING says when a channel runs, CLOCK sets its local meter, and OUTPUT shapes what leaves the jack.
+
+[warmly] That completes the walkthrough. Thank you for following the details. If you want to keep up with CLOCK or support its development, follow South Signal Lab here or on Ko-fi for more insight into how these Eurorack modules and components are built. Bye for now, and see you soon.

@@ -26,6 +26,10 @@ scenes:
         - button:
             name: TAP
         - wait_ms: 120
+        - focus:
+            target: tap
+            label: "First TAP starts a measurement"
+            duration_ms: 4600
         - subtitle:
             text: "Tap again at the new pulse."
         - button:
@@ -34,6 +38,24 @@ scenes:
         - button:
             name: TAP
         - wait_ms: 700
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "AUTO stays selected; internal BPM is updated"
+            duration_ms: 8500
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "Subsequent taps refine the internal BPM"
+            duration_ms: 5600
   - callout:
       type: tip
       title: "AUTO stays AUTO"
@@ -46,4 +68,4 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      duration_ms: 20000
+      duration_ms: 24000

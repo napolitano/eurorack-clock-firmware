@@ -11,7 +11,7 @@ Every script follows the same South Signal Lab framing, but the closing wording 
 - opening: `Hi, this is South Signal Lab. My name is Axel, and today I’ll show you ...`
 - closing: the same thank-you / follow / Ko-fi message, lightly varied so repeated videos do not sound templated.
 
-After the 4.5-second pre-produced intro, every example reserves an 18-second opening card for the spoken introduction. The final Storybook scene holds for 20 seconds before the 5.5-second outro; Axel measured the spoken sign-off at roughly 16 seconds, leaving about four seconds of editorial safety.
+After the 4.5-second pre-produced intro, every example reserves an 18-second opening card. The current closing scripts need up to roughly 20 seconds at the reference pace, so the final Storybook scene now holds for 24 seconds before the 5.5-second outro. The measured 16-second sign-off is a pacing reference, not the measured duration of these newly written scripts.
 
 Generated narration audio (`.wav`, `.mp3`, `.m4a`, `.aac`, `.flac`) is intentionally ignored by Git and must not be added to source packages.
 

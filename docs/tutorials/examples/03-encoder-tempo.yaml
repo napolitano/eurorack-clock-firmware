@@ -27,12 +27,30 @@ scenes:
             direction: clockwise
             detents: 8
         - wait_ms: 900
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "Master BPM rises directly"
+            duration_ms: 4600
         - subtitle:
             text: "Turn counter-clockwise to reduce BPM."
         - encoder:
             direction: counter_clockwise
             detents: 3
         - wait_ms: 900
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "Master BPM follows one shared timeline"
+            duration_ms: 9500
   - callout:
       type: tip
       title: "One master timeline"
@@ -44,4 +62,4 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      duration_ms: 20000
+      duration_ms: 24000

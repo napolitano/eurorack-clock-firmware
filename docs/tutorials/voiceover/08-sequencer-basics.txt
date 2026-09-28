@@ -1,11 +1,11 @@
 [warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you the basic editing workflow in CLOCK’s Sequencer mode — selecting the mode, moving around the step grid, toggling a gate, and then watching the result run. [short pause]
 
-Select Sequencer from the mode carousel. Unlike Euclidean mode, Sequencer lets you decide directly which individual steps produce gates instead of calculating the distribution from a hit count.
+Press the encoder to open the overview. Hold TAP and turn through the mode carousel to Sequencer. Release TAP, confirm the change and let the step grid appear. Unlike Euclidean mode, Sequencer lets you decide directly which individual steps produce gates instead of calculating the distribution from a hit count. The grid is the edit surface for the selected output.
 
-Move to step two with the encoder and press the encoder to toggle that gate. Then press PLAY and the scope shows the resulting gate sequence.
+Turn the encoder one detent to step two. The highlighted step is the one you are about to change; turning alone does not write a gate. Press the encoder to toggle the step, and look at the changed marker on the OLED. Then press PLAY and show the scope. You can compare the grid position with the resulting gate activity as the sequence advances.
 
-[thoughtful] Patterns are not limited to one sixteen-step page. Sequencer supports longer patterns, and the display follows the active block so you can edit them without squeezing every step onto the OLED at once.
+[thoughtful] Patterns are not limited to one sixteen-step page. Sequencer supports longer patterns, and the display follows the active block so you can edit them without squeezing every step onto the OLED at once. We are only editing one visible step here; this video does not change the pattern length or walk through additional blocks.
 
-The Sequencer defines event placement, while CLOCK’s shared master timing still defines when those steps occur.
+The Sequencer defines event placement, while CLOCK’s shared master timing still defines when those steps occur. Stop the transport and return to Performance when the result is clear. The edited step is part of the selected channel’s pattern.
 
 [warmly] And that’s enough to get started with the Sequencer. Thanks very much for your interest and for spending the time here. If you want to see where CLOCK goes next, get more engineering detail, or support my work, follow South Signal Lab here or on Ko-fi for exclusive development insights from my Eurorack projects. Bye — see you soon.

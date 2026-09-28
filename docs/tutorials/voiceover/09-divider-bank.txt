@@ -1,9 +1,9 @@
 [warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you Divider Bank — the fastest way to turn one timing source into eight related clock divisions without configuring eight individual channels one by one. [short pause]
 
-Select Divider Bank from the topology carousel. Instead of treating the outputs as eight separate channel configurations, Divider Bank assigns one coordinated family of divisions across all eight physical outputs.
+Press the encoder to open the overview. Hold TAP and turn one detent to Divider Bank. Release TAP, move the confirmation from NO to YES and press the encoder. Instead of treating the outputs as eight separately edited channel configurations, Divider Bank assigns a coordinated family of divisions across all eight physical outputs. The screen now reflects the selected bank rather than an individual Clock channel.
 
-Here we change from powers of two to the integer bank. CLOCK also provides a prime-number family for a different set of rhythmic relationships.
+Press the encoder to edit the bank choice. The initial family uses powers of two, the familiar sequence of repeated halving. Turn one detent to the integer family and press again to confirm. The available bank choices also include a prime-number family for different rhythmic relationships. We are naming that option here; this example leaves the integer bank selected.
 
-[thoughtful] Divider Bank is useful when you want conventional clock-division behavior quickly. All eight outputs remain derived from the same timing reference, so their relationship is deterministic rather than being eight unrelated clocks that merely happen to start together.
+[thoughtful] Return to the main screen and press PLAY. The scope provides a visible reference for one of the bank outputs while the divider set runs. Divider Bank is useful when you want conventional clock divisions quickly. All eight outputs remain derived from the same timing reference, so the divisions keep their relationship to the incoming master pulse. Press STOP when you have seen enough.
 
 [warmly] That’s Divider Bank. Thank you for your interest and for taking the time to watch. If you found this useful, want to stay up to date with CLOCK, or would like to support continued development, follow South Signal Lab here or on Ko-fi for exclusive insight into the engineering process behind my Eurorack modules and components. Bye for now, and see you soon.

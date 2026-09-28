@@ -37,12 +37,30 @@ scenes:
             direction: clockwise
             detents: 1
         - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "Sequencer places gates on chosen steps"
+            duration_ms: 6300
         - subtitle:
             text: "Move to step 2 and toggle its gate."
         - encoder:
             direction: clockwise
             detents: 1
         - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "Step 2 is now toggled"
+            duration_ms: 5100
         - button:
             name: PLAY
         - assert:
@@ -53,6 +71,15 @@ scenes:
         - wait_ms: 1600
         - scope:
             state: hide
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "Pattern blocks extend beyond 16 steps"
+            duration_ms: 14500
         - button:
             name: STOP_BACK
         - button:
@@ -70,4 +97,4 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      duration_ms: 20000
+      duration_ms: 24000

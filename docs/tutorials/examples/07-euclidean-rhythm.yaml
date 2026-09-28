@@ -47,6 +47,15 @@ scenes:
         - encoder:
             direction: clockwise
             detents: 1
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "12 steps define the cycle"
+            duration_ms: 5900
         - subtitle:
             text: "Increase the number of hits to 5."
         - encoder_push: {}
@@ -54,6 +63,29 @@ scenes:
             direction: clockwise
             detents: 1
         - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "Five hits are distributed across the cycle"
+            duration_ms: 5400
+        - subtitle:
+            text: "Select ROTATE to inspect the position of those five hits."
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "ROTATE: same hits, shifted starting position"
+            duration_ms: 6200
         - button:
             name: STOP_BACK
         - button:
@@ -70,6 +102,15 @@ scenes:
             state: hide
         - button:
             name: STOP_BACK
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "ROTATE shifts the pattern without changing its count"
+            duration_ms: 6200
   - callout:
       type: tip
       title: "Three core parameters"
@@ -81,4 +122,4 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      duration_ms: 20000
+      duration_ms: 24000

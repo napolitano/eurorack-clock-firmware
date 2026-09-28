@@ -1,10 +1,10 @@
 [warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how CLOCK handles external SYNC and RST, why those inputs have different jobs, and what happens when external timing meets a manual transport command. [short pause]
 
-SYNC provides timing. In the factory AUTO source mode, connect an external clock and CLOCK waits for valid incoming edges before establishing lock. Once locked, external timing becomes the reference while SOURCE itself remains AUTO.
+SYNC provides timing. In the factory AUTO source mode, connect an external clock to the SYNC input. CLOCK does not treat the physical cable alone as proof of a valid clock: it waits for accepted edges before establishing lock. Let the simulation run until the lock indication appears. Once locked, external timing becomes the reference while the SOURCE setting itself remains AUTO. You can watch the selected output in the scope.
 
-RST is different. It controls phase; it is not a second transport or clock-source input. Here we inject one reset pulse and the transport remains playing while the phase restarts.
+RST is different. Patch it separately and hold its generator before sending one deliberate reset pulse. RST controls phase; it is not a second transport or clock-source input. Observe that the output’s phase restarts while the transport remains playing. SYNC continues providing the timing reference during this action.
 
-[slower] Now press STOP manually. Even with external SYNC still present, CLOCK stays stopped. External timing must not silently override an explicit manual STOP.
+[slower] Now press STOP slash BACK manually. Even with external SYNC still present and valid incoming pulses, CLOCK stays stopped. Watch the transport indication for a moment; there is no automatic restart from the clock edges. External timing must not silently override an explicit manual STOP.
 
 [thoughtful] Use SYNC for timing, RST for phase restart, and CLOCK’s own controls for manual PLAY and STOP authority.
 

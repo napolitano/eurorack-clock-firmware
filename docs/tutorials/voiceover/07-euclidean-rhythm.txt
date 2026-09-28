@@ -1,11 +1,11 @@
 [warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you the basics of CLOCK’s Euclidean mode — what STEPS, HITS, and ROTATE mean, and how those three controls turn a simple cycle into a useful rhythmic pattern. [short pause]
 
-A Euclidean rhythm distributes a chosen number of hits as evenly as possible across a chosen number of steps. Here we set the cycle to twelve steps and the hit count to five.
+A Euclidean rhythm distributes a chosen number of hits as evenly as possible across a chosen number of steps. Start by choosing Euclid from the carousel and confirming the mode change. On the channel page, select STEPS. Press the encoder to edit its value, turn four detents down from the factory value of sixteen to twelve, and press again to confirm. The cycle now contains twelve positions before it repeats.
 
-The third core parameter is ROTATE. Rotation does not change the number of steps or hits; it shifts the pattern’s position inside the cycle, which lets the same distribution start at a different musical point.
+Turn down to HITS. Press to edit, move it from four to five, and press again. Five events are now distributed over those twelve positions, with the gaps as even as the numbers allow. The third core parameter is ROTATE. Move to it now. Rotation does not add or remove a hit; it changes where the same pattern starts in the cycle. We only inspect this setting here and leave its value untouched.
 
-Press PLAY and the scope shows the resulting gate activity.
+Press STOP slash BACK twice to return to Performance. Press PLAY and the scope shows the resulting gate activity. Let it run for a moment so you can see the pattern repeat; then press STOP to end the demonstration.
 
-[thoughtful] The useful mental model is simple: STEPS defines the length, HITS defines the number of events, and ROTATE changes where the pattern begins. The channel still follows CLOCK’s master timeline, so it stays musically related to the other outputs.
+[thoughtful] The useful mental model is simple: STEPS defines the length, HITS defines the number of events, and ROTATE changes where the pattern begins. Twelve steps and five hits describe this particular cycle; its rotation can be changed later without rebuilding those values. The channel still follows CLOCK’s master timeline, so it stays musically related to the other outputs.
 
 [warmly] That’s the Euclidean foundation. Thank you for watching, and thank you for your time. If you want more CLOCK tutorials, want to follow the ongoing development, or would like to support the project, follow South Signal Lab here or on Ko-fi for exclusive insights into how my Eurorack modules and components are built. Bye for now, and see you soon.

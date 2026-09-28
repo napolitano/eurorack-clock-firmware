@@ -37,6 +37,15 @@ scenes:
             direction: clockwise
             detents: 1
         - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "One bank drives eight related divisions"
+            duration_ms: 6200
         - subtitle:
             text: "Change the divider bank from powers of two to integers."
         - encoder_push: {}
@@ -44,6 +53,15 @@ scenes:
             direction: clockwise
             detents: 1
         - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "Integer bank selected"
+            duration_ms: 7300
         - button:
             name: STOP_BACK
         - button:
@@ -58,6 +76,15 @@ scenes:
             state: hide
         - button:
             name: STOP_BACK
+        - focus:
+            target: oled_region
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+            label: "Powers of two · integers · primes"
+            duration_ms: 5200
   - callout:
       type: tip
       title: "Bank choices"
@@ -69,4 +96,4 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      duration_ms: 20000
+      duration_ms: 24000

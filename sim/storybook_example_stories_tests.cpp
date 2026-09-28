@@ -18,6 +18,7 @@
 #include "tutorial/story_validator.h"
 
 namespace {
+using namespace clockfw;
 using namespace clockfw::sim;
 using namespace clockfw::sim::tutorial;
 
@@ -73,6 +74,22 @@ int main() {
             for (const auto& issue : result.issues) std::cerr << filename << ':' << issue.sourceLine << ": " << issue.reason << '\n';
         }
         ok &= require(static_cast<bool>(result), std::string(filename) + " must execute");
+        if (std::string(filename) == "11-eight-independent-clocks-walkthrough.yaml" && result) {
+            const ClockState& state = runtime.state();
+            ok &= require(state.operatingMode == OperatingMode::Independent,
+                          "Example 11 must end in Independent topology");
+            ok &= require(runtime.selectedChannelForPresentation() == 3U,
+                          "Example 11 must leave channel 4 selected");
+            for (std::size_t channel = 0U; channel < kChannelCount; ++channel) {
+                const auto& config = state.channels[channel].common;
+                ok &= require(config.mode == ChannelMode::Clock,
+                              "Example 11 must keep all eight channels in Clock mode");
+                ok &= require(config.rate.factor == (channel == 3U ? 2U : 1U),
+                              "Example 11 must edit only channel 4 rate to x2");
+                ok &= require(config.gateLengthMs == (channel == 3U ? 20U : 10U),
+                              "Example 11 must edit only channel 4 gate to 20 ms");
+            }
+        }
         runtime.flushPersistence();
         std::filesystem::remove(statePath);
     }

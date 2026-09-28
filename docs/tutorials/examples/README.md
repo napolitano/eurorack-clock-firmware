@@ -14,7 +14,7 @@ These eleven files are a didactic, copy-and-edit Storybook starter set. They are
 8. `08-sequencer-basics.yaml` — select Sequencer and toggle a step.
 9. `09-divider-bank.yaml` — Divider Bank and divider-family selection.
 10. `10-external-sync.yaml` — external SYNC lock plus independent RST phase reset.
-11. `11-eight-independent-clocks-walkthrough.yaml` — full One Clock → eight Independent Clocks workflow, channel selection, long-press context settings, and Clock-channel timing/output configuration.
+11. `11-eight-independent-clocks-walkthrough.yaml` — full One Clock → eight Independent Clocks workflow, channel selection, long-press settings, and a separate on-screen explanation for MODE and each TIMING, CLOCK, and OUTPUT row.
 
 All examples change CLOCK only through recorded physical controls, patch actions or external stimuli. `setup:` establishes only pre-recording factory/power conditions.
 
@@ -22,8 +22,10 @@ Every example also:
 
 - prepends the tracked South Signal Lab intro and appends the tracked South Signal Lab outro from `../assets/video/`;
 - starts with an 18-second narration-safe title window after the intro bumper;
-- ends with a 20-second narration-safe hold before the outro;
+- ends with a 24-second narration-safe hold before the outro;
 - has a matching US-English Eleven v3 voice-over script under [`../voiceover/`](../voiceover/README.md).
+
+Picture timing is planned from the actual script length and the control-action profile. See [`../voiceover/TIMING.md`](../voiceover/TIMING.md) for all eleven estimates and the Example 11 setting checklist. Final cuts must be adjusted against the recorded narration.
 
 The bumper MP4s are approved authored source assets. Generated tutorial video/audio, retained frames, sidecars and manifests are ignored by Git and are not repository source.
 

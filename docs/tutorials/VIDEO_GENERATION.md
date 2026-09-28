@@ -173,7 +173,7 @@ Storybook + intro/outro -> final silent tutorial section -> ElevenLabs narration
 
 The scripts target Eleven v3 and use sparse Audio Tags in square brackets plus punctuation and paragraph structure for natural delivery. They deliberately avoid SSML `<break>` markup. Generate a whole script when the timing already fits, or generate paragraph-by-paragraph when you want tighter editorial control.
 
-The tracked intro is 4.5 seconds. After it, every example reserves an 18-second opening card for the spoken introduction. The final `Thanks for watching` screen is 20 seconds; the measured sign-off is about 16 seconds, leaving editorial safety before the 5.5-second tracked outro. Generated narration audio is local post-production output and is ignored by Git.
+The tracked intro is 4.5 seconds. After it, every example reserves an 18-second opening card for the spoken introduction. The final `Thanks for watching` screen is now 24 seconds for the longer written sign-offs, before the 5.5-second tracked outro. Plan body holds using the voice-over script and the actual action-profile timing in [`voiceover/TIMING.md`](voiceover/TIMING.md); trim against the recorded voice before publication. Generated narration audio is local post-production output and is ignored by Git.
 
 ## 9. Use explicit ffmpeg/ffprobe paths when needed
 
