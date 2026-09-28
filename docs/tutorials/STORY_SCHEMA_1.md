@@ -164,7 +164,7 @@ Timeouts and failed assertions abort generation.
 
 ## Narration timing anchors
 
-Editable narrated examples may attach an optional stable `narration` ID to a bounded non-tutorial scene or to one timed tutorial action. The ID is publication metadata only; it does not change CLOCK state, firmware time semantics, subtitle text or interaction behaviour.
+Editable narrated examples attach stable `narration` IDs to bounded non-tutorial scenes or to explicit tutorial `beat` blocks. Narration metadata never changes CLOCK state or interaction semantics; it defines the presentation interval that owns the spoken explanation.
 
 Non-tutorial scene:
 
@@ -176,26 +176,44 @@ Non-tutorial scene:
     duration_ms: 12000
 ```
 
-Timed tutorial action:
+Tutorial narration is a temporal container around the related actions:
 
 ```yaml
-- focus:
-    target: oled_top_bar
-    label: "Source and lock state"
+- beat:
     narration: "s03"
-    duration_ms: 8000
+    duration_ms: 18000
+- subtitle:
+    text: "Open the overview and switch to Independent Clock."
+- encoder_push: {}
+- button:
+    name: TAP
+    state: down
+- encoder:
+    direction: clockwise
+    detents: 2
+- button:
+    name: TAP
+    state: up
+- focus:
+    target: oled_region
+    x: 0
+    y: 12
+    width: 128
+    height: 52
+    label: "Independent Clock topology"
+    duration_ms: 0
+- beat_end: "s03"
 ```
 
-or:
+`beat.duration_ms` is the **total authored narration budget**, not an additional hold after the actions. `StoryRunner` emits `NarrationBegin` before the first action inside the beat. Physical and simulator actions then advance normally while the voice-over is active. At `beat_end`, if the actions consumed less presentation time than the resolved narration budget, Storybook holds the last meaningful presentation state only for the remaining time. Firmware time is frozen during that tail hold. If enclosed actions already exceed the resolved narration budget, execution fails instead of silently desynchronising picture and narration.
 
-```yaml
-- narration: "s04"
-  wait_ms: 5000
-```
+A `focus` inside an active beat may use `duration_ms: 0`. In that form the focus remains visible without consuming an independent timed hold and is cleared automatically at `beat_end`. Intermediate timed focus actions remain valid and consume presentation time inside the same narration budget.
 
-Narration IDs are lower-case stable identifiers and must be unique inside one Story. A tutorial scene itself cannot carry `narration` because it has no single bounded duration; attach the ID to the concrete timed action that owns the spoken beat. Story Runner emits begin/end trace events at the exact presentation times.
+Tutorial scene-level narration and action-local forms such as `focus.narration` or `narration + wait_ms` are intentionally invalid. They allowed an action to complete before the voice-over describing it began and therefore cannot represent a synchronized instructional beat.
 
-The checked-in teaching examples pair these IDs with [`voiceover/segments.json`](voiceover/segments.json). Local publication may lengthen the matching `duration_ms`/`wait_ms` in an ignored resolved Story copy after measuring real TTS audio; authored source remains unchanged.
+Narration IDs are lower-case stable identifiers and must be unique inside one Story. Beats cannot overlap or nest, and `beat_end` must name the currently active beat.
+
+The checked-in teaching examples pair these IDs with [`voiceover/segments.json`](voiceover/segments.json). Local publication synthesizes each segment first, measures the real audio duration, and writes an ignored resolved Story copy in which the matching `beat.duration_ms` or non-tutorial scene duration is resolved to the larger of (a) measured duration plus configured headroom and (b) the authored duration, which remains a deliberate minimum visual/action budget. Authored source remains unchanged.
 
 ## Interaction profiles
 

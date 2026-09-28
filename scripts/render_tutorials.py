@@ -433,11 +433,12 @@ def segment_budgets(config: LocalConfig, audio: list[SegmentAudio]) -> dict[str,
     return budgets
 
 
-def resolve_story(stem: str, budgets: dict[str, int], output_path: Path) -> None:
+def resolve_story(stem: str, budgets: dict[str, int], output_path: Path) -> dict[str, int]:
     source = EXAMPLES_DIR / f"{stem}.yaml"
     lines = source.read_text(encoding="utf-8").splitlines()
     seen: set[str] = set()
-    narration_pattern = re.compile(r'^\s*(?:-\s*)?narration:\s*"([a-z0-9-]+)"\s*$')
+    resolved_budgets: dict[str, int] = {}
+    narration_pattern = re.compile(r'^\s*(?:-\s*)?narration:\s*"?([a-z0-9-]+)"?\s*$')
     duration_pattern = re.compile(r'^(\s*)(duration_ms|wait_ms):\s*\d+\s*$')
     for index, line in enumerate(lines):
         match = narration_pattern.match(line)
@@ -462,7 +463,10 @@ def resolve_story(stem: str, budgets: dict[str, int], output_path: Path) -> None
                 break
             dm = duration_pattern.match(lines[probe])
             if dm:
-                lines[probe] = f"{dm.group(1)}{dm.group(2)}: {budgets[segment_id]}"
+                authored_budget = int(lines[probe].split(":", 1)[1].strip())
+                resolved_budget = max(authored_budget, budgets[segment_id])
+                lines[probe] = f"{dm.group(1)}{dm.group(2)}: {resolved_budget}"
+                resolved_budgets[segment_id] = resolved_budget
                 replaced = True
                 break
         if not replaced:
@@ -478,6 +482,7 @@ def resolve_story(stem: str, budgets: dict[str, int], output_path: Path) -> None
     resolved = re.sub(r'outro_video:\s*"[^"]+"', f'outro_video: "{outro}"', resolved)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(resolved, encoding="utf-8")
+    return resolved_budgets
 
 
 def write_timing_plan(
@@ -640,9 +645,9 @@ def render_one(
 
     budgets = segment_budgets(config, audio)
     resolved_story = output_root / "resolved-stories" / f"{stem}.yaml"
-    resolve_story(stem, budgets, resolved_story)
+    resolved_budgets = resolve_story(stem, budgets, resolved_story)
     timing_plan = output_root / "plans" / f"{stem}.json"
-    write_timing_plan(stem, model_id, audio, budgets, timing_plan)
+    write_timing_plan(stem, model_id, audio, resolved_budgets, timing_plan)
     log(f"Resolved story: {resolved_story}")
     if audio_only:
         return {"story": stem, "audio_only": True, "segments": len(audio), "plan": str(timing_plan)}

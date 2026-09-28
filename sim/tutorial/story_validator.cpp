@@ -173,17 +173,33 @@ std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem:
             issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine,
                               "tutorial scene narration must be attached to a timed action"});
         }
+        std::optional<std::string> openBeat;
         for (std::size_t actionIndex = 0U; actionIndex < scene.actions.size(); ++actionIndex) {
             const StoryAction& action = scene.actions[actionIndex];
             auto semanticIssue = [&](const std::string& reason) {
                 issues.push_back({story.id, sceneIndex, actionIndex, action.sourceLine, reason});
             };
-            if (action.narrationId) {
-                if (!validNarrationId(*action.narrationId)) {
-                    semanticIssue("narration id must use lower-case kebab-case");
+            if (action.kind == StoryActionKind::BeatBegin) {
+                if (!action.narrationId || !validNarrationId(*action.narrationId)) {
+                    semanticIssue("beat narration id must use lower-case kebab-case");
+                } else if (openBeat.has_value()) {
+                    semanticIssue("narration beats may not overlap or nest");
                 } else if (!narrationIds.emplace(*action.narrationId).second) {
                     semanticIssue("duplicate narration id: " + *action.narrationId);
+                } else {
+                    openBeat = *action.narrationId;
                 }
+                if (action.durationMs == 0U) semanticIssue("beat requires a positive duration_ms");
+            } else if (action.kind == StoryActionKind::BeatEnd) {
+                if (!action.narrationId || !validNarrationId(*action.narrationId)) {
+                    semanticIssue("beat_end narration id must use lower-case kebab-case");
+                } else if (!openBeat.has_value() || *openBeat != *action.narrationId) {
+                    semanticIssue("beat_end must match the currently open narration beat");
+                } else {
+                    openBeat.reset();
+                }
+            } else if (action.narrationId) {
+                semanticIssue("tutorial narration must use beat/beat_end boundaries");
             }
             switch (action.kind) {
                 case StoryActionKind::Button:
@@ -220,6 +236,10 @@ std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem:
                 default: break;
             }
             if (!expectedValid(action)) semanticIssue("invalid expected state for wait_until/assert");
+        }
+        if (openBeat.has_value()) {
+            issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine,
+                              "tutorial scene ended with an open narration beat: " + *openBeat});
         }
     }
     if (heldButtons[0] || heldButtons[1] || heldButtons[2]) {

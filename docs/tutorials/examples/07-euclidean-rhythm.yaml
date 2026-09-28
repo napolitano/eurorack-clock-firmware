@@ -3,26 +3,29 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-euclidean-rhythm
-title: "Example 07 — Euclidean Rhythm"
+title: Example 07 — Euclidean Rhythm
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
 publication:
-  intro_video: "../assets/video/south-signal-lab-intro.mp4"
-  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
 setup:
   factory_reset: true
-  power: on
+  power: 'on'
 scenes:
   - chapter:
       number: 1
-      title: "Euclidean Mode"
-      subtitle: "Distribute hits across a cycle"
-      narration: "s01"
+      title: Euclidean Mode
+      subtitle: Distribute hits across a cycle
+      narration: s01
       duration_ms: 18000
   - tutorial:
-      subtitle: "Select Euclid from the mode carousel."
+      subtitle: Select Euclid from the mode carousel.
       actions:
+        - beat:
+            narration: s02
+            duration_ms: 18800
         - wait_ms: 1100
         - encoder_push: {}
         - button:
@@ -38,8 +41,21 @@ scenes:
             direction: clockwise
             detents: 1
         - encoder_push: {}
+        - focus:
+            target: oled_region
+            label: Euclid is the selected channel mode
+            duration_ms: 0
+            x: 0
+            y: 30
+            width: 124
+            height: 10
+            placement: right
+        - beat_end: s02
+        - beat:
+            narration: s03
+            duration_ms: 11400
         - subtitle:
-            text: "Set the cycle to 12 steps."
+            text: Set the cycle to 12 steps.
         - encoder_push: {}
         - encoder:
             direction: counter_clockwise
@@ -55,11 +71,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "12 steps define the cycle"
-            narration: "s02"
-            duration_ms: 21400
+            label: 12 steps define the cycle
+            duration_ms: 0
+        - beat_end: s03
+        - beat:
+            narration: s04
+            duration_ms: 15400
         - subtitle:
-            text: "Increase the number of hits to 5."
+            text: Increase the number of hits to 5.
         - encoder_push: {}
         - encoder:
             direction: clockwise
@@ -72,11 +91,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Five hits are distributed across the cycle"
-            narration: "s03"
-            duration_ms: 19500
+            label: Five hits are distributed across the cycle
+            duration_ms: 0
+        - beat_end: s04
+        - beat:
+            narration: s05
+            duration_ms: 22500
         - subtitle:
-            text: "Select ROTATE to inspect the position of those five hits."
+            text: Select ROTATE to inspect the position of those five hits.
         - encoder:
             direction: clockwise
             detents: 1
@@ -87,9 +109,8 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "ROTATE: same hits, shifted starting position"
-            narration: "s04"
-            duration_ms: 11200
+            label: 'ROTATE: same hits, shifted starting position'
+            duration_ms: 1800
         - button:
             name: STOP_BACK
         - button:
@@ -113,20 +134,20 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "ROTATE shifts the pattern without changing its count"
-            narration: "s05"
-            duration_ms: 15600
+            label: ROTATE shifts the pattern without changing its count
+            duration_ms: 0
+        - beat_end: s05
   - callout:
       type: tip
-      title: "Three core parameters"
+      title: Three core parameters
       body: |
         STEPS sets cycle length, HITS sets event count, and ROTATE shifts the pattern.
-      narration: "s06"
+      narration: s06
       duration_ms: 12700
   - text:
-      title: "Thanks for watching"
+      title: Thanks for watching
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      narration: "s07"
+      narration: s07
       duration_ms: 20000

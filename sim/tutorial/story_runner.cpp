@@ -12,6 +12,7 @@
 #include <string>
 #include <utility>
 #include "tutorial/interaction_profile_loader.h"
+#include "tutorial/story_narration_beat.h"
 #include "tutorial/story_runner_support.h"
 #include "tutorial/story_validator.h"
 namespace clockfw::sim::tutorial { namespace {
@@ -24,14 +25,9 @@ using detail::traceActionName;
 using detail::traceSceneName;
 class RunContext final {
 public:
-    RunContext(
-        StorySimulatorPort& port,
-        const Story& story,
-        const InteractionTiming& timing,
-        StoryPresentationSink* presentationSink,
-        StoryExecutionObserver* executionObserver)
-        : port_(port), story_(story), timing_(timing), presentationSink_(presentationSink),
-          executionObserver_(executionObserver) {}
+    RunContext(StorySimulatorPort& port, const Story& story, const InteractionTiming& timing,
+               StoryPresentationSink* presentationSink, StoryExecutionObserver* executionObserver)
+        : port_(port), story_(story), timing_(timing), presentationSink_(presentationSink), executionObserver_(executionObserver) {}
     StoryRunResult execute() {
         if (!applySetup()) {
             finish();
@@ -50,8 +46,7 @@ private:
         if (story_.setup.factoryReset) {
             const StoryPortResult reset = port_.resetPersistenceToFactory();
             if (!reset) {
-                addIssue(std::nullopt, std::nullopt, 0U,
-                         std::string("setup factory_reset failed: ") + portErrorName(reset.error));
+                addIssue(std::nullopt, std::nullopt, 0U, std::string("setup factory_reset failed: ") + portErrorName(reset.error));
                 return false;
             }
             emit(StoryTraceKind::Setup, std::nullopt, std::nullopt, "factory_reset", "applied");
@@ -59,12 +54,10 @@ private:
         if (story_.setup.powerOn.has_value()) {
             const StoryPortResult power = port_.setPower(*story_.setup.powerOn);
             if (!power) {
-                addIssue(std::nullopt, std::nullopt, 0U,
-                         std::string("setup power failed: ") + portErrorName(power.error));
+                addIssue(std::nullopt, std::nullopt, 0U, std::string("setup power failed: ") + portErrorName(power.error));
                 return false;
             }
-            emit(StoryTraceKind::Setup, std::nullopt, std::nullopt, "power",
-                 *story_.setup.powerOn ? "on" : "off");
+            emit(StoryTraceKind::Setup, std::nullopt, std::nullopt, "power", *story_.setup.powerOn ? "on" : "off");
         }
         return true;
     }
@@ -88,14 +81,19 @@ private:
         for (std::size_t actionIndex = 0U; actionIndex < scene.actions.size(); ++actionIndex) {
             const StoryAction& action = scene.actions[actionIndex];
             emit(StoryTraceKind::ActionBegin, sceneIndex, actionIndex, traceActionName(action.kind), {});
-            if (action.narrationId) emit(StoryTraceKind::NarrationBegin, sceneIndex, actionIndex, *action.narrationId, {});
+            const bool beatBoundary = action.kind == StoryActionKind::BeatBegin || action.kind == StoryActionKind::BeatEnd;
+            if (action.narrationId && !beatBoundary) {
+                emit(StoryTraceKind::NarrationBegin, sceneIndex, actionIndex, *action.narrationId, {});
+            }
             if (isPacedAction(action.kind)) {
                 advanceActiveMs(timing_.beforeActionMs);
             }
             if (!executeAction(action, sceneIndex, actionIndex)) {
                 return false;
             }
-            if (action.narrationId) emit(StoryTraceKind::NarrationEnd, sceneIndex, actionIndex, *action.narrationId, {});
+            if (action.narrationId && !beatBoundary) {
+                emit(StoryTraceKind::NarrationEnd, sceneIndex, actionIndex, *action.narrationId, {});
+            }
             emit(StoryTraceKind::ActionEnd, sceneIndex, actionIndex, traceActionName(action.kind), {});
         }
         emit(StoryTraceKind::SceneEnd, sceneIndex, std::nullopt, traceSceneName(scene.kind), scene.title);
@@ -103,12 +101,15 @@ private:
         activeSubtitle_.clear();
         return true;
     }
-
     bool executeAction(
         const StoryAction& action,
         const std::size_t sceneIndex,
         const std::size_t actionIndex) {
         switch (action.kind) {
+            case StoryActionKind::BeatBegin:
+                return beginBeat(action, sceneIndex, actionIndex);
+            case StoryActionKind::BeatEnd:
+                return endBeat(action, sceneIndex, actionIndex);
             case StoryActionKind::Encoder:
                 for (std::uint16_t detent = 0U; detent < action.detents; ++detent) {
                     if (!requirePort(port_.rotateEncoderDetent(action.encoderDirection), action, sceneIndex, actionIndex)) {
@@ -219,6 +220,10 @@ private:
                 if (presentationSink_ != nullptr) presentationSink_->onFocusState(
                     presentationUs_, action.focusTarget, true, action.focusPlacement, action.focusX, action.focusY, action.focusWidth, action.focusHeight, action.text);
                 emit(StoryTraceKind::Focus, sceneIndex, actionIndex, "focus", action.text);
+                if (action.durationMs == 0U && beat_.active()) {
+                    beat_.retainFocus(action.focusTarget);
+                    return true;
+                }
                 advancePresentationMs(action.durationMs);
                 if (presentationSink_ != nullptr) presentationSink_->onFocusState(
                     presentationUs_, action.focusTarget, false, FocusPlacement::Auto, 0, 0, 0, 0, {});
@@ -240,7 +245,22 @@ private:
         }
         return false;
     }
-
+    bool beginBeat(const StoryAction& action, const std::size_t sceneIndex, const std::size_t actionIndex) {
+        std::string error;
+        if (!beat_.begin(action, presentationUs_, error)) { addIssue(sceneIndex, actionIndex, action.sourceLine, std::move(error)); return false; }
+        emit(StoryTraceKind::NarrationBegin, sceneIndex, actionIndex, *action.narrationId, {});
+        return true;
+    }
+    bool endBeat(const StoryAction& action, const std::size_t sceneIndex, const std::size_t actionIndex) {
+        StoryNarrationBeatFinish finish;
+        std::string error;
+        if (!beat_.finish(action, presentationUs_, finish, error)) { addIssue(sceneIndex, actionIndex, action.sourceLine, std::move(error)); return false; }
+        if (finish.remainingUs > 0ULL) sampleUntil(presentationUs_ + finish.remainingUs, false);
+        if (finish.focusToClear && presentationSink_ != nullptr)
+            presentationSink_->onFocusState(presentationUs_, *finish.focusToClear, false, FocusPlacement::Auto, 0, 0, 0, 0, {});
+        emit(StoryTraceKind::NarrationEnd, sceneIndex, actionIndex, finish.id, {});
+        return true;
+    }
     bool executeButton(
         const ModuleControl control,
         const std::uint32_t downMs,
@@ -262,7 +282,6 @@ private:
         advanceActiveMs(releaseAndPauseMs);
         return true;
     }
-
     bool executeWaitUntil(
         const StoryAction& action,
         const std::size_t sceneIndex,
@@ -285,7 +304,6 @@ private:
                  "wait_until timeout: expected " + action.expected);
         return false;
     }
-
     bool waitConditionMatches(const StoryAction& action) const {
         if (!action.waitCondition) return false;
         switch (*action.waitCondition) {
@@ -298,7 +316,6 @@ private:
         }
         return false;
     }
-
     bool assertionMatches(const StoryAction& action) const {
         if (!action.assertion) return false;
         switch (*action.assertion) {
@@ -318,14 +335,12 @@ private:
         }
         return false;
     }
-
     bool transportMatches(const std::string& expected) const {
         if (expected == "playing") return port_.transportState() == TransportState::Playing;
         if (expected == "paused") return port_.transportState() == TransportState::Paused;
         if (expected == "stopped") return port_.transportState() == TransportState::Stopped;
         return false;
     }
-
     bool requirePort(
         const StoryPortResult result,
         const StoryAction& action,
@@ -336,7 +351,6 @@ private:
                  std::string(traceActionName(action.kind)) + " failed: " + portErrorName(result.error));
         return false;
     }
-
     void addIssue(
         const std::optional<std::size_t> sceneIndex,
         const std::optional<std::size_t> actionIndex,
@@ -344,7 +358,6 @@ private:
         std::string reason) {
         result_.issues.push_back({story_.id, sceneIndex, actionIndex, sourceLine, std::move(reason)});
     }
-
     void emit(
         const StoryTraceKind kind,
         const std::optional<std::size_t> sceneIndex,
@@ -354,7 +367,6 @@ private:
         result_.trace.push_back({kind, presentationUs_, port_.runtime().nowMicroseconds(),
                                  sceneIndex, actionIndex, std::move(name), std::move(value)});
     }
-
     void sampleUntil(const std::uint64_t targetPresentationUs, const bool firmwareAdvances) {
         while (executionObserver_ != nullptr) {
             const std::optional<std::uint64_t> next = executionObserver_->nextPresentationSampleUs();
@@ -374,32 +386,26 @@ private:
                 presentationUs_, port_.runtime().nowMicroseconds(), *currentSceneIndex_, currentScene_,
                 activeSubtitle_, &port_.presentationRuntime()});
         }
-
         const std::uint64_t remainingUs = targetPresentationUs - presentationUs_;
         if (firmwareAdvances && remainingUs > 0ULL) {
             port_.advanceFirmwareMicroseconds(remainingUs);
         }
         presentationUs_ = targetPresentationUs;
     }
-
     void advancePresentationMs(const std::uint32_t durationMs) {
         const std::uint64_t target = presentationUs_ + static_cast<std::uint64_t>(durationMs) * kUsPerMs;
         sampleUntil(target, false);
     }
-
     void advanceActiveMs(const std::uint32_t durationMs) {
         advanceActiveUs(static_cast<std::uint64_t>(durationMs) * kUsPerMs);
     }
-
     void advanceActiveUs(const std::uint64_t durationUs) {
         if (durationUs == 0ULL) return;
         sampleUntil(presentationUs_ + durationUs, true);
     }
-
     void finish() {
         result_.presentationDurationUs = presentationUs_;
     }
-
     StorySimulatorPort& port_;
     const Story& story_;
     const InteractionTiming& timing_;
@@ -410,14 +416,12 @@ private:
     const StoryScene* currentScene_ = nullptr;
     std::optional<std::size_t> currentSceneIndex_;
     std::string activeSubtitle_;
+    StoryNarrationBeat beat_;
 };
-
 }  // namespace
-
 StoryRunResult::operator bool() const {
     return issues.empty();
 }
-
 StoryRunner::StoryRunner(
     StorySimulatorPort& port,
     std::filesystem::path tutorialRoot,
@@ -425,14 +429,12 @@ StoryRunner::StoryRunner(
     StoryExecutionObserver* executionObserver)
     : port_(port), tutorialRoot_(std::move(tutorialRoot)), presentationSink_(presentationSink),
       executionObserver_(executionObserver) {}
-
 StoryRunResult StoryRunner::run(const Story& story) {
     StoryRunResult rejected;
     rejected.issues = validateStory(story, tutorialRoot_);
     if (!rejected.issues.empty()) {
         return rejected;
     }
-
     const InteractionTimingResult timing = loadInteractionTiming(tutorialRoot_, story.interactionProfile);
     if (!timing) {
         rejected.issues = timing.issues;
@@ -441,9 +443,7 @@ StoryRunResult StoryRunner::run(const Story& story) {
         }
         return rejected;
     }
-
     RunContext context(port_, story, *timing.timing, presentationSink_, executionObserver_);
     return context.execute();
 }
-
 }  // namespace clockfw::sim::tutorial

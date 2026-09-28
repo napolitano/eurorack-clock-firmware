@@ -37,7 +37,7 @@ For all eleven videos:
 python scripts/render_tutorials.py --all
 ```
 
-The local runner creates ElevenLabs speech first, measures the actual segment duration, writes ignored resolved Story copies, uses the optimized sparse Storybook renderer, then aligns narration to the publication cue sidecar. Generated audio/video, resolved stories, frame data, sidecars and manifests stay under ignored `tutorial-output/` and are not repository source.
+The local runner creates ElevenLabs speech first, measures the actual segment duration, writes ignored resolved Story copies, uses tutorial narration beats so each voice-over starts before the actions it explains, renders through the optimized sparse Storybook path, then aligns narration to the publication cue sidecar. Generated audio/video, resolved stories, frame data, sidecars and manifests stay under ignored `tutorial-output/` and are not repository source.
 
 For local `.env`/ElevenLabs configuration and low-level Storybook commands, see [`../VIDEO_GENERATION.md`](../VIDEO_GENERATION.md).
 

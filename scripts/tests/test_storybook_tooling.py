@@ -97,7 +97,8 @@ class StorybookToolingTests(unittest.TestCase):
             self.assertTrue(ids)
             self.assertEqual(len(ids), len(set(ids)))
             for narration_id in ids:
-                self.assertIn(f'narration: "{narration_id}"', story)
+                self.assertRegex(story, rf'narration:\s+["\']?{narration_id}["\']?')
+        self.assertIn("beat_end:", (ROOT / "docs/tutorials/examples/11-eight-independent-clocks-walkthrough.yaml").read_text(encoding="utf-8"))
 
     def test_publication_assets_and_scope_are_schema_contracts(self) -> None:
         """Schema 1 must retain optional media assets and visible-channel scope semantics."""
@@ -107,7 +108,8 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn('channel: visible', schema)
         self.assertIn('state: off', schema)
         self.assertIn('state: on', schema)
-        self.assertIn('narration: "s03"', schema)
+        self.assertIn('beat:', schema)
+        self.assertIn('beat_end:', schema)
         self.assertIn('<story-id>.narration.json', schema)
 
     def test_story_port_never_sets_clock_source_directly(self) -> None:
@@ -159,9 +161,9 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertEqual(11, len(scripts))
         for story in stories:
             text = story.read_text(encoding="utf-8")
-            self.assertIn('intro_video: "../assets/video/south-signal-lab-intro.mp4"', text)
-            self.assertIn('outro_video: "../assets/video/south-signal-lab-outro.mp4"', text)
-            self.assertIn('title: "Thanks for watching"', text)
+            self.assertIn('intro_video: ../assets/video/south-signal-lab-intro.mp4', text)
+            self.assertIn('outro_video: ../assets/video/south-signal-lab-outro.mp4', text)
+            self.assertIn('title: Thanks for watching', text)
             self.assertIn('duration_ms: 18000', text)
             self.assertIn('duration_ms: 20000', text)
         for script in scripts:
@@ -170,9 +172,9 @@ class StorybookToolingTests(unittest.TestCase):
             self.assertIn("Ko-fi", text)
         detailed = (examples / "11-eight-independent-clocks-walkthrough.yaml").read_text(encoding="utf-8")
         self.assertIn("hold_ms: 800", detailed)
-        self.assertIn('label: "MODE · TIMING · CLOCK · OUTPUT"', detailed)
-        self.assertIn('label: "Probability · Gate · Phase · Reset · Mute"', detailed)
-        self.assertIn('text: "Change channel 4 from ×1 to ×2."', detailed)
+        self.assertIn('label: MODE · TIMING · CLOCK · OUTPUT', detailed)
+        self.assertIn('label: Probability · Gate · Phase · Reset · Mute', detailed)
+        self.assertIn('text: Change channel 4 from ×1 to ×2.', detailed)
 
     def test_phase1_acceptance_matrix_has_exactly_40_evidence_rows(self) -> None:
         """SB-8 closes the frozen 40-point Phase-1 implementation gate with repository evidence."""

@@ -34,6 +34,8 @@ const char* traceActionName(const StoryActionKind kind) {
         case StoryActionKind::Subtitle: return "subtitle";
         case StoryActionKind::Scope: return "scope";
         case StoryActionKind::Focus: return "focus";
+        case StoryActionKind::BeatBegin: return "beat";
+        case StoryActionKind::BeatEnd: return "beat_end";
         case StoryActionKind::Wait: return "wait";
         case StoryActionKind::WaitUntil: return "wait_until";
         case StoryActionKind::Assert: return "assert";
@@ -68,6 +70,8 @@ bool isPacedAction(const StoryActionKind kind) {
         case StoryActionKind::Subtitle:
         case StoryActionKind::Scope:
         case StoryActionKind::Focus:
+        case StoryActionKind::BeatBegin:
+        case StoryActionKind::BeatEnd:
         case StoryActionKind::Wait:
         case StoryActionKind::WaitUntil:
         case StoryActionKind::Assert:

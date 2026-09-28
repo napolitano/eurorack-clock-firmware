@@ -4,7 +4,7 @@
 
 This directory contains the authored US-English narration for the eleven editable Storybook examples. Narration is now a first-class **local publication input** rather than a manually aligned afterthought: the local renderer creates the speech first, measures its real duration, resolves the Story presentation holds from those measurements, renders the picture, and finally muxes the speech onto Storybook's own narration cue timeline.
 
-The human-readable `.txt` files remain the spoken source of truth. [`segments.json`](segments.json) maps stable Storybook narration IDs such as `s01` and `s02` to one or more script paragraphs. The Story YAML contains the same IDs on bounded scenes or timed tutorial actions. This keeps prose, visible state and media timing explicitly related without storing generated audio in the repository.
+The human-readable `.txt` files remain the spoken source of truth. [`segments.json`](segments.json) maps stable Storybook narration IDs such as `s01` and `s02` to one or more script paragraphs. The Story YAML contains the same IDs on bounded non-tutorial scenes or explicit tutorial `beat` / `beat_end` containers. This keeps prose, visible actions and media timing explicitly related without storing generated audio in the repository.
 
 The scripts use purposeful Eleven expressive Audio Tags in square brackets together with punctuation and paragraph structure. Tags are performance direction rather than decoration: `[warmly]` for the opening, `[conversational]` for normal explanation, `[thoughtful]` or `[slowly]` where a distinction needs space, `[confidently]` or `[with emphasis]` for an important rule, and `[pause]` only where an actual pause belongs. The configured ElevenLabs TTS model must support the authored tags; the local pipeline does not silently rewrite them.
 
@@ -39,7 +39,7 @@ Wording may vary slightly from video to video, but those elements stay present.
 
 The user's measured reference delivery remains useful while authoring: roughly **15 seconds for the opening**, **16 seconds for the sign-off**, and approximately **195 spoken words/minute** as a planning pace. These values are no longer the final publication clock.
 
-For an actual local render, `scripts/render_tutorials.py` calls ElevenLabs segment by segment, measures each encoded audio file with `ffprobe`, and makes that real duration authoritative. The resolved Story adds a small visual headroom to every segment and keeps minimum opening/closing budgets of 18/20 seconds unless local configuration raises them. The checked-in Story YAML remains editable source; resolved timing lives only under ignored `tutorial-output/`.
+For an actual local render, `scripts/render_tutorials.py` calls ElevenLabs segment by segment, measures each encoded audio file with `ffprobe`, and makes that real duration authoritative. The resolved Story adds a small visual headroom to every segment, never shortens a checked-in beat below its authored visual/action minimum, and keeps minimum opening/closing budgets of 18/20 seconds unless local configuration raises them. In tutorial scenes the resolved duration belongs to the whole beat: narration starts before its actions, those actions consume part of the same budget, and `beat_end` holds only the remaining spoken time. The checked-in Story YAML remains editable source; resolved timing lives only under ignored `tutorial-output/`.
 
 Generated narration audio and its local cache are intentionally ignored by Git and must never be added to source packages.
 

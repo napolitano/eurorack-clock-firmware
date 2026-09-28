@@ -124,6 +124,7 @@ target_compile_options(clock-storybook-simulator-port PRIVATE ${CLOCK_WARNING_FL
 add_library(clock-storybook-runner STATIC
     sim/tutorial/story_runner.cpp
     sim/tutorial/story_runner_support.cpp
+    sim/tutorial/story_narration_beat.cpp
 )
 target_link_libraries(clock-storybook-runner PUBLIC
     clock-storybook-model

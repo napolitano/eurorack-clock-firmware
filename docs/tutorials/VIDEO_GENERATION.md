@@ -258,14 +258,14 @@ Final SRT/WebVTT cues are shifted by the measured normalized intro duration. Out
 
 ## 9. Narration-first publication details
 
-The editable examples have matching US-English narration under [`voiceover/`](voiceover/README.md). The checked-in `.txt` scripts remain human-authored spoken copy. [`voiceover/segments.json`](voiceover/segments.json) maps their paragraphs to stable `narration:` IDs embedded in the matching Story.
+The editable examples have matching US-English narration under [`voiceover/`](voiceover/README.md). The checked-in `.txt` scripts remain human-authored spoken copy. [`voiceover/segments.json`](voiceover/segments.json) maps their paragraphs to stable narration IDs embedded in the matching Story. Bounded non-tutorial scenes may carry `narration:` directly; tutorial narration uses explicit `beat` / `beat_end` containers so the spoken explanation begins before the actions it describes.
 
 The local runner performs two passes before expensive video work:
 
 1. synthesize or reuse each narration segment and measure its encoded duration with `ffprobe`;
-2. create an ignored resolved Story copy whose narration-linked `duration_ms`/`wait_ms` values are the measured duration plus local visual headroom.
+2. create an ignored resolved Story copy whose matching scene or `beat.duration_ms` budget is the larger of the measured duration plus local visual headroom and the authored minimum budget.
 
-The authored Story is never rewritten by the local job. After validation, Storybook executes the resolved copy once and records exact `NarrationBegin`/`NarrationEnd` presentation timestamps. Publication shifts those cues by the probed intro duration and writes `<story-id>.narration.json`. The Python runner uses that sidecar to place the cached audio segments and copies the already encoded video stream into the final narrated master.
+The authored Story is never rewritten by the local job. After validation, Storybook executes the resolved copy once and records exact `NarrationBegin`/`NarrationEnd` presentation timestamps. Actions inside a tutorial beat execute while narration is active. `beat_end` holds only any remaining narration budget; it does not replay or delay the actions. Publication shifts the resulting cues by the probed intro duration and writes `<story-id>.narration.json`. The Python runner uses that sidecar to place the cached audio segments and copies the already encoded video stream into the final narrated master.
 
 This means the actual generated voice — including Audio Tags, punctuation and pauses — controls timing. The historical ~195 wpm planning value is only an authoring estimate and is not used to overrule measured audio.
 
@@ -382,13 +382,14 @@ Use this order while developing a narrated teaching Story:
 
 1. Copy the closest YAML from `docs/tutorials/examples/` and its voice-over script.
 2. Change the `id`, `title`, explanatory text and recorded physical actions.
-3. Split narration into editorially stable beats in `voiceover/segments.json` and attach each ID to one bounded scene or timed action with `narration:`.
-4. Run `clock-storybook validate` until schema and semantics are clean.
-5. Run `python scripts/render_tutorials.py <number> --audio-only` to hear the real takes and create measured timing.
-6. Adjust prose/tags if necessary; unchanged segment audio remains cached.
-7. Run `python scripts/render_tutorials.py <number>` for the sparse picture render and final cue-aligned master.
-8. Use the low-level `frames` command only when individual frame inspection is needed.
-9. Keep all generated output under ignored `tutorial-output/`; never add it to a source bundle.
+3. Split narration into editorially stable beats in `voiceover/segments.json`. Attach non-tutorial IDs to bounded scenes; wrap tutorial actions in `beat` / `beat_end` so narration begins before the operation it explains.
+4. Use `focus.duration_ms: 0` for the final explanatory focus of a tutorial beat when it should remain visible through the remaining narration time.
+5. Run `clock-storybook validate` until schema and semantics are clean.
+6. Run `python scripts/render_tutorials.py <number> --audio-only` to hear the real takes and create measured timing.
+7. Adjust prose/tags if necessary; unchanged segment audio remains cached.
+8. Run `python scripts/render_tutorials.py <number>` for the sparse picture render and final cue-aligned master.
+9. Use the low-level `frames` command only when individual frame inspection is needed.
+10. Keep all generated output under ignored `tutorial-output/`; never add it to a source bundle.
 
 Do not replace physical UI actions with direct product-state setters. If a workflow cannot be expressed through the existing module controls, patch actions and external stimuli, extend the Storybook contract explicitly and regression-test that addition first.
 

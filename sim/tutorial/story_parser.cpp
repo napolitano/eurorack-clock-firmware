@@ -26,9 +26,7 @@ struct Decoder final {
     }
     bool mapping(const Node& node, const char* context, std::optional<std::size_t> scene = std::nullopt,
                  std::optional<std::size_t> action = std::nullopt) {
-        if (node.type == Node::Type::Mapping) {
-            return true;
-        }
+        if (node.type == Node::Type::Mapping) return true;
         issue(node, std::string(context) + " must be a mapping", scene, action);
         return false;
     }
@@ -49,27 +47,20 @@ struct Decoder final {
                          std::optional<std::size_t> scene = std::nullopt,
                          std::optional<std::size_t> action = std::nullopt) {
         const Node* value = node.find(key);
-        if (value == nullptr) {
-            issue(node, std::string(context) + ": missing required field '" + key + "'", scene, action);
-        }
+        if (value == nullptr) issue(node, std::string(context) + ": missing required field '" + key + "'", scene, action);
         return value;
     }
     std::optional<std::string> scalar(const Node& node, const char* context,
                                       std::optional<std::size_t> scene = std::nullopt,
                                       std::optional<std::size_t> action = std::nullopt) {
-        if (node.type != Node::Type::Scalar || node.scalar.empty()) {
-            issue(node, std::string(context) + " must be a non-empty scalar", scene, action);
-            return std::nullopt;
-        }
+        if (node.type != Node::Type::Scalar || node.scalar.empty()) { issue(node, std::string(context) + " must be a non-empty scalar", scene, action); return std::nullopt; }
         return node.scalar;
     }
     std::optional<std::uint32_t> uintValue(const Node& node, const char* context, const std::uint32_t min,
                                            const std::uint32_t max, std::optional<std::size_t> scene = std::nullopt,
                                            std::optional<std::size_t> action = std::nullopt) {
         const auto text = scalar(node, context, scene, action);
-        if (!text) {
-            return std::nullopt;
-        }
+        if (!text) return std::nullopt;
         std::uint32_t value = 0U;
         const auto* begin = text->data();
         const auto* end = begin + text->size();
@@ -161,8 +152,22 @@ struct Decoder final {
             if (const auto value = uintValue(node, "wait_ms", 1U, 3600000U, sceneIndex, actionIndex)) action.durationMs = *value;
             return action;
         }
+        if (name == "beat_end") {
+            action.kind = StoryActionKind::BeatEnd;
+            if (const auto value = scalar(node, "beat_end", sceneIndex, actionIndex)) action.narrationId = *value;
+            return action;
+        }
         if (!mapping(node, name.c_str(), sceneIndex, actionIndex)) return action;
-        if (name == "encoder") {
+        if (name == "beat") {
+            action.kind = StoryActionKind::BeatBegin;
+            rejectUnknown(node, {"narration", "duration_ms"}, "beat", sceneIndex, actionIndex);
+            if (const Node* value = required(node, "narration", "beat", sceneIndex, actionIndex)) {
+                if (const auto parsed = scalar(*value, "beat.narration", sceneIndex, actionIndex)) action.narrationId = *parsed;
+            }
+            if (const Node* value = required(node, "duration_ms", "beat", sceneIndex, actionIndex)) {
+                if (const auto parsed = uintValue(*value, "beat.duration_ms", 1U, 3600000U, sceneIndex, actionIndex)) action.durationMs = *parsed;
+            }
+        } else if (name == "encoder") {
             action.kind = StoryActionKind::Encoder;
             rejectUnknown(node, {"direction", "detents"}, "encoder", sceneIndex, actionIndex);
             if (const Node* value = required(node, "direction", "encoder", sceneIndex, actionIndex)) {
@@ -248,7 +253,7 @@ struct Decoder final {
             }
         } else if (name == "focus") {
             action.kind = StoryActionKind::Focus;
-            rejectUnknown(node, {"target", "label", "placement", "duration_ms", "x", "y", "width", "height", "narration"}, "focus", sceneIndex, actionIndex);
+            rejectUnknown(node, {"target", "label", "placement", "duration_ms", "x", "y", "width", "height"}, "focus", sceneIndex, actionIndex);
             if (const Node* value = required(node, "target", "focus", sceneIndex, actionIndex)) {
                 const auto text = scalar(*value, "focus.target", sceneIndex, actionIndex);
                 if (text && *text == "encoder") action.focusTarget = FocusTarget::Encoder;
@@ -262,7 +267,6 @@ struct Decoder final {
                 else if (text) issue(*value, "focus.target: expected encoder/play/tap/stop/sync/rst/oled_top_bar/oled_region", sceneIndex, actionIndex);
             }
             if (const Node* value = node.find("label")) if (const auto parsed = scalar(*value, "focus.label", sceneIndex, actionIndex)) action.text = *parsed;
-            if (const Node* value = node.find("narration")) if (const auto parsed = scalar(*value, "focus.narration", sceneIndex, actionIndex)) action.narrationId = *parsed;
             if (const Node* value = node.find("placement")) if (const auto parsed = scalar(*value, "focus.placement", sceneIndex, actionIndex)) {
                 if (*parsed == "auto") action.focusPlacement = FocusPlacement::Auto;
                 else if (*parsed == "left") action.focusPlacement = FocusPlacement::Left;
@@ -271,8 +275,9 @@ struct Decoder final {
                 else if (*parsed == "below") action.focusPlacement = FocusPlacement::Below;
                 else issue(*value, "focus.placement: expected auto/left/right/above/below", sceneIndex, actionIndex);
             }
-            if (const Node* value = node.find("duration_ms")) if (const auto parsed = uintValue(*value, "focus.duration_ms", 100U, 60000U, sceneIndex, actionIndex)) action.durationMs = *parsed;
-            if (action.durationMs == 0U) action.durationMs = 2200U;
+            const Node* focusDuration = node.find("duration_ms");
+            if (focusDuration != nullptr) { if (const auto parsed = uintValue(*focusDuration, "focus.duration_ms", 0U, 60000U, sceneIndex, actionIndex)) action.durationMs = *parsed; }
+            else action.durationMs = 2200U;
             if (action.focusTarget == FocusTarget::OledRegion && action.focusWidth == 0) {
                 if (const Node* value = required(node, "x", "focus", sceneIndex, actionIndex)) if (const auto parsed = uintValue(*value, "focus.x", 0U, 127U, sceneIndex, actionIndex)) action.focusX = static_cast<int>(*parsed);
                 if (const Node* value = required(node, "y", "focus", sceneIndex, actionIndex)) if (const auto parsed = uintValue(*value, "focus.y", 0U, 63U, sceneIndex, actionIndex)) action.focusY = static_cast<int>(*parsed);
@@ -309,7 +314,6 @@ struct Decoder final {
         }
         return action;
     }
-
     StoryScene decodeScene(const std::string& name, const Node& node, const std::size_t sceneIndex) {
         StoryScene scene;
         scene.sourceLine = node.line;
@@ -317,10 +321,9 @@ struct Decoder final {
         if (!mapping(node, name.c_str(), sceneIndex)) return scene;
         if (name == "tutorial") {
             scene.kind = SceneKind::Tutorial;
-            rejectUnknown(node, {"subtitle", "actions", "transition", "narration"}, "tutorial", sceneIndex);
+            rejectUnknown(node, {"subtitle", "actions", "transition"}, "tutorial", sceneIndex);
             if (const Node* value = node.find("subtitle")) if (const auto parsed = scalar(*value, "tutorial.subtitle", sceneIndex)) scene.subtitle = *parsed;
             if (const Node* value = node.find("transition")) if (const auto parsed = transition(*value, sceneIndex)) scene.transition = *parsed;
-            if (const Node* value = node.find("narration")) if (const auto parsed = scalar(*value, "tutorial.narration", sceneIndex)) scene.narrationId = *parsed;
             const Node* actions = required(node, "actions", "tutorial", sceneIndex);
             if (actions != nullptr) {
                 if (actions->type != Node::Type::Sequence) issue(*actions, "tutorial.actions must be a sequence", sceneIndex);
@@ -331,20 +334,12 @@ struct Decoder final {
                             issue(item, "tutorial action must be a mapping", sceneIndex, i);
                             continue;
                         }
-                        const Node* narration = item.find("narration");
-                        const std::size_t actionFieldCount = item.mapping.size() - (narration != nullptr ? 1U : 0U);
-                        if (actionFieldCount != 1U) {
-                            issue(item, "tutorial action must contain exactly one action type plus optional narration", sceneIndex, i);
+                        if (item.mapping.size() != 1U) {
+                            issue(item, "tutorial action must contain exactly one action type", sceneIndex, i);
                             continue;
                         }
-                        const auto actionEntry = std::find_if(item.mapping.begin(), item.mapping.end(), [](const auto& entry) {
-                            return entry.first != "narration";
-                        });
-                        StoryAction action = decodeAction(actionEntry->first, actionEntry->second, sceneIndex, i);
-                        if (narration != nullptr) {
-                            if (const auto parsed = scalar(*narration, "action.narration", sceneIndex, i)) action.narrationId = *parsed;
-                        }
-                        scene.actions.push_back(std::move(action));
+                        const auto& actionEntry = item.mapping.front();
+                        scene.actions.push_back(decodeAction(actionEntry.first, actionEntry.second, sceneIndex, i));
                     }
                 }
             }
@@ -381,7 +376,6 @@ struct Decoder final {
         }
         return scene;
     }
-
     StoryParseResult decode(const Node& root) {
         if (!mapping(root, "story")) return {std::nullopt, std::move(issues)};
         if (const Node* value = root.find("id")) if (const auto parsed = scalar(*value, "id")) story.id = *parsed;
@@ -416,13 +410,10 @@ struct Decoder final {
         return result;
     }
 };
-
 }  // namespace
-
 StoryParseResult::operator bool() const {
     return story.has_value() && issues.empty();
 }
-
 StoryParseResult parseStoryText(const std::string_view source) {
     const StoryYamlResult yaml = parseStoryYaml(source);
     if (!yaml) {
@@ -433,7 +424,6 @@ StoryParseResult parseStoryText(const std::string_view source) {
     Decoder decoder;
     return decoder.decode(*yaml.root);
 }
-
 StoryParseResult parseStoryFile(const std::filesystem::path& path) {
     std::ifstream input(path, std::ios::binary);
     if (!input) {
@@ -445,5 +435,4 @@ StoryParseResult parseStoryFile(const std::filesystem::path& path) {
     buffer << input.rdbuf();
     return parseStoryText(buffer.str());
 }
-
 }  // namespace clockfw::sim::tutorial

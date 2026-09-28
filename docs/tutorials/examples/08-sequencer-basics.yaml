@@ -3,26 +3,29 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-sequencer-basics
-title: "Example 08 — Sequencer Basics"
+title: Example 08 — Sequencer Basics
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
 publication:
-  intro_video: "../assets/video/south-signal-lab-intro.mp4"
-  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
 setup:
   factory_reset: true
-  power: on
+  power: 'on'
 scenes:
   - chapter:
       number: 1
-      title: "Sequencer Mode"
-      subtitle: "Edit gates directly on the step grid"
-      narration: "s01"
+      title: Sequencer Mode
+      subtitle: Edit gates directly on the step grid
+      narration: s01
       duration_ms: 18000
   - tutorial:
-      subtitle: "Select Sequencer from the mode carousel."
+      subtitle: Select Sequencer from the mode carousel.
       actions:
+        - beat:
+            narration: s02
+            duration_ms: 21900
         - wait_ms: 1100
         - encoder_push: {}
         - button:
@@ -45,11 +48,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Sequencer places gates on chosen steps"
-            narration: "s02"
-            duration_ms: 17800
+            label: Sequencer places gates on chosen steps
+            duration_ms: 0
+        - beat_end: s02
+        - beat:
+            narration: s03
+            duration_ms: 12900
         - subtitle:
-            text: "Move to step 2 and toggle its gate."
+            text: Move to step 2 and toggle its gate.
         - encoder:
             direction: clockwise
             detents: 1
@@ -61,9 +67,12 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Step 2 is now toggled"
-            narration: "s03"
-            duration_ms: 14400
+            label: Step 2 is now toggled
+            duration_ms: 0
+        - beat_end: s03
+        - beat:
+            narration: s04
+            duration_ms: 30200
         - button:
             name: PLAY
         - assert:
@@ -81,26 +90,29 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Pattern blocks extend beyond 16 steps"
-            narration: "s04"
-            duration_ms: 29600
+            label: Pattern blocks extend beyond 16 steps
+            duration_ms: 0
+        - beat_end: s04
+        - beat:
+            narration: s05
+            duration_ms: 6500
         - button:
             name: STOP_BACK
         - button:
             name: STOP_BACK
         - button:
             name: STOP_BACK
+        - beat_end: s05
   - callout:
       type: tip
-      title: "Longer patterns"
+      title: Longer patterns
       body: |
         Sequencer supports patterns beyond 16 steps; the display follows the active block.
-      narration: "s05"
-      duration_ms: 9900
+      duration_ms: 3500
   - text:
-      title: "Thanks for watching"
+      title: Thanks for watching
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      narration: "s06"
+      narration: s06
       duration_ms: 20000

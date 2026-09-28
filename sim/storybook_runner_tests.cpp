@@ -236,6 +236,80 @@ scenes:
         ok &= require(static_cast<bool>(matrix.result), "runner must execute all Phase-1 action classes used by the action matrix");
     }
 
+
+    const StoryParseResult narrationBeatStory = parseStoryText(R"YAML(
+schema: 1
+id: runner-narration-beat
+title: "Runner narration beat"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_FAST
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - tutorial:
+      actions:
+        - beat:
+            narration: s01
+            duration_ms: 1000
+        - button:
+            name: PLAY
+        - focus:
+            target: play
+            label: "PLAY while narration is active"
+            duration_ms: 0
+        - beat_end: s01
+)YAML");
+    ok &= require(static_cast<bool>(narrationBeatStory), "narration-beat story must parse");
+    if (narrationBeatStory) {
+        const ExecutedStory beat = executeReference(
+            *narrationBeatStory.story, tutorialRoot, ".clock-storybook-runner-beat.bin");
+        ok &= require(static_cast<bool>(beat.result), "narration beat must execute successfully");
+        const StoryTraceEvent* narrationBegin = nullptr;
+        const StoryTraceEvent* firstControl = nullptr;
+        const StoryTraceEvent* narrationEnd = nullptr;
+        for (const StoryTraceEvent& event : beat.result.trace) {
+            if (event.kind == StoryTraceKind::NarrationBegin && event.name == "s01") narrationBegin = &event;
+            if (firstControl == nullptr && event.kind == StoryTraceKind::ControlState && event.name == "PLAY") firstControl = &event;
+            if (event.kind == StoryTraceKind::NarrationEnd && event.name == "s01") narrationEnd = &event;
+        }
+        ok &= require(narrationBegin != nullptr && firstControl != nullptr && narrationEnd != nullptr,
+                      "narration beat must emit narration and enclosed control events");
+        if (narrationBegin != nullptr && firstControl != nullptr && narrationEnd != nullptr) {
+            ok &= require(narrationBegin->presentationUs < firstControl->presentationUs,
+                          "narration must begin before the control action it explains");
+            ok &= require(narrationEnd->presentationUs - narrationBegin->presentationUs == 1000000ULL,
+                          "narration beat must own its complete resolved presentation budget");
+            ok &= require(narrationEnd->firmwareUs < narrationEnd->presentationUs,
+                          "remaining narration tail must freeze firmware time rather than replay actions");
+        }
+    }
+
+    const StoryParseResult narrationOverrunStory = parseStoryText(R"YAML(
+schema: 1
+id: runner-narration-overrun
+title: "Runner narration overrun"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_FAST
+scenes:
+  - tutorial:
+      actions:
+        - beat:
+            narration: s01
+            duration_ms: 10
+        - wait_ms: 100
+        - beat_end: s01
+)YAML");
+    ok &= require(static_cast<bool>(narrationOverrunStory), "narration-overrun story must parse");
+    if (narrationOverrunStory) {
+        const ExecutedStory overrun = executeReference(
+            *narrationOverrunStory.story, tutorialRoot, ".clock-storybook-runner-overrun.bin");
+        ok &= require(!overrun.result && containsReason(overrun.result, "narration beat actions exceed resolved audio budget"),
+                      "narration beat must fail instead of silently desynchronising when actions exceed its budget");
+    }
+
     const StoryParseResult timeoutStory = parseStoryText(R"YAML(
 schema: 1
 id: runner-timeout

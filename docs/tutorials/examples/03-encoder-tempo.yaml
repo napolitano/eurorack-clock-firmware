@@ -3,26 +3,29 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-encoder-tempo
-title: "Example 03 — Encoder Tempo"
+title: Example 03 — Encoder Tempo
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
 publication:
-  intro_video: "../assets/video/south-signal-lab-intro.mp4"
-  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
 setup:
   factory_reset: true
-  power: on
+  power: 'on'
 scenes:
   - chapter:
       number: 1
-      title: "Changing Tempo"
-      subtitle: "The encoder controls master BPM"
-      narration: "s01"
+      title: Changing Tempo
+      subtitle: The encoder controls master BPM
+      narration: s01
       duration_ms: 18000
   - tutorial:
-      subtitle: "Turn clockwise to increase BPM."
+      subtitle: Turn clockwise to increase BPM.
       actions:
+        - beat:
+            narration: s02
+            duration_ms: 24900
         - wait_ms: 1100
         - encoder:
             direction: clockwise
@@ -35,11 +38,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Master BPM rises directly"
-            narration: "s02"
-            duration_ms: 12300
+            label: Master BPM rises directly
+            duration_ms: 0
+        - beat_end: s02
+        - beat:
+            narration: s03
+            duration_ms: 13600
         - subtitle:
-            text: "Turn counter-clockwise to reduce BPM."
+            text: Turn counter-clockwise to reduce BPM.
         - encoder:
             direction: counter_clockwise
             detents: 3
@@ -51,20 +57,20 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Master BPM follows one shared timeline"
-            narration: "s03"
-            duration_ms: 30800
+            label: Master BPM follows one shared timeline
+            duration_ms: 0
+        - beat_end: s03
   - callout:
       type: tip
-      title: "One master timeline"
+      title: One master timeline
       body: |
         Tempo changes move the shared master timeline; channels remain musically related.
-      narration: "s04"
+      narration: s04
       duration_ms: 8000
   - text:
-      title: "Thanks for watching"
+      title: Thanks for watching
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      narration: "s05"
+      narration: s05
       duration_ms: 20000

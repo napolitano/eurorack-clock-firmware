@@ -17,7 +17,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Rework all eleven US-English ElevenLabs narration scripts around the full South Signal Lab opening/sign-off contract, explicit viewer orientation before detailed operation, and purposeful Audio Tags for warmer, more natural delivery.
 - Recalculate every editable example from the actual narration length at the measured ~195 wpm reference pace; retain 18-second opening and 20-second closing windows while substantially extending body holds where the explanation needs room.
 - Expand the editable teaching set from ten to eleven examples with a full eight-Independent-Clocks walkthrough covering product orientation, topology change, short-push channel selection, the real encoder long-press, and a separately timed explanation of every MODE / TIMING / CLOCK / OUTPUT setting actually shown on screen.
-- Keep subtitles concise while the post-production voice-over explains intent, context and parameter meaning in more detail.
+- Keep subtitles concise while narration beats explain intent, context and parameter meaning in more detail.
 - Add a local narration-first publication orchestrator: synthesize/cache ElevenLabs segments, measure real audio duration, resolve Story timing from those measurements, render the picture only afterwards, and mux narration against Storybook-authored cue positions.
 - Make ElevenLabs model selection local and runtime-resolved through `/v1/models`, preferring an accessible v4 TTS model via `ELEVENLABS_MODEL_ID=auto-v4` without hard-coding a provider model identifier.
 - Add a tracked `.env.example` while hard-ignoring real `.env`/`.env.*` files; API keys remain workstation-only and are never copied into manifests or render reports.
@@ -39,6 +39,11 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 
 ### Fixed
+
+- Fix tutorial narration synchronization by replacing action-local narration holds with explicit `beat` / `beat_end` containers: voice-over now begins before the UI actions it describes, those actions consume the same resolved audio budget, and only the remaining tail is held afterwards.
+- Reject the legacy tutorial forms that could speak after an operation had already completed, preserve zero-duration final focus through the active beat, and fail explicitly if enclosed actions exceed the resolved narration budget.
+- Preserve deliberate authored visual/action minima when local ElevenLabs audio is shorter, while still expanding resolved beats to measured audio duration plus configured headroom when speech is longer.
+- Remove the obsolete 15-second narration filler from the Example 11 result/scope beat; the scope now advances for six real firmware seconds and remains visible for any narration tail instead of double-counting speaker time.
 
 - Fixed MinGW/UCRT64 compilation of the Windows Storybook system-font renderer: Win32 `SIZE::cx` is a `LONG`, so measured GDI widths now pass through checked `LONG` -> `int` conversion before renderer arithmetic instead of mixing Win32 and renderer integer types under `-Werror`.
 - Guarded the Windows `WIN32_LEAN_AND_MEAN` and `NOMINMAX` definitions in the Storybook host-process launcher so MinGW/UCRT64 builds remain clean under `-Werror` when the toolchain already defines `NOMINMAX`.

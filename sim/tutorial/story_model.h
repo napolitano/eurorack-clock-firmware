@@ -41,6 +41,8 @@ enum class StoryActionKind : std::uint8_t {
     Subtitle,
     Scope,
     Focus,
+    BeatBegin,
+    BeatEnd,
     Wait,
     WaitUntil,
     Assert,

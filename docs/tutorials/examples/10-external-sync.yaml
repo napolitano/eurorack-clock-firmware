@@ -3,33 +3,36 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-external-sync-and-rst
-title: "Example 10 — External SYNC and RST"
+title: Example 10 — External SYNC and RST
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
 publication:
-  intro_video: "../assets/video/south-signal-lab-intro.mp4"
-  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
 setup:
   factory_reset: true
-  power: on
+  power: 'on'
 scenes:
   - chapter:
       number: 1
-      title: "External SYNC and RST"
-      subtitle: "Follow external timing and reset phase independently"
-      narration: "s01"
+      title: External SYNC and RST
+      subtitle: Follow external timing and reset phase independently
+      narration: s01
       duration_ms: 18000
   - text:
-      title: "Two different jobs"
+      title: Two different jobs
       body: |
         SYNC supplies timing. In factory AUTO mode, two accepted edges establish lock.
         RST changes phase only; it does not take ownership of PLAY or STOP.
-      narration: "s02"
+      narration: s02
       duration_ms: 9600
   - tutorial:
-      subtitle: "Patch the external clock to SYNC and wait for lock."
+      subtitle: Patch the external clock to SYNC and wait for lock.
       actions:
+        - beat:
+            narration: s03
+            duration_ms: 26800
         - wait_ms: 1100
         - sync_cable:
             state: connect
@@ -48,12 +51,15 @@ scenes:
             state: hide
         - focus:
             target: oled_top_bar
-            label: "AUTO locks to valid external SYNC"
-            narration: "s03"
-            duration_ms: 20900
+            label: AUTO locks to valid external SYNC
+            duration_ms: 0
+        - beat_end: s03
   - tutorial:
-      subtitle: "Patch RST, hold its generator, then inject one reset pulse."
+      subtitle: Patch RST, hold its generator, then inject one reset pulse.
       actions:
+        - beat:
+            narration: s04
+            duration_ms: 13900
         - rst_cable:
             state: connect
         - rst_generator:
@@ -64,11 +70,14 @@ scenes:
         - wait_ms: 800
         - focus:
             target: rst
-            label: "RST restarts phase; transport stays playing"
-            narration: "s04"
-            duration_ms: 13700
+            label: RST restarts phase; transport stays playing
+            duration_ms: 0
+        - beat_end: s04
+        - beat:
+            narration: s05
+            duration_ms: 13200
         - subtitle:
-            text: "Now press STOP. External SYNC must not override it."
+            text: Now press STOP. External SYNC must not override it.
         - button:
             name: STOP_BACK
         - assert:
@@ -78,22 +87,22 @@ scenes:
             transport: stopped
         - focus:
             target: stop
-            label: "Manual STOP stays authoritative"
-            narration: "s05"
-            duration_ms: 19500
+            label: Manual STOP stays authoritative
+            duration_ms: 0
+        - beat_end: s05
   - callout:
       type: recipe
-      title: "External timing recipe"
+      title: External timing recipe
       steps:
-        - "Use SYNC for timing and wait for lock."
-        - "Use RST when you need a phase restart."
-        - "Use CLOCK's transport controls for manual PLAY/STOP authority."
-      narration: "s06"
+        - Use SYNC for timing and wait for lock.
+        - Use RST when you need a phase restart.
+        - Use CLOCK's transport controls for manual PLAY/STOP authority.
+      narration: s06
       duration_ms: 8600
   - text:
-      title: "Thanks for watching"
+      title: Thanks for watching
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      narration: "s07"
+      narration: s07
       duration_ms: 20000

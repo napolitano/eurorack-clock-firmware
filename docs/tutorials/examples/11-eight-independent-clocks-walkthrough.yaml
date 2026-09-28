@@ -3,36 +3,38 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-eight-independent-clocks-walkthrough
-title: "Example 11 — Eight Independent Clocks Walkthrough"
+title: Example 11 — Eight Independent Clocks Walkthrough
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
 publication:
-  intro_video: "../assets/video/south-signal-lab-intro.mp4"
-  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
 setup:
   factory_reset: true
-  power: on
+  power: 'on'
 scenes:
   - chapter:
       number: 1
-      title: "Eight Independent Clocks"
-      subtitle: "Topology, channel selection, long-press settings"
-      narration: "s01"
+      title: Eight Independent Clocks
+      subtitle: Topology, channel selection, long-press settings
+      narration: s01
       duration_ms: 18000
   - text:
-      title: "Start from the factory state"
+      title: Start from the factory state
       body: |
         Factory state uses One Clock, but every stored channel starts in Clock mode.
         Selecting Clock therefore changes the topology to Independent and exposes eight individual Clock channels.
-      narration: "s02"
+      narration: s02
       duration_ms: 50000
   - tutorial:
-      subtitle: "Independent Clock, one setting at a time."
+      subtitle: Independent Clock, one setting at a time.
       actions:
-        # Voice-over beat 01: Open the overview; choose Clock and confirm Independent.
+        - beat:
+            narration: s03
+            duration_ms: 23700
         - subtitle:
-            text: "Open the overview; choose Clock and confirm Independent."
+            text: Open the overview; choose Clock and confirm Independent.
         - wait_ms: 1400
         - encoder_push: {}
         - button:
@@ -56,12 +58,14 @@ scenes:
             width: 128
             height: 64
             placement: right
-            label: "Clock selected · Independent confirmed"
-            narration: "s03"
-            duration_ms: 20000
-        # Voice-over beat 02: Open the channel overview. All eight channels begin in Clock mode.
+            label: Clock selected · Independent confirmed
+            duration_ms: 0
+        - beat_end: s03
+        - beat:
+            narration: s04
+            duration_ms: 13900
         - subtitle:
-            text: "Open the channel overview. All eight channels begin in Clock mode."
+            text: Open the channel overview. All eight channels begin in Clock mode.
         - encoder_push: {}
         - focus:
             target: oled_region
@@ -70,12 +74,14 @@ scenes:
             width: 128
             height: 64
             placement: right
-            label: "Eight Clock channels in the overview"
-            narration: "s04"
-            duration_ms: 14000
-        # Voice-over beat 03: Turn to channel four and confirm with a short encoder press.
+            label: Eight Clock channels in the overview
+            duration_ms: 0
+        - beat_end: s04
+        - beat:
+            narration: s05
+            duration_ms: 13900
         - subtitle:
-            text: "Turn to channel four and confirm with a short encoder press."
+            text: Turn to channel four and confirm with a short encoder press.
         - encoder:
             direction: clockwise
             detents: 3
@@ -87,12 +93,14 @@ scenes:
             width: 128
             height: 64
             placement: right
-            label: "Channel 4 selected"
-            narration: "s05"
-            duration_ms: 13000
-        # Voice-over beat 04: Long-press to open the four channel-settings groups.
+            label: Channel 4 selected
+            duration_ms: 0
+        - beat_end: s05
+        - beat:
+            narration: s06
+            duration_ms: 30500
         - subtitle:
-            text: "Long-press to open the four channel-settings groups."
+            text: Long-press to open the four channel-settings groups.
         - encoder_push:
             hold_ms: 800
         - focus:
@@ -102,12 +110,14 @@ scenes:
             width: 128
             height: 64
             placement: right
-            label: "MODE · TIMING · CLOCK · OUTPUT"
-            narration: "s06"
-            duration_ms: 27000
-        # Voice-over beat 05: MODE selects this channel’s function without changing its neighbours.
+            label: MODE · TIMING · CLOCK · OUTPUT
+            duration_ms: 0
+        - beat_end: s06
+        - beat:
+            narration: s07
+            duration_ms: 19100
         - subtitle:
-            text: "MODE selects this channel’s function without changing its neighbours."
+            text: MODE selects this channel’s function without changing its neighbours.
         - focus:
             target: oled_region
             x: 0
@@ -115,12 +125,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "MODE: Clock, Euclid, Sequencer or Off"
-            narration: "s07"
-            duration_ms: 20000
-        # Voice-over beat 06: Open TIMING to inspect each timing setting.
+            label: 'MODE: Clock, Euclid, Sequencer or Off'
+            duration_ms: 0
+        - beat_end: s07
+        - beat:
+            narration: s08
+            duration_ms: 7400
         - subtitle:
-            text: "Open TIMING to inspect each timing setting."
+            text: Open TIMING to inspect each timing setting.
         - encoder:
             direction: clockwise
             detents: 1
@@ -132,12 +144,14 @@ scenes:
             width: 128
             height: 64
             placement: right
-            label: "TIMING: five separate settings"
-            narration: "s08"
-            duration_ms: 7000
-        # Voice-over beat 07: Edit DIV/MULT to make channel four twice as fast.
+            label: 'TIMING: five separate settings'
+            duration_ms: 0
+        - beat_end: s08
+        - beat:
+            narration: s09
+            duration_ms: 20000
         - subtitle:
-            text: "Change channel 4 from ×1 to ×2."
+            text: Change channel 4 from ×1 to ×2.
         - encoder_push: {}
         - encoder:
             direction: clockwise
@@ -150,12 +164,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "DIV/MULT: integer rate now ×2"
-            narration: "s09"
-            duration_ms: 20000
-        # Voice-over beat 08: NUMERATOR gives the upper part of a rational timing ratio.
+            label: 'DIV/MULT: integer rate now ×2'
+            duration_ms: 0
+        - beat_end: s09
+        - beat:
+            narration: s10
+            duration_ms: 14500
         - subtitle:
-            text: "NUMERATOR gives the upper part of a rational timing ratio."
+            text: NUMERATOR gives the upper part of a rational timing ratio.
         - encoder:
             direction: clockwise
             detents: 1
@@ -166,12 +182,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "NUMERATOR: upper part of the ratio"
-            narration: "s10"
+            label: 'NUMERATOR: upper part of the ratio'
+            duration_ms: 0
+        - beat_end: s10
+        - beat:
+            narration: s11
             duration_ms: 14500
-        # Voice-over beat 09: DENOMINATOR gives the lower part of a rational timing ratio.
         - subtitle:
-            text: "DENOMINATOR gives the lower part of a rational timing ratio."
+            text: DENOMINATOR gives the lower part of a rational timing ratio.
         - encoder:
             direction: clockwise
             detents: 1
@@ -182,12 +200,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "DENOMINATOR: lower part of the ratio"
-            narration: "s11"
-            duration_ms: 14500
-        # Voice-over beat 10: SWING alternates longer and shorter intervals.
+            label: 'DENOMINATOR: lower part of the ratio'
+            duration_ms: 0
+        - beat_end: s11
+        - beat:
+            narration: s12
+            duration_ms: 16300
         - subtitle:
-            text: "SWING alternates longer and shorter intervals."
+            text: SWING alternates longer and shorter intervals.
         - encoder:
             direction: clockwise
             detents: 1
@@ -198,12 +218,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "SWING: alternate timing displacement"
-            narration: "s12"
-            duration_ms: 17000
-        # Voice-over beat 11: GROOVE opens the deterministic pattern timing page.
+            label: 'SWING: alternate timing displacement'
+            duration_ms: 0
+        - beat_end: s12
+        - beat:
+            narration: s13
+            duration_ms: 18200
         - subtitle:
-            text: "GROOVE opens the deterministic pattern timing page."
+            text: GROOVE opens the deterministic pattern timing page.
         - encoder:
             direction: clockwise
             detents: 1
@@ -214,12 +236,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "GROOVE: pattern-based timing"
-            narration: "s13"
-            duration_ms: 19000
-        # Voice-over beat 12: Open CLOCK to inspect both meter settings.
+            label: 'GROOVE: pattern-based timing'
+            duration_ms: 0
+        - beat_end: s13
+        - beat:
+            narration: s14
+            duration_ms: 11100
         - subtitle:
-            text: "Open CLOCK to inspect both meter settings."
+            text: Open CLOCK to inspect both meter settings.
         - button:
             name: STOP_BACK
         - encoder:
@@ -233,12 +257,14 @@ scenes:
             width: 128
             height: 64
             placement: right
-            label: "CLOCK: meter settings"
-            narration: "s14"
-            duration_ms: 8000
-        # Voice-over beat 13: METER BEATS determines the number of beats in this channel’s measure.
+            label: 'CLOCK: meter settings'
+            duration_ms: 0
+        - beat_end: s14
+        - beat:
+            narration: s15
+            duration_ms: 11700
         - subtitle:
-            text: "METER BEATS determines the number of beats in this channel’s measure."
+            text: METER BEATS determines the number of beats in this channel’s measure.
         - focus:
             target: oled_region
             x: 0
@@ -246,12 +272,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "METER BEATS: beats per measure"
-            narration: "s15"
+            label: 'METER BEATS: beats per measure'
+            duration_ms: 0
+        - beat_end: s15
+        - beat:
+            narration: s16
             duration_ms: 12000
-        # Voice-over beat 14: METER UNIT determines which note value counts as one beat.
         - subtitle:
-            text: "METER UNIT determines which note value counts as one beat."
+            text: METER UNIT determines which note value counts as one beat.
         - encoder:
             direction: clockwise
             detents: 1
@@ -262,12 +290,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "METER UNIT: beat note value"
-            narration: "s16"
-            duration_ms: 12500
-        # Voice-over beat 15: Open OUTPUT. Probability is the first output setting.
+            label: 'METER UNIT: beat note value'
+            duration_ms: 0
+        - beat_end: s16
+        - beat:
+            narration: s17
+            duration_ms: 13900
         - subtitle:
-            text: "Open OUTPUT. Probability is the first output setting."
+            text: Open OUTPUT. Probability is the first output setting.
         - button:
             name: STOP_BACK
         - encoder:
@@ -281,9 +311,12 @@ scenes:
             width: 128
             height: 64
             placement: right
-            label: "Probability · Gate · Phase · Reset · Mute"
-            narration: "s17"
-            duration_ms: 10000
+            label: Probability · Gate · Phase · Reset · Mute
+            duration_ms: 0
+        - beat_end: s17
+        - beat:
+            narration: s18
+            duration_ms: 15100
         - focus:
             target: oled_region
             x: 0
@@ -291,12 +324,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "PROBABILITY: chance of a gate event"
-            narration: "s18"
-            duration_ms: 15000
-        # Voice-over beat 16: Change GATE from ten to twenty milliseconds.
+            label: 'PROBABILITY: chance of a gate event'
+            duration_ms: 0
+        - beat_end: s18
+        - beat:
+            narration: s19
+            duration_ms: 16300
         - subtitle:
-            text: "Change GATE from ten to twenty milliseconds."
+            text: Change GATE from ten to twenty milliseconds.
         - encoder:
             direction: clockwise
             detents: 1
@@ -312,12 +347,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "GATE: HIGH time now 20 ms"
-            narration: "s19"
-            duration_ms: 17000
-        # Voice-over beat 17: PHASE offsets this channel against the shared clock reference.
+            label: 'GATE: HIGH time now 20 ms'
+            duration_ms: 0
+        - beat_end: s19
+        - beat:
+            narration: s20
+            duration_ms: 15100
         - subtitle:
-            text: "PHASE offsets this channel against the shared clock reference."
+            text: PHASE offsets this channel against the shared clock reference.
         - encoder:
             direction: clockwise
             detents: 1
@@ -328,12 +365,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "PHASE: offset against shared reference"
-            narration: "s20"
-            duration_ms: 15500
-        # Voice-over beat 18: RESET decides whether this channel follows a global phase reset.
+            label: 'PHASE: offset against shared reference'
+            duration_ms: 0
+        - beat_end: s20
+        - beat:
+            narration: s21
+            duration_ms: 15400
         - subtitle:
-            text: "RESET decides whether this channel follows a global phase reset."
+            text: RESET decides whether this channel follows a global phase reset.
         - encoder:
             direction: clockwise
             detents: 1
@@ -344,12 +383,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "RESET: Global or Sync Free"
-            narration: "s21"
-            duration_ms: 16000
-        # Voice-over beat 19: MUTE silences this output without deleting its configuration.
+            label: 'RESET: Global or Sync Free'
+            duration_ms: 0
+        - beat_end: s21
+        - beat:
+            narration: s22
+            duration_ms: 14500
         - subtitle:
-            text: "MUTE silences this output without deleting its configuration."
+            text: MUTE silences this output without deleting its configuration.
         - encoder:
             direction: clockwise
             detents: 1
@@ -360,12 +401,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "MUTE: silence without losing settings"
-            narration: "s22"
-            duration_ms: 15000
-        # Voice-over beat 20: Return to Performance and start channel four at its new rate.
+            label: 'MUTE: silence without losing settings'
+            duration_ms: 0
+        - beat_end: s22
+        - beat:
+            narration: s23
+            duration_ms: 14200
         - subtitle:
-            text: "Return to Performance and start channel four at its new rate."
+            text: Return to Performance and start channel four at its new rate.
         - button:
             name: STOP_BACK
         - button:
@@ -377,8 +420,8 @@ scenes:
         - scope:
             state: show
             channel: visible
-        - narration: "s23"
-          wait_ms: 15000
+        - wait_ms: 6000
+        - beat_end: s23
         - scope:
             state: hide
         - button:
@@ -387,15 +430,15 @@ scenes:
             transport: stopped
   - callout:
       type: tip
-      title: "Independent means individually configurable"
+      title: Independent means individually configurable
       body: |
         Each output keeps its own mode and channel settings while CLOCK preserves one shared musical reference.
-      narration: "s24"
+      narration: s24
       duration_ms: 19000
   - text:
-      title: "Thanks for watching"
+      title: Thanks for watching
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      narration: "s25"
+      narration: s25
       duration_ms: 20000

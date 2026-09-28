@@ -2,7 +2,7 @@
 
 # CLOCK tutorial voice-over and picture timing
 
-The authored scripts are the spoken source of truth; **measured generated audio is the publication timing source of truth**. Checked-in Story YAML keeps readable editorial holds, while the local publication runner creates a resolved copy whose narration-linked holds are calculated from the actual ElevenLabs audio files.
+The authored scripts are the spoken source of truth; **measured generated audio is the publication timing source of truth**. Checked-in Story YAML keeps readable editorial budgets, while the local publication runner creates a resolved copy whose narration-linked scene or beat duration is calculated from the actual ElevenLabs audio files.
 
 ## Timing pipeline
 
@@ -23,7 +23,7 @@ final local master
 For each narration segment the local runner uses:
 
 ```text
-story budget = measured audio duration + visual headroom
+story budget = max(authored minimum, measured audio duration + visual headroom)
 ```
 
 and rounds upward to a deterministic timing quantum. The first and last narration segments additionally retain configurable minimum budgets for the established South Signal Lab opening and sign-off.
@@ -43,9 +43,11 @@ The measured reference delivery — roughly 15 seconds for the opening, 16 secon
 
 ## Stable narration IDs
 
-[`segments.json`](segments.json) groups one or more adjacent script paragraphs under stable IDs (`s01`, `s02`, ...). Each ID occurs exactly once in the matching Story YAML on a bounded scene or timed tutorial action. Storybook records begin/end presentation timestamps for those anchors and publishes a `<story-id>.narration.json` sidecar after shifting the cue positions by the measured intro duration.
+[`segments.json`](segments.json) groups one or more adjacent script paragraphs under stable IDs (`s01`, `s02`, ...). Each ID occurs exactly once in the matching Story YAML: directly on a bounded non-tutorial scene or on one explicit tutorial `beat`, closed by the matching `beat_end`.
 
-That sidecar, not frame counting or YAML guesswork, positions the audio in the final master.
+For tutorial beats, `NarrationBegin` occurs before the first enclosed action. Buttons, encoder moves, patches, waits and intermediate focus holds then consume presentation time while the narration is already running. At `beat_end`, Storybook holds only the remaining resolved audio budget. A zero-duration final focus may remain visible through that tail. If the actions themselves exceed the resolved budget, execution fails rather than silently shifting speech after the operation.
+
+Storybook records the resulting begin/end presentation timestamps and publishes a `<story-id>.narration.json` sidecar after shifting the cue positions by the measured intro duration. That sidecar, not frame counting or YAML guesswork, positions the audio in the final master.
 
 ## Example 11: narrative structure
 

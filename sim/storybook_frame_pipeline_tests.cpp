@@ -127,8 +127,11 @@ scenes:
   - tutorial:
       subtitle: "Press PLAY."
       actions:
-        - narration: "s02"
-          wait_ms: 200
+        - beat:
+            narration: "s02"
+            duration_ms: 200
+        - wait_ms: 200
+        - beat_end: "s02"
 )YAML");
 
     const std::filesystem::path outA = temp / "run-a";

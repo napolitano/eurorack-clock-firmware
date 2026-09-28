@@ -10,14 +10,10 @@
 #include <iostream>
 #include <string>
 #include <vector>
-
 #include "tutorial/story_parser.h"
 #include "tutorial/story_validator.h"
-
 namespace {
-
 using namespace clockfw::sim::tutorial;
-
 bool require(const bool condition, const std::string& message) {
     if (!condition) {
         std::cerr << "Storybook parser failure: " << message << '\n';
@@ -25,14 +21,12 @@ bool require(const bool condition, const std::string& message) {
     }
     return true;
 }
-
 bool containsReason(const std::vector<StoryIssue>& issues, const std::string& needle) {
     for (const StoryIssue& issue : issues) {
         if (issue.reason.find(needle) != std::string::npos) return true;
     }
     return false;
 }
-
 std::filesystem::path root() {
     return std::filesystem::path(CLOCK_SOURCE_ROOT);
 }
@@ -238,14 +232,35 @@ scenes:
       duration_ms: 18000
   - tutorial:
       actions:
-        - narration: "s02"
-          wait_ms: 1000
+        - beat:
+            narration: "s02"
+            duration_ms: 1000
+        - wait_ms: 250
+        - beat_end: "s02"
 )YAML");
     ok &= require(narration && validateStory(*narration.story, tutorialRoot).empty(),
-                  "bounded scene/action narration anchors must parse and validate");
+                  "scene narration and narration-first tutorial beats must parse and validate");
     ok &= require(narration && narration.story->scenes[0].narrationId == std::optional<std::string>("s01") &&
-                      narration.story->scenes[1].actions[0].narrationId == std::optional<std::string>("s02"),
-                  "narration IDs must survive parsing on scenes and timed actions");
+                      narration.story->scenes[1].actions[0].kind == StoryActionKind::BeatBegin &&
+                      narration.story->scenes[1].actions[0].narrationId == std::optional<std::string>("s02") &&
+                      narration.story->scenes[1].actions[2].kind == StoryActionKind::BeatEnd,
+                  "narration IDs and beat boundaries must survive parsing");
+
+    const StoryParseResult legacyActionNarration = parseStoryText(R"YAML(
+schema: 1
+id: legacy-action-narration
+title: "Legacy action narration"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - tutorial:
+      actions:
+        - narration: "s01"
+          wait_ms: 1000
+)YAML");
+    ok &= require(!legacyActionNarration && containsReason(legacyActionNarration.issues, "exactly one action type"),
+                  "tutorial narration must use beat/beat_end instead of action-local narration");
 
     const StoryParseResult duplicateNarration = parseStoryText(R"YAML(
 schema: 1

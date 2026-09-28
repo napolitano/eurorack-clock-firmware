@@ -3,37 +3,39 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-tap-tempo
-title: "Example 04 — Tap Tempo"
+title: Example 04 — Tap Tempo
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_FAST
 publication:
-  intro_video: "../assets/video/south-signal-lab-intro.mp4"
-  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
 setup:
   factory_reset: true
-  power: on
+  power: 'on'
 scenes:
   - chapter:
       number: 1
-      title: "Tap Tempo"
-      subtitle: "Set the internal tempo by feel"
-      narration: "s01"
+      title: Tap Tempo
+      subtitle: Set the internal tempo by feel
+      narration: s01
       duration_ms: 18000
   - tutorial:
-      subtitle: "The first TAP starts a new measurement."
+      subtitle: The first TAP starts a new measurement.
       actions:
+        - beat:
+            narration: s02
+            duration_ms: 26500
         - wait_ms: 1100
         - button:
             name: TAP
         - wait_ms: 120
         - focus:
             target: tap
-            label: "First TAP starts a measurement"
-            narration: "s02"
-            duration_ms: 10200
+            label: First TAP starts a measurement
+            duration_ms: 1800
         - subtitle:
-            text: "Tap again at the new pulse."
+            text: Tap again at the new pulse.
         - button:
             name: TAP
         - wait_ms: 120
@@ -47,31 +49,37 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "AUTO stays selected; internal BPM is updated"
-            narration: "s03"
-            duration_ms: 27600
+            label: AUTO stays selected; internal BPM is updated
+            duration_ms: 0
+        - beat_end: s02
+        - beat:
+            narration: s03
+            duration_ms: 12600
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
-            placement: right
-            label: "Subsequent taps refine the internal BPM"
-            narration: "s04"
-            duration_ms: 12400
+            target: oled_top_bar
+            label: SOURCE remains AUTO after Tap Tempo
+            duration_ms: 0
+        - beat_end: s03
+        - beat:
+            narration: s04
+            duration_ms: 13600
+        - focus:
+            target: oled_top_bar
+            label: AUTO can still lock to valid external SYNC
+            duration_ms: 0
+        - beat_end: s04
   - callout:
       type: tip
-      title: "AUTO stays AUTO"
+      title: AUTO stays AUTO
       body: |
         Tap Tempo changes the internal fallback BPM only.
         It never changes the selected clock source.
-      narration: "s05"
+      narration: s05
       duration_ms: 7700
   - text:
-      title: "Thanks for watching"
+      title: Thanks for watching
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      narration: "s06"
+      narration: s06
       duration_ms: 20000

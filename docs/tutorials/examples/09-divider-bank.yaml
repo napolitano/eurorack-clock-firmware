@@ -3,26 +3,29 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-divider-bank
-title: "Example 09 — Divider Bank"
+title: Example 09 — Divider Bank
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
 publication:
-  intro_video: "../assets/video/south-signal-lab-intro.mp4"
-  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
 setup:
   factory_reset: true
-  power: on
+  power: 'on'
 scenes:
   - chapter:
       number: 1
-      title: "Divider Bank"
-      subtitle: "Eight related divisions from one source"
-      narration: "s01"
+      title: Divider Bank
+      subtitle: Eight related divisions from one source
+      narration: s01
       duration_ms: 18000
   - tutorial:
-      subtitle: "Select Divider Bank from the mode carousel."
+      subtitle: Select Divider Bank from the mode carousel.
       actions:
+        - beat:
+            narration: s02
+            duration_ms: 20900
         - wait_ms: 1100
         - encoder_push: {}
         - button:
@@ -45,11 +48,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "One bank drives eight related divisions"
-            narration: "s02"
-            duration_ms: 18900
+            label: One bank drives eight related divisions
+            duration_ms: 0
+        - beat_end: s02
+        - beat:
+            narration: s03
+            duration_ms: 16300
         - subtitle:
-            text: "Change the divider bank from powers of two to integers."
+            text: Change the divider bank from powers of two to integers.
         - encoder_push: {}
         - encoder:
             direction: clockwise
@@ -62,9 +68,12 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Integer bank selected"
-            narration: "s03"
-            duration_ms: 22300
+            label: Integer bank selected
+            duration_ms: 0
+        - beat_end: s03
+        - beat:
+            narration: s04
+            duration_ms: 21200
         - button:
             name: STOP_BACK
         - button:
@@ -77,6 +86,10 @@ scenes:
         - wait_ms: 1500
         - scope:
             state: hide
+        - beat_end: s04
+        - beat:
+            narration: s05
+            duration_ms: 8600
         - button:
             name: STOP_BACK
         - focus:
@@ -86,20 +99,19 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Powers of two · integers · primes"
-            narration: "s04"
-            duration_ms: 15900
+            label: Powers of two · integers · primes
+            duration_ms: 0
+        - beat_end: s05
   - callout:
       type: tip
-      title: "Bank choices"
+      title: Bank choices
       body: |
         Divider Bank offers powers-of-two, integer, and prime division families.
-      narration: "s05"
-      duration_ms: 10100
+      duration_ms: 3500
   - text:
-      title: "Thanks for watching"
+      title: Thanks for watching
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      narration: "s06"
+      narration: s06
       duration_ms: 20000

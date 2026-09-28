@@ -3,26 +3,29 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-clock-mode
-title: "Example 06 — Clock Mode"
+title: Example 06 — Clock Mode
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
 publication:
-  intro_video: "../assets/video/south-signal-lab-intro.mp4"
-  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
 setup:
   factory_reset: true
-  power: on
+  power: 'on'
 scenes:
   - chapter:
       number: 1
-      title: "Clock Mode"
-      subtitle: "A conventional clock on one Independent output"
-      narration: "s01"
+      title: Clock Mode
+      subtitle: A conventional clock on one Independent output
+      narration: s01
       duration_ms: 18000
   - tutorial:
-      subtitle: "Select Clock from the mode carousel."
+      subtitle: Select Clock from the mode carousel.
       actions:
+        - beat:
+            narration: s02
+            duration_ms: 31700
         - wait_ms: 1100
         - encoder_push: {}
         - button:
@@ -45,11 +48,14 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Clock is the selected channel mode"
-            narration: "s02"
-            duration_ms: 31100
+            label: Clock is the selected channel mode
+            duration_ms: 0
+        - beat_end: s02
+        - beat:
+            narration: s03
+            duration_ms: 11400
         - subtitle:
-            text: "Start transport and watch the selected channel."
+            text: Start transport and watch the selected channel.
         - button:
             name: PLAY
         - assert:
@@ -61,6 +67,10 @@ scenes:
         - wait_ms: 4600
         - scope:
             state: hide
+        - beat_end: s03
+        - beat:
+            narration: s04
+            duration_ms: 21600
         - button:
             name: STOP_BACK
         - focus:
@@ -70,20 +80,19 @@ scenes:
             width: 124
             height: 10
             placement: right
-            label: "Gate activity follows the master timeline"
-            narration: "s03"
-            duration_ms: 17500
+            label: Gate activity follows the master timeline
+            duration_ms: 0
+        - beat_end: s04
   - callout:
       type: tip
-      title: "Clock is still phase-coherent"
+      title: Clock is still phase-coherent
       body: |
         Independent Clock does not become a free-running second master clock.
-      narration: "s04"
-      duration_ms: 12400
+      duration_ms: 3500
   - text:
-      title: "Thanks for watching"
+      title: Thanks for watching
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      narration: "s05"
+      narration: s05
       duration_ms: 20000
