@@ -7,6 +7,9 @@ title: "Example 09 — Divider Bank"
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
+publication:
+  intro_video: "../assets/video/south-signal-lab-intro.mp4"
+  outro_video: "../assets/video/south-signal-lab-outro.mp4"
 setup:
   factory_reset: true
   power: on
@@ -15,7 +18,7 @@ scenes:
       number: 1
       title: "Divider Bank"
       subtitle: "Eight related divisions from one source"
-      duration_ms: 2800
+      duration_ms: 18000
   - tutorial:
       subtitle: "Select Divider Bank from the mode carousel."
       actions:
@@ -61,3 +64,9 @@ scenes:
       body: |
         Divider Bank offers powers-of-two, integer, and prime division families.
       duration_ms: 3300
+  - text:
+      title: "Thanks for watching"
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      duration_ms: 20000

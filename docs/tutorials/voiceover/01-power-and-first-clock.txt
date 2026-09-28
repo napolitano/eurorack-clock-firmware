@@ -1,0 +1,11 @@
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how to power up CLOCK, read the essential status information, start the transport, change the master tempo, and stop again from a clean, defined state. [short pause]
+
+CLOCK always boots in STOP. In the factory state it starts at 120 BPM, uses One Clock, and keeps SOURCE on AUTO. The top bar gives you the most important status information at a glance, including the current musical context and transport state.
+
+Press PLAY and the transport starts. In One Clock, all eight outputs follow the same master timing. Turn the encoder clockwise and you raise that shared BPM, so every output stays related to the same timing reference.
+
+Press STOP slash BACK to stop. STOP also resets the global phase, which means the next start begins from a defined musical boundary rather than from an arbitrary point in the previous cycle.
+
+[thoughtful] One Clock is the simplest place to learn CLOCK. Independent mode comes later, when you want different rhythmic functions or settings on individual outputs without giving up the shared master timeline.
+
+[warmly] And that already brings us to the end. Thank you for your interest, and for taking the time to watch. If you liked what you saw, want to stay up to date, or would like to support my work, follow South Signal Lab here or on Ko-fi for exclusive insights into the development of my Eurorack modules and components. Bye for now, and see you soon.

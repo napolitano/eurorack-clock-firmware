@@ -1,0 +1,11 @@
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how CLOCK’s transport works — specifically the difference between PLAY, PAUSE, and STOP, and why STOP deliberately does a little more than simply silence the outputs. [short pause]
+
+CLOCK always starts in STOP. Press PLAY once and the transport starts. Press PLAY again while it is running and CLOCK pauses. Press PLAY one more time and it resumes from the paused transport state.
+
+[slower] STOP is deliberately different. Press STOP slash BACK and CLOCK stops and resets the global phase. That makes the next start begin from a defined phase reference, which is especially useful when several outputs have to restart together.
+
+A manual STOP also remains authoritative when external SYNC is present. External timing may provide the pulse reference, but it does not cancel an explicit stop command from the front panel.
+
+[thoughtful] So the mental model is straightforward: PLAY starts or resumes, PLAY while running pauses, and STOP ends the run and resets phase.
+
+[warmly] That’s it for this transport walkthrough. Thanks very much for your interest and your time. If this was useful, if you want to follow the project, or if you’d like to support further development, follow South Signal Lab here or on Ko-fi and get exclusive behind-the-scenes insight into how my Eurorack modules and components are developed. Bye, and see you next time.

@@ -1,0 +1,25 @@
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you a complete CLOCK workflow: turning the factory One Clock setup into eight individually configurable Clock channels, selecting a channel with the encoder, and using a long press to reach its detailed settings. [short pause]
+
+We begin in the factory state. One Clock is active, so one shared clock configuration drives all eight outputs. Behind that topology, however, every stored channel starts in Clock mode. That means selecting Clock from the mode carousel switches CLOCK into Independent topology and exposes eight individual Clock channels without us having to configure each one from scratch.
+
+First, press the encoder to open the overview. Hold TAP and turn the encoder until Clock is selected. When you release TAP, CLOCK asks for confirmation. Move from NO to YES and press the encoder to confirm.
+
+Now press the encoder once more. This is the Independent channel overview. All eight tiles are visible at the same time, and at the moment all eight channels are in Clock mode. [thoughtful] This is an important distinction: we now have eight separately configurable clocks, but they still share CLOCK’s master musical reference.
+
+Let’s work on channel four. Turn the encoder until channel four is highlighted, then press the encoder to select it. A short press is therefore your normal channel-selection gesture: open the overview, choose a channel, and confirm it.
+
+[slower] Now for the second encoder gesture. Long-press the encoder for about two thirds of a second. Instead of opening the channel overview, CLOCK opens the context settings for the selected channel. In Clock mode, that top-level channel menu is divided into four areas: MODE, TIMING, CLOCK, and OUTPUT.
+
+MODE changes the channel function itself. TIMING contains the musical timing relationship: the integer divide or multiply rate, the rational numerator and denominator, Swing, and Groove. CLOCK contains the parameters that are specific to a conventional Clock channel — its meter beats and meter unit. OUTPUT contains the parameters that describe what leaves the jack: Probability, gate length, Phase, reset behavior, and Mute.
+
+Let’s open TIMING first. The first row is the familiar divide-or-multiply rate. Press the encoder to enter edit mode, turn it one step, and press again to confirm. Channel four is now running at times two while the other channels keep their own settings. The numerator and denominator below it provide rational ratios when a simple integer multiplier is not what you need. Swing adds the regular long-short displacement, while Groove selects the deterministic timing pattern layer.
+
+Go back once and open CLOCK. This page is intentionally small because the mode-specific part of a regular clock is simple: meter beats and meter unit. These values describe the channel’s musical meter context; the shared timing and output behavior remain in the other two groups rather than being duplicated here.
+
+Go back again and open OUTPUT. Probability controls whether scheduled events are emitted. Gate is the absolute HIGH time of the output pulse. Phase shifts the channel against the shared reference. Reset chooses whether a global reset re-anchors the channel or allows its local cycle to stay free. Mute silences the channel without changing the rest of its configuration.
+
+As a concrete example, move to Gate, press the encoder to edit, and change the value from ten to twenty milliseconds. Press again to confirm. We now have channel four at times two with a twenty-millisecond gate, while the other seven Clock channels remain independently configurable.
+
+Finally, return to Performance and press PLAY. The selected channel is visibly running at its new rate. [thoughtful] This is the central idea behind Independent mode: each output owns its own mode and channel settings, but CLOCK keeps those outputs anchored to one common musical timeline instead of turning them into eight unrelated oscillators.
+
+[warmly] And that completes the full walkthrough. Thank you for your interest and for taking the time to follow the details. If you liked what you saw, want to stay up to date, or would like to support future development, follow South Signal Lab here or on Ko-fi for exclusive insights into my Eurorack development process. Bye for now, and see you soon.

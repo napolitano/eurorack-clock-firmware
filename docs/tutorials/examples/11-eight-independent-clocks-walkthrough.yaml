@@ -1,0 +1,206 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-eight-independent-clocks-walkthrough
+title: "Example 11 — Eight Independent Clocks Walkthrough"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+publication:
+  intro_video: "../assets/video/south-signal-lab-intro.mp4"
+  outro_video: "../assets/video/south-signal-lab-outro.mp4"
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - chapter:
+      number: 1
+      title: "Eight Independent Clocks"
+      subtitle: "Topology, channel selection, long-press settings"
+      duration_ms: 18000
+  - text:
+      title: "Start from the factory state"
+      body: |
+        Factory state uses One Clock, but every stored channel starts in Clock mode.
+        Selecting Clock therefore changes the topology to Independent and exposes eight individual Clock channels.
+      duration_ms: 14000
+  - tutorial:
+      subtitle: "Switch from One Clock to Independent Clock mode."
+      actions:
+        - wait_ms: 1400
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - button:
+            name: TAP
+            state: up
+        - wait_ms: 1200
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - wait_ms: 1600
+        - subtitle:
+            text: "Press the encoder to see all eight channels."
+        - encoder_push: {}
+        - wait_ms: 900
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: "Eight Independent channels — all currently Clock"
+            duration_ms: 6500
+        - subtitle:
+            text: "Turn to channel 4, then press to select it."
+        - encoder:
+            direction: clockwise
+            detents: 3
+        - wait_ms: 900
+        - encoder_push: {}
+        - wait_ms: 1800
+        - subtitle:
+            text: "Long-press the encoder for channel settings."
+        - encoder_push:
+            hold_ms: 800
+        - wait_ms: 1200
+        - focus:
+            target: oled_region
+            x: 0
+            y: 10
+            width: 128
+            height: 42
+            placement: right
+            label: "MODE · TIMING · CLOCK · OUTPUT"
+            duration_ms: 7000
+        - subtitle:
+            text: "Open TIMING for rate, ratio, Swing and Groove."
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - wait_ms: 1200
+        - focus:
+            target: oled_region
+            x: 0
+            y: 10
+            width: 128
+            height: 50
+            placement: right
+            label: "Rate · ratio · Swing · Groove"
+            duration_ms: 8000
+        - subtitle:
+            text: "Change channel 4 from ×1 to ×2."
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - wait_ms: 1600
+        - focus:
+            target: oled_region
+            x: 0
+            y: 10
+            width: 128
+            height: 10
+            placement: right
+            label: "Channel rate is now ×2"
+            duration_ms: 4500
+        - button:
+            name: STOP_BACK
+        - wait_ms: 1000
+        - subtitle:
+            text: "CLOCK contains the channel meter settings."
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - wait_ms: 1000
+        - focus:
+            target: oled_region
+            x: 0
+            y: 10
+            width: 128
+            height: 20
+            placement: right
+            label: "Meter beats · meter unit"
+            duration_ms: 6500
+        - button:
+            name: STOP_BACK
+        - wait_ms: 1000
+        - subtitle:
+            text: "OUTPUT contains probability, gate, phase, reset and mute."
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - wait_ms: 1000
+        - focus:
+            target: oled_region
+            x: 0
+            y: 10
+            width: 128
+            height: 50
+            placement: right
+            label: "Probability · Gate · Phase · Reset · Mute"
+            duration_ms: 9000
+        - subtitle:
+            text: "Change the gate length from 10 to 20 ms."
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - wait_ms: 1600
+        - focus:
+            target: oled_region
+            x: 0
+            y: 20
+            width: 128
+            height: 10
+            placement: right
+            label: "Gate = 20 ms"
+            duration_ms: 4500
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - wait_ms: 1400
+        - subtitle:
+            text: "Start transport and watch channel 4 run at ×2."
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 4500
+        - scope:
+            state: hide
+        - button:
+            name: STOP_BACK
+        - assert:
+            transport: stopped
+  - callout:
+      type: tip
+      title: "Independent means individually configurable"
+      body: |
+        Each output keeps its own mode and channel settings while CLOCK preserves one shared musical reference.
+      duration_ms: 9000
+  - text:
+      title: "Thanks for watching"
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      duration_ms: 20000

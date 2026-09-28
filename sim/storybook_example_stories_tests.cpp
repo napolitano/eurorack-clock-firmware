@@ -1,6 +1,6 @@
 /**
  * @file storybook_example_stories_tests.cpp
- * @brief Validates and executes the ten copy-and-edit CLOCK Storybook teaching examples.
+ * @brief Validates and executes the eleven copy-and-edit CLOCK Storybook teaching examples.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -21,7 +21,7 @@ namespace {
 using namespace clockfw::sim;
 using namespace clockfw::sim::tutorial;
 
-constexpr std::array<const char*, 10U> kExamples{{
+constexpr std::array<const char*, 11U> kExamples{{
     "01-power-and-first-clock.yaml",
     "02-transport-basics.yaml",
     "03-encoder-tempo.yaml",
@@ -32,6 +32,7 @@ constexpr std::array<const char*, 10U> kExamples{{
     "08-sequencer-basics.yaml",
     "09-divider-bank.yaml",
     "10-external-sync.yaml",
+    "11-eight-independent-clocks-walkthrough.yaml",
 }};
 
 bool require(const bool condition, const std::string& message) {
@@ -77,6 +78,6 @@ int main() {
     }
 
     if (!ok) return EXIT_FAILURE;
-    std::cout << "CLOCK Storybook teaching examples: 10/10 PASS\n";
+    std::cout << "CLOCK Storybook teaching examples: 11/11 PASS\n";
     return EXIT_SUCCESS;
 }

@@ -53,7 +53,7 @@ On Windows the file has the usual `.exe` suffix.
 
 ## 3. Start with the examples
 
-Ten editable teaching examples live in [`examples/`](examples/README.md). They are intentionally separate from the canonical CI reference catalog under [`stories/`](stories/README.md).
+Eleven editable teaching examples live in [`examples/`](examples/README.md). They are intentionally separate from the canonical CI reference catalog under [`stories/`](stories/README.md).
 
 Validate one Story before doing any expensive rendering:
 
@@ -69,7 +69,7 @@ Windows PowerShell:
   docs\tutorials\examples\01-power-and-first-clock.yaml
 ```
 
-A successful validation prints the Story ID and title and exits with status 0.
+A successful validation prints the Story ID and title and exits with status 0. The most complete teaching example is `11-eight-independent-clocks-walkthrough.yaml`, which demonstrates Independent topology, channel selection, long-press context settings, and Clock-channel configuration.
 
 ## 4. Generate frames only
 
@@ -163,7 +163,19 @@ The clips are probed before use and normalized to the Story resolution and FPS w
 
 Final SRT/WebVTT cues are shifted by the measured normalized intro duration. Outro duration never shifts tutorial cues.
 
-## 8. Use explicit ffmpeg/ffprobe paths when needed
+## 8. Add post-production voice-over
+
+The editable example set has matching US-English narration under [`voiceover/`](voiceover/README.md). These scripts are intended for post-production rather than the deterministic Storybook render itself. The normal workflow is therefore:
+
+```text
+Storybook + intro/outro -> final silent tutorial section -> ElevenLabs narration -> NLE/audio mix -> publication master
+```
+
+The scripts target Eleven v3 and use sparse Audio Tags in square brackets plus punctuation and paragraph structure for natural delivery. They deliberately avoid SSML `<break>` markup. Generate a whole script when the timing already fits, or generate paragraph-by-paragraph when you want tighter editorial control.
+
+The tracked intro is 4.5 seconds. After it, every example reserves an 18-second opening card for the spoken introduction. The final `Thanks for watching` screen is 20 seconds; the measured sign-off is about 16 seconds, leaving editorial safety before the 5.5-second tracked outro. Generated narration audio is local post-production output and is ignored by Git.
+
+## 9. Use explicit ffmpeg/ffprobe paths when needed
 
 Normally the CLI finds both programs on `PATH`. To select specific binaries:
 
@@ -178,7 +190,7 @@ Normally the CLI finds both programs on `PATH`. To select specific binaries:
 This is useful on Windows systems with multiple FFmpeg installations or in controlled CI environments.
 
 
-## 9. Windows process-launch troubleshooting
+## 10. Windows process-launch troubleshooting
 
 If `clock-storybook video` exits immediately on Windows with process status `0xC0000139` / `-1073741511`, use a source revision containing the Storybook Windows process-launch fix (r48j or later) and rebuild `clock-storybook`. The fixed implementation invokes `ffmpeg`/`ffprobe` through `CreateProcessW` rather than the CRT `_wspawnv` path and preserves arguments containing spaces, embedded quotes and trailing backslashes.
 
@@ -190,7 +202,7 @@ cmake --build --preset simulator-headless --target clock-storybook
 
 Then retry the same `video` command. The CLI prints the frame-render stage, frame count and resolved FFmpeg/FFprobe executable paths before publication starts.
 
-## 10. Publication typography, colours and backgrounds
+## 11. Publication typography, colours and backgrounds
 
 The publication theme is [`themes/south-signal-lab-default.yaml`](themes/south-signal-lab-default.yaml). Its defaults follow the CLOCK manual visual language:
 
@@ -229,7 +241,7 @@ presentation:
 
 The path is relative to `docs/tutorials/`. Supported image mode values are `cover`, `contain`, and `stretch`. The current SDL-free image loader accepts uncompressed 24-bit or 32-bit Windows BMP so background images do not add an image-codec dependency to the headless renderer. Leaving `background_image` empty uses pure black.
 
-## 11. Tutorial pacing
+## 12. Tutorial pacing
 
 Interaction speed is controlled centrally by [`interaction_profiles.yaml`](interaction_profiles.yaml), not by video playback speed. `HUMAN_NORMAL` and `HUMAN_SLOW` are intentionally paced for viewers to follow the OLED and physical control movement. `HUMAN_FAST` remains reserved for interactions whose timing is semantically meaningful, especially Tap Tempo.
 
@@ -247,7 +259,7 @@ interaction_profile: HUMAN_SLOW
 
 Do not slow Tap Tempo by changing its profile unless the demonstrated tap interval is updated accordingly; the taps are real CLOCK input and therefore change the measured BPM.
 
-## 12. Record the source revision in the manifest
+## 13. Record the source revision in the manifest
 
 The default manifest revision is `working-tree`. For an archived or release-oriented render, pass the Git revision explicitly:
 
@@ -268,7 +280,7 @@ $revision = git rev-parse HEAD
   --source-revision $revision
 ```
 
-## 13. Recommended authoring loop
+## 14. Recommended authoring loop
 
 Use this order while developing a Story:
 
@@ -282,7 +294,7 @@ Use this order while developing a Story:
 
 Do not replace physical UI actions with direct product-state setters. If a workflow cannot be expressed through the existing module controls, patch actions and external stimuli, extend the Storybook contract explicitly and regression-test that addition first.
 
-## 14. Useful verification commands
+## 15. Useful verification commands
 
 Validate the full native Storybook/test matrix:
 
@@ -300,9 +312,7 @@ python scripts/tests/test_storybook_tooling.py
 
 The publication integration test automatically skips only when `ffmpeg`/`ffprobe` are unavailable; all non-publication Storybook and firmware/simulator targets remain independent of those tools.
 
-<h6 align="center">From Munich with &#9829;</h6>
-
-## Focus overlays and subtitle safe area
+## 16. Focus overlays and subtitle safe area
 
 The default publication theme keeps burned-in subtitles above a 150-pixel lower player-control safe area at 1080p. Adjust `presentation.subtitle_safe_bottom_px` in the selected theme if the target player requires more or less clearance.
 
@@ -317,3 +327,5 @@ Physical actions are highlighted automatically. For explanatory pauses, add a pr
 ```
 
 For a specific UI element use `target: oled_region` with `x`, `y`, `width`, and `height` in the real 128x64 OLED coordinate system. `placement: auto` is the default; use `left`, `right`, `above`, or `below` when a particular teaching frame needs a fixed callout direction. Arrow leaders terminate outside the target and use a black/white contrast outline around the CLOCK-blue core. Focus actions do not advance CLOCK firmware time.
+
+<h6 align="center">From Munich with &#9829;</h6>

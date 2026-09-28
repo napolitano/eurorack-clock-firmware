@@ -7,6 +7,9 @@ title: "Example 08 — Sequencer Basics"
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
+publication:
+  intro_video: "../assets/video/south-signal-lab-intro.mp4"
+  outro_video: "../assets/video/south-signal-lab-outro.mp4"
 setup:
   factory_reset: true
   power: on
@@ -15,7 +18,7 @@ scenes:
       number: 1
       title: "Sequencer Mode"
       subtitle: "Edit gates directly on the step grid"
-      duration_ms: 2800
+      duration_ms: 18000
   - tutorial:
       subtitle: "Select Sequencer from the mode carousel."
       actions:
@@ -62,3 +65,9 @@ scenes:
       body: |
         Sequencer supports patterns beyond 16 steps; the display follows the active block.
       duration_ms: 3500
+  - text:
+      title: "Thanks for watching"
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      duration_ms: 20000

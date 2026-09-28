@@ -10,6 +10,14 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Storybook publication assets, narration and repository hygiene
+
+- Add the approved South Signal Lab 1080p intro and outro as the only intentionally tracked Storybook MP4 source assets, and reference both from every editable teaching example.
+- Ignore generated tutorial videos, audio renders, subtitle sidecars, retained frame trees, staging directories and Storybook frame PNG/RGBA intermediates so publication output cannot drift into source control.
+- Add US-English Eleven-v3 narration scripts with sparse Audio Tags, 18-second spoken-opening windows and 20-second varied closing windows sized from measured narration delivery.
+- Expand the editable teaching set from ten to eleven examples with a full eight-Independent-Clocks walkthrough covering topology change, short-push channel selection, the real encoder long-press, and the TIMING / CLOCK / OUTPUT settings hierarchy.
+- Keep subtitles concise while the post-production voice-over explains intent, context and parameter meaning in more detail.
+
 ### Storybook focus-arrow readability
 
 - Reworked tutorial focus arrows into short collision-aware leaders that terminate outside the highlighted control/OLED region instead of crossing it.
@@ -75,8 +83,8 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Run the canonical reference catalog explicitly in the native simulator CI job on Linux, Windows and macOS in addition to normal CTest coverage.
 - Extend Storybook repository policy so the exact canonical story set, physical modifier/long-push authoring contracts and 40-row Phase-1 evidence matrix cannot silently regress.
 - Add the user-facing `clock-storybook` headless CLI with `validate`, `frames`, and `video` commands, MP4/WebM selection, optional frame retention, explicit ffmpeg/ffprobe paths, and source-revision stamping.
-- Add ten copy-and-edit didactic example Stories under `docs/tutorials/examples/` plus `docs/tutorials/VIDEO_GENERATION.md` covering the complete build, validation, frame-only and final-video workflow without changing the canonical 13-Story CI catalog.
-- Add `storybook_example_stories_tests` and a CLI validation CTest so all ten examples are parsed, semantically validated, and executed through the real simulator/product UI without generating publication media.
+- Add eleven copy-and-edit didactic example Stories under `docs/tutorials/examples/` plus `docs/tutorials/VIDEO_GENERATION.md` covering the complete build, validation, frame-only and final-video workflow without changing the canonical 13-Story CI catalog.
+- Add `storybook_example_stories_tests` and a CLI validation CTest so all eleven examples are parsed, semantically validated, and executed through the real simulator/product UI without generating publication media.
 - Fix Windows Storybook publication process launch by replacing CRT `_wspawnv` with direct `CreateProcessW`, preserving argv-safe execution while correctly handling spaces, quotes and trailing backslashes; add a self-spawn regression and visible CLI progress before FFmpeg publication.
 
 ### Sequencer 2.0 foundation

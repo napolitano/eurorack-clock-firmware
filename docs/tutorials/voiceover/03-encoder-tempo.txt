@@ -1,0 +1,9 @@
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you the most direct way to change CLOCK’s master tempo with the encoder, and also explain what that master BPM actually means once you start using several outputs. [short pause]
+
+Turn the encoder clockwise and the BPM goes up. Turn it counter-clockwise and the BPM comes back down. The value changes directly on the performance screen, so there is no menu between you and the master tempo.
+
+[thoughtful] The important part is that this BPM belongs to one shared musical timeline. Even when you later use Independent outputs with different rates or rhythmic functions, those channels remain anchored to the same master reference instead of becoming unrelated free-running clocks.
+
+So a tempo change moves the common timing reference while preserving the musical relationship between channels. It is a simple control, but it changes the whole timing system in a predictable way.
+
+[warmly] And with that, we’re finished for this one. Thank you for watching and for spending the time with me. If you like this kind of detailed Eurorack development work, want to keep up with CLOCK, or want to support what I’m building, follow South Signal Lab here or on Ko-fi for exclusive development insights. Bye for now — see you soon.

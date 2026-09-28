@@ -7,6 +7,9 @@ title: "Example 05 — Topology and Channel"
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
+publication:
+  intro_video: "../assets/video/south-signal-lab-intro.mp4"
+  outro_video: "../assets/video/south-signal-lab-outro.mp4"
 setup:
   factory_reset: true
   power: on
@@ -15,7 +18,7 @@ scenes:
       number: 1
       title: "Topology and Channel"
       subtitle: "Move from One Clock to one Independent output"
-      duration_ms: 2800
+      duration_ms: 18000
   - text:
       title: "Two related choices"
       body: |
@@ -55,3 +58,9 @@ scenes:
       body: |
         Each output can use its own rhythmic function while all channels remain anchored to CLOCK's master timeline.
       duration_ms: 3800
+  - text:
+      title: "Thanks for watching"
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      duration_ms: 20000

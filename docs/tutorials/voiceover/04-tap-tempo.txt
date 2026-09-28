@@ -1,0 +1,9 @@
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you how to set CLOCK’s internal tempo by feel with TAP Tempo, how the measurement sequence works, and why tapping the tempo does not silently change your selected clock source. [short pause]
+
+The first TAP starts a new measurement. Tap again on the next pulse and CLOCK now has an interval it can use. Additional taps continue refining that internal tempo, and the display gives you visual TAP feedback once a real measurement exists.
+
+[slower] One detail is important: TAP Tempo changes the internal fallback BPM. It does not change the selected clock source. If SOURCE is AUTO, it stays AUTO.
+
+[thoughtful] That means you can prepare a useful internal tempo by hand and still let CLOCK lock to an external source when one becomes available. The internal tempo remains available as the fallback rather than becoming a hidden source switch.
+
+[warmly] That’s the complete Tap Tempo workflow. Thank you very much for your interest and your time. If you enjoyed the video, want to stay informed about the next CLOCK steps, or would like to support South Signal Lab, follow me here or on Ko-fi for exclusive looks at the development process behind my Eurorack modules and components. Bye, and see you soon.

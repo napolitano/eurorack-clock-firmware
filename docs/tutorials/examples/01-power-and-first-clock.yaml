@@ -7,6 +7,9 @@ title: "Example 01 — Power and First Clock"
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
+publication:
+  intro_video: "../assets/video/south-signal-lab-intro.mp4"
+  outro_video: "../assets/video/south-signal-lab-outro.mp4"
 defaults:
   transition:
     type: cut
@@ -18,7 +21,7 @@ scenes:
       number: 1
       title: "Getting Started"
       subtitle: "Power, PLAY, tempo, STOP"
-      duration_ms: 2500
+      duration_ms: 18000
   - text:
       title: "Factory state"
       body: |
@@ -64,3 +67,9 @@ scenes:
         One Clock sends the same master timing to all eight outputs.
         Use Independent when each output needs its own rhythmic function.
       duration_ms: 3500
+  - text:
+      title: "Thanks for watching"
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      duration_ms: 20000

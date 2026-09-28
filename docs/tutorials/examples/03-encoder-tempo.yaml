@@ -7,6 +7,9 @@ title: "Example 03 — Encoder Tempo"
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
+publication:
+  intro_video: "../assets/video/south-signal-lab-intro.mp4"
+  outro_video: "../assets/video/south-signal-lab-outro.mp4"
 setup:
   factory_reset: true
   power: on
@@ -15,7 +18,7 @@ scenes:
       number: 1
       title: "Changing Tempo"
       subtitle: "The encoder controls master BPM"
-      duration_ms: 2500
+      duration_ms: 18000
   - tutorial:
       subtitle: "Turn clockwise to increase BPM."
       actions:
@@ -36,3 +39,9 @@ scenes:
       body: |
         Tempo changes move the shared master timeline; channels remain musically related.
       duration_ms: 3000
+  - text:
+      title: "Thanks for watching"
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      duration_ms: 20000

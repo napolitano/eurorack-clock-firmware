@@ -41,6 +41,7 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertTrue((ROOT / "docs/tutorials/assets/video/README.md").is_file())
         self.assertTrue((ROOT / "docs/tutorials/VIDEO_GENERATION.md").is_file())
         self.assertTrue((ROOT / "docs/tutorials/examples/README.md").is_file())
+        self.assertTrue((ROOT / "docs/tutorials/voiceover/README.md").is_file())
 
     def test_architecture_guard_forbids_embedded_storybook_media_dependencies(self) -> None:
         """The architecture gate must reject reverse dependencies into embedded code."""
@@ -53,10 +54,15 @@ class StorybookToolingTests(unittest.TestCase):
     def test_generated_storybook_media_is_ignored(self) -> None:
         """Generated tutorial/publication artifacts must never be source-bundle inputs."""
         gitignore = (ROOT / ".gitignore").read_text(encoding="utf-8")
-        self.assertIn("docs/tutorials/generated/", gitignore)
-        self.assertIn("docs/tutorials/.cache/", gitignore)
-        self.assertIn("*.storybook-manifest.json", gitignore)
-        self.assertIn("*.storybook-probe.json", gitignore)
+        for token in (
+            "/tutorial-output/", "docs/tutorials/generated/", "docs/tutorials/.cache/",
+            "*.frames/", "*.staging/", "**/frames/frame-*.png", "**/frames/frame-*.rgba",
+            "*.mp4", "*.webm", "*.srt", "*.vtt",
+            "*.wav", "*.mp3", "*.m4a", "*.storybook-manifest.json", "*.storybook-probe.json",
+        ):
+            self.assertIn(token, gitignore)
+        self.assertIn("!docs/tutorials/assets/video/south-signal-lab-intro.mp4", gitignore)
+        self.assertIn("!docs/tutorials/assets/video/south-signal-lab-outro.mp4", gitignore)
 
     def test_publication_assets_and_scope_are_schema_contracts(self) -> None:
         """Schema 1 must retain optional media assets and visible-channel scope semantics."""
@@ -87,13 +93,13 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertFalse(any((ROOT / "sim/tutorial").rglob("*.yaml")))
 
     def test_teaching_examples_are_separate_and_complete(self) -> None:
-        """Ten editable examples must exist outside the canonical reference-story directory."""
+        """Eleven editable examples must exist outside the canonical reference-story directory."""
         examples = ROOT / "docs/tutorials/examples"
         expected = {
             "01-power-and-first-clock.yaml", "02-transport-basics.yaml", "03-encoder-tempo.yaml",
             "04-tap-tempo.yaml", "05-topology-and-channel.yaml", "06-clock-mode.yaml",
             "07-euclidean-rhythm.yaml", "08-sequencer-basics.yaml", "09-divider-bank.yaml",
-            "10-external-sync.yaml",
+            "10-external-sync.yaml", "11-eight-independent-clocks-walkthrough.yaml",
         }
         self.assertEqual(expected, {path.name for path in examples.glob("*.yaml")})
         guide = (ROOT / "docs/tutorials/VIDEO_GENERATION.md").read_text(encoding="utf-8")
@@ -101,6 +107,35 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("clock-storybook video", guide)
         self.assertIn("--format both", guide)
         self.assertIn("intro_video:", guide)
+
+    def test_examples_use_tracked_bumpers_and_voiceover_scripts(self) -> None:
+        """Editable examples share the approved bumpers and narration contract."""
+        examples = ROOT / "docs/tutorials/examples"
+        voiceover = ROOT / "docs/tutorials/voiceover"
+        intro = ROOT / "docs/tutorials/assets/video/south-signal-lab-intro.mp4"
+        outro = ROOT / "docs/tutorials/assets/video/south-signal-lab-outro.mp4"
+        self.assertTrue(intro.is_file() and intro.stat().st_size > 0)
+        self.assertTrue(outro.is_file() and outro.stat().st_size > 0)
+        stories = sorted(examples.glob("*.yaml"))
+        scripts = sorted(voiceover.glob("*.txt"))
+        self.assertEqual(11, len(stories))
+        self.assertEqual(11, len(scripts))
+        for story in stories:
+            text = story.read_text(encoding="utf-8")
+            self.assertIn('intro_video: "../assets/video/south-signal-lab-intro.mp4"', text)
+            self.assertIn('outro_video: "../assets/video/south-signal-lab-outro.mp4"', text)
+            self.assertIn('title: "Thanks for watching"', text)
+            self.assertIn('duration_ms: 18000', text)
+            self.assertIn('duration_ms: 20000', text)
+        for script in scripts:
+            text = script.read_text(encoding="utf-8")
+            self.assertIn("Hi, this is South Signal Lab. My name is Axel, and today", text)
+            self.assertIn("Ko-fi", text)
+        detailed = (examples / "11-eight-independent-clocks-walkthrough.yaml").read_text(encoding="utf-8")
+        self.assertIn("hold_ms: 800", detailed)
+        self.assertIn('label: "MODE · TIMING · CLOCK · OUTPUT"', detailed)
+        self.assertIn('label: "Probability · Gate · Phase · Reset · Mute"', detailed)
+        self.assertIn('text: "Change channel 4 from ×1 to ×2."', detailed)
 
     def test_phase1_acceptance_matrix_has_exactly_40_evidence_rows(self) -> None:
         """SB-8 closes the frozen 40-point Phase-1 implementation gate with repository evidence."""

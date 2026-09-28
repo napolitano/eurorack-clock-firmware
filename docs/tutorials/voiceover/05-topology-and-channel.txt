@@ -1,0 +1,11 @@
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I’ll show you the difference between choosing CLOCK’s operating topology and choosing an individual output channel — two related actions that are easy to confuse at first. [short pause]
+
+CLOCK has three high-level topologies: One Clock, Independent, and Divider Bank. The topology defines how the eight physical outputs are organized before you start editing the details of an individual channel.
+
+Here we open the overview and use the TAP-plus-encoder gesture to move from One Clock into Independent operation. Selecting Clock enters Independent mode. Once Independent is active, a short encoder press opens the eight-channel overview, and we choose channel three.
+
+From this point on, changes apply to that selected output instead of to the shared One Clock configuration.
+
+[thoughtful] Independent does not mean unrelated. Each output can use its own mode and settings while the active channels remain anchored to CLOCK’s common master timeline.
+
+[warmly] That wraps up topology and channel selection. Thank you for your interest and for taking the time to watch. If you want to keep following the project, see more engineering detail, or support future work, follow South Signal Lab here or on Ko-fi for exclusive insight into the development of my Eurorack modules and components. Bye for now, and see you soon.

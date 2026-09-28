@@ -93,8 +93,35 @@ sim/*-panel.local.jpeg
 clock-simulator-screenshot*.bmp
 
 # CLOCK Storybook generated/publication output
-# Source stories/themes stay tracked; rendered media and verification output do not.
+# Source stories/themes and the two approved pre-produced bumper clips stay tracked.
+# Rendered tutorials, retained frame trees, publication staging, voice-over renders,
+# subtitle sidecars and manifests are workstation output and must never be committed.
+/tutorial-output/
+/tutorial-output*/
 docs/tutorials/generated/
 docs/tutorials/.cache/
+*.frames/
+*.staging/
+**/frames/frame-*.png
+**/frames/frame-*.rgba
 *.storybook-manifest.json
 *.storybook-probe.json
+publication-manifest.json
+
+# Generated Storybook media / post-production audio.
+*.mp4
+*.webm
+*.mov
+*.mkv
+*.avi
+*.srt
+*.vtt
+*.wav
+*.mp3
+*.m4a
+*.aac
+*.flac
+
+# Explicit authored publication inputs. These are source assets, not rendered output.
+!docs/tutorials/assets/video/south-signal-lab-intro.mp4
+!docs/tutorials/assets/video/south-signal-lab-outro.mp4

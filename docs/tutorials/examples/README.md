@@ -2,7 +2,7 @@
 
 # CLOCK Storybook example stories
 
-These ten files are a didactic, copy-and-edit Storybook starter set. They are deliberately separate from the canonical CI reference catalog in `../stories/`.
+These eleven files are a didactic, copy-and-edit Storybook starter set. They are deliberately separate from the canonical CI reference catalog in `../stories/`.
 
 1. `01-power-and-first-clock.yaml` — power-up, PLAY, tempo and STOP.
 2. `02-transport-basics.yaml` — PLAY, PAUSE, resume and STOP.
@@ -14,8 +14,18 @@ These ten files are a didactic, copy-and-edit Storybook starter set. They are de
 8. `08-sequencer-basics.yaml` — select Sequencer and toggle a step.
 9. `09-divider-bank.yaml` — Divider Bank and divider-family selection.
 10. `10-external-sync.yaml` — external SYNC lock plus independent RST phase reset.
+11. `11-eight-independent-clocks-walkthrough.yaml` — full One Clock → eight Independent Clocks workflow, channel selection, long-press context settings, and Clock-channel timing/output configuration.
 
 All examples change CLOCK only through recorded physical controls, patch actions or external stimuli. `setup:` establishes only pre-recording factory/power conditions.
+
+Every example also:
+
+- prepends the tracked South Signal Lab intro and appends the tracked South Signal Lab outro from `../assets/video/`;
+- starts with an 18-second narration-safe title window after the intro bumper;
+- ends with a 20-second narration-safe hold before the outro;
+- has a matching US-English Eleven v3 voice-over script under [`../voiceover/`](../voiceover/README.md).
+
+The bumper MP4s are approved authored source assets. Generated tutorial video/audio, retained frames, sidecars and manifests are ignored by Git and are not repository source.
 
 Validate one example before rendering:
 

@@ -7,6 +7,9 @@ title: "Example 10 — External SYNC and RST"
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
+publication:
+  intro_video: "../assets/video/south-signal-lab-intro.mp4"
+  outro_video: "../assets/video/south-signal-lab-outro.mp4"
 setup:
   factory_reset: true
   power: on
@@ -15,7 +18,7 @@ scenes:
       number: 1
       title: "External SYNC and RST"
       subtitle: "Follow external timing and reset phase independently"
-      duration_ms: 3000
+      duration_ms: 18000
   - text:
       title: "Two different jobs"
       body: |
@@ -69,3 +72,9 @@ scenes:
         - "Use RST when you need a phase restart."
         - "Use CLOCK's transport controls for manual PLAY/STOP authority."
       duration_ms: 4300
+  - text:
+      title: "Thanks for watching"
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      duration_ms: 20000

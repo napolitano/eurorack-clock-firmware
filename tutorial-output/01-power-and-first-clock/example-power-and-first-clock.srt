@@ -3,14 +3,14 @@
 Power CLOCK on.
 
 2
-00:00:12,550 --> 00:00:16,070
+00:00:12,550 --> 00:00:14,970
 Press PLAY.
 
 3
-00:00:16,070 --> 00:00:21,050
+00:00:14,970 --> 00:00:18,650
 Turn the encoder to raise the master tempo.
 
 4
-00:00:21,050 --> 00:00:22,570
+00:00:18,650 --> 00:00:20,170
 Press STOP/BACK to stop and reset phase.
 
