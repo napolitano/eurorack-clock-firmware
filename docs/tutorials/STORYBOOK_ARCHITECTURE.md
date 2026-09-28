@@ -201,8 +201,26 @@ The renderer owns presentation only:
 - `tutorial_renderer.*` composes tutorial, chapter, text and callout frames;
 - `scope::Session`/`scope_timeline` remain the source for transport-relative scope timing, while gate traces come from `SimulatorRuntime::telemetry()`.
 
-The primary tutorial layout reserves a dedicated bottom subtitle strip. The left content region contains the real integer-scaled OLED and, when requested, the scope for exactly the production UI's selected channel. The right region contains the front panel. The panel representation uses only `PanelLayout` geometry and embeds the same real OLED framebuffer rather than a semantic screen mockup.
+The primary tutorial layout reserves a dedicated bottom subtitle strip for `tutorial` scenes only. Chapter subtitles remain part of the chapter card and are not emitted as timed tutorial subtitles. The left content region contains the real integer-scaled OLED and, when requested, the scope for exactly the production UI's selected channel. The right region contains the front panel. The panel representation uses only `PanelLayout` geometry and embeds the same real OLED framebuffer rather than a semantic screen mockup.
 
 Text is fully measured before drawing. An unbreakable line wider than its layout box, excessive wrapped height, a missing theme, an unavailable font face, or an invalid theme value aborts rendering.
 
 No developer timing panel, debug status text, or eight-channel developer scope is composed into tutorial frames. The optional Storybook scope is deliberately reduced to the requested visible channel.
+
+## SB-6 frame/subtitle output pipeline
+
+SB-6 adds a read-only `StoryExecutionObserver` to the runner. It cannot deliver controls or mutate Story state. It only requests future presentation sample timestamps and receives a snapshot while the one real Story execution is already at the corresponding simulator/firmware time.
+
+The frame scheduler uses exact rational timestamps:
+
+```text
+presentation_us(frame N) = floor(N * 1,000,000 / fps)
+```
+
+A sample exactly on a scene boundary belongs to the scene beginning at that timestamp. Pure presentation scenes therefore reuse the unchanged simulator state while their own presentation frames advance; tutorial intervals advance the actual simulator to each required sample before rendering.
+
+`frame_pipeline.*` combines that observer with `PanelPresentationTimeline` and `TutorialRenderer`. No second Story replay is required to create video frames. Lossless output is PNG/RGBA8 under `frames/`, with deterministic raw-RGBA FNV-1a-64 digests recorded in `manifest.json`.
+
+Subtitle cues are extracted from the same runner trace events that drive burned-in tutorial subtitles. A cue begins at a `Subtitle` event and closes at the next subtitle in that scene or at the scene end. SRT and WebVTT serialization therefore cannot acquire an independent authoring/timing source.
+
+Generation is atomic at the Storybook artifact-directory boundary: frames and sidecars are written to a sibling staging directory, and the requested output directory is replaced only after Story execution, rendering, subtitle serialization, PNG writing, and manifest writing all succeed. Generated output remains ignored and excluded from source bundles.

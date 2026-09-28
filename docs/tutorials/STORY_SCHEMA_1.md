@@ -207,3 +207,18 @@ Tutorial frames use the story output profile (default 1920×1080). OLED pixels a
 When `scope: {state: show, channel: visible}` is active, only the current production-UI selected channel is shown. Scope traces come from real gate-transition telemetry and the existing transport-referenced scope timeline. Storybook does not infer a waveform from BPM, steps, or story content.
 
 The subtitle strip is outside the tutorial content area and therefore never obscures CLOCK.
+
+## Generated Phase-1 artifacts
+
+Schema 1 authoring does not name individual output frames or subtitle sidecars. The host generation pipeline derives them deterministically from the Story ID and output profile:
+
+```text
+frames/frame-000000.png
+frames/frame-000001.png
+...
+<story-id>.srt
+<story-id>.vtt
+manifest.json
+```
+
+Frame timestamps are exact rational presentation timestamps (`floor(frame_index * 1,000,000 / fps)`). Burned-in subtitles, SRT, and WebVTT are generated from the same timed Story subtitle events. Intro/outro offsets are not applied at this stage; the SB-7 publication compositor applies those after probing the actual pre-produced intro duration.

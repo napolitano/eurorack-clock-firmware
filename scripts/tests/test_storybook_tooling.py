@@ -25,6 +25,8 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("clock-storybook-parser-tests", cmake)
         self.assertIn("clock-storybook-runner", cmake)
         self.assertIn("clock-storybook-runner-tests", cmake)
+        self.assertIn("clock-storybook-frame-pipeline", cmake)
+        self.assertIn("clock-storybook-frame-pipeline-tests", cmake)
         self.assertNotIn("storybook", platformio.lower())
         self.assertNotIn("yaml-cpp", platformio.lower())
         self.assertTrue((ROOT / "docs/tutorials/stories/README.md").is_file())
@@ -76,6 +78,18 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertNotIn("state().source =", runner)
         self.assertNotIn("setClockSource", runner)
         self.assertNotIn("setTransport", runner)
+
+    def test_sb6_output_pipeline_is_single_run_and_host_only(self) -> None:
+        """Frame/subtitle output must observe one runner execution and stay outside embedded code."""
+        pipeline = (ROOT / "sim/tutorial/frame_pipeline.cpp").read_text(encoding="utf-8")
+        runner = (ROOT / "sim/tutorial/story_runner.cpp").read_text(encoding="utf-8")
+        architecture = (ROOT / "docs/tutorials/STORYBOOK_ARCHITECTURE.md").read_text(encoding="utf-8")
+        self.assertIn("StoryExecutionObserver", runner)
+        self.assertIn("StoryRunner runner", pipeline)
+        self.assertIn("writeTutorialPng", pipeline)
+        self.assertIn("writeSubtitleSidecars", pipeline)
+        self.assertIn("No second Story replay", architecture)
+        self.assertFalse(any((ROOT / "src").rglob("*storybook*")))
 
 
 if __name__ == "__main__":

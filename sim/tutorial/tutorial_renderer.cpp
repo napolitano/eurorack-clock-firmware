@@ -431,8 +431,10 @@ TutorialSurface TutorialRenderer::renderScene(
             renderTutorial(frame, runtime, panelLayout_, physicalState, scopeSession_, theme, speedMultiplier);
             break;
     }
-    const std::string subtitle = !activeSubtitle.empty() ? activeSubtitle : scene.subtitle;
-    renderSubtitle(frame, subtitle, theme);
+    if (scene.kind == SceneKind::Tutorial) {
+        const std::string subtitle = !activeSubtitle.empty() ? activeSubtitle : scene.subtitle;
+        renderSubtitle(frame, subtitle, theme);
+    }
     return frame;
 }
 

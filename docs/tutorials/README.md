@@ -4,7 +4,7 @@
 
 CLOCK Storybook is the project-local, host-only documentation-video system for deterministic how-to material. It drives the production CLOCK application through existing simulator boundaries and composes documentation frames from real firmware output rather than reproducing firmware behaviour.
 
-Current implementation status: **SB-0/SB-1/SB-2/SB-3/SB-4/SB-5 complete; SB-6 frame/subtitle pipeline next**.
+Current implementation status: **SB-0 through SB-6 complete; SB-7 publication/media encoding next**.
 
 - [`STORYBOOK_ARCHITECTURE.md`](STORYBOOK_ARCHITECTURE.md) defines ownership, dependency, timing, stream, and publication boundaries.
 - [`STORY_SCHEMA_1.md`](STORY_SCHEMA_1.md) defines the initial authoring interface and stable action spellings.
@@ -32,5 +32,31 @@ For `tutorial` scenes it combines:
 `chapter`, `text`, `TIP`, `WARNING`, and `RECIPE` scenes use the same data-driven theme and measured text layout. Horizontal or vertical overflow is a hard render failure; Storybook never silently clips instructional text.
 
 Phase-1 typography is deliberately deterministic and independent of system font installation. Themes select project-local `CLOCK UI` or `CLOCK Mono` faces and explicit integer-scaled pixel sizes. Unknown requested faces fail validation/rendering rather than being silently substituted.
+
+
+## SB-6 deterministic frame and subtitle pipeline
+
+`sim/tutorial/frame_pipeline.*` executes each validated Story exactly once. A read-only execution observer samples that same live run at the configured rational frame timestamps (`frame_index × 1,000,000 / fps`) and immediately renders the current production framebuffer, simulator telemetry, physical presentation state, active scene, and active subtitle.
+
+Generated output is staged and published atomically:
+
+```text
+<output>/
+  frames/
+    frame-000000.png
+    frame-000001.png
+    ...
+  <story-id>.srt
+  <story-id>.vtt
+  manifest.json
+```
+
+PNG frames are deterministic RGBA8 lossless images produced by project-local host tooling. The writer uses PNG Sub filtering plus a deterministic fixed-Huffman DEFLATE stream, so frame generation has no image-codec package dependency.
+
+SRT, WebVTT, and burned-in subtitles all derive from the same Story Runner subtitle events. Sidecar cue boundaries therefore use the same presentation timeline as the rendered frames. Publication-time intro offsets are intentionally deferred to SB-7 because intro/outro media are publication assets, not Story execution.
+
+The manifest records the Story/schema identity, firmware version, caller-supplied simulator source revision, theme, interaction profile, output profile, presentation duration, frame count, subtitle count, and an FNV-1a-64 digest of each raw RGBA8 frame. The digest is a deterministic regression identity, not a security checksum.
+
+Generation writes to a sibling staging directory first. A parser, runner, renderer, subtitle, PNG, or filesystem failure removes that staging output and does not replace a previously successful output directory.
 
 <h6 align="center">From Munich with &#9829;</h6>

@@ -95,6 +95,13 @@ public:
     /** @brief Returns the wrapped runtime for read-only downstream renderer/telemetry integration. */
     const SimulatorRuntime& runtime() const;
 
+    /**
+     * @brief Returns the host runtime for presentation tooling that maintains simulator-only telemetry views.
+     *
+     * Story actions must not use this accessor to mutate CLOCK state; it exists for frame/scope presentation only.
+     */
+    SimulatorRuntime& presentationRuntime();
+
 private:
     /** @brief Maps a Storybook module control to the existing simulator button enum. */
     static StoryPortResult mapButton(ModuleControl control, SimButton& button);

@@ -38,6 +38,10 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 - Add deterministic data-driven Storybook themes, project-local `CLOCK UI`/`CLOCK Mono` faces, explicit font sizes/line spacing/colours, and hard failure for unavailable requested fonts.
 - Add measured wrapping and hard horizontal/vertical overflow rejection for chapters, explanatory text, subtitles, TIP, WARNING and RECIPE presentation.
 - Add `storybook_renderer_tests` covering all Phase-1 scene kinds, theme styling/font failure, overflow rejection, exact OLED pixel ownership/scaling, subtitle isolation and real visible-channel scope traces.
+- Add the SB-6 single-run frame pipeline: a read-only execution observer samples the real Story Runner at exact rational frame timestamps without replaying CLOCK.
+- Generate deterministic lossless PNG/RGBA8 frames, raw-RGBA frame digests, atomic staging, and a source/revision/output manifest without adding an image-codec package dependency.
+- Generate SRT and WebVTT from the same timed tutorial subtitle events used for the burned-in subtitle strip; publication-time intro offsets remain an SB-7 media-composition concern.
+- Add frame-pipeline regressions for exact timestamps, byte-identical repeated PNG generation, sidecar timing, manifests, and cleanup/preservation after render failure.
 
 ### Sequencer 2.0 foundation
 
@@ -2113,3 +2117,4 @@ CLOCK 1.0.0 is the first stable firmware release. It freezes the V1 feature set 
 - Initial STM32F401CCU6 PlatformIO prototype.
 - SSD1306 I2C display support.
 - Central tempo display and basic clock UI.
+

@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "tutorial/story_execution_observer.h"
 #include "tutorial/story_model.h"
 #include "tutorial/story_presentation_sink.h"
 #include "tutorial/story_simulator_port.h"
@@ -72,7 +73,8 @@ public:
     StoryRunner(
         StorySimulatorPort& port,
         std::filesystem::path tutorialRoot,
-        StoryPresentationSink* presentationSink = nullptr);
+        StoryPresentationSink* presentationSink = nullptr,
+        StoryExecutionObserver* executionObserver = nullptr);
 
     /** @brief Validates and executes one complete story deterministically. */
     StoryRunResult run(const Story& story);
@@ -81,6 +83,7 @@ private:
     StorySimulatorPort& port_;
     std::filesystem::path tutorialRoot_;
     StoryPresentationSink* presentationSink_ = nullptr;
+    StoryExecutionObserver* executionObserver_ = nullptr;
 };
 
 }  // namespace clockfw::sim::tutorial

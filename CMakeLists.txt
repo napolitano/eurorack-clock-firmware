@@ -123,6 +123,7 @@ target_compile_options(clock-storybook-simulator-port PRIVATE ${CLOCK_WARNING_FL
 
 add_library(clock-storybook-runner STATIC
     sim/tutorial/story_runner.cpp
+    sim/tutorial/story_runner_support.cpp
 )
 target_link_libraries(clock-storybook-runner PUBLIC
     clock-storybook-model
@@ -150,6 +151,19 @@ target_include_directories(clock-storybook-renderer PUBLIC
     "${CMAKE_CURRENT_SOURCE_DIR}/sim"
 )
 target_compile_options(clock-storybook-renderer PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_library(clock-storybook-frame-pipeline STATIC
+    sim/tutorial/png_writer.cpp
+    sim/tutorial/subtitle_writer.cpp
+    sim/tutorial/frame_pipeline.cpp
+)
+target_link_libraries(clock-storybook-frame-pipeline PUBLIC
+    clock-storybook-renderer
+)
+target_include_directories(clock-storybook-frame-pipeline PUBLIC
+    "${CMAKE_CURRENT_SOURCE_DIR}/sim"
+)
+target_compile_options(clock-storybook-frame-pipeline PRIVATE ${CLOCK_WARNING_FLAGS})
 target_link_libraries(clock-storybook-presentation PUBLIC
     clock-storybook-runner
     clock-simulator-panel-layout
@@ -210,6 +224,17 @@ target_compile_definitions(clock-storybook-renderer-tests PRIVATE
     CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
 )
 target_compile_options(clock-storybook-renderer-tests PRIVATE ${CLOCK_WARNING_FLAGS})
+
+add_executable(clock-storybook-frame-pipeline-tests
+    sim/storybook_frame_pipeline_tests.cpp
+)
+target_link_libraries(clock-storybook-frame-pipeline-tests PRIVATE
+    clock-storybook-frame-pipeline
+)
+target_compile_definitions(clock-storybook-frame-pipeline-tests PRIVATE
+    CLOCK_SOURCE_ROOT="${CMAKE_CURRENT_SOURCE_DIR}"
+)
+target_compile_options(clock-storybook-frame-pipeline-tests PRIVATE ${CLOCK_WARNING_FLAGS})
 
 add_library(clock-vcv-runtime-adapter STATIC
     vcv/clock_vcv_runtime.cpp
@@ -304,5 +329,6 @@ add_test(NAME storybook_parser_tests COMMAND clock-storybook-parser-tests)
 add_test(NAME storybook_runner_tests COMMAND clock-storybook-runner-tests)
 add_test(NAME storybook_panel_presentation_tests COMMAND clock-storybook-panel-presentation-tests)
 add_test(NAME storybook_renderer_tests COMMAND clock-storybook-renderer-tests)
+add_test(NAME storybook_frame_pipeline_tests COMMAND clock-storybook-frame-pipeline-tests)
 add_test(NAME simulator_runtime_tests COMMAND clock-simulator-tests)
 add_test(NAME vcv_runtime_adapter_tests COMMAND clock-vcv-runtime-tests)

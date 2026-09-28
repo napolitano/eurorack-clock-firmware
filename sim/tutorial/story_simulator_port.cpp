@@ -197,6 +197,10 @@ const SimulatorRuntime& StorySimulatorPort::runtime() const {
     return runtime_;
 }
 
+SimulatorRuntime& StorySimulatorPort::presentationRuntime() {
+    return runtime_;
+}
+
 StoryPortResult StorySimulatorPort::mapButton(
     const ModuleControl control,
     SimButton& button) {

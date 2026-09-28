@@ -8,91 +8,32 @@
 #include "tutorial/story_runner.h"
 #include <algorithm>
 #include <cstdint>
+#include <stdexcept>
 #include <string>
 #include <utility>
 #include "tutorial/interaction_profile_loader.h"
+#include "tutorial/story_runner_support.h"
 #include "tutorial/story_validator.h"
 namespace clockfw::sim::tutorial {
 namespace {
 constexpr std::uint64_t kUsPerMs = 1000ULL;
 constexpr std::uint64_t kWaitPollUs = 1000ULL;
-const char* traceSceneName(const SceneKind kind) {
-    switch (kind) {
-        case SceneKind::Chapter: return "chapter";
-        case SceneKind::Tutorial: return "tutorial";
-        case SceneKind::Text: return "text";
-        case SceneKind::Callout: return "callout";
-    }
-    return "scene";
-}
-const char* traceActionName(const StoryActionKind kind) {
-    switch (kind) {
-        case StoryActionKind::Encoder: return "encoder";
-        case StoryActionKind::EncoderPush: return "encoder_push";
-        case StoryActionKind::Button: return "button";
-        case StoryActionKind::Power: return "power";
-        case StoryActionKind::SyncCable: return "sync_cable";
-        case StoryActionKind::ResetCable: return "rst_cable";
-        case StoryActionKind::SyncGenerator: return "sync_generator";
-        case StoryActionKind::SyncSource: return "sync_source";
-        case StoryActionKind::ResetGenerator: return "rst_generator";
-        case StoryActionKind::ResetPulse: return "rst_pulse";
-        case StoryActionKind::Subtitle: return "subtitle";
-        case StoryActionKind::Scope: return "scope";
-        case StoryActionKind::Wait: return "wait";
-        case StoryActionKind::WaitUntil: return "wait_until";
-        case StoryActionKind::Assert: return "assert";
-    }
-    return "action";
-}
-const char* portErrorName(const StoryPortError error) {
-    switch (error) {
-        case StoryPortError::None: return "none";
-        case StoryPortError::ModulePoweredOff: return "module powered off";
-        case StoryPortError::CableRequired: return "cable required";
-        case StoryPortError::InvalidParameter: return "invalid parameter";
-        case StoryPortError::UnsupportedAction: return "unsupported action";
-    }
-    return "unknown port error";
-}
-bool isPacedAction(const StoryActionKind kind) {
-    switch (kind) {
-        case StoryActionKind::Encoder:
-        case StoryActionKind::EncoderPush:
-        case StoryActionKind::Button:
-        case StoryActionKind::Power:
-        case StoryActionKind::SyncCable:
-        case StoryActionKind::ResetCable:
-        case StoryActionKind::SyncGenerator:
-        case StoryActionKind::SyncSource:
-        case StoryActionKind::ResetGenerator:
-        case StoryActionKind::ResetPulse:
-            return true;
-        case StoryActionKind::Subtitle:
-        case StoryActionKind::Scope:
-        case StoryActionKind::Wait:
-        case StoryActionKind::WaitUntil:
-        case StoryActionKind::Assert:
-            return false;
-    }
-    return false;
-}
-SignalWaveform toSimulatorWaveform(const StoryWaveform waveform) {
-    switch (waveform) {
-        case StoryWaveform::Square: return SignalWaveform::Square;
-        case StoryWaveform::Sine: return SignalWaveform::Sine;
-        case StoryWaveform::Triangle: return SignalWaveform::Triangle;
-    }
-    return SignalWaveform::Square;
-}
+using detail::isPacedAction;
+using detail::portErrorName;
+using detail::toSimulatorWaveform;
+using detail::traceActionName;
+using detail::traceSceneName;
+
 class RunContext final {
 public:
     RunContext(
         StorySimulatorPort& port,
         const Story& story,
         const InteractionTiming& timing,
-        StoryPresentationSink* presentationSink)
-        : port_(port), story_(story), timing_(timing), presentationSink_(presentationSink) {}
+        StoryPresentationSink* presentationSink,
+        StoryExecutionObserver* executionObserver)
+        : port_(port), story_(story), timing_(timing), presentationSink_(presentationSink),
+          executionObserver_(executionObserver) {}
 
     StoryRunResult execute() {
         if (!applySetup()) {
@@ -133,10 +74,15 @@ private:
     }
 
     bool executeScene(const StoryScene& scene, const std::size_t sceneIndex) {
+        currentScene_ = &scene;
+        currentSceneIndex_ = sceneIndex;
+        activeSubtitle_ = scene.kind == SceneKind::Tutorial ? scene.subtitle : std::string{};
         emit(StoryTraceKind::SceneBegin, sceneIndex, std::nullopt, traceSceneName(scene.kind), scene.title);
         if (scene.kind != SceneKind::Tutorial) {
             advancePresentationMs(scene.durationMs);
             emit(StoryTraceKind::SceneEnd, sceneIndex, std::nullopt, traceSceneName(scene.kind), scene.title);
+            currentScene_ = nullptr;
+            activeSubtitle_.clear();
             return true;
         }
 
@@ -155,6 +101,8 @@ private:
             emit(StoryTraceKind::ActionEnd, sceneIndex, actionIndex, traceActionName(action.kind), {});
         }
         emit(StoryTraceKind::SceneEnd, sceneIndex, std::nullopt, traceSceneName(scene.kind), scene.title);
+        currentScene_ = nullptr;
+        activeSubtitle_.clear();
         return true;
     }
 
@@ -243,6 +191,7 @@ private:
                 advanceActiveMs(timing_.afterValueChangeMs);
                 return true;
             case StoryActionKind::Subtitle:
+                activeSubtitle_ = action.text;
                 emit(StoryTraceKind::Subtitle, sceneIndex, actionIndex, "subtitle", action.text);
                 return true;
             case StoryActionKind::Scope:
@@ -384,8 +333,36 @@ private:
                                  sceneIndex, actionIndex, std::move(name), std::move(value)});
     }
 
+    void sampleUntil(const std::uint64_t targetPresentationUs, const bool firmwareAdvances) {
+        while (executionObserver_ != nullptr) {
+            const std::optional<std::uint64_t> next = executionObserver_->nextPresentationSampleUs();
+            if (!next.has_value() || *next >= targetPresentationUs) break;
+            if (*next < presentationUs_) {
+                throw std::runtime_error("Story execution observer requested a past presentation timestamp");
+            }
+            const std::uint64_t deltaUs = *next - presentationUs_;
+            if (firmwareAdvances && deltaUs > 0ULL) {
+                port_.advanceFirmwareMicroseconds(deltaUs);
+            }
+            presentationUs_ = *next;
+            if (currentScene_ == nullptr || !currentSceneIndex_.has_value()) {
+                throw std::runtime_error("Story execution observer sampled outside a scene");
+            }
+            executionObserver_->onPresentationSample({
+                presentationUs_, port_.runtime().nowMicroseconds(), *currentSceneIndex_, currentScene_,
+                activeSubtitle_, &port_.presentationRuntime()});
+        }
+
+        const std::uint64_t remainingUs = targetPresentationUs - presentationUs_;
+        if (firmwareAdvances && remainingUs > 0ULL) {
+            port_.advanceFirmwareMicroseconds(remainingUs);
+        }
+        presentationUs_ = targetPresentationUs;
+    }
+
     void advancePresentationMs(const std::uint32_t durationMs) {
-        presentationUs_ += static_cast<std::uint64_t>(durationMs) * kUsPerMs;
+        const std::uint64_t target = presentationUs_ + static_cast<std::uint64_t>(durationMs) * kUsPerMs;
+        sampleUntil(target, false);
     }
 
     void advanceActiveMs(const std::uint32_t durationMs) {
@@ -394,8 +371,7 @@ private:
 
     void advanceActiveUs(const std::uint64_t durationUs) {
         if (durationUs == 0ULL) return;
-        port_.advanceFirmwareMicroseconds(durationUs);
-        presentationUs_ += durationUs;
+        sampleUntil(presentationUs_ + durationUs, true);
     }
 
     void finish() {
@@ -408,6 +384,10 @@ private:
     StoryRunResult result_;
     std::uint64_t presentationUs_ = 0ULL;
     StoryPresentationSink* presentationSink_ = nullptr;
+    StoryExecutionObserver* executionObserver_ = nullptr;
+    const StoryScene* currentScene_ = nullptr;
+    std::optional<std::size_t> currentSceneIndex_;
+    std::string activeSubtitle_;
 };
 
 }  // namespace
@@ -419,8 +399,10 @@ StoryRunResult::operator bool() const {
 StoryRunner::StoryRunner(
     StorySimulatorPort& port,
     std::filesystem::path tutorialRoot,
-    StoryPresentationSink* presentationSink)
-    : port_(port), tutorialRoot_(std::move(tutorialRoot)), presentationSink_(presentationSink) {}
+    StoryPresentationSink* presentationSink,
+    StoryExecutionObserver* executionObserver)
+    : port_(port), tutorialRoot_(std::move(tutorialRoot)), presentationSink_(presentationSink),
+      executionObserver_(executionObserver) {}
 
 StoryRunResult StoryRunner::run(const Story& story) {
     StoryRunResult rejected;
@@ -438,7 +420,7 @@ StoryRunResult StoryRunner::run(const Story& story) {
         return rejected;
     }
 
-    RunContext context(port_, story, *timing.timing, presentationSink_);
+    RunContext context(port_, story, *timing.timing, presentationSink_, executionObserver_);
     return context.execute();
 }
 
