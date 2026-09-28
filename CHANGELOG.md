@@ -40,6 +40,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Fixed
 
+- Fix Windows Storybook rerenders failing with `Permission denied` while replacing `<output>.frames`: video publication now renders into a unique run-scoped frame directory, so stale Explorer/Defender/indexer handles on a previous frame tree cannot block the next run; temporary run trees are cleaned after publication unless `--keep-frames` is requested.
 - Fix tutorial narration synchronization by replacing action-local narration holds with explicit `beat` / `beat_end` containers: voice-over now begins before the UI actions it describes, those actions consume the same resolved audio budget, and only the remaining tail is held afterwards.
 - Reject the legacy tutorial forms that could speak after an operation had already completed, preserve zero-duration final focus through the active beat, and fail explicitly if enclosed actions exceed the resolved narration budget.
 - Preserve deliberate authored visual/action minima when local ElevenLabs audio is shorter, while still expanding resolved beats to measured audio duration plus configured headroom when speech is longer.

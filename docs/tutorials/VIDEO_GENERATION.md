@@ -210,7 +210,7 @@ To keep the intermediate frames for inspection:
   --keep-frames
 ```
 
-The retained intermediate directory is a sibling named `<output>.frames`.
+For `video`, each render uses a run-scoped sibling directory named `<output>.frames.run-<token>`. This avoids replacing a stale or temporarily locked frame tree on Windows. With `--keep-frames`, the CLI prints the exact retained path. Without it, the run-scoped frame tree is removed after publication. The standalone `frames` command still writes to the exact `--output` directory requested by the author.
 
 ## 7. Generate WebM or both formats
 

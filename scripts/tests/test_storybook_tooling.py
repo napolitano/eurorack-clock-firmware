@@ -246,6 +246,15 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn("placement: right", schema)
         self.assertIn("auto` (default), `left`, `right`, `above`, or `below", schema)
 
+    def test_video_render_uses_run_scoped_frame_workspace(self) -> None:
+        """Video rerenders must not replace a fixed frame tree that Windows may still have locked."""
+        source = (ROOT / "sim/storybook_cli.cpp").read_text(encoding="utf-8")
+        guide = (ROOT / "docs/tutorials/VIDEO_GENERATION.md").read_text(encoding="utf-8")
+        self.assertIn("runScopedFramesDirectory", source)
+        self.assertIn(".frames.run-", source)
+        self.assertIn('options.command == "frames" ? output : runScopedFramesDirectory(output)', source)
+        self.assertIn("<output>.frames.run-<token>", guide)
+
     def test_windows_host_process_macros_are_idempotent(self) -> None:
         """Windows SDK compatibility macros must not trigger MinGW/MSVC redefinition warnings."""
         source = (ROOT / "sim/tutorial/external_process.cpp").read_text(encoding="utf-8")

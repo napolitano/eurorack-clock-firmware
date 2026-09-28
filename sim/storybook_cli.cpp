@@ -5,6 +5,7 @@
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
  */
+#include <chrono>
 #include <cstdlib>
 #include <filesystem>
 #include <iostream>
@@ -140,9 +141,10 @@ std::filesystem::path resolveExecutable(
     return *resolved;
 }
 
-std::filesystem::path siblingFramesDirectory(const std::filesystem::path& output) {
+std::filesystem::path runScopedFramesDirectory(const std::filesystem::path& output) {
     const auto parent = output.parent_path();
-    const auto name = output.filename().string() + ".frames";
+    const auto ticks = std::chrono::steady_clock::now().time_since_epoch().count();
+    const auto name = output.filename().string() + ".frames.run-" + std::to_string(ticks);
     return parent.empty() ? std::filesystem::path(name) : parent / name;
 }
 
@@ -160,7 +162,7 @@ int execute(const CliOptions& options) {
 
     const std::filesystem::path output = std::filesystem::absolute(*options.outputDirectory);
     const std::filesystem::path framesDirectory =
-        options.command == "frames" ? output : siblingFramesDirectory(output);
+        options.command == "frames" ? output : runScopedFramesDirectory(output);
     const std::filesystem::path statePath = framesDirectory.string() + ".state.bin";
     std::error_code ignored;
     std::filesystem::remove(statePath, ignored);
@@ -200,10 +202,15 @@ int execute(const CliOptions& options) {
         *story, storyPath, generated, output, options.formats);
     if (!published) {
         for (const auto& issue : published.issues) printIssue(issue);
+        if (!options.keepFrames) std::filesystem::remove_all(framesDirectory, ignored);
         return EXIT_FAILURE;
     }
 
-    if (!options.keepFrames) std::filesystem::remove_all(framesDirectory, ignored);
+    if (!options.keepFrames) {
+        std::filesystem::remove_all(framesDirectory, ignored);
+    } else {
+        std::cout << "Frames: " << framesDirectory.string() << '\n';
+    }
 
     if (published.mp4Path) std::cout << "MP4: " << published.mp4Path->string() << '\n';
     if (published.webmPath) std::cout << "WebM: " << published.webmPath->string() << '\n';
