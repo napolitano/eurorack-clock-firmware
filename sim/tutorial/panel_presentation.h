@@ -35,6 +35,7 @@ struct PhysicalPresentationState {
     std::uint64_t automaticFocusSinceUs = 0ULL;
     std::uint64_t automaticFocusAgeUs = 0ULL;
     FocusTarget explicitFocus = FocusTarget::None;
+    FocusPlacement focusPlacement = FocusPlacement::Auto;
     int focusX = 0;
     int focusY = 0;
     int focusWidth = 0;
@@ -125,7 +126,7 @@ public:
     void onScopeState(std::uint64_t presentationUs, ScopeMode mode) override;
     void onFocusState(
         std::uint64_t presentationUs, FocusTarget target, bool visible,
-        int x, int y, int width, int height, const std::string& label) override;
+        FocusPlacement placement, int x, int y, int width, int height, const std::string& label) override;
 
 private:
     enum class EventKind : std::uint8_t { Encoder, Control, Power, PatchMotion, PatchSettled, Scope, Focus };
@@ -140,6 +141,7 @@ private:
         bool state = false;
         std::uint64_t durationUs = 0ULL;
         FocusTarget focusTarget = FocusTarget::None;
+        FocusPlacement focusPlacement = FocusPlacement::Auto;
         int x = 0;
         int y = 0;
         int width = 0;

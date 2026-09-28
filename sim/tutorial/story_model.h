@@ -70,6 +70,7 @@ struct StoryAction {
     std::string text;
     ScopeMode scopeMode = ScopeMode::Hidden;
     FocusTarget focusTarget = FocusTarget::None;
+    FocusPlacement focusPlacement = FocusPlacement::Auto;
     int focusX = 0;
     int focusY = 0;
     int focusWidth = 0;

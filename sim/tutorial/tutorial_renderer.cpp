@@ -304,7 +304,7 @@ void renderTutorial(
         const int cy = target->y + target->height / 2;
         drawTutorialFocusRing(frame, cx, cy, target->width / 2, theme);
         drawTutorialFocusArrow(
-            frame, *target, focus.label.empty() ? focusTargetLabel(focus.target) : focus.label, theme, false);
+            frame, *target, focus.label.empty() ? focusTargetLabel(focus.target) : focus.label, theme, focus.placement);
     }
     if (const auto target = panelFocusDestinationRect(panelLayout, focus.target, fullPanel, locatorDestination)) {
         drawTutorialFocusRing(frame, target->x + target->width / 2,

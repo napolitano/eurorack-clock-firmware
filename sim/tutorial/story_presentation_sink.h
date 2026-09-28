@@ -64,6 +64,7 @@ public:
         std::uint64_t presentationUs,
         FocusTarget target,
         bool visible,
+        FocusPlacement placement,
         int x,
         int y,
         int width,

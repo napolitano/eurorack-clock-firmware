@@ -10,6 +10,13 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ## [Unreleased]
 
+### Storybook focus-arrow readability
+
+- Reworked tutorial focus arrows into short collision-aware leaders that terminate outside the highlighted control/OLED region instead of crossing it.
+- Added adaptive auto-placement plus optional `focus.placement: left|right|above|below` authoring control.
+- Added a three-layer black/white/CLOCK-blue leader and arrowhead so callouts remain visible across bright OLED pixels, dark cards and panel artwork.
+- Kept focus geometry presentation-only and derived from the existing PanelLayout/canonical OLED coordinates.
+
 ### Changed
 
 - Refined Storybook publication visuals: Ubuntu/Ubuntu Mono are now the configurable default publication fonts, chapter/interstitial screens use the manual CLOCK Blue `#0B4FC0`, normal tutorial views default to black, and OLED/panel content sits on a cleaner dark card layout with a dedicated subtitle bar.

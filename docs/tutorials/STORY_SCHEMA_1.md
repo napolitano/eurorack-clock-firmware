@@ -261,6 +261,7 @@ Manual explanations use `focus`:
 ```yaml
 - focus:
     target: oled_top_bar
+    placement: right
     label: "Top bar: status, musical context, transport"
     duration_ms: 2800
 ```
@@ -278,7 +279,7 @@ Supported physical targets are `encoder`, `play`, `tap`, `stop`, `sync` and `rst
     duration_ms: 2200
 ```
 
-`x/y/width/height` use the canonical 128x64 production framebuffer coordinate system. A focus action advances presentation time only; firmware/simulator time is frozen for its duration.
+`x/y/width/height` use the canonical 128x64 production framebuffer coordinate system. `placement` is optional and accepts `auto` (default), `left`, `right`, `above`, or `below`. Auto placement chooses the side with the most usable room outside the target. Focus leaders stop outside the highlighted control/region instead of crossing it, and use a dark/white outline around the CLOCK-blue core so they remain visible on both bright OLED pixels and dark tutorial surfaces. A focus action advances presentation time only; firmware/simulator time is frozen for its duration.
 
 Burned-in subtitles are not placed against the bottom video edge. Theme presentation settings reserve a configurable player-control safe area:
 

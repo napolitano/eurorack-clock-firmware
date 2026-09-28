@@ -311,8 +311,9 @@ Physical actions are highlighted automatically. For explanatory pauses, add a pr
 ```yaml
 - focus:
     target: oled_top_bar
+    placement: right
     label: "Top bar: status, musical context, transport"
     duration_ms: 2800
 ```
 
-For a specific UI element use `target: oled_region` with `x`, `y`, `width`, and `height` in the real 128x64 OLED coordinate system. Focus actions do not advance CLOCK firmware time.
+For a specific UI element use `target: oled_region` with `x`, `y`, `width`, and `height` in the real 128x64 OLED coordinate system. `placement: auto` is the default; use `left`, `right`, `above`, or `below` when a particular teaching frame needs a fixed callout direction. Arrow leaders terminate outside the target and use a black/white contrast outline around the CLOCK-blue core. Focus actions do not advance CLOCK firmware time.

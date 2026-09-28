@@ -27,6 +27,7 @@ using clockfw::sim::layout::Point;
 using clockfw::sim::layout::makeDefaultPanelLayout;
 using clockfw::sim::panelLedVisuallyLit;
 using clockfw::sim::tutorial::PanelPresentationTimeline;
+using clockfw::sim::tutorial::FocusPlacement;
 using clockfw::sim::tutorial::FocusTarget;
 using clockfw::sim::tutorial::PatchMotion;
 using clockfw::sim::tutorial::ScopeMode;
@@ -111,6 +112,7 @@ scenes:
             channel: visible
         - focus:
             target: oled_top_bar
+            placement: right
             label: "Top bar"
             duration_ms: 400
         - wait_ms: 100
@@ -163,7 +165,8 @@ scenes:
     if (focusEvent != nullptr) {
         const auto focused = timeline.stateAt(focusEvent->presentationUs + 200000ULL);
         ok &= require(focused.explicitFocus == FocusTarget::OledRegion && focused.focusWidth == 128 &&
-                      focused.focusHeight == 12 && focused.focusLabel == "Top bar",
+                      focused.focusHeight == 12 && focused.focusLabel == "Top bar" &&
+                      focused.focusPlacement == FocusPlacement::Right,
                       "manual OLED focus must remain presentation-only for its requested duration");
         ok &= require(timeline.stateAt(focusEvent->presentationUs + 400000ULL).explicitFocus == FocusTarget::None,
                       "manual focus must clear at the end of its presentation interval");

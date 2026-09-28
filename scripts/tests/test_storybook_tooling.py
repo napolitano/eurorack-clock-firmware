@@ -160,6 +160,18 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn('HUMAN_FAST:', profiles)
         self.assertIn('patch_action_ms: 300', profiles)
 
+
+    def test_focus_arrows_are_collision_aware_and_high_contrast(self) -> None:
+        """Tutorial callouts must not depend on a white line drawn through the highlighted target."""
+        source = (ROOT / "sim/tutorial/tutorial_focus_renderer.cpp").read_text(encoding="utf-8")
+        schema = (ROOT / "docs/tutorials/STORY_SCHEMA_1.md").read_text(encoding="utf-8")
+        self.assertIn("drawContrastLeader", source)
+        self.assertIn("theme.accent, 4", source)
+        self.assertIn("kArrowTargetGap", source)
+        self.assertIn("chooseArrowSide", source)
+        self.assertIn("placement: right", schema)
+        self.assertIn("auto` (default), `left`, `right`, `above`, or `below", schema)
+
     def test_windows_host_process_macros_are_idempotent(self) -> None:
         """Windows SDK compatibility macros must not trigger MinGW/MSVC redefinition warnings."""
         source = (ROOT / "sim/tutorial/external_process.cpp").read_text(encoding="utf-8")

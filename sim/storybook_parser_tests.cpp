@@ -305,12 +305,14 @@ scenes:
             y: 0
             width: 64
             height: 12
+            placement: above
             label: "Top bar"
             duration_ms: 2400
 )YAML");
     ok &= require(focusAction && focusAction.story->scenes[0].actions[0].focusTarget == FocusTarget::OledRegion &&
                       focusAction.story->scenes[0].actions[0].focusWidth == 64 &&
                       focusAction.story->scenes[0].actions[0].durationMs == 2400U &&
+                      focusAction.story->scenes[0].actions[0].focusPlacement == FocusPlacement::Above &&
                       validateStory(*focusAction.story, tutorialRoot).empty(),
                   "presentation-only focus action must decode and validate OLED regions");
 

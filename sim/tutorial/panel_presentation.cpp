@@ -107,6 +107,7 @@ PhysicalPresentationState PanelPresentationTimeline::stateAt(const std::uint64_t
             case EventKind::Focus:
                 if (event.state) {
                     state.explicitFocus = event.focusTarget;
+                    state.focusPlacement = event.focusPlacement;
                     state.focusX = event.x;
                     state.focusY = event.y;
                     state.focusWidth = event.width;
@@ -154,7 +155,7 @@ void PanelPresentationTimeline::onEncoderDetent(
     const std::uint64_t presentationUs,
     const int direction) {
     events_.push_back({EventKind::Encoder, presentationUs, ModuleControl::Encoder,
-                       PatchAction::SyncCable, ScopeMode::Hidden, direction, false, 0ULL, FocusTarget::None, 0, 0, 0, 0, {}});
+                       PatchAction::SyncCable, ScopeMode::Hidden, direction, false, 0ULL, FocusTarget::None, FocusPlacement::Auto, 0, 0, 0, 0, {}});
 }
 
 void PanelPresentationTimeline::onControlState(
@@ -162,14 +163,14 @@ void PanelPresentationTimeline::onControlState(
     const ModuleControl control,
     const bool pressed) {
     events_.push_back({EventKind::Control, presentationUs, control,
-                       PatchAction::SyncCable, ScopeMode::Hidden, 0, pressed, 0ULL, FocusTarget::None, 0, 0, 0, 0, {}});
+                       PatchAction::SyncCable, ScopeMode::Hidden, 0, pressed, 0ULL, FocusTarget::None, FocusPlacement::Auto, 0, 0, 0, 0, {}});
 }
 
 void PanelPresentationTimeline::onPowerState(
     const std::uint64_t presentationUs,
     const bool poweredOn) {
     events_.push_back({EventKind::Power, presentationUs, ModuleControl::Power,
-                       PatchAction::SyncCable, ScopeMode::Hidden, 0, poweredOn, 0ULL, FocusTarget::None, 0, 0, 0, 0, {}});
+                       PatchAction::SyncCable, ScopeMode::Hidden, 0, poweredOn, 0ULL, FocusTarget::None, FocusPlacement::Auto, 0, 0, 0, 0, {}});
 }
 
 void PanelPresentationTimeline::onPatchMotion(
@@ -178,7 +179,7 @@ void PanelPresentationTimeline::onPatchMotion(
     const bool targetConnected,
     const std::uint64_t durationUs) {
     events_.push_back({EventKind::PatchMotion, presentationUs, ModuleControl::Encoder,
-                       patch, ScopeMode::Hidden, 0, targetConnected, durationUs, FocusTarget::None, 0, 0, 0, 0, {}});
+                       patch, ScopeMode::Hidden, 0, targetConnected, durationUs, FocusTarget::None, FocusPlacement::Auto, 0, 0, 0, 0, {}});
 }
 
 void PanelPresentationTimeline::onPatchSettled(
@@ -186,20 +187,21 @@ void PanelPresentationTimeline::onPatchSettled(
     const PatchAction patch,
     const bool connected) {
     events_.push_back({EventKind::PatchSettled, presentationUs, ModuleControl::Encoder,
-                       patch, ScopeMode::Hidden, 0, connected, 0ULL, FocusTarget::None, 0, 0, 0, 0, {}});
+                       patch, ScopeMode::Hidden, 0, connected, 0ULL, FocusTarget::None, FocusPlacement::Auto, 0, 0, 0, 0, {}});
 }
 
 void PanelPresentationTimeline::onScopeState(
     const std::uint64_t presentationUs,
     const ScopeMode mode) {
     events_.push_back({EventKind::Scope, presentationUs, ModuleControl::Encoder,
-                       PatchAction::SyncCable, mode, 0, false, 0ULL, FocusTarget::None, 0, 0, 0, 0, {}});
+                       PatchAction::SyncCable, mode, 0, false, 0ULL, FocusTarget::None, FocusPlacement::Auto, 0, 0, 0, 0, {}});
 }
 
 void PanelPresentationTimeline::onFocusState(
     const std::uint64_t presentationUs,
     const FocusTarget target,
     const bool visible,
+    const FocusPlacement placement,
     const int x,
     const int y,
     const int width,
@@ -210,6 +212,7 @@ void PanelPresentationTimeline::onFocusState(
     event.presentationUs = presentationUs;
     event.state = visible;
     event.focusTarget = target;
+    event.focusPlacement = placement;
     event.x = x;
     event.y = y;
     event.width = width;

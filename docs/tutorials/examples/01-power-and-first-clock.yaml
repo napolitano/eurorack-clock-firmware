@@ -35,6 +35,7 @@ scenes:
             transport: stopped
         - focus:
             target: oled_top_bar
+            placement: right
             label: "Top bar: status, musical context, transport"
             duration_ms: 2800
         - subtitle:

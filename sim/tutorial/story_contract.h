@@ -51,6 +51,9 @@ enum class ScopeMode : std::uint8_t { Hidden, VisibleChannel };
 /** @brief Presentation-only focus targets for tutorial guidance overlays. */
 enum class FocusTarget : std::uint8_t { None, Encoder, Play, Tap, StopBack, Sync, Reset, OledRegion };
 
+/** @brief Preferred presentation placement for one explanatory focus callout. */
+enum class FocusPlacement : std::uint8_t { Auto, Left, Right, Above, Below };
+
 /** @brief Publication containers supported by the planned media encoder stage. */
 enum class PublicationFormat : std::uint8_t { Mp4H264, WebM };
 

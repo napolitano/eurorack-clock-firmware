@@ -19,6 +19,7 @@ namespace clockfw::sim::tutorial {
 /** @brief One resolved focus overlay after explicit-focus and automatic-interaction precedence. */
 struct ResolvedTutorialFocus {
     FocusTarget target = FocusTarget::None;
+    FocusPlacement placement = FocusPlacement::Auto;
     int oledX = 0;
     int oledY = 0;
     int oledWidth = 0;
@@ -36,7 +37,7 @@ std::string focusTargetLabel(FocusTarget target);
 void drawTutorialFocusRing(TutorialSurface& frame, int centerX, int centerY, int radius, const StoryTheme& theme);
 void drawTutorialFocusArrow(
     TutorialSurface& frame, TutorialRect target, const std::string& label,
-    const StoryTheme& theme, bool preferLeftLabel = false);
+    const StoryTheme& theme, FocusPlacement placement = FocusPlacement::Auto);
 void drawOledRegionFocus(
     TutorialSurface& frame, TutorialRect oledRaster,
     const ResolvedTutorialFocus& focus, const StoryTheme& theme);

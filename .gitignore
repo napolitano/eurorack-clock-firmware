@@ -98,5 +98,3 @@ docs/tutorials/generated/
 docs/tutorials/.cache/
 *.storybook-manifest.json
 *.storybook-probe.json
-tutorial-output
-tutorial-output/

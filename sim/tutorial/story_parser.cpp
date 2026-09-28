@@ -19,9 +19,7 @@
 
 namespace clockfw::sim::tutorial {
 namespace {
-
 using Node = StoryYamlNode;
-
 struct Decoder final {
     Story story;
     std::vector<StoryIssue> issues;
@@ -267,7 +265,7 @@ struct Decoder final {
             }
         } else if (name == "focus") {
             action.kind = StoryActionKind::Focus;
-            rejectUnknown(node, {"target", "label", "duration_ms", "x", "y", "width", "height"}, "focus", sceneIndex, actionIndex);
+            rejectUnknown(node, {"target", "label", "placement", "duration_ms", "x", "y", "width", "height"}, "focus", sceneIndex, actionIndex);
             if (const Node* value = required(node, "target", "focus", sceneIndex, actionIndex)) {
                 const auto text = scalar(*value, "focus.target", sceneIndex, actionIndex);
                 if (text && *text == "encoder") action.focusTarget = FocusTarget::Encoder;
@@ -281,6 +279,14 @@ struct Decoder final {
                 else if (text) issue(*value, "focus.target: expected encoder/play/tap/stop/sync/rst/oled_top_bar/oled_region", sceneIndex, actionIndex);
             }
             if (const Node* value = node.find("label")) if (const auto parsed = scalar(*value, "focus.label", sceneIndex, actionIndex)) action.text = *parsed;
+            if (const Node* value = node.find("placement")) if (const auto parsed = scalar(*value, "focus.placement", sceneIndex, actionIndex)) {
+                if (*parsed == "auto") action.focusPlacement = FocusPlacement::Auto;
+                else if (*parsed == "left") action.focusPlacement = FocusPlacement::Left;
+                else if (*parsed == "right") action.focusPlacement = FocusPlacement::Right;
+                else if (*parsed == "above") action.focusPlacement = FocusPlacement::Above;
+                else if (*parsed == "below") action.focusPlacement = FocusPlacement::Below;
+                else issue(*value, "focus.placement: expected auto/left/right/above/below", sceneIndex, actionIndex);
+            }
             if (const Node* value = node.find("duration_ms")) if (const auto parsed = uintValue(*value, "focus.duration_ms", 100U, 60000U, sceneIndex, actionIndex)) action.durationMs = *parsed;
             if (action.durationMs == 0U) action.durationMs = 2200U;
             if (action.focusTarget == FocusTarget::OledRegion && action.focusWidth == 0) {

@@ -218,11 +218,11 @@ private:
                 return true;
             case StoryActionKind::Focus:
                 if (presentationSink_ != nullptr) presentationSink_->onFocusState(
-                    presentationUs_, action.focusTarget, true, action.focusX, action.focusY, action.focusWidth, action.focusHeight, action.text);
+                    presentationUs_, action.focusTarget, true, action.focusPlacement, action.focusX, action.focusY, action.focusWidth, action.focusHeight, action.text);
                 emit(StoryTraceKind::Focus, sceneIndex, actionIndex, "focus", action.text);
                 advancePresentationMs(action.durationMs);
                 if (presentationSink_ != nullptr) presentationSink_->onFocusState(
-                    presentationUs_, action.focusTarget, false, 0, 0, 0, 0, {});
+                    presentationUs_, action.focusTarget, false, FocusPlacement::Auto, 0, 0, 0, 0, {});
                 return true;
             case StoryActionKind::Wait:
                 advanceActiveMs(action.durationMs);
