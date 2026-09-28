@@ -124,14 +124,32 @@ public:
             throw std::runtime_error("frame sample is missing scene/runtime state");
         }
         lastSceneIndex_ = sample.sceneIndex;
-        const PhysicalPresentationState physical = presentation_.stateAt(sample.presentationUs);
-        const TutorialSurface frame = renderer_.renderScene(
-            story_, *sample.scene, *sample.runtime, physical, std::string(sample.activeSubtitle), 1.0);
         const std::filesystem::path relative = std::filesystem::path("frames") / frameFileName(frameIndex_);
-        writeTutorialPng(frameDirectory_ / relative.filename(), frame);
-        frames_.push_back({
-            frameIndex_, sample.presentationUs, relative,
-            formatDigest64(tutorialRgbaFnv1a64(frame))});
+        const std::filesystem::path destination = frameDirectory_ / relative.filename();
+        const bool staticScene = sample.scene->kind != SceneKind::Tutorial;
+        if (staticScene && cachedStaticSceneIndex_ == sample.sceneIndex) {
+            std::error_code linkError;
+            std::filesystem::create_hard_link(cachedStaticFramePath_, destination, linkError);
+            if (linkError) {
+                // Some filesystems do not allow hard links. Keep the required per-frame paths.
+                std::filesystem::copy_file(cachedStaticFramePath_, destination);
+            }
+            frames_.push_back({frameIndex_, sample.presentationUs, relative, cachedStaticDigest_});
+        } else {
+            const PhysicalPresentationState physical = presentation_.stateAt(sample.presentationUs);
+            const TutorialSurface frame = renderer_.renderScene(
+                story_, *sample.scene, *sample.runtime, physical, std::string(sample.activeSubtitle), 1.0);
+            writeTutorialPng(destination, frame);
+            const std::string digest = formatDigest64(tutorialRgbaFnv1a64(frame));
+            frames_.push_back({frameIndex_, sample.presentationUs, relative, digest});
+            if (staticScene) {
+                cachedStaticSceneIndex_ = sample.sceneIndex;
+                cachedStaticFramePath_ = destination;
+                cachedStaticDigest_ = digest;
+            } else {
+                cachedStaticSceneIndex_.reset();
+            }
+        }
         ++frameIndex_;
     }
 
@@ -146,6 +164,9 @@ private:
     std::size_t frameIndex_ = 0U;
     std::vector<StoryFrameRecord> frames_{};
     std::optional<std::size_t> lastSceneIndex_;
+    std::optional<std::size_t> cachedStaticSceneIndex_;
+    std::filesystem::path cachedStaticFramePath_;
+    std::string cachedStaticDigest_;
 };
 
 std::filesystem::path stagingPathFor(const std::filesystem::path& outputDirectory) {

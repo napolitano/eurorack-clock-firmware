@@ -173,6 +173,44 @@ scenes:
                   manifestA.find("\"frame_hash_algorithm\": \"fnv1a64-rgba8\"") != std::string::npos,
                   "manifest must record deterministic output identity and frame-hash contract");
 
+    Story staticStory = story;
+    staticStory.id = "frame-pipeline-static-scenes";
+    staticStory.scenes.resize(1U);
+    staticStory.scenes[0].durationMs = 200U;
+    clockfw::sim::tutorial::StoryScene nextScene;
+    nextScene.kind = clockfw::sim::tutorial::SceneKind::Text;
+    nextScene.title = "Next scene";
+    nextScene.body = "A distinct image after the chapter.";
+    nextScene.durationMs = 100U;
+    staticStory.scenes.push_back(nextScene);
+    const std::filesystem::path staticOutput = temp / "static-scenes";
+    const StoryFramePipelineResult staticResult = generate(
+        staticStory, tutorialRoot, staticOutput, temp / "state-static.bin");
+    ok &= require(static_cast<bool>(staticResult) && staticResult.frames.size() == 3U,
+                  "static scenes must generate every scheduled frame");
+    if (staticResult.frames.size() == 3U) {
+        const auto first = staticOutput / staticResult.frames[0].relativePath;
+        const auto repeated = staticOutput / staticResult.frames[1].relativePath;
+        const auto changed = staticOutput / staticResult.frames[2].relativePath;
+        ok &= require(first != repeated && std::filesystem::exists(first) &&
+                      std::filesystem::exists(repeated) && std::filesystem::exists(changed),
+                      "reused frames must retain distinct numbered PNG paths");
+        ok &= require(staticResult.frames[0].rgbaFnv1a64 == staticResult.frames[1].rgbaFnv1a64 &&
+                      readBytes(first) == readBytes(repeated),
+                      "frames within one static scene must have identical image bytes and hashes");
+        const auto probe = staticOutput / "hard-link-probe.png";
+        std::error_code linkError;
+        std::filesystem::create_hard_link(first, probe, linkError);
+        if (!linkError) {
+            ok &= require(std::filesystem::equivalent(first, repeated),
+                          "static frames must share the encoded PNG when hard links are supported");
+            std::filesystem::remove(probe);
+        }
+        ok &= require(staticResult.frames[1].rgbaFnv1a64 != staticResult.frames[2].rgbaFnv1a64 &&
+                      readBytes(repeated) != readBytes(changed),
+                      "a new static scene must render a new image");
+    }
+
     Story overflow = story;
     overflow.id = "frame-pipeline-overflow";
     overflow.scenes.clear();

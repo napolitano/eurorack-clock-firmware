@@ -7,6 +7,7 @@
  */
 #include "tutorial/png_writer.h"
 
+#include <algorithm>
 #include <array>
 #include <cstddef>
 #include <cstdint>
@@ -89,11 +90,19 @@ void fixedLengthDistanceOne(BitWriter& writer, const unsigned length) {
 
 std::uint32_t adler32(const std::vector<std::uint8_t>& bytes) {
     constexpr std::uint32_t modulus = 65521U;
+    constexpr std::size_t kMaximumUnreducedBytes = 5552U;
     std::uint32_t a = 1U;
     std::uint32_t b = 0U;
-    for (const std::uint8_t byte : bytes) {
-        a = (a + byte) % modulus;
-        b = (b + a) % modulus;
+    // 5552 bytes is the maximum safe Adler-32 block for 32-bit accumulators.
+    // Reducing once per block avoids two divisions for every pixel byte.
+    for (std::size_t offset = 0U; offset < bytes.size();) {
+        const std::size_t end = offset + std::min(kMaximumUnreducedBytes, bytes.size() - offset);
+        for (; offset < end; ++offset) {
+            a += bytes[offset];
+            b += a;
+        }
+        a %= modulus;
+        b %= modulus;
     }
     return (b << 16U) | a;
 }
@@ -131,22 +140,21 @@ void appendChunk(
 
 std::vector<std::uint8_t> filteredRgba(const TutorialSurface& surface) {
     const std::size_t rowBytes = surface.width() * 4U;
-    std::vector<std::uint8_t> filtered;
-    filtered.reserve((rowBytes + 1U) * surface.height());
+    std::vector<std::uint8_t> filtered((rowBytes + 1U) * surface.height());
+    const auto& pixels = surface.pixels();
     for (std::size_t y = 0U; y < surface.height(); ++y) {
-        filtered.push_back(1U);  // PNG Sub filter.
+        const std::size_t row = y * (rowBytes + 1U);
+        filtered[row] = 1U;  // PNG Sub filter.
         for (std::size_t x = 0U; x < surface.width(); ++x) {
-            const TutorialColor pixel = surface.pixel(x, y);
-            const std::array<std::uint8_t, 4U> channels{{pixel.red, pixel.green, pixel.blue, pixel.alpha}};
-            for (std::size_t channel = 0U; channel < channels.size(); ++channel) {
-                const std::uint8_t left = x == 0U ? 0U : [&]() {
-                    const TutorialColor previous = surface.pixel(x - 1U, y);
-                    const std::array<std::uint8_t, 4U> previousChannels{{
-                        previous.red, previous.green, previous.blue, previous.alpha}};
-                    return previousChannels[channel];
-                }();
-                filtered.push_back(static_cast<std::uint8_t>(channels[channel] - left));
-            }
+            const TutorialColor& pixel = pixels[y * surface.width() + x];
+            const TutorialColor left = x == 0U
+                ? TutorialColor{0U, 0U, 0U, 0U}
+                : pixels[y * surface.width() + x - 1U];
+            const std::size_t out = row + 1U + x * 4U;
+            filtered[out] = static_cast<std::uint8_t>(pixel.red - left.red);
+            filtered[out + 1U] = static_cast<std::uint8_t>(pixel.green - left.green);
+            filtered[out + 2U] = static_cast<std::uint8_t>(pixel.blue - left.blue);
+            filtered[out + 3U] = static_cast<std::uint8_t>(pixel.alpha - left.alpha);
         }
     }
     return filtered;

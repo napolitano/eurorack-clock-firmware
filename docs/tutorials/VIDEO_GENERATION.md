@@ -43,6 +43,15 @@ cmake --preset simulator-headless
 cmake --build --preset simulator-headless --target clock-storybook
 ```
 
+For full-length videos, build the optimized headless executable instead:
+
+```bash
+cmake --preset simulator-headless-release
+cmake --build --preset simulator-headless-release --target clock-storybook
+```
+
+Use `build/simulator-headless-release/clock-storybook` in the commands below when rendering with this build (or append `.exe` on Windows). The default `simulator-headless` preset builds in Debug mode, which makes per-frame PNG encoding substantially slower. Consecutive frames of a chapter, text, or callout scene reuse the same image data while retaining a separate numbered PNG path and manifest entry for each frame. Tutorial scenes continue to render at every presentation sample.
+
 The executable is then:
 
 ```text

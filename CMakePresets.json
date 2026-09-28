@@ -28,6 +28,17 @@
         "CLOCK_BUILD_SIMULATOR": "ON",
         "CLOCK_SIMULATOR_WITH_SDL": "OFF"
       }
+    },
+    {
+      "name": "simulator-headless-release",
+      "displayName": "Native simulator (headless, optimized)",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/simulator-headless-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "CLOCK_BUILD_SIMULATOR": "ON",
+        "CLOCK_SIMULATOR_WITH_SDL": "OFF"
+      }
     }
   ],
   "buildPresets": [
@@ -38,12 +49,23 @@
     {
       "name": "simulator-headless",
       "configurePreset": "simulator-headless"
+    },
+    {
+      "name": "simulator-headless-release",
+      "configurePreset": "simulator-headless-release"
     }
   ],
   "testPresets": [
     {
       "name": "simulator-headless",
       "configurePreset": "simulator-headless",
+      "output": {
+        "outputOnFailure": true
+      }
+    },
+    {
+      "name": "simulator-headless-release",
+      "configurePreset": "simulator-headless-release",
       "output": {
         "outputOnFailure": true
       }
