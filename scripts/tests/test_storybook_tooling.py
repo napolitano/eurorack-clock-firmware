@@ -6,7 +6,10 @@ License: PolyForm-Noncommercial-1.0.0
 
 from __future__ import annotations
 
+import importlib.util
 import json
+import tempfile
+import sys
 import unittest
 from pathlib import Path
 
@@ -99,6 +102,29 @@ class StorybookToolingTests(unittest.TestCase):
             for narration_id in ids:
                 self.assertRegex(story, rf'narration:\s+["\']?{narration_id}["\']?')
         self.assertIn("beat_end:", (ROOT / "docs/tutorials/examples/11-eight-independent-clocks-walkthrough.yaml").read_text(encoding="utf-8"))
+
+    def test_resolved_story_rebases_unquoted_publication_assets(self) -> None:
+        """Generated resolved stories must not inherit relative asset paths from the authored source location."""
+        module_path = ROOT / "scripts/render_tutorials.py"
+        spec = importlib.util.spec_from_file_location("render_tutorials", module_path)
+        self.assertIsNotNone(spec)
+        self.assertIsNotNone(spec.loader)
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[spec.name] = module
+        spec.loader.exec_module(module)
+        catalog = json.loads((ROOT / "docs/tutorials/voiceover/segments.json").read_text(encoding="utf-8"))
+        stem = "11-eight-independent-clocks-walkthrough"
+        budgets = {str(item["id"]): 60000 for item in catalog["stories"][stem]["segments"]}
+        with tempfile.TemporaryDirectory() as temp_dir:
+            output = Path(temp_dir) / "resolved-stories" / f"{stem}.yaml"
+            module.resolve_story(stem, budgets, output)
+            resolved = output.read_text(encoding="utf-8")
+        intro = (ROOT / "docs/tutorials/assets/video/south-signal-lab-intro.mp4").resolve().as_posix()
+        outro = (ROOT / "docs/tutorials/assets/video/south-signal-lab-outro.mp4").resolve().as_posix()
+        self.assertIn(f'intro_video: "{intro}"', resolved)
+        self.assertIn(f'outro_video: "{outro}"', resolved)
+        self.assertNotIn("intro_video: ../assets/", resolved)
+        self.assertNotIn("outro_video: ../assets/", resolved)
 
     def test_publication_assets_and_scope_are_schema_contracts(self) -> None:
         """Schema 1 must retain optional media assets and visible-channel scope semantics."""

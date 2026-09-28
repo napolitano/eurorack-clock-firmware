@@ -475,11 +475,24 @@ def resolve_story(stem: str, budgets: dict[str, int], output_path: Path) -> dict
     if missing:
         raise RenderError(f"segments.json contains narration IDs not anchored in {stem}: {sorted(missing)}")
 
-    intro = (ROOT / "docs/tutorials/assets/video/south-signal-lab-intro.mp4").resolve().as_posix()
-    outro = (ROOT / "docs/tutorials/assets/video/south-signal-lab-outro.mp4").resolve().as_posix()
+    asset_pattern = re.compile(r'^(\s*)(intro_video|outro_video):\s*(.*?)\s*$')
+    for index, line in enumerate(lines):
+        match = asset_pattern.match(line)
+        if not match:
+            continue
+        raw_reference = match.group(3).strip()
+        if len(raw_reference) >= 2 and raw_reference[0] == raw_reference[-1] and raw_reference[0] in {"\"", "'"}:
+            raw_reference = raw_reference[1:-1]
+        asset = Path(raw_reference)
+        if not asset.is_absolute():
+            asset = source.parent / asset
+        asset = asset.resolve()
+        if not asset.is_file():
+            raise RenderError(f"story {stem} references missing publication asset: {asset}")
+        normalized = asset.as_posix().replace('"', '\\"')
+        lines[index] = f'{match.group(1)}{match.group(2)}: "{normalized}"'
+
     resolved = "\n".join(lines) + "\n"
-    resolved = re.sub(r'intro_video:\s*"[^"]+"', f'intro_video: "{intro}"', resolved)
-    resolved = re.sub(r'outro_video:\s*"[^"]+"', f'outro_video: "{outro}"', resolved)
     output_path.parent.mkdir(parents=True, exist_ok=True)
     output_path.write_text(resolved, encoding="utf-8")
     return resolved_budgets

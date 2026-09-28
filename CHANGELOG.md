@@ -40,6 +40,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Fixed
 
+- Fix narration-resolved tutorial publication losing its intro/outro asset base directory: generated stories now rebase any relative `intro_video` / `outro_video` reference against the authored Story location, serialize an absolute normalized path under `tutorial-output/resolved-stories/`, and fail before frame rendering if the resolved publication asset does not exist.
 - Fix Windows Storybook rerenders failing with `Permission denied` while replacing `<output>.frames`: video publication now renders into a unique run-scoped frame directory, so stale Explorer/Defender/indexer handles on a previous frame tree cannot block the next run; temporary run trees are cleaned after publication unless `--keep-frames` is requested.
 - Fix tutorial narration synchronization by replacing action-local narration holds with explicit `beat` / `beat_end` containers: voice-over now begins before the UI actions it describes, those actions consume the same resolved audio budget, and only the remaining tail is held afterwards.
 - Reject the legacy tutorial forms that could speak after an operation had already completed, preserve zero-duration final focus through the active beat, and fail explicitly if enclosed actions exceed the resolved narration budget.
