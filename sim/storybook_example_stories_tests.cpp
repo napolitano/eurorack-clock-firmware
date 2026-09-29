@@ -1,6 +1,6 @@
 /**
  * @file storybook_example_stories_tests.cpp
- * @brief Validates and executes the thirteen copy-and-edit CLOCK Storybook teaching examples.
+ * @brief Validates and executes the fourteen copy-and-edit CLOCK Storybook teaching examples.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -22,7 +22,7 @@ using namespace clockfw;
 using namespace clockfw::sim;
 using namespace clockfw::sim::tutorial;
 
-constexpr std::array<const char*, 13U> kExamples{{
+constexpr std::array<const char*, 14U> kExamples{{
     "01-power-and-first-clock.yaml",
     "02-transport-basics.yaml",
     "03-encoder-tempo.yaml",
@@ -36,6 +36,7 @@ constexpr std::array<const char*, 13U> kExamples{{
     "11-eight-independent-clocks-walkthrough.yaml",
     "12-groove-editor-walkthrough.yaml",
     "13-getting-to-know-clock.yaml",
+    "14-external-sync-reset-general-settings.yaml",
 }};
 
 bool require(const bool condition, const std::string& message) {
@@ -130,11 +131,26 @@ int main() {
             ok &= require(state.transport == TransportState::Stopped,
                           "Getting to Know CLOCK must finish with transport stopped");
         }
+        if (std::string(filename) == "14-external-sync-reset-general-settings.yaml" && result) {
+            const ClockState& state = runtime.state();
+            ok &= require(state.source == ClockSource::Auto,
+                          "External Sync, Reset & General Settings must leave SOURCE at AUTO");
+            ok &= require(state.inputs.input1 == InputFunction::Sync,
+                          "External Sync, Reset & General Settings must restore INPUT 1 to SYNC");
+            ok &= require(state.inputs.input2 == InputFunction::Reset,
+                          "External Sync, Reset & General Settings must restore INPUT 2 to RESET");
+            ok &= require(state.externalSync.lossMode == SyncLossMode::Freewheel,
+                          "External Sync, Reset & General Settings must restore LOSS to FREE");
+            ok &= require(state.externalSync.resetMode == ExternalResetMode::Trigger,
+                          "External Sync, Reset & General Settings must restore RESET INPUT to TRIGGER");
+            ok &= require(state.transport == TransportState::Playing,
+                          "External Sync, Reset & General Settings must finish with transport playing");
+        }
         runtime.flushPersistence();
         std::filesystem::remove(statePath);
     }
 
     if (!ok) return EXIT_FAILURE;
-    std::cout << "CLOCK Storybook teaching examples: 13/13 PASS\n";
+    std::cout << "CLOCK Storybook teaching examples: 14/14 PASS\n";
     return EXIT_SUCCESS;
 }

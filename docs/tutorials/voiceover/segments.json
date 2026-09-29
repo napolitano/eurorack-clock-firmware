@@ -996,6 +996,270 @@
         }
       ],
       "headroom_ms": 400
+    },
+    "14-external-sync-reset-general-settings": {
+      "voiceover": "14-external-sync-reset-general-settings.txt",
+      "segments": [
+        {
+          "id": "s01",
+          "paragraphs": [
+            1
+          ]
+        },
+        {
+          "id": "s02",
+          "paragraphs": [
+            2
+          ]
+        },
+        {
+          "id": "s03",
+          "paragraphs": [
+            3
+          ]
+        },
+        {
+          "id": "s04",
+          "paragraphs": [
+            4
+          ]
+        },
+        {
+          "id": "s05",
+          "paragraphs": [
+            5
+          ]
+        },
+        {
+          "id": "s06",
+          "paragraphs": [
+            6
+          ]
+        },
+        {
+          "id": "s07",
+          "paragraphs": [
+            7
+          ]
+        },
+        {
+          "id": "s08",
+          "paragraphs": [
+            8
+          ]
+        },
+        {
+          "id": "s09",
+          "paragraphs": [
+            9
+          ]
+        },
+        {
+          "id": "s10",
+          "paragraphs": [
+            10
+          ]
+        },
+        {
+          "id": "s11",
+          "paragraphs": [
+            11
+          ]
+        },
+        {
+          "id": "s12",
+          "paragraphs": [
+            12
+          ]
+        },
+        {
+          "id": "s13",
+          "paragraphs": [
+            13
+          ]
+        },
+        {
+          "id": "s14",
+          "paragraphs": [
+            14
+          ]
+        },
+        {
+          "id": "s15",
+          "paragraphs": [
+            15
+          ]
+        },
+        {
+          "id": "s16",
+          "paragraphs": [
+            16
+          ]
+        },
+        {
+          "id": "s17",
+          "paragraphs": [
+            17
+          ]
+        },
+        {
+          "id": "s18",
+          "paragraphs": [
+            18
+          ]
+        },
+        {
+          "id": "s19",
+          "paragraphs": [
+            19
+          ]
+        },
+        {
+          "id": "s20",
+          "paragraphs": [
+            20
+          ]
+        },
+        {
+          "id": "s21",
+          "paragraphs": [
+            21
+          ]
+        },
+        {
+          "id": "s22",
+          "paragraphs": [
+            22
+          ]
+        },
+        {
+          "id": "s23",
+          "paragraphs": [
+            23
+          ]
+        },
+        {
+          "id": "s24",
+          "paragraphs": [
+            24
+          ]
+        },
+        {
+          "id": "s25",
+          "paragraphs": [
+            25
+          ]
+        },
+        {
+          "id": "s26",
+          "paragraphs": [
+            26
+          ]
+        },
+        {
+          "id": "s26-stop",
+          "paragraphs": [
+            27
+          ]
+        },
+        {
+          "id": "s27",
+          "paragraphs": [
+            28
+          ]
+        },
+        {
+          "id": "s28",
+          "paragraphs": [
+            29
+          ]
+        },
+        {
+          "id": "s29",
+          "paragraphs": [
+            30
+          ]
+        },
+        {
+          "id": "s30",
+          "paragraphs": [
+            31
+          ]
+        },
+        {
+          "id": "s31",
+          "paragraphs": [
+            32
+          ]
+        },
+        {
+          "id": "s32",
+          "paragraphs": [
+            33
+          ]
+        },
+        {
+          "id": "s33",
+          "paragraphs": [
+            34
+          ]
+        },
+        {
+          "id": "s34",
+          "paragraphs": [
+            35
+          ]
+        },
+        {
+          "id": "s35",
+          "paragraphs": [
+            36
+          ]
+        },
+        {
+          "id": "s36",
+          "paragraphs": [
+            37
+          ]
+        },
+        {
+          "id": "s37",
+          "paragraphs": [
+            38
+          ]
+        },
+        {
+          "id": "s38",
+          "paragraphs": [
+            39
+          ]
+        },
+        {
+          "id": "s39",
+          "paragraphs": [
+            40
+          ]
+        },
+        {
+          "id": "s40",
+          "paragraphs": [
+            41
+          ]
+        },
+        {
+          "id": "s41",
+          "paragraphs": [
+            42
+          ]
+        },
+        {
+          "id": "s42",
+          "paragraphs": [
+            43
+          ]
+        }
+      ],
+      "headroom_ms": 400
     }
   }
 }

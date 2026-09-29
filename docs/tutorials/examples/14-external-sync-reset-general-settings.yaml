@@ -1,0 +1,1035 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-external-sync-reset-general-settings
+title: External Sync, Reset & General Settings
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_FAST
+publication:
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
+setup:
+  factory_reset: true
+  power: 'on'
+scenes:
+  - chapter:
+      title: External Sync, Reset & General Settings
+      subtitle: Let CLOCK lead · or follow another timing master
+      narration: s01
+      duration_ms: 3200
+
+  - text:
+      title: Firmware behaviour first · hardware validation still matters
+      body: |
+        This walkthrough shows implemented firmware and UI behaviour.
+        Final electrical hardware characteristics remain under verification.
+      narration: s02
+      duration_ms: 2200
+
+  - tutorial:
+      subtitle: Open Settings, then General Settings and Inputs.
+      actions:
+        - beat:
+            narration: s03
+            duration_ms: 2800
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - focus:
+            target: oled_settings_row_1
+            placement: right
+            label: GENERAL SETTINGS
+            duration_ms: 0
+        - encoder_push: {}
+        - focus:
+            target: oled_settings_rows
+            placement: right
+            label: GENERAL SETTINGS
+            duration_ms: 0
+        - beat_end: s03
+
+        - beat:
+            narration: s04
+            duration_ms: 1800
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_settings_row_2
+            placement: right
+            label: INPUTS
+            duration_ms: 0
+        - encoder_push: {}
+        - focus:
+            target: oled_settings_top3
+            placement: right
+            label: INPUT 1 · INPUT 2 · CONFIG
+            duration_ms: 0
+        - beat_end: s04
+
+        - beat:
+            narration: s05
+            duration_ms: 4100
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 5
+            speed: fast
+        - encoder:
+            direction: counter_clockwise
+            detents: 5
+            speed: fast
+        - encoder_push: {}
+        - focus:
+            target: oled_settings_row_2
+            placement: right
+            label: RESET · RUN · START · STOP · RESTART · TAP · OFF
+            duration_ms: 0
+        - beat_end: s05
+
+  - callout:
+      type: tip
+      title: Two racks, two CLOCKs
+      body: |
+        CLOCK A can be the timing master for CLOCK B.
+        Naturally, the technically correct solution is to own two CLOCKs.
+      narration: s06
+      duration_ms: 2800
+
+  - tutorial:
+      subtitle: Open CONFIG, then patch the master clock into SYNC.
+      actions:
+        - beat:
+            narration: s07
+            duration_ms: 1800
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_settings_rows
+            placement: right
+            label: External timing configuration
+            duration_ms: 0
+        - beat_end: s07
+
+        - beat:
+            narration: s08
+            duration_ms: 500
+        - focus:
+            target: oled_settings_row_1
+            placement: right
+            label: SOURCE · INTERNAL / EXTERNAL / AUTO
+            duration_ms: 0
+        - beat_end: s08
+
+        - beat:
+            narration: s09
+            duration_ms: 500
+        - focus:
+            target: oled_settings_row_1
+            placement: right
+            label: AUTO · internal until a valid external period is acquired
+            duration_ms: 0
+        - beat_end: s09
+
+        - beat:
+            narration: s10
+            duration_ms: 3200
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - sync_source:
+            bpm: 150
+            ppqn: 1
+            waveform: square
+        - sync_cable:
+            state: connect
+        - focus:
+            target: oled_top_bar
+            placement: right
+            label: First accepted edge · acquisition starts · no lock yet
+            duration_ms: 0
+        - beat_end: s10
+
+        - beat:
+            narration: s11
+            duration_ms: 500
+        - wait_until:
+            external_sync: locked
+            timeout_ms: 2500
+        - assert:
+            clock_source: auto
+        - assert:
+            transport: playing
+        - focus:
+            target: oled_top_bar
+            placement: right
+            label: Slave + lock · external BPM measured
+            duration_ms: 0
+        - beat_end: s11
+
+        - beat:
+            narration: s12
+            duration_ms: 6300
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_settings_row_2
+            placement: right
+            label: PPQN · 1 / 2 / 4 / 24
+            duration_ms: 0
+        - beat_end: s12
+
+        - beat:
+            narration: s13
+            duration_ms: 900
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_settings_row_3
+            placement: right
+            label: EDGE · RISING / FALLING
+            duration_ms: 0
+        - beat_end: s13
+
+        - beat:
+            narration: s14
+            duration_ms: 900
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_settings_row_4
+            placement: right
+            label: LOSS · STOP / FREE / INTERNAL
+            duration_ms: 0
+        - beat_end: s14
+
+        - beat:
+            narration: s15
+            duration_ms: 6000
+        - encoder_push: {}
+        - encoder:
+            direction: counter_clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - sync_generator:
+            state: hold
+        - wait_until:
+            external_sync: unlocked
+            timeout_ms: 3000
+        - wait_until:
+            transport: stopped
+            timeout_ms: 1000
+        - focus:
+            target: oled_top_bar
+            placement: right
+            label: LOSS = STOP · external clock gone · transport stops
+            duration_ms: 0
+        - beat_end: s15
+
+        - beat:
+            narration: s16
+            duration_ms: 12900
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 3
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - sync_generator:
+            state: run
+        - wait_until:
+            external_sync: locked
+            timeout_ms: 2500
+        - wait_until:
+            transport: playing
+            timeout_ms: 1000
+        - sync_generator:
+            state: hold
+        - wait_until:
+            external_sync: unlocked
+            timeout_ms: 3000
+        - assert:
+            transport: playing
+        - focus:
+            target: oled_tempo
+            placement: right
+            label: LOSS = FREE · keep the last measured external tempo
+            duration_ms: 0
+        - beat_end: s16
+
+        - beat:
+            narration: s17
+            duration_ms: 12900
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 3
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - sync_generator:
+            state: run
+        - wait_until:
+            external_sync: locked
+            timeout_ms: 2500
+        - sync_generator:
+            state: hold
+        - wait_until:
+            external_sync: unlocked
+            timeout_ms: 3000
+        - assert:
+            transport: playing
+        - focus:
+            target: oled_tempo
+            placement: right
+            label: LOSS = INTERNAL · return to the configured fallback BPM
+            duration_ms: 0
+        - beat_end: s17
+
+        - beat:
+            narration: s18
+            duration_ms: 12600
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 3
+        - encoder_push: {}
+        - encoder:
+            direction: counter_clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - sync_generator:
+            state: run
+        - wait_until:
+            external_sync: locked
+            timeout_ms: 2500
+        - button:
+            name: STOP_BACK
+        - assert:
+            transport: stopped
+        - wait_ms: 700
+        - assert:
+            transport: stopped
+        - focus:
+            target: oled_top_bar
+            placement: right
+            label: Manual STOP stays authoritative while SYNC continues
+            duration_ms: 0
+        - beat_end: s18
+
+  - callout:
+      type: recipe
+      title: External sequencer as master
+      steps:
+        - Sequencer CLOCK OUT → CLOCK SYNC
+        - Sequencer RESET OUT → CLOCK RESET
+      narration: s19
+      duration_ms: 3000
+
+  - tutorial:
+      subtitle: Configure RESET, then compare TRIGGER and GATE behaviour.
+      actions:
+        - beat:
+            narration: s20
+            duration_ms: 8000
+        - button:
+            name: PLAY
+        - rst_cable:
+            state: connect
+        - rst_generator:
+            state: hold
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 4
+        - focus:
+            target: oled_settings_row_5
+            placement: right
+            label: RESET INPUT · TRIGGER / GATE
+            duration_ms: 0
+        - beat_end: s20
+
+        - beat:
+            narration: s21
+            duration_ms: 3400
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - rst_pulse: {}
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 650
+        - scope:
+            state: hide
+        - focus:
+            target: reset
+            placement: right
+            label: TRIGGER · one edge · one phase reset · transport unchanged
+            duration_ms: 0
+        - beat_end: s21
+
+        - beat:
+            narration: s22
+            duration_ms: 12600
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 4
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - rst_generator:
+            state: run
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 500
+        - rst_generator:
+            state: hold
+        - wait_ms: 350
+        - scope:
+            state: hide
+        - assert:
+            transport: playing
+        - focus:
+            target: reset
+            placement: right
+            label: GATE · HIGH holds reset · LOW releases from phase zero
+            duration_ms: 0
+        - beat_end: s22
+
+  - text:
+      title: Global reset still respects channel reset policy
+      body: |
+        GLOBAL channels re-anchor to the external reset.
+        FREE channels preserve their local cycle relationship.
+      narration: s23
+      duration_ms: 2800
+
+  - callout:
+      type: tip
+      title: INPUT 2 can control transport too
+      body: |
+        RUN · START · STOP · RESTART · TAP
+        The second jack can match the control signals your master device provides.
+      narration: s24
+      duration_ms: 2600
+
+  - tutorial:
+      subtitle: Reassign INPUT 2 and exercise the external transport roles.
+      actions:
+        - beat:
+            narration: s25
+            duration_ms: 10300
+        - button:
+            name: STOP_BACK
+        - assert:
+            transport: stopped
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - rst_generator:
+            state: run
+        - wait_until:
+            transport: playing
+            timeout_ms: 1000
+        - wait_ms: 350
+        - rst_generator:
+            state: hold
+        - wait_until:
+            transport: stopped
+            timeout_ms: 1000
+        - focus:
+            target: reset
+            placement: right
+            label: RUN · HIGH = PLAY · LOW = STOP
+            duration_ms: 0
+        - beat_end: s25
+
+        - beat:
+            narration: s26
+            duration_ms: 9000
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - rst_pulse: {}
+        - wait_until:
+            transport: playing
+            timeout_ms: 1000
+        - focus:
+            target: reset
+            placement: right
+            label: START edge → PLAY
+            duration_ms: 0
+        - beat_end: s26
+
+        - beat:
+            narration: s26-stop
+            duration_ms: 9000
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - rst_pulse: {}
+        - wait_until:
+            transport: stopped
+            timeout_ms: 1000
+        - focus:
+            target: reset
+            placement: right
+            label: STOP edge → STOP
+            duration_ms: 0
+        - beat_end: s26-stop
+
+        - beat:
+            narration: s27
+            duration_ms: 9500
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: PLAY
+        - rst_pulse: {}
+        - assert:
+            transport: playing
+        - focus:
+            target: reset
+            placement: right
+            label: RESTART · deterministic STOP → PLAY from phase zero
+            duration_ms: 0
+        - beat_end: s27
+
+        - beat:
+            narration: s28
+            duration_ms: 10000
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - rst_pulse: {}
+        - wait_ms: 500
+        - rst_pulse: {}
+        - focus:
+            target: reset
+            placement: right
+            label: TAP · external positive edges use the normal Tap Tempo estimator
+            duration_ms: 0
+        - beat_end: s28
+
+        - beat:
+            narration: s29
+            duration_ms: 12000
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: counter_clockwise
+            detents: 5
+            speed: fast
+        - encoder_push: {}
+        - focus:
+            target: oled_settings_top3
+            placement: right
+            label: INPUT 1 = SYNC · INPUT 2 = RESET
+            duration_ms: 0
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 4
+        - encoder_push: {}
+        - encoder:
+            direction: counter_clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_settings_row_5
+            placement: right
+            label: RESET INPUT = TRIGGER
+            duration_ms: 0
+        - beat_end: s29
+
+  - tutorial:
+      subtitle: Finish the external-clock CONFIG page: FILTER, SMOOTHING and TIMEOUT.
+      actions:
+        - beat:
+            narration: s30
+            duration_ms: 900
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_settings_row_5
+            placement: right
+            label: FILTER · reject implausibly short selected-edge intervals
+            duration_ms: 0
+        - beat_end: s30
+
+        - beat:
+            narration: s31
+            duration_ms: 900
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_settings_row_5
+            placement: right
+            label: SMOOTHING · OFF / LOW / MEDIUM / FULL
+            duration_ms: 0
+        - beat_end: s31
+
+        - beat:
+            narration: s32
+            duration_ms: 900
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_settings_row_5
+            placement: right
+            label: TIMEOUT · lock-loss floor · slow clocks remain protected
+            duration_ms: 0
+        - beat_end: s32
+
+  - callout:
+      type: tip
+      title: TIMEOUT and LOSS answer different questions
+      body: |
+        TIMEOUT: when is the external clock considered gone?
+        LOSS: what should CLOCK do after that?
+      narration: s33
+      duration_ms: 2600
+
+  - tutorial:
+      subtitle: Use Diagnostics before debugging the rest of the patch.
+      actions:
+        - beat:
+            narration: s34
+            duration_ms: 5100
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - encoder_push: {}
+        - rst_generator:
+            state: run
+        - wait_ms: 450
+        - focus:
+            target: oled_full
+            placement: right
+            label: Diagnostics · INPUT 1 / INPUT 2 comparator states
+            duration_ms: 0
+        - rst_generator:
+            state: hold
+        - beat_end: s34
+
+        - beat:
+            narration: s35
+            duration_ms: 500
+        - focus:
+            target: oled_full
+            placement: right
+            label: Digital HIGH / LOW · not a voltage measurement
+            duration_ms: 0
+        - beat_end: s35
+
+        - beat:
+            narration: s36
+            duration_ms: 2300
+        - button:
+            name: STOP_BACK
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_full
+            placement: right
+            label: Outputs · firmware gate-source states for channels 1–8
+            duration_ms: 0
+        - beat_end: s36
+
+        - beat:
+            narration: s37
+            duration_ms: 3000
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - encoder:
+            direction: counter_clockwise
+            detents: 3
+        - encoder_push: {}
+        - focus:
+            target: oled_settings_rows
+            placement: right
+            label: TEMPO · MIN BPM · MAX BPM · METER BEATS · METER UNIT
+            duration_ms: 0
+        - beat_end: s37
+
+        - beat:
+            narration: s38
+            duration_ms: 1100
+        - encoder:
+            direction: clockwise
+            detents: 5
+            speed: fast
+        - focus:
+            target: oled_settings_row_5
+            placement: right
+            label: PRE COUNT · OFF or 1–64 silent beats
+            duration_ms: 0
+        - beat_end: s38
+
+        - beat:
+            narration: s39
+            duration_ms: 2400
+        - button:
+            name: STOP_BACK
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - focus:
+            target: oled_settings_top4
+            placement: right
+            label: Screensaver · start · dim · OLED off
+            duration_ms: 0
+        - beat_end: s39
+
+        - beat:
+            narration: s40
+            duration_ms: 3800
+        - button:
+            name: STOP_BACK
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - encoder_push: {}
+        - focus:
+            target: oled_settings_top3
+            placement: right
+            label: ENCODER DIR · ORIENTATION
+            duration_ms: 0
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - beat_end: s40
+
+  - callout:
+      type: recipe
+      title: Three questions make external sync easier
+      steps:
+        - What does the input do? → INPUT role
+        - Who owns musical time? → SOURCE
+        - What happens after clock loss? → LOSS
+      narration: s41
+      duration_ms: 3200
+
+  - text:
+      title: Thanks for watching
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      narration: s42
+      duration_ms: 4200

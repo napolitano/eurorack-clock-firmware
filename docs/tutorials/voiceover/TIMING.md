@@ -109,3 +109,18 @@ The screen explanation covers the beat grid, marker diamonds, selected marker, `
 After SAVE, the stored slot becomes the active `Custom` groove at Amount 100% and Rotate 0. The walkthrough then demonstrates Amount as scaling of the stored signed offsets and Rotate as a phase shift of the pattern start without rewriting the saved marker positions. The final scope view reinforces that Custom Groove is deterministic per-step microtiming, not stochastic Humanize.
 
 For the scope demonstration, the walkthrough intentionally uses a stronger but still bounded Custom Groove: step 1 is edited to **-28/256** and step 2 to **+80/256** before saving. At Amount 80%, those stored offsets remain visibly displaced while still demonstrating that Amount scales the same deterministic shape rather than rewriting it. Rotate 1 then shifts the pattern start.
+
+
+## External Sync, Reset & General Settings timing checklist
+
+This scenario-driven walkthrough deliberately keeps external-control actions atomic. The narration beat that names a setting begins before the corresponding navigation or external stimulus. In particular:
+
+- Settings entry, General Settings entry and INPUTS entry remain separate visible operations.
+- The first SYNC edge and second-edge lock are separate narration beats.
+- LOSS = STOP, FREE and INTERNAL each own their complete reacquire/loss demonstration.
+- RESET TRIGGER and GATE are separate beats.
+- RUN, START/STOP, RESTART and TAP are demonstrated through the real configurable INPUT 2 role.
+- FILTER, SMOOTHING and TIMEOUT each receive their own beat and focus row.
+- Diagnostics INPUTS/OUTPUTS and the remaining General Settings pages are separate closing beats.
+
+The authored minimums are action budgets only. Measured TTS duration plus per-story headroom remains the final publication timing source.
