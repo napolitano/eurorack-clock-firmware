@@ -1,6 +1,6 @@
 /**
  * @file storybook_example_stories_tests.cpp
- * @brief Validates and executes the twelve copy-and-edit CLOCK Storybook teaching examples.
+ * @brief Validates and executes the thirteen copy-and-edit CLOCK Storybook teaching examples.
  * @author Axel Napolitano
  * @copyright 2026 Axel Napolitano
  * @license PolyForm-Noncommercial-1.0.0
@@ -22,7 +22,7 @@ using namespace clockfw;
 using namespace clockfw::sim;
 using namespace clockfw::sim::tutorial;
 
-constexpr std::array<const char*, 12U> kExamples{{
+constexpr std::array<const char*, 13U> kExamples{{
     "01-power-and-first-clock.yaml",
     "02-transport-basics.yaml",
     "03-encoder-tempo.yaml",
@@ -35,6 +35,7 @@ constexpr std::array<const char*, 12U> kExamples{{
     "10-external-sync.yaml",
     "11-eight-independent-clocks-walkthrough.yaml",
     "12-groove-editor-walkthrough.yaml",
+    "13-getting-to-know-clock.yaml",
 }};
 
 bool require(const bool condition, const std::string& message) {
@@ -114,11 +115,26 @@ int main() {
             ok &= require(state.transport == TransportState::Stopped,
                           "Example 12 must finish with transport stopped");
         }
+        if (std::string(filename) == "13-getting-to-know-clock.yaml" && result) {
+            const ClockState& state = runtime.state();
+            ok &= require(state.operatingMode == OperatingMode::Independent,
+                          "Getting to Know CLOCK must end in Independent topology");
+            ok &= require(state.channels[0U].common.mode == ChannelMode::Clock,
+                          "Getting to Know CLOCK must keep channel 1 in Clock mode");
+            ok &= require(state.channels[1U].common.mode == ChannelMode::Euclid,
+                          "Getting to Know CLOCK must leave channel 2 in Euclid mode");
+            ok &= require(state.channels[2U].common.mode == ChannelMode::Sequencer,
+                          "Getting to Know CLOCK must leave channel 3 in Sequencer mode");
+            ok &= require(runtime.selectedChannelForPresentation() == 2U,
+                          "Getting to Know CLOCK must leave channel 3 selected");
+            ok &= require(state.transport == TransportState::Stopped,
+                          "Getting to Know CLOCK must finish with transport stopped");
+        }
         runtime.flushPersistence();
         std::filesystem::remove(statePath);
     }
 
     if (!ok) return EXIT_FAILURE;
-    std::cout << "CLOCK Storybook teaching examples: 12/12 PASS\n";
+    std::cout << "CLOCK Storybook teaching examples: 13/13 PASS\n";
     return EXIT_SUCCESS;
 }

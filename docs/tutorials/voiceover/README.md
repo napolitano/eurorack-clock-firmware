@@ -2,7 +2,7 @@
 
 # CLOCK tutorial voice-over scripts
 
-This directory contains the authored US-English narration for the twelve editable Storybook examples. Narration is now a first-class **local publication input** rather than a manually aligned afterthought: the local renderer creates the speech first, measures its real duration, resolves the Story presentation holds from those measurements, renders the picture, and finally muxes the speech onto Storybook's own narration cue timeline.
+This directory contains the authored US-English narration for the thirteen editable Storybook examples. Narration is now a first-class **local publication input** rather than a manually aligned afterthought: the local renderer creates the speech first, measures its real duration, resolves the Story presentation holds from those measurements, renders the picture, and finally muxes the speech onto Storybook's own narration cue timeline.
 
 The human-readable `.txt` files remain the spoken source of truth. [`segments.json`](segments.json) maps stable Storybook narration IDs such as `s01` and `s02` to one or more script paragraphs. The Story YAML contains the same IDs on bounded non-tutorial scenes or explicit tutorial `beat` / `beat_end` containers. This keeps prose, visible actions and media timing explicitly related without storing generated audio in the repository.
 
@@ -59,5 +59,6 @@ See [`TIMING.md`](TIMING.md) for the timing model and the Eight Independent Cloc
 - **External SYNC and RST** — `10-external-sync.txt`
 - **Eight Independent Clocks Walkthrough** — `11-eight-independent-clocks-walkthrough.txt`
 - **Groove Editor Walkthrough** — `12-groove-editor-walkthrough.txt`
+- **Getting to Know CLOCK** — `13-getting-to-know-clock.txt`
 
 <h6 align="center">From Munich with &#9829;</h6>

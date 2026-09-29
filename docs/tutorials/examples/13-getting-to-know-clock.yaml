@@ -1,0 +1,434 @@
+# Example Story — copy/edit freely within the project
+# Author: Axel Napolitano
+# License: PolyForm-Noncommercial-1.0.0
+schema: 1
+id: example-getting-to-know-clock
+title: Getting to Know CLOCK
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_FAST
+publication:
+  intro_video: ../assets/video/south-signal-lab-intro.mp4
+  outro_video: ../assets/video/south-signal-lab-outro.mp4
+setup:
+  factory_reset: true
+  power: 'off'
+scenes:
+  - chapter:
+      title: Getting to Know CLOCK
+      subtitle: Eight outputs · clocks · rhythms · sequencing
+      narration: s01
+      duration_ms: 2500
+  - text:
+      title: A DIY project in active development
+      body: |
+        Firmware source is already public.
+        Hardware files are intentionally not available yet.
+      narration: s03
+      duration_ms: 1800
+  - text:
+      title: Hardware release follows verification
+      body: |
+        I am still verifying the circuit.
+        The hardware files follow once I am confident in the design.
+      narration: s04
+      duration_ms: 1800
+  - text:
+      title: Verify first, publish second
+      body: |
+        A DIY release asks other people to spend money and build time.
+        Unverified hardware should not be the starting point.
+      narration: s05
+      duration_ms: 1800
+  - text:
+      title: Why another clock?
+      body: |
+        Start with a useful master clock.
+        Then cover several common timing jobs in the same module.
+      narration: s06
+      duration_ms: 2000
+  - tutorial:
+      subtitle: Start simple, then let the eight outputs take on different roles.
+      actions:
+        - beat:
+            narration: s07
+            duration_ms: 4000
+        - power:
+            state: 'on'
+        - wait_ms: 1100
+        - assert:
+            transport: stopped
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Eight outputs · 10 HP
+            duration_ms: 0
+        - beat_end: s07
+
+        - beat:
+            narration: s08
+            duration_ms: 1200
+        - focus:
+            target: oled_top_bar
+            placement: right
+            label: One Clock
+            duration_ms: 0
+        - beat_end: s08
+
+        - beat:
+            narration: s09
+            duration_ms: 5000
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - encoder:
+            direction: clockwise
+            detents: 1
+            speed: fast
+        - button:
+            name: TAP
+        - focus:
+            target: oled_top_bar
+            placement: right
+            label: Tempo · Tap Tempo · transport
+            duration_ms: 0
+        - beat_end: s09
+
+        - beat:
+            narration: s10
+            duration_ms: 1800
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 1200
+        - scope:
+            state: hide
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Eight copies of one coherent master timing signal
+            duration_ms: 0
+        - beat_end: s10
+
+        - beat:
+            narration: s11
+            duration_ms: 13000
+        - subtitle:
+            text: Switch from One Clock to Divider Bank and let the divisions run.
+        - button:
+            name: STOP_BACK
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Divider Bank · eight related divisions
+            duration_ms: 0
+        - button:
+            name: STOP_BACK
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - wait_ms: 1500
+        - beat_end: s11
+
+        - beat:
+            narration: s14
+            duration_ms: 13000
+        - subtitle:
+            text: Switch to Independent, then move from channel 1 to channel 2.
+        - button:
+            name: STOP_BACK
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Independent · channel 2 selected
+            duration_ms: 0
+        - beat_end: s14
+
+        - beat:
+            narration: s16
+            duration_ms: 1000
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Clock channel
+            duration_ms: 0
+        - beat_end: s16
+
+        - beat:
+            narration: s17
+            duration_ms: 1400
+        - focus:
+            target: oled_top_bar
+            placement: right
+            label: Different musical rates · one master timeline
+            duration_ms: 0
+        - beat_end: s17
+
+        - beat:
+            narration: s18
+            duration_ms: 13000
+        - subtitle:
+            text: Turn channel 2 into Euclid and let the pattern run beside the Clock channels.
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 12
+            width: 128
+            height: 42
+            placement: right
+            label: Euclid · hits distributed across a repeating pattern
+            duration_ms: 0
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 1400
+        - scope:
+            state: hide
+        - beat_end: s18
+
+        - beat:
+            narration: s21
+            duration_ms: 18000
+        - subtitle:
+            text: Move to channel 3, choose Sequencer, add gates and let it run.
+        - button:
+            name: STOP_BACK
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: down
+        - encoder:
+            direction: clockwise
+            detents: 2
+        - button:
+            name: TAP
+            state: up
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - encoder_push: {}
+        - encoder:
+            direction: clockwise
+            detents: 3
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 24
+            width: 128
+            height: 36
+            placement: right
+            label: Sequencer · gates on selected steps
+            duration_ms: 0
+        - button:
+            name: PLAY
+        - assert:
+            transport: playing
+        - scope:
+            state: show
+            channel: visible
+        - wait_ms: 1400
+        - scope:
+            state: hide
+        - beat_end: s21
+
+        - beat:
+            narration: s24
+            duration_ms: 8000
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - button:
+            name: STOP_BACK
+        - encoder_push: {}
+        - focus:
+            target: oled_region
+            x: 0
+            y: 0
+            width: 128
+            height: 64
+            placement: right
+            label: Clock · Euclid · Sequencer side by side
+            duration_ms: 0
+        - beat_end: s24
+
+  - callout:
+      type: tip
+      title: Useful work in a small space
+      body: |
+        Clock distribution, divisions and simple gate sequencing
+        can often stay inside one module.
+      narration: s25
+      duration_ms: 1400
+  - text:
+      title: Fewer utility modules in many patches
+      body: |
+        A multiple, a divider and simple gate-sequencing duties
+        do not always need separate modules.
+      narration: s26
+      duration_ms: 1400
+  - text:
+      title: Focused rather than general-purpose
+      body: |
+        CLOCK is a timing and rhythm instrument,
+        not a replacement for every specialised rhythm module.
+      narration: s27
+      duration_ms: 1600
+  - text:
+      title: Practical DIY hardware
+      body: |
+        Through-hole parts keep the hardware hand-solderable,
+        inspectable and repairable.
+      narration: s28
+      duration_ms: 1600
+  - text:
+      title: Designed to be buildable
+      body: |
+        The goal is a realistic build for normal DIY soldering experience,
+        without specialised fine-pitch SMD equipment.
+      narration: s29
+      duration_ms: 1400
+  - text:
+      title: Hardware is still under development
+      body: |
+        Circuit and physical verification are still in progress.
+        Hardware files are intentionally not released yet.
+      narration: s30
+      duration_ms: 1600
+  - text:
+      title: Release after verification
+      body: |
+        Hardware files follow when the design has been checked well enough
+        for other builders to invest boards, parts and time.
+      narration: s31
+      duration_ms: 1600
+  - text:
+      title: There is more to CLOCK
+      body: |
+        External SYNC/RST · swing and grooves · probability · gate timing
+        presets · diagnostics · deeper channel settings
+      narration: s32
+      duration_ms: 1600
+  - text:
+      title: Separate walkthroughs go deeper
+      body: |
+        Detailed workflows have their own named tutorials.
+      narration: s33
+      duration_ms: 1200
+  - text:
+      title: The overall idea
+      body: |
+        One Clock · Divider Bank · Independent
+        Clock · Euclid · Sequencer
+      narration: s34
+      duration_ms: 1600
+  - text:
+      title: Eight related rhythm channels
+      body: |
+        Clocks · divisions · polymeter · polyrhythm
+        Euclidean rhythms · gate sequencing
+      narration: s35
+      duration_ms: 1400
+  - text:
+      title: Why I am building CLOCK
+      body: |
+        The timing jobs I regularly need in my own rack,
+        without turning CLOCK into a general-purpose modulation module.
+      narration: s36
+      duration_ms: 1600
+  - text:
+      title: Thanks for watching
+      body: |
+        Follow South Signal Lab here or on Ko-fi for more CLOCK development,
+        Eurorack engineering, and behind-the-scenes project work.
+      narration: s37
+      duration_ms: 1800

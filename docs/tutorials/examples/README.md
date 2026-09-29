@@ -2,7 +2,7 @@
 
 # CLOCK Storybook example stories
 
-These twelve files are a didactic, copy-and-edit Storybook starter set. They are deliberately separate from the canonical CI reference catalog in `../stories/`.
+These thirteen files are a didactic, copy-and-edit Storybook starter set. They are deliberately separate from the canonical CI reference catalog in `../stories/`.
 
 - **Power and First Clock** — `01-power-and-first-clock.yaml`: power-up, PLAY, tempo and STOP.
 - **Transport Basics** — `02-transport-basics.yaml`: PLAY, PAUSE, resume and STOP.
@@ -16,6 +16,7 @@ These twelve files are a didactic, copy-and-edit Storybook starter set. They are
 - **External SYNC and RST** — `10-external-sync.yaml`: external SYNC lock plus independent RST phase reset.
 - **Eight Independent Clocks Walkthrough** — `11-eight-independent-clocks-walkthrough.yaml`: full One Clock → eight Independent Clocks workflow, channel selection, long-press settings, and a separate on-screen explanation for MODE and each TIMING, CLOCK, and OUTPUT row.
 - **Groove Editor Walkthrough** — `12-groove-editor-walkthrough.yaml`: standalone Custom Groove Editor walkthrough with a minimal hand-off from Eight Independent Clocks Walkthrough, editor entry, fine/coarse microtiming gestures, step navigation, zoom, context menu, pattern length, save, Amount/Rotate and discard protection.
+- **Getting to Know CLOCK** — `13-getting-to-know-clock.yaml`: general product tour covering the open DIY project context, current hardware-verification status, One Clock, Divider Bank, Independent channel switching, Clock, Euclid, Sequencer, polymetric/polyrhythmic use and the through-hole build philosophy.
 
 All examples change CLOCK only through recorded physical controls, patch actions or external stimuli. `setup:` establishes only pre-recording factory/power conditions.
 
@@ -32,7 +33,7 @@ The preferred publication path is local:
 python scripts/render_tutorials.py "Eight Independent Clocks Walkthrough"
 ```
 
-For all twelve videos:
+For all thirteen videos:
 
 ```bash
 python scripts/render_tutorials.py --all

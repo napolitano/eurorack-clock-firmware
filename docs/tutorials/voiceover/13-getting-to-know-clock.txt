@@ -1,0 +1,111 @@
+[warmly] Hi, this is South Signal Lab. My name is Axel, and today I want to give you a quick tour of CLOCK — the Eurorack clock and rhythm module I am currently developing.
+
+This is not meant to be a detailed tutorial. I just want to show you what the module does, how the different modes fit together, and why I started building it.
+
+[short pause] CLOCK is a DIY project.
+
+The firmware is already publicly available. The hardware is not — at least not yet.
+
+I am still verifying the circuit, and I will release the hardware files once I am confident that the design works properly.
+
+For a DIY project, I think that is important. I do not want people ordering PCBs and parts for something that may still contain a hardware problem.
+
+[short pause] The idea behind CLOCK started out quite simply.
+
+I wanted a useful master clock for my own rack.
+
+But I also wanted to avoid needing a separate multiple, a separate divider and another trigger sequencer for fairly common rhythm patches.
+
+So CLOCK grew into a ten-HP module with eight outputs that can either work together or do different jobs. Let me show you.
+
+[short pause] The simplest mode is One Clock.
+
+Here, one master clock drives all eight outputs. I can set the tempo with the encoder, use Tap Tempo, and start or stop the clock directly from the front panel.
+
+For a lot of patches, that already removes the need for a separate clock multiple. I have eight copies of the same timing signal available directly from the module.
+
+[matter-of-fact] And because those outputs come from the same engine, transport, phase and reset behaviour remain consistent across all of them.
+
+[short pause] The next mode is Divider Bank.
+
+Here, the eight outputs provide different divisions of the master clock.
+
+So if I need slower clocks for percussion, envelopes, sequencers or resets, I can get them directly from CLOCK instead of patching through another divider module.
+
+[short pause] The most flexible mode is Independent.
+
+Now each of the eight outputs becomes its own rhythm channel. I can switch between the channels, select one, change its function or timing, and then move to another one while the rest keep running.
+
+[short pause] A channel can simply be a Clock channel.
+
+But the channels do not all have to run at the same rate. They can use different musical rate relationships while still sharing the same master timing.
+
+That makes polymetric and polyrhythmic patches quite straightforward without turning the eight outputs into unrelated free-running clocks.
+
+[short pause] Another channel can run a Euclidean rhythm.
+
+Instead of producing every pulse, it distributes a number of hits across a pattern.
+
+That gives you structured rhythmic patterns very quickly, and they can run alongside normal Clock channels.
+
+[short pause] And another channel can use the gate sequencer.
+
+Here, I can define where gates occur in a pattern rather than simply deriving another clock rate.
+
+So I might have a straight clock on one output, a slower clock on another, a Euclidean pattern on a third and a programmed gate sequence on a fourth. And the remaining outputs are still available.
+
+[short pause] That is really the main idea behind CLOCK.
+
+The eight outputs are not just eight copies of one signal. They can be used as eight related rhythm channels.
+
+Because they share the same timing engine, different rates, pattern lengths and rhythm types can still stay musically connected.
+
+[short pause] In practice, that can save quite a bit of rack space.
+
+Depending on the patch, I may not need a separate clock multiple. I may not need a separate divider. And some simple gate-sequencing jobs can also happen inside CLOCK.
+
+It is not meant to replace every specialised rhythm module. It is simply supposed to cover a useful amount of everyday timing work in one relatively compact module.
+
+And to do that in ten HP.
+
+[short pause] The hardware follows the same idea of keeping things practical.
+
+CLOCK is designed as a through-hole DIY project.
+
+That means it is not as compact internally as an SMD design could be, but it is much easier to solder, inspect and repair.
+
+My goal is that somebody with normal DIY soldering experience should be able to build it without specialised equipment.
+
+[short pause] The hardware is still under development.
+
+Right now I am verifying the circuit and the physical design.
+
+Once I am satisfied with that, the hardware files will be released as well.
+
+Until then, I prefer to keep them back rather than publish something that has not been properly checked.
+
+[short pause] There is much more in CLOCK than I can cover in a short overview.
+
+There is external sync and reset, swing and grooves, probability, gate timing, presets, diagnostics and more detailed channel settings.
+
+Those are better covered in separate walkthroughs.
+
+[short pause] For this video, the important part is the overall idea.
+
+CLOCK can be a simple eight-output master clock. It can work as a divider bank. Or it can provide eight individual rhythm channels using Clock, Euclid and Sequencer modes.
+
+That gives me clocks, divisions, polymetric and polyrhythmic timing, Euclidean rhythms and gate sequencing from one ten-HP module.
+
+And that is basically why I am building it.
+
+It covers the timing jobs I regularly need in my own rack without turning into a general-purpose modulation module.
+
+[short pause] [warmly] And that brings us to the end of this overview.
+
+Thank you for your interest and for taking the time to have a look at CLOCK.
+
+If you want to follow the project, see how the development continues, or support my work, follow South Signal Lab here or on Ko-fi.
+
+There you will also find more detailed material about the development of CLOCK and my other Eurorack projects.
+
+Bye for now, and see you soon.
