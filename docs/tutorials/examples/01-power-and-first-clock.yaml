@@ -3,7 +3,7 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-power-and-first-clock
-title: Example 01 — Power and First Clock
+title: Power and First Clock
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
@@ -18,7 +18,6 @@ setup:
   power: 'off'
 scenes:
   - chapter:
-      number: 1
       title: Getting Started
       subtitle: Power, PLAY, tempo, STOP
       narration: s01

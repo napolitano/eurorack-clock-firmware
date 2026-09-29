@@ -3,7 +3,7 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-clock-mode
-title: Example 06 — Clock Mode
+title: Clock Mode
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
@@ -15,7 +15,6 @@ setup:
   power: 'on'
 scenes:
   - chapter:
-      number: 1
       title: Clock Mode
       subtitle: A conventional clock on one Independent output
       narration: s01

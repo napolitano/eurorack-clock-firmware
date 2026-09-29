@@ -3,7 +3,7 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-euclidean-rhythm
-title: Example 07 — Euclidean Rhythm
+title: Euclidean Rhythm
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
@@ -15,7 +15,6 @@ setup:
   power: 'on'
 scenes:
   - chapter:
-      number: 1
       title: Euclidean Mode
       subtitle: Distribute hits across a cycle
       narration: s01

@@ -30,24 +30,19 @@ bool containsReason(const std::vector<StoryIssue>& issues, const std::string& ne
 std::filesystem::path root() {
     return std::filesystem::path(CLOCK_SOURCE_ROOT);
 }
-
 bool validateFixture(const char* relative) {
     const StoryParseResult parsed = parseStoryFile(root() / relative);
     if (!parsed) return false;
     return validateStory(*parsed.story, root() / "docs/tutorials").empty();
 }
-
 }  // namespace
-
 int main() {
     bool ok = true;
     const auto tutorialRoot = root() / "docs/tutorials";
-
     ok &= require(validateFixture("docs/tutorials/stories/examples/schema1-minimal.yaml"),
                   "minimal fixture must parse and validate");
     ok &= require(validateFixture("docs/tutorials/stories/examples/schema1-power-scope-publication.yaml"),
                   "power/scope/publication fixture must parse and validate");
-
     const StoryParseResult minimal = parseStoryFile(root() / "docs/tutorials/stories/examples/schema1-minimal.yaml");
     ok &= require(minimal && minimal.story->schema == 1U, "schema must decode");
     ok &= require(minimal && minimal.story->output.width == 1920U && minimal.story->output.height == 1080U &&
@@ -55,18 +50,15 @@ int main() {
                   "default output profile must survive parsing");
     ok &= require(minimal && minimal.story->scenes.size() == 2U, "minimal story must have two scenes");
     ok &= require(minimal && minimal.story->scenes[1].actions.size() == 3U, "tutorial actions must decode");
-
     const StoryParseResult power = parseStoryFile(root() / "docs/tutorials/stories/examples/schema1-power-scope-publication.yaml");
     ok &= require(power && power.story->publication.introVideo.has_value() && power.story->publication.outroVideo.has_value(),
                   "publication assets must decode as references");
     ok &= require(power && power.story->setup.powerOn.has_value() && !*power.story->setup.powerOn,
                   "setup power state must decode");
-
     const StoryParseResult fade = parseStoryFile(root() / "docs/tutorials/stories/examples/schema1-invalid-fade.yaml");
     ok &= require(static_cast<bool>(fade), "known future FADE must parse structurally");
     ok &= require(fade && containsReason(validateStory(*fade.story, tutorialRoot), "CUT transitions only"),
                   "FADE must fail Phase-1 semantic validation");
-
     const StoryParseResult generator = parseStoryFile(
         root() / "docs/tutorials/stories/examples/schema1-invalid-generator-without-cable.yaml");
     ok &= require(static_cast<bool>(generator), "generator fixture must parse structurally");
@@ -75,7 +67,6 @@ int main() {
                   "generator run without cable must fail semantic validation");
     ok &= require(!generatorIssues.empty() && generatorIssues.front().sceneIndex.has_value(),
                   "semantic errors must include scene context");
-
     const StoryParseResult badSchema = parseStoryText(R"YAML(
 schema: 2
 id: bad-schema
@@ -91,7 +82,6 @@ scenes:
 )YAML");
     ok &= require(badSchema && containsReason(validateStory(*badSchema.story, tutorialRoot), "unsupported schema version"),
                   "unsupported schema version must fail explicitly");
-
     const StoryParseResult unknownScene = parseStoryText(R"YAML(
 schema: 1
 id: unknown-scene
@@ -105,7 +95,6 @@ scenes:
 )YAML");
     ok &= require(!unknownScene && containsReason(unknownScene.issues, "unknown scene type"),
                   "unknown scene type must fail parsing");
-
     const StoryParseResult unknownAction = parseStoryText(R"YAML(
 schema: 1
 id: unknown-action
@@ -120,7 +109,6 @@ scenes:
 )YAML");
     ok &= require(!unknownAction && containsReason(unknownAction.issues, "unknown action type"),
                   "unknown action type must fail parsing");
-
     const StoryParseResult badButton = parseStoryText(R"YAML(
 schema: 1
 id: bad-button
@@ -136,7 +124,6 @@ scenes:
 )YAML");
     ok &= require(!badButton && containsReason(badButton.issues, "unknown CLOCK button"),
                   "nonexistent CLOCK button must fail parsing");
-
     const StoryParseResult unknownField = parseStoryText(R"YAML(
 schema: 1
 id: unknown-field
@@ -155,7 +142,21 @@ scenes:
                   "unknown top-level fields must fail parsing");
     ok &= require(!unknownField.issues.empty() && unknownField.issues.front().storyId == "unknown-field",
                   "structural errors must retain story ID context when available");
-
+    const StoryParseResult unnumberedChapter = parseStoryText(R"YAML(
+schema: 1
+id: named-chapter
+title: "Named tutorial"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_NORMAL
+scenes:
+  - chapter:
+      title: "Named chapter"
+      subtitle: "No visible sequence number"
+      duration_ms: 1000
+)YAML");
+    ok &= require(unnumberedChapter && validateStory(*unnumberedChapter.story, tutorialRoot).empty(),
+                  "chapter number must be optional for standalone named tutorials");
     const StoryParseResult badProfile = parseStoryText(R"YAML(
 schema: 1
 id: undefined-profile
@@ -171,7 +172,6 @@ scenes:
 )YAML");
     ok &= require(badProfile && validateStory(*badProfile.story, tutorialRoot).empty(),
                   "HUMAN_FAST must resolve from docs/tutorials interaction-profile resources");
-
     const StoryParseResult badTheme = parseStoryText(R"YAML(
 schema: 1
 id: missing-theme

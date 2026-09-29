@@ -3,7 +3,7 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-sequencer-basics
-title: Example 08 — Sequencer Basics
+title: Sequencer Basics
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
@@ -15,7 +15,6 @@ setup:
   power: 'on'
 scenes:
   - chapter:
-      number: 1
       title: Sequencer Mode
       subtitle: Edit gates directly on the step grid
       narration: s01

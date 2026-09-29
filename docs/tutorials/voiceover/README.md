@@ -43,21 +43,21 @@ For an actual local render, `scripts/render_tutorials.py` calls ElevenLabs segme
 
 Generated narration audio and its local cache are intentionally ignored by Git and must never be added to source packages.
 
-See [`TIMING.md`](TIMING.md) for the timing model and Example 11/12 walkthrough checklists. See [`../VIDEO_GENERATION.md`](../VIDEO_GENERATION.md) for `.env`, ElevenLabs and local rendering setup.
+See [`TIMING.md`](TIMING.md) for the timing model and the Eight Independent Clocks Walkthrough / Groove Editor Walkthrough checklists. See [`../VIDEO_GENERATION.md`](../VIDEO_GENERATION.md) for `.env`, ElevenLabs and local rendering setup.
 
 ## Script map
 
-1. `01-power-and-first-clock.txt`
-2. `02-transport-basics.txt`
-3. `03-encoder-tempo.txt`
-4. `04-tap-tempo.txt`
-5. `05-topology-and-channel.txt`
-6. `06-clock-mode.txt`
-7. `07-euclidean-rhythm.txt`
-8. `08-sequencer-basics.txt`
-9. `09-divider-bank.txt`
-10. `10-external-sync.txt`
-11. `11-eight-independent-clocks-walkthrough.txt`
-12. `12-groove-editor-walkthrough.txt`
+- **Power and First Clock** — `01-power-and-first-clock.txt`
+- **Transport Basics** — `02-transport-basics.txt`
+- **Encoder Tempo** — `03-encoder-tempo.txt`
+- **Tap Tempo** — `04-tap-tempo.txt`
+- **Topology and Channel** — `05-topology-and-channel.txt`
+- **Clock Mode** — `06-clock-mode.txt`
+- **Euclidean Rhythm** — `07-euclidean-rhythm.txt`
+- **Sequencer Basics** — `08-sequencer-basics.txt`
+- **Divider Bank** — `09-divider-bank.txt`
+- **External SYNC and RST** — `10-external-sync.txt`
+- **Eight Independent Clocks Walkthrough** — `11-eight-independent-clocks-walkthrough.txt`
+- **Groove Editor Walkthrough** — `12-groove-editor-walkthrough.txt`
 
 <h6 align="center">From Munich with &#9829;</h6>

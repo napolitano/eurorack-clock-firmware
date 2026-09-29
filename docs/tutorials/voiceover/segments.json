@@ -617,48 +617,23 @@
         {
           "id": "s04",
           "paragraphs": [
-            4
-          ]
-        },
-        {
-          "id": "s05",
-          "paragraphs": [
-            5
-          ]
-        },
-        {
-          "id": "s06",
-          "paragraphs": [
+            4,
+            5,
             6
           ]
         },
         {
           "id": "s07",
           "paragraphs": [
-            7
-          ]
-        },
-        {
-          "id": "s08",
-          "paragraphs": [
-            8
-          ]
-        },
-        {
-          "id": "s09",
-          "paragraphs": [
+            7,
+            8,
             9
           ]
         },
         {
           "id": "s10",
           "paragraphs": [
-            10
-          ]
-        },
-        {
-          "id": "s11",
-          "paragraphs": [
+            10,
             11
           ]
         },
@@ -689,12 +664,7 @@
         {
           "id": "s16",
           "paragraphs": [
-            16
-          ]
-        },
-        {
-          "id": "s17",
-          "paragraphs": [
+            16,
             17
           ]
         },
@@ -733,8 +703,112 @@
           "paragraphs": [
             23
           ]
+        },
+        {
+          "id": "s24",
+          "paragraphs": [
+            24
+          ]
+        },
+        {
+          "id": "s25",
+          "paragraphs": [
+            25
+          ]
+        },
+        {
+          "id": "s26",
+          "paragraphs": [
+            26
+          ]
+        },
+        {
+          "id": "s27",
+          "paragraphs": [
+            27
+          ]
+        },
+        {
+          "id": "s28",
+          "paragraphs": [
+            28
+          ]
+        },
+        {
+          "id": "s29",
+          "paragraphs": [
+            29
+          ]
+        },
+        {
+          "id": "s30",
+          "paragraphs": [
+            30
+          ]
+        },
+        {
+          "id": "s31",
+          "paragraphs": [
+            31
+          ]
+        },
+        {
+          "id": "s32",
+          "paragraphs": [
+            32
+          ]
+        },
+        {
+          "id": "s33",
+          "paragraphs": [
+            33
+          ]
+        },
+        {
+          "id": "s34",
+          "paragraphs": [
+            34
+          ]
+        },
+        {
+          "id": "s35",
+          "paragraphs": [
+            35,
+            36
+          ]
+        },
+        {
+          "id": "s37",
+          "paragraphs": [
+            37
+          ]
+        },
+        {
+          "id": "s38",
+          "paragraphs": [
+            38
+          ]
+        },
+        {
+          "id": "s39",
+          "paragraphs": [
+            39
+          ]
+        },
+        {
+          "id": "s40",
+          "paragraphs": [
+            40
+          ]
+        },
+        {
+          "id": "s41",
+          "paragraphs": [
+            41
+          ]
         }
-      ]
+      ],
+      "headroom_ms": 400
     }
   }
 }

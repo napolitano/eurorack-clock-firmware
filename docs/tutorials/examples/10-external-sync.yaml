@@ -3,7 +3,7 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-external-sync-and-rst
-title: Example 10 — External SYNC and RST
+title: External SYNC and RST
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
@@ -15,7 +15,6 @@ setup:
   power: 'on'
 scenes:
   - chapter:
-      number: 1
       title: External SYNC and RST
       subtitle: Follow external timing and reset phase independently
       narration: s01

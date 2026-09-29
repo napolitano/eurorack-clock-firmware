@@ -169,7 +169,7 @@ struct Decoder final {
             }
         } else if (name == "encoder") {
             action.kind = StoryActionKind::Encoder;
-            rejectUnknown(node, {"direction", "detents"}, "encoder", sceneIndex, actionIndex);
+            rejectUnknown(node, {"direction", "detents", "speed"}, "encoder", sceneIndex, actionIndex);
             if (const Node* value = required(node, "direction", "encoder", sceneIndex, actionIndex)) {
                 const auto text = scalar(*value, "encoder.direction", sceneIndex, actionIndex);
                 if (text && *text == "clockwise") action.encoderDirection = 1;
@@ -178,6 +178,12 @@ struct Decoder final {
             }
             if (const Node* value = node.find("detents")) {
                 if (const auto parsed = uintValue(*value, "encoder.detents", 1U, 4096U, sceneIndex, actionIndex)) action.detents = static_cast<std::uint16_t>(*parsed);
+            }
+            if (const Node* value = node.find("speed")) {
+                const auto text = scalar(*value, "encoder.speed", sceneIndex, actionIndex);
+                if (text && *text == "fast") action.encoderFast = true;
+                else if (text && *text == "normal") action.encoderFast = false;
+                else if (text) issue(*value, "encoder.speed: expected normal or fast", sceneIndex, actionIndex);
             }
         } else if (name == "encoder_push") {
             action.kind = StoryActionKind::EncoderPush;

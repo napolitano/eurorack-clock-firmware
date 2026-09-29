@@ -42,20 +42,26 @@ void renderStoryChapter(TutorialSurface& frame, const StoryScene& scene, const S
     frame.clear(theme.chapterBackground);
     const int width = static_cast<int>(frame.width());
     const int contentBottom = static_cast<int>(frame.height());
-    StoryFontStyle numberFont = theme.monospace;
-    numberFont.sizePx = numberFont.backend == StoryFontBackend::Builtin ? 42U : 44U;
-    numberFont.weight = 700U;
-    const std::string number = std::to_string(scene.number);
-    const int numberWidth = measureStoryTextWidth(number, numberFont);
-    const TutorialColor numberColor{255U, 255U, 255U, 190U};
-    (void)drawStoryTextLine(frame, number, numberFont, (width - numberWidth) / 2, 220, numberColor);
-    frame.fillRect({width / 2 - 42, 310, 84, 4}, {255U, 255U, 255U, 210U});
+    int dividerY = 260;
+    int titleY = 315;
+    if (scene.number != 0U) {
+        StoryFontStyle numberFont = theme.monospace;
+        numberFont.sizePx = numberFont.backend == StoryFontBackend::Builtin ? 42U : 44U;
+        numberFont.weight = 700U;
+        const std::string number = std::to_string(scene.number);
+        const int numberWidth = measureStoryTextWidth(number, numberFont);
+        const TutorialColor numberColor{255U, 255U, 255U, 190U};
+        (void)drawStoryTextLine(frame, number, numberFont, (width - numberWidth) / 2, 220, numberColor);
+        dividerY = 310;
+        titleY = 365;
+    }
+    frame.fillRect({width / 2 - 42, dividerY, 84, 4}, {255U, 255U, 255U, 210U});
     const StoryTextLayout title = layoutStoryText(scene.title, theme.chapter, width - 360, 190, theme.lineSpacingPx);
-    drawStoryText(frame, title, theme.chapter, (width - title.widthPx) / 2, 365, theme.chapterForeground);
+    drawStoryText(frame, title, theme.chapter, (width - title.widthPx) / 2, titleY, theme.chapterForeground);
     if (!scene.subtitle.empty()) {
         const StoryTextLayout subtitle = layoutStoryText(scene.subtitle, theme.heading, width - 440, 190, theme.lineSpacingPx);
         drawStoryText(frame, subtitle, theme.heading, (width - subtitle.widthPx) / 2,
-                      std::min(contentBottom - subtitle.heightPx - 180, 560), theme.chapterMuted);
+                      std::min(contentBottom - subtitle.heightPx - 180, titleY + 195), theme.chapterMuted);
     }
 }
 

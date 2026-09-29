@@ -3,7 +3,7 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-divider-bank
-title: Example 09 — Divider Bank
+title: Divider Bank
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
@@ -15,7 +15,6 @@ setup:
   power: 'on'
 scenes:
   - chapter:
-      number: 1
       title: Divider Bank
       subtitle: Eight related divisions from one source
       narration: s01

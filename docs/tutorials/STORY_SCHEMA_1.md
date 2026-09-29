@@ -75,6 +75,11 @@ Recorded module controls represent visible physical operation plus real simulato
 - encoder:
     direction: clockwise
     detents: 2
+    speed: normal
+- encoder:
+    direction: counter_clockwise
+    detents: 20
+    speed: fast
 - encoder_push: {}
 - encoder_push:
     hold_ms: 800
@@ -94,7 +99,7 @@ Recorded module controls represent visible physical operation plus real simulato
     state: on
 ```
 
-Stable control spellings are `encoder`, `encoder_push`, `PLAY`, `TAP`, `STOP_BACK`, and `power`. `encoder_push.hold_ms` records the real press duration and therefore supports existing long-push workflows without bypassing CLOCK navigation. `button.state` is optional; `down`/`up` keeps the physical button held across following actions so real CLOCK modifier chords can be recorded. Every explicit `down` must be balanced by `up` before the story ends.
+Stable control spellings are `encoder`, `encoder_push`, `PLAY`, `TAP`, `STOP_BACK`, and `power`. `encoder.speed` is optional and accepts `normal` or `fast`; `fast` uses the selected interaction profile's `encoder_fast_detent_ms` for deliberate long sweeps without changing the number of physical detents. `encoder_push.hold_ms` records the real press duration and therefore supports existing long-push workflows without bypassing CLOCK navigation. `button.state` is optional; `down`/`up` keeps the physical button held across following actions so real CLOCK modifier chords can be recorded. Every explicit `down` must be balanced by `up` before the story ends.
 
 ## Patch Actions
 

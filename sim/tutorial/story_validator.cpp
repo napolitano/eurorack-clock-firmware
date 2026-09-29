@@ -151,8 +151,8 @@ std::vector<StoryIssue> validateStory(const Story& story, const std::filesystem:
                                   "duplicate narration id: " + *scene.narrationId});
             }
         }
-        if (scene.kind == SceneKind::Chapter && (scene.number == 0U || scene.title.empty())) {
-            issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "chapter requires number and title"});
+        if (scene.kind == SceneKind::Chapter && scene.title.empty()) {
+            issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "chapter requires title"});
         }
         if (scene.kind == SceneKind::Text && (scene.title.empty() || scene.body.empty())) {
             issues.push_back({story.id, sceneIndex, std::nullopt, scene.sourceLine, "text scene requires title and body"});

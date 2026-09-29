@@ -421,10 +421,17 @@ def round_up_ms(value: int, quantum: int) -> int:
     return ((value + quantum - 1) // quantum) * quantum
 
 
-def segment_budgets(config: LocalConfig, audio: list[SegmentAudio]) -> dict[str, int]:
+def segment_budgets(
+    config: LocalConfig,
+    audio: list[SegmentAudio],
+    body_headroom_ms: int | None = None,
+) -> dict[str, int]:
     budgets: dict[str, int] = {}
+    headroom_ms = config.body_headroom_ms if body_headroom_ms is None else body_headroom_ms
+    if headroom_ms <= 0:
+        raise RenderError("narration body headroom must be greater than zero")
     for index, item in enumerate(audio):
-        budget = item.duration_ms + config.body_headroom_ms
+        budget = item.duration_ms + headroom_ms
         if index == 0:
             budget = max(budget, config.opening_min_ms)
         if index + 1 == len(audio):
@@ -617,16 +624,38 @@ def story_number(stem: str) -> str:
     return stem.split("-", 1)[0]
 
 
+def story_title(stem: str) -> str:
+    story = EXAMPLES_DIR / f"{stem}.yaml"
+    for line in story.read_text(encoding="utf-8").splitlines():
+        if line.startswith("title:"):
+            return line.split(":", 1)[1].strip().strip('"\'')
+    raise RenderError(f"tutorial has no top-level title: {story}")
+
+
 def select_stories(target: str | None, render_all: bool, catalog: dict[str, dict[str, Any]]) -> list[str]:
     stems = sorted(catalog)
     if render_all:
         return stems
     if not target:
-        raise RenderError("specify an example number/name or --all")
+        raise RenderError("specify a tutorial name or --all")
     normalized = target.strip().lower()
-    matches = [stem for stem in stems if normalized in {stem.lower(), story_number(stem), story_number(stem).lstrip("0")}]
+    matches: list[str] = []
+    for stem in stems:
+        number = story_number(stem)
+        source_name = stem.split("-", 1)[1] if "-" in stem else stem
+        aliases = {
+            stem.lower(),
+            source_name.lower(),
+            story_title(stem).lower(),
+            number,
+            number.lstrip("0"),
+        }
+        if normalized in aliases:
+            matches.append(stem)
     if len(matches) != 1:
-        raise RenderError(f"cannot resolve tutorial {target!r}; choose 01..12 or an exact example stem")
+        raise RenderError(
+            f"cannot resolve tutorial {target!r}; use its exact tutorial name, filename stem, or internal source number"
+        )
     return matches
 
 
@@ -656,7 +685,10 @@ def render_one(
         audio.append(item)
         log(f"  {item.duration_ms / 1000.0:.2f}s {'(cache)' if item.cache_hit else '(rendered)'}")
 
-    budgets = segment_budgets(config, audio)
+    story_headroom = entry.get("headroom_ms")
+    if story_headroom is not None and not isinstance(story_headroom, int):
+        raise RenderError(f"segments.json headroom_ms for {stem} must be an integer")
+    budgets = segment_budgets(config, audio, story_headroom)
     resolved_story = output_root / "resolved-stories" / f"{stem}.yaml"
     resolved_budgets = resolve_story(stem, budgets, resolved_story)
     timing_plan = output_root / "plans" / f"{stem}.json"
@@ -695,8 +727,8 @@ def render_one(
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Render narrated CLOCK Storybook publication masters locally")
-    parser.add_argument("tutorial", nargs="?", help="example number (01..12) or exact example filename stem")
-    parser.add_argument("--all", action="store_true", help="render all twelve editable examples")
+    parser.add_argument("tutorial", nargs="?", help="tutorial name, filename stem, or internal source number")
+    parser.add_argument("--all", action="store_true", help="render all editable tutorials")
     mode = parser.add_mutually_exclusive_group()
     mode.add_argument("--audio-only", action="store_true", help="render/cache narration and resolve timing, but do not render picture")
     mode.add_argument("--picture-only", action="store_true", help="reuse matching cached narration; render picture and final mux only")

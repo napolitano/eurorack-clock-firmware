@@ -49,9 +49,9 @@ For tutorial beats, `NarrationBegin` occurs before the first enclosed action. Bu
 
 Storybook records the resulting begin/end presentation timestamps and publishes a `<story-id>.narration.json` sidecar after shifting the cue positions by the measured intro duration. That sidecar, not frame counting or YAML guesswork, positions the audio in the final master.
 
-## Example 11: narrative structure
+## Eight Independent Clocks Walkthrough: narrative structure
 
-Example 11 is intentionally a full walkthrough rather than a fast feature demo. It starts with a proper orientation before the first control action:
+Eight Independent Clocks Walkthrough is intentionally a full walkthrough rather than a fast feature demo. It starts with a proper orientation before the first control action:
 
 - what South Signal Lab is showing;
 - what CLOCK is;
@@ -79,15 +79,17 @@ Every setting actually shown on screen receives its own explanation and narratio
 | OUTPUT → RESET | Global versus Sync Free reset behavior | selected; unchanged |
 | OUTPUT → MUTE | silence the output without deleting its configuration | selected; unchanged |
 
-`GROOVE` is explained as the entry to its own editor but that editor is not opened in Example 11. A separate editor would introduce settings not otherwise shown in this walkthrough.
+`GROOVE` is explained as the entry to its own editor but that editor is not opened in Eight Independent Clocks Walkthrough. A separate editor would introduce settings not otherwise shown in this walkthrough.
 
 The final scope view demonstrates the two actual edits: channel 4 at ×2 with a 20-ms gate while the other seven Clock channels retain their original settings.
 
 <h6 align="center">From Munich with &#9829;</h6>
 
-## Example 12: Groove Editor walkthrough
+## Groove Editor Walkthrough
 
-Example 12 deliberately continues the teaching sequence from Example 11 without requiring the viewer to have watched it. The opening names Tutorial 11, restates only the minimum Independent/channel-selection path, and then treats the Groove Editor as the sole subject.
+Groove Editor Walkthrough deliberately continues the teaching sequence from Eight Independent Clocks Walkthrough without requiring the viewer to have watched it. The opening names Eight Independent Clocks Walkthrough, restates only the minimum Independent/channel-selection path, and then treats the Groove Editor as the sole subject.
+
+The Groove Editor narration is deliberately split into smaller action-aligned segments. The human-readable script remains complete; segmentation only moves boundaries so each spoken instruction stays close to the action it describes. Groove Editor Walkthrough overrides the general body headroom with **400 ms**. Authored beat durations are only minimum time for the enclosed physical actions; measured ElevenLabs audio plus that headroom determines the remaining hold. This avoids long silent gaps without shortening the explanation.
 
 The implementation source is authoritative for the gestures shown in the video:
 
@@ -105,3 +107,5 @@ The implementation source is authoritative for the gestures shown in the video:
 The screen explanation covers the beat grid, marker diamonds, selected marker, `Snn` step indicator, signed offset, `Lnn` pattern length and `FIT`/`Znn` zoom state. The walkthrough also demonstrates that Custom Groove editing is previewed live, that pattern length is 1–64 steps, and that ten persistent Custom Groove slots are available.
 
 After SAVE, the stored slot becomes the active `Custom` groove at Amount 100% and Rotate 0. The walkthrough then demonstrates Amount as scaling of the stored signed offsets and Rotate as a phase shift of the pattern start without rewriting the saved marker positions. The final scope view reinforces that Custom Groove is deterministic per-step microtiming, not stochastic Humanize.
+
+For the scope demonstration, the walkthrough intentionally uses a stronger but still bounded Custom Groove: step 1 is edited to **-28/256** and step 2 to **+80/256** before saving. At Amount 80%, those stored offsets remain visibly displaced while still demonstrating that Amount scales the same deterministic shape rather than rewriting it. Rotate 1 then shifts the pattern start.

@@ -120,7 +120,7 @@ private:
                     }
                     emit(StoryTraceKind::EncoderDetent, sceneIndex, actionIndex, "encoder",
                          action.encoderDirection > 0 ? "clockwise" : "counter_clockwise");
-                    advanceActiveMs(timing_.encoderDetentMs);
+                    advanceActiveMs(action.encoderFast ? timing_.encoderFastDetentMs : timing_.encoderDetentMs);
                 }
                 advanceActiveMs(timing_.afterValueChangeMs);
                 return true;

@@ -3,7 +3,7 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-encoder-tempo
-title: Example 03 — Encoder Tempo
+title: Encoder Tempo
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_NORMAL
@@ -15,7 +15,6 @@ setup:
   power: 'on'
 scenes:
   - chapter:
-      number: 1
       title: Changing Tempo
       subtitle: The encoder controls master BPM
       narration: s01

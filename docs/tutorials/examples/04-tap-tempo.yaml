@@ -3,7 +3,7 @@
 # License: PolyForm-Noncommercial-1.0.0
 schema: 1
 id: example-tap-tempo
-title: Example 04 — Tap Tempo
+title: Tap Tempo
 language: en
 theme: south-signal-lab-default
 interaction_profile: HUMAN_FAST
@@ -15,7 +15,6 @@ setup:
   power: 'on'
 scenes:
   - chapter:
-      number: 1
       title: Tap Tempo
       subtitle: Set the internal tempo by feel
       narration: s01

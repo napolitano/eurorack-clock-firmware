@@ -126,6 +126,21 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertNotIn("intro_video: ../assets/", resolved)
         self.assertNotIn("outro_video: ../assets/", resolved)
 
+    def test_editable_tutorials_use_names_not_visible_sequence_numbers(self) -> None:
+        """Public tutorial identity must be stable by name even if source filenames retain numeric ordering."""
+        examples = ROOT / "docs/tutorials/examples"
+        voiceover = ROOT / "docs/tutorials/voiceover"
+        for story_path in sorted(examples.glob("[0-9][0-9]-*.yaml")):
+            story = story_path.read_text(encoding="utf-8")
+            self.assertNotRegex(story, r"(?m)^title:\s+Example\s+\d+")
+            self.assertNotRegex(story, r"(?m)^\s+number:\s+\d+\s*$")
+            self.assertNotRegex(story, r"Tutorial\s+\d+")
+            self.assertNotRegex(story, r"Example\s+\d+")
+        for script_path in sorted(voiceover.glob("[0-9][0-9]-*.txt")):
+            script = script_path.read_text(encoding="utf-8")
+            self.assertNotRegex(script, r"Tutorial\s+\d+")
+            self.assertNotRegex(script, r"Example\s+\d+")
+
     def test_publication_assets_and_scope_are_schema_contracts(self) -> None:
         """Schema 1 must retain optional media assets and visible-channel scope semantics."""
         schema = (ROOT / "docs/tutorials/STORY_SCHEMA_1.md").read_text(encoding="utf-8")
@@ -203,7 +218,7 @@ class StorybookToolingTests(unittest.TestCase):
         self.assertIn('label: Probability · Gate · Phase · Reset · Mute', detailed)
         self.assertIn('text: Change channel 4 from ×1 to ×2.', detailed)
         groove = (examples / "12-groove-editor-walkthrough.yaml").read_text(encoding="utf-8")
-        self.assertIn('title: Example 12 — Groove Editor Walkthrough', groove)
+        self.assertIn('title: Groove Editor Walkthrough', groove)
         self.assertIn('label: TAP + turn · four offset units per encoder step', groove)
         self.assertIn('label: PLAY release is consumed after a zoom gesture', groove)
         self.assertIn('label: SAVE · LOAD · ZOOM · LENGTH', groove)

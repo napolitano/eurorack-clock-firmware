@@ -4,18 +4,18 @@
 
 These twelve files are a didactic, copy-and-edit Storybook starter set. They are deliberately separate from the canonical CI reference catalog in `../stories/`.
 
-1. `01-power-and-first-clock.yaml` — power-up, PLAY, tempo and STOP.
-2. `02-transport-basics.yaml` — PLAY, PAUSE, resume and STOP.
-3. `03-encoder-tempo.yaml` — master BPM with the encoder.
-4. `04-tap-tempo.yaml` — Tap Tempo without changing CLOCK SOURCE.
-5. `05-topology-and-channel.yaml` — select Independent topology and one output.
-6. `06-clock-mode.yaml` — Independent Clock with visible gate telemetry.
-7. `07-euclidean-rhythm.yaml` — select Euclid and edit a useful pattern.
-8. `08-sequencer-basics.yaml` — select Sequencer and toggle a step.
-9. `09-divider-bank.yaml` — Divider Bank and divider-family selection.
-10. `10-external-sync.yaml` — external SYNC lock plus independent RST phase reset.
-11. `11-eight-independent-clocks-walkthrough.yaml` — full One Clock → eight Independent Clocks workflow, channel selection, long-press settings, and a separate on-screen explanation for MODE and each TIMING, CLOCK, and OUTPUT row.
-12. `12-groove-editor-walkthrough.yaml` — standalone Custom Groove Editor walkthrough: minimal hand-off from Example 11, editor entry, fine/coarse microtiming gestures, step navigation, zoom, context menu, pattern length, save, Amount/Rotate and discard protection.
+- **Power and First Clock** — `01-power-and-first-clock.yaml`: power-up, PLAY, tempo and STOP.
+- **Transport Basics** — `02-transport-basics.yaml`: PLAY, PAUSE, resume and STOP.
+- **Encoder Tempo** — `03-encoder-tempo.yaml`: master BPM with the encoder.
+- **Tap Tempo** — `04-tap-tempo.yaml`: Tap Tempo without changing CLOCK SOURCE.
+- **Topology and Channel** — `05-topology-and-channel.yaml`: select Independent topology and one output.
+- **Clock Mode** — `06-clock-mode.yaml`: Independent Clock with visible gate telemetry.
+- **Euclidean Rhythm** — `07-euclidean-rhythm.yaml`: select Euclid and edit a useful pattern.
+- **Sequencer Basics** — `08-sequencer-basics.yaml`: select Sequencer and toggle a step.
+- **Divider Bank** — `09-divider-bank.yaml`: Divider Bank and divider-family selection.
+- **External SYNC and RST** — `10-external-sync.yaml`: external SYNC lock plus independent RST phase reset.
+- **Eight Independent Clocks Walkthrough** — `11-eight-independent-clocks-walkthrough.yaml`: full One Clock → eight Independent Clocks workflow, channel selection, long-press settings, and a separate on-screen explanation for MODE and each TIMING, CLOCK, and OUTPUT row.
+- **Groove Editor Walkthrough** — `12-groove-editor-walkthrough.yaml`: standalone Custom Groove Editor walkthrough with a minimal hand-off from Eight Independent Clocks Walkthrough, editor entry, fine/coarse microtiming gestures, step navigation, zoom, context menu, pattern length, save, Amount/Rotate and discard protection.
 
 All examples change CLOCK only through recorded physical controls, patch actions or external stimuli. `setup:` establishes only pre-recording factory/power conditions.
 
@@ -29,7 +29,7 @@ Every example also:
 The preferred publication path is local:
 
 ```bash
-python scripts/render_tutorials.py 11
+python scripts/render_tutorials.py "Eight Independent Clocks Walkthrough"
 ```
 
 For all twelve videos:

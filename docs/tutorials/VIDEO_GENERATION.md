@@ -99,7 +99,7 @@ CLOCK_TUTORIAL_ROUNDING_MS=100
 Render one complete narrated master:
 
 ```bash
-python scripts/render_tutorials.py 11
+python scripts/render_tutorials.py "Eight Independent Clocks Walkthrough"
 ```
 
 Render all twelve examples as a local evening/nightly job:
@@ -111,9 +111,9 @@ python scripts/render_tutorials.py --all
 Useful partial passes:
 
 ```bash
-python scripts/render_tutorials.py 11 --audio-only
-python scripts/render_tutorials.py 11 --picture-only
-python scripts/render_tutorials.py 11 --force-tts
+python scripts/render_tutorials.py "Eight Independent Clocks Walkthrough" --audio-only
+python scripts/render_tutorials.py "Eight Independent Clocks Walkthrough" --picture-only
+python scripts/render_tutorials.py "Eight Independent Clocks Walkthrough" --force-tts
 ```
 
 The runner builds the optimized `simulator-headless-release` Storybook target unless `--skip-build` is specified. All generated audio, resolved YAML, timing plans, intermediate publication media and final masters live under ignored `tutorial-output/`.
@@ -385,9 +385,9 @@ Use this order while developing a narrated teaching Story:
 3. Split narration into editorially stable beats in `voiceover/segments.json`. Attach non-tutorial IDs to bounded scenes; wrap tutorial actions in `beat` / `beat_end` so narration begins before the operation it explains.
 4. Use `focus.duration_ms: 0` for the final explanatory focus of a tutorial beat when it should remain visible through the remaining narration time.
 5. Run `clock-storybook validate` until schema and semantics are clean.
-6. Run `python scripts/render_tutorials.py <number> --audio-only` to hear the real takes and create measured timing.
+6. Run `python scripts/render_tutorials.py "<tutorial name>" --audio-only` to hear the real takes and create measured timing.
 7. Adjust prose/tags if necessary; unchanged segment audio remains cached.
-8. Run `python scripts/render_tutorials.py <number>` for the sparse picture render and final cue-aligned master.
+8. Run `python scripts/render_tutorials.py "<tutorial name>"` for the sparse picture render and final cue-aligned master.
 9. Use the low-level `frames` command only when individual frame inspection is needed.
 10. Keep all generated output under ignored `tutorial-output/`; never add it to a source bundle.
 
