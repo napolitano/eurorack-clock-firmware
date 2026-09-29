@@ -100,6 +100,7 @@ class StorybookToolingTests(unittest.TestCase):
             self.assertTrue(ids)
             self.assertEqual(len(ids), len(set(ids)))
             for narration_id in ids:
+                self.assertRegex(narration_id, r"^s\d{2,}$")
                 self.assertRegex(story, rf'narration:\s+["\']?{narration_id}["\']?')
         self.assertIn("beat_end:", (ROOT / "docs/tutorials/examples/11-eight-independent-clocks-walkthrough.yaml").read_text(encoding="utf-8"))
 

@@ -50,6 +50,7 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Fixed
 
+- Fix the External Sync, Reset & General Settings narration catalog using an invalid `s26-stop` segment identifier: narration IDs are now a continuous `s01` through `s43`, and repository tooling validates the same numeric-ID contract enforced by the local renderer.
 - Fix narration-resolved tutorial publication losing its intro/outro asset base directory: generated stories now rebase any relative `intro_video` / `outro_video` reference against the authored Story location, serialize an absolute normalized path under `tutorial-output/resolved-stories/`, and fail before frame rendering if the resolved publication asset does not exist.
 - Fix Windows Storybook rerenders failing with `Permission denied` while replacing `<output>.frames`: video publication now renders into a unique run-scoped frame directory, so stale Explorer/Defender/indexer handles on a previous frame tree cannot block the next run; temporary run trees are cleaned after publication unless `--keep-frames` is requested.
 - Fix tutorial narration synchronization by replacing action-local narration holds with explicit `beat` / `beat_end` containers: voice-over now begins before the UI actions it describes, those actions consume the same resolved audio budget, and only the remaining tail is held afterwards.

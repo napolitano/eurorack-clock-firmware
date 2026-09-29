@@ -675,7 +675,7 @@ scenes:
         - beat_end: s26
 
         - beat:
-            narration: s26-stop
+            narration: s27
             duration_ms: 9000
         - button:
             name: TAP
@@ -712,10 +712,10 @@ scenes:
             placement: right
             label: STOP edge → STOP
             duration_ms: 0
-        - beat_end: s26-stop
+        - beat_end: s27
 
         - beat:
-            narration: s27
+            narration: s28
             duration_ms: 9500
         - button:
             name: TAP
@@ -753,10 +753,10 @@ scenes:
             placement: right
             label: RESTART · deterministic STOP → PLAY from phase zero
             duration_ms: 0
-        - beat_end: s27
+        - beat_end: s28
 
         - beat:
-            narration: s28
+            narration: s29
             duration_ms: 10000
         - button:
             name: TAP
@@ -792,10 +792,10 @@ scenes:
             placement: right
             label: TAP · external positive edges use the normal Tap Tempo estimator
             duration_ms: 0
-        - beat_end: s28
+        - beat_end: s29
 
         - beat:
-            narration: s29
+            narration: s30
             duration_ms: 12000
         - button:
             name: TAP
@@ -840,24 +840,11 @@ scenes:
             placement: right
             label: RESET INPUT = TRIGGER
             duration_ms: 0
-        - beat_end: s29
+        - beat_end: s30
 
   - tutorial:
       subtitle: Finish the external-clock CONFIG page: FILTER, SMOOTHING and TIMEOUT.
       actions:
-        - beat:
-            narration: s30
-            duration_ms: 900
-        - encoder:
-            direction: clockwise
-            detents: 1
-        - focus:
-            target: oled_settings_row_5
-            placement: right
-            label: FILTER · reject implausibly short selected-edge intervals
-            duration_ms: 0
-        - beat_end: s30
-
         - beat:
             narration: s31
             duration_ms: 900
@@ -867,7 +854,7 @@ scenes:
         - focus:
             target: oled_settings_row_5
             placement: right
-            label: SMOOTHING · OFF / LOW / MEDIUM / FULL
+            label: FILTER · reject implausibly short selected-edge intervals
             duration_ms: 0
         - beat_end: s31
 
@@ -880,9 +867,22 @@ scenes:
         - focus:
             target: oled_settings_row_5
             placement: right
-            label: TIMEOUT · lock-loss floor · slow clocks remain protected
+            label: SMOOTHING · OFF / LOW / MEDIUM / FULL
             duration_ms: 0
         - beat_end: s32
+
+        - beat:
+            narration: s33
+            duration_ms: 900
+        - encoder:
+            direction: clockwise
+            detents: 1
+        - focus:
+            target: oled_settings_row_5
+            placement: right
+            label: TIMEOUT · lock-loss floor · slow clocks remain protected
+            duration_ms: 0
+        - beat_end: s33
 
   - callout:
       type: tip
@@ -890,14 +890,14 @@ scenes:
       body: |
         TIMEOUT: when is the external clock considered gone?
         LOSS: what should CLOCK do after that?
-      narration: s33
+      narration: s34
       duration_ms: 2600
 
   - tutorial:
       subtitle: Use Diagnostics before debugging the rest of the patch.
       actions:
         - beat:
-            narration: s34
+            narration: s35
             duration_ms: 5100
         - button:
             name: STOP_BACK
@@ -918,20 +918,20 @@ scenes:
             duration_ms: 0
         - rst_generator:
             state: hold
-        - beat_end: s34
+        - beat_end: s35
 
         - beat:
-            narration: s35
+            narration: s36
             duration_ms: 500
         - focus:
             target: oled_full
             placement: right
             label: Digital HIGH / LOW · not a voltage measurement
             duration_ms: 0
-        - beat_end: s35
+        - beat_end: s36
 
         - beat:
-            narration: s36
+            narration: s37
             duration_ms: 2300
         - button:
             name: STOP_BACK
@@ -944,10 +944,10 @@ scenes:
             placement: right
             label: Outputs · firmware gate-source states for channels 1–8
             duration_ms: 0
-        - beat_end: s36
+        - beat_end: s37
 
         - beat:
-            narration: s37
+            narration: s38
             duration_ms: 3000
         - button:
             name: STOP_BACK
@@ -962,10 +962,10 @@ scenes:
             placement: right
             label: TEMPO · MIN BPM · MAX BPM · METER BEATS · METER UNIT
             duration_ms: 0
-        - beat_end: s37
+        - beat_end: s38
 
         - beat:
-            narration: s38
+            narration: s39
             duration_ms: 1100
         - encoder:
             direction: clockwise
@@ -976,10 +976,10 @@ scenes:
             placement: right
             label: PRE COUNT · OFF or 1–64 silent beats
             duration_ms: 0
-        - beat_end: s38
+        - beat_end: s39
 
         - beat:
-            narration: s39
+            narration: s40
             duration_ms: 2400
         - button:
             name: STOP_BACK
@@ -992,10 +992,10 @@ scenes:
             placement: right
             label: Screensaver · start · dim · OLED off
             duration_ms: 0
-        - beat_end: s39
+        - beat_end: s40
 
         - beat:
-            narration: s40
+            narration: s41
             duration_ms: 3800
         - button:
             name: STOP_BACK
@@ -1014,7 +1014,7 @@ scenes:
             name: STOP_BACK
         - button:
             name: STOP_BACK
-        - beat_end: s40
+        - beat_end: s41
 
   - callout:
       type: recipe
@@ -1023,7 +1023,7 @@ scenes:
         - What does the input do? → INPUT role
         - Who owns musical time? → SOURCE
         - What happens after clock loss? → LOSS
-      narration: s41
+      narration: s42
       duration_ms: 3200
 
   - text:
@@ -1031,5 +1031,5 @@ scenes:
       body: |
         Follow South Signal Lab here or on Ko-fi for more CLOCK development,
         Eurorack engineering, and behind-the-scenes project work.
-      narration: s42
+      narration: s43
       duration_ms: 4200
