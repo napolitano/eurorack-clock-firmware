@@ -6,6 +6,7 @@
  * @license PolyForm-Noncommercial-1.0.0
  */
 #include "tutorial/story_parser.h"
+#include "tutorial/story_focus_regions.h"
 #include <algorithm>
 #include <charconv>
 #include <fstream>
@@ -268,9 +269,14 @@ struct Decoder final {
                 else if (text && (*text == "stop" || *text == "stop_back")) action.focusTarget = FocusTarget::StopBack;
                 else if (text && *text == "sync") action.focusTarget = FocusTarget::Sync;
                 else if (text && (*text == "rst" || *text == "reset")) action.focusTarget = FocusTarget::Reset;
-                else if (text && *text == "oled_top_bar") { action.focusTarget = FocusTarget::OledRegion; action.focusX = 0; action.focusY = 0; action.focusWidth = 128; action.focusHeight = 12; }
                 else if (text && *text == "oled_region") action.focusTarget = FocusTarget::OledRegion;
-                else if (text) issue(*value, "focus.target: expected encoder/play/tap/stop/sync/rst/oled_top_bar/oled_region", sceneIndex, actionIndex);
+                else if (text) {
+                    if (const auto region = storyOledFocusRegion(*text)) {
+                        action.focusTarget = FocusTarget::OledRegion;
+                        action.focusX = region->x; action.focusY = region->y;
+                        action.focusWidth = region->width; action.focusHeight = region->height;
+                    } else issue(*value, "focus.target: unknown focus target '" + *text + "'", sceneIndex, actionIndex);
+                }
             }
             if (const Node* value = node.find("label")) if (const auto parsed = scalar(*value, "focus.label", sceneIndex, actionIndex)) action.text = *parsed;
             if (const Node* value = node.find("placement")) if (const auto parsed = scalar(*value, "focus.placement", sceneIndex, actionIndex)) {

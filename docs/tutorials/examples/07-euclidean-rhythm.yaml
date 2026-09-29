@@ -41,13 +41,9 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
+            target: oled_top_bar
             label: Euclid is the selected channel mode
             duration_ms: 0
-            x: 0
-            y: 30
-            width: 124
-            height: 10
             placement: right
         - beat_end: s02
         - beat:
@@ -64,11 +60,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_settings_row_3
             placement: right
             label: 12 steps define the cycle
             duration_ms: 0
@@ -84,11 +76,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_settings_row_3
             placement: right
             label: Five hits are distributed across the cycle
             duration_ms: 0
@@ -102,11 +90,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_settings_row_3
             placement: right
             label: 'ROTATE: same hits, shifted starting position'
             duration_ms: 1800
@@ -127,11 +111,7 @@ scenes:
         - button:
             name: STOP_BACK
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_pattern_strip
             placement: right
             label: ROTATE shifts the pattern without changing its count
             duration_ms: 0

@@ -325,7 +325,24 @@ Manual explanations use `focus`:
     duration_ms: 2800
 ```
 
-Supported physical targets are `encoder`, `play`, `tap`, `stop`, `sync` and `rst`. `oled_top_bar` is the complete top 12-pixel band. Any OLED sub-region can be addressed without changing firmware coordinates:
+Supported physical targets are `encoder`, `play`, `tap`, `stop`, `sync` and `rst`. `oled_top_bar` is the complete top 10-pixel band used by the production renderer. Any OLED sub-region can be addressed without changing firmware coordinates:
+
+For common UI areas, prefer the semantic OLED targets below instead of hand-maintained coordinates:
+
+- `oled_full`
+- `oled_tempo`
+- `oled_mode_carousel`
+- `oled_channel_grid`
+- `oled_settings_rows`, `oled_settings_top3`, `oled_settings_top4`, `oled_settings_bottom2`
+- `oled_settings_row_1` through `oled_settings_row_5`
+- `oled_divider_grid`
+- `oled_pattern_strip`
+- `oled_groove_grid`, `oled_groove_status`, `oled_groove_zoom`
+- `oled_groove_slots`, `oled_groove_name`, `oled_groove_confirm`
+- `oled_sequencer_editor`
+
+These aliases are derived from the production 128x64 renderer geometry. Use `oled_region` only for a genuinely custom area.
+
 
 ```yaml
 - focus:

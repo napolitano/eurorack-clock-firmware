@@ -42,11 +42,7 @@ scenes:
             name: TAP
         - wait_ms: 700
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_tempo
             placement: right
             label: AUTO stays selected; internal BPM is updated
             duration_ms: 0

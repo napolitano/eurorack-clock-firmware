@@ -425,6 +425,6 @@ Physical actions are highlighted automatically. For explanatory pauses, add a pr
     duration_ms: 2800
 ```
 
-For a specific UI element use `target: oled_region` with `x`, `y`, `width`, and `height` in the real 128x64 OLED coordinate system. `placement: auto` is the default; use `left`, `right`, `above`, or `below` when a particular teaching frame needs a fixed callout direction. Arrow leaders terminate outside the target and use a black/white contrast outline around the CLOCK-blue core. Focus actions do not advance CLOCK firmware time.
+For common UI elements prefer the semantic OLED targets documented in `STORY_SCHEMA_1.md` so the focus follows production renderer geometry. Use `target: oled_region` with `x`, `y`, `width`, and `height` only for a genuinely custom area in the real 128x64 OLED coordinate system. `placement: auto` is the default; use `left`, `right`, `above`, or `below` when a particular teaching frame needs a fixed callout direction. Arrow leaders terminate outside the target and use a black/white contrast outline around the CLOCK-blue core. Focus actions do not advance CLOCK firmware time.
 
 <h6 align="center">From Munich with &#9829;</h6>

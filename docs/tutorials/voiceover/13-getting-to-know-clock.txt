@@ -90,16 +90,6 @@ There is external sync and reset, swing and grooves, probability, gate timing, p
 
 Those are better covered in separate walkthroughs.
 
-[short pause] For this video, the important part is the overall idea.
-
-CLOCK can be a simple eight-output master clock. It can work as a divider bank. Or it can provide eight individual rhythm channels using Clock, Euclid and Sequencer modes.
-
-That gives me clocks, divisions, polymetric and polyrhythmic timing, Euclidean rhythms and gate sequencing from one ten-HP module.
-
-And that is basically why I am building it.
-
-It covers the timing jobs I regularly need in my own rack without turning into a general-purpose modulation module.
-
 [short pause] [warmly] And that brings us to the end of this overview.
 
 Thank you for your interest and for taking the time to have a look at CLOCK.

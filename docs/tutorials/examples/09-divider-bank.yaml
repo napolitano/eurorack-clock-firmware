@@ -41,11 +41,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_divider_grid
             placement: right
             label: One bank drives eight related divisions
             duration_ms: 0
@@ -61,11 +57,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_settings_row_2
             placement: right
             label: Integer bank selected
             duration_ms: 0
@@ -92,11 +84,7 @@ scenes:
         - button:
             name: STOP_BACK
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_settings_rows
             placement: right
             label: Powers of two · integers · primes
             duration_ms: 0

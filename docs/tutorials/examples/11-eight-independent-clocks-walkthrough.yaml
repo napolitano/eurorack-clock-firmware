@@ -51,11 +51,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_top_bar
             placement: right
             label: Clock selected · Independent confirmed
             duration_ms: 0
@@ -67,11 +63,7 @@ scenes:
             text: Open the channel overview. All eight channels begin in Clock mode.
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_channel_grid
             placement: right
             label: Eight Clock channels in the overview
             duration_ms: 0
@@ -86,11 +78,7 @@ scenes:
             detents: 3
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_top_bar
             placement: right
             label: Channel 4 selected
             duration_ms: 0
@@ -103,11 +91,7 @@ scenes:
         - encoder_push:
             hold_ms: 800
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_settings_rows
             placement: right
             label: MODE · TIMING · CLOCK · OUTPUT
             duration_ms: 0
@@ -118,11 +102,7 @@ scenes:
         - subtitle:
             text: MODE selects this channel’s function without changing its neighbours.
         - focus:
-            target: oled_region
-            x: 0
-            y: 10
-            width: 124
-            height: 10
+            target: oled_settings_row_1
             placement: right
             label: 'MODE: Clock, Euclid, Sequencer or Off'
             duration_ms: 0
@@ -137,11 +117,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_settings_rows
             placement: right
             label: 'TIMING: five separate settings'
             duration_ms: 0
@@ -157,11 +133,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 10
-            width: 124
-            height: 10
+            target: oled_settings_row_1
             placement: right
             label: 'DIV/MULT: integer rate now ×2'
             duration_ms: 0
@@ -175,11 +147,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 20
-            width: 124
-            height: 10
+            target: oled_settings_row_2
             placement: right
             label: 'NUMERATOR: upper part of the ratio'
             duration_ms: 0
@@ -193,11 +161,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_settings_row_3
             placement: right
             label: 'DENOMINATOR: lower part of the ratio'
             duration_ms: 0
@@ -211,11 +175,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 40
-            width: 124
-            height: 10
+            target: oled_settings_row_4
             placement: right
             label: 'SWING: alternate timing displacement'
             duration_ms: 0
@@ -229,11 +189,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 50
-            width: 124
-            height: 10
+            target: oled_settings_row_5
             placement: right
             label: 'GROOVE: pattern-based timing'
             duration_ms: 0
@@ -250,11 +206,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_settings_rows
             placement: right
             label: 'CLOCK: meter settings'
             duration_ms: 0
@@ -265,11 +217,7 @@ scenes:
         - subtitle:
             text: METER BEATS determines the number of beats in this channel’s measure.
         - focus:
-            target: oled_region
-            x: 0
-            y: 10
-            width: 124
-            height: 10
+            target: oled_settings_row_1
             placement: right
             label: 'METER BEATS: beats per measure'
             duration_ms: 0
@@ -283,11 +231,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 20
-            width: 124
-            height: 10
+            target: oled_settings_row_2
             placement: right
             label: 'METER UNIT: beat note value'
             duration_ms: 0
@@ -304,11 +248,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_settings_rows
             placement: right
             label: Probability · Gate · Phase · Reset · Mute
             duration_ms: 0
@@ -317,11 +257,7 @@ scenes:
             narration: s18
             duration_ms: 15100
         - focus:
-            target: oled_region
-            x: 0
-            y: 10
-            width: 124
-            height: 10
+            target: oled_settings_row_1
             placement: right
             label: 'PROBABILITY: chance of a gate event'
             duration_ms: 0
@@ -340,11 +276,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 20
-            width: 124
-            height: 10
+            target: oled_settings_row_2
             placement: right
             label: 'GATE: HIGH time now 20 ms'
             duration_ms: 0
@@ -358,11 +290,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_settings_row_3
             placement: right
             label: 'PHASE: offset against shared reference'
             duration_ms: 0
@@ -376,11 +304,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 40
-            width: 124
-            height: 10
+            target: oled_settings_row_4
             placement: right
             label: 'RESET: Global or Sync Free'
             duration_ms: 0
@@ -394,11 +318,7 @@ scenes:
             direction: clockwise
             detents: 1
         - focus:
-            target: oled_region
-            x: 0
-            y: 50
-            width: 124
-            height: 10
+            target: oled_settings_row_5
             placement: right
             label: 'MUTE: silence without losing settings'
             duration_ms: 0

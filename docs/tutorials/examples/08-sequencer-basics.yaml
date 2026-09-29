@@ -41,11 +41,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_top_bar
             placement: right
             label: Sequencer places gates on chosen steps
             duration_ms: 0
@@ -60,11 +56,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_sequencer_editor
             placement: right
             label: Step 2 is now toggled
             duration_ms: 0
@@ -83,11 +75,7 @@ scenes:
         - scope:
             state: hide
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_sequencer_editor
             placement: right
             label: Pattern blocks extend beyond 16 steps
             duration_ms: 0

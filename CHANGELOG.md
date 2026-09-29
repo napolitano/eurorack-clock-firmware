@@ -31,6 +31,9 @@ CLOCK follows semantic release milestones from the stable 1.0.0 baseline; earlie
 
 ### Storybook focus-arrow readability
 
+- Replace hand-maintained tutorial OLED rectangles with canonical semantic focus regions derived from the production 128x64 renderers for top bar, tempo, channel grid, settings rows, Divider Bank, Euclid/Sequencer feedback, Groove editor/status/library and Sequencer editor geometry.
+- Clamp focus strokes to the actual OLED raster at display edges so full-width/full-height targets no longer draw their highlight outside the display area.
+- Shorten the end of **Getting to Know CLOCK** by removing the repeated mode/feature recap and second motivation summary; after the deeper-walkthrough pointer it now goes directly to the project-follow/sign-off block.
 - Reworked tutorial focus arrows into short collision-aware leaders that terminate outside the highlighted control/OLED region instead of crossing it.
 - Added adaptive auto-placement plus optional `focus.placement: left|right|above|below` authoring control.
 - Added a three-layer black/white/CLOCK-blue leader and arrowhead so callouts remain visible across bright OLED pixels, dark cards and panel artwork.

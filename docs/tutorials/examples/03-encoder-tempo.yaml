@@ -31,11 +31,7 @@ scenes:
             detents: 8
         - wait_ms: 900
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_tempo
             placement: right
             label: Master BPM rises directly
             duration_ms: 0
@@ -50,11 +46,7 @@ scenes:
             detents: 3
         - wait_ms: 900
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_tempo
             placement: right
             label: Master BPM follows one shared timeline
             duration_ms: 0

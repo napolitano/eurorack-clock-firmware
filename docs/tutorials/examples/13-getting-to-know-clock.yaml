@@ -59,11 +59,7 @@ scenes:
         - assert:
             transport: stopped
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_full
             placement: right
             label: Eight outputs · 10 HP
             duration_ms: 0
@@ -93,7 +89,7 @@ scenes:
         - button:
             name: TAP
         - focus:
-            target: oled_top_bar
+            target: oled_full
             placement: right
             label: Tempo · Tap Tempo · transport
             duration_ms: 0
@@ -109,11 +105,7 @@ scenes:
         - scope:
             state: hide
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_tempo
             placement: right
             label: Eight copies of one coherent master timing signal
             duration_ms: 0
@@ -141,11 +133,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_divider_grid
             placement: right
             label: Divider Bank · eight related divisions
             duration_ms: 0
@@ -185,11 +173,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_top_bar
             placement: right
             label: Independent · channel 2 selected
             duration_ms: 0
@@ -199,11 +183,7 @@ scenes:
             narration: s16
             duration_ms: 1000
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_top_bar
             placement: right
             label: Clock channel
             duration_ms: 0
@@ -213,7 +193,7 @@ scenes:
             narration: s17
             duration_ms: 1400
         - focus:
-            target: oled_top_bar
+            target: oled_tempo
             placement: right
             label: Different musical rates · one master timeline
             duration_ms: 0
@@ -239,11 +219,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 12
-            width: 128
-            height: 42
+            target: oled_pattern_strip
             placement: right
             label: Euclid · hits distributed across a repeating pattern
             duration_ms: 0
@@ -298,11 +274,7 @@ scenes:
             detents: 3
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 24
-            width: 128
-            height: 36
+            target: oled_sequencer_editor
             placement: right
             label: Sequencer · gates on selected steps
             duration_ms: 0
@@ -331,11 +303,7 @@ scenes:
             name: STOP_BACK
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 0
-            width: 128
-            height: 64
+            target: oled_channel_grid
             placement: right
             label: Clock · Euclid · Sequencer side by side
             duration_ms: 0
@@ -404,27 +372,6 @@ scenes:
         Detailed workflows have their own named tutorials.
       narration: s33
       duration_ms: 1200
-  - text:
-      title: The overall idea
-      body: |
-        One Clock · Divider Bank · Independent
-        Clock · Euclid · Sequencer
-      narration: s34
-      duration_ms: 1600
-  - text:
-      title: Eight related rhythm channels
-      body: |
-        Clocks · divisions · polymeter · polyrhythm
-        Euclidean rhythms · gate sequencing
-      narration: s35
-      duration_ms: 1400
-  - text:
-      title: Why I am building CLOCK
-      body: |
-        The timing jobs I regularly need in my own rack,
-        without turning CLOCK into a general-purpose modulation module.
-      narration: s36
-      duration_ms: 1600
   - text:
       title: Thanks for watching
       body: |

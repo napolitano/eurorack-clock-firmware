@@ -48,11 +48,7 @@ scenes:
             detents: 1
         - encoder_push: {}
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_top_bar
             placement: right
             label: Independent topology is now active
             duration_ms: 0
@@ -70,11 +66,7 @@ scenes:
         - encoder_push: {}
         - wait_ms: 900
         - focus:
-            target: oled_region
-            x: 0
-            y: 30
-            width: 124
-            height: 10
+            target: oled_top_bar
             placement: right
             label: Channel 3 is the selected output
             duration_ms: 0

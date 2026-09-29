@@ -298,8 +298,19 @@ void drawOledRegionFocus(
         oledRaster.y + (focus.oledY * oledRaster.height) / 64,
         std::max(2, (focus.oledWidth * oledRaster.width) / 128),
         std::max(2, (focus.oledHeight * oledRaster.height) / 64)};
-    frame.strokeRect({region.x - 8, region.y - 8, region.width + 16, region.height + 16}, theme.accent, 8);
-    frame.strokeRect({region.x - 3, region.y - 3, region.width + 6, region.height + 6}, theme.focusForeground, 3);
+    const auto clampToOled = [&oledRaster](const TutorialRect rect) {
+        const int left = std::max(oledRaster.x, rect.x);
+        const int top = std::max(oledRaster.y, rect.y);
+        const int right = std::min(oledRaster.x + oledRaster.width, rect.x + rect.width);
+        const int bottom = std::min(oledRaster.y + oledRaster.height, rect.y + rect.height);
+        return TutorialRect{left, top, std::max(1, right - left), std::max(1, bottom - top)};
+    };
+    const TutorialRect accentRect = clampToOled(
+        {region.x - 8, region.y - 8, region.width + 16, region.height + 16});
+    const TutorialRect contrastRect = clampToOled(
+        {region.x - 3, region.y - 3, region.width + 6, region.height + 6});
+    frame.strokeRect(accentRect, theme.accent, 8);
+    frame.strokeRect(contrastRect, theme.focusForeground, 3);
     drawTutorialFocusArrow(frame, region, focus.label, theme, focus.placement);
 }
 

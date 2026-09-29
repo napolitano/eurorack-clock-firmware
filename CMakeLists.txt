@@ -99,6 +99,7 @@ add_library(clock-storybook-model STATIC
     sim/tutorial/story_model.cpp
     sim/tutorial/story_yaml.cpp
     sim/tutorial/story_parser.cpp
+    sim/tutorial/story_focus_regions.cpp
     sim/tutorial/story_validator.cpp
     sim/tutorial/interaction_profile_loader.cpp
     sim/tutorial/story_theme.cpp
