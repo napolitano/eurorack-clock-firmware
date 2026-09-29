@@ -52,6 +52,47 @@ int main() {
     const std::filesystem::path examplesRoot = tutorialRoot / "examples";
     bool ok = true;
 
+    // Regression for the real Performance-only Settings chord. Opening cards freeze
+    // firmware time, so tutorials must complete boot before TAP + encoder push.
+    const StoryParseResult settingsEntry = parseStoryText(R"YAML(
+schema: 1
+id: settings-entry-regression
+title: "Settings entry regression"
+language: en
+theme: south-signal-lab-default
+interaction_profile: HUMAN_FAST
+setup:
+  factory_reset: true
+  power: on
+scenes:
+  - tutorial:
+      actions:
+        - wait_ms: 1100
+        - button:
+            name: TAP
+            state: down
+        - encoder_push: {}
+        - button:
+            name: TAP
+            state: up
+        - encoder_push: {}
+)YAML");
+    ok &= require(static_cast<bool>(settingsEntry), "Settings-entry regression story must parse");
+    if (settingsEntry) {
+        const auto statePath = std::filesystem::path(".clock-storybook-settings-entry.bin");
+        std::filesystem::remove(statePath);
+        SimulatorRuntime runtime(statePath);
+        runtime.begin();
+        StorySimulatorPort port(runtime);
+        StoryRunner runner(port, tutorialRoot);
+        const StoryRunResult result = runner.run(*settingsEntry.story);
+        ok &= require(static_cast<bool>(result), "TAP + encoder push Settings gesture must execute after boot");
+        ok &= require(runtime.generalSettingsOpen(),
+                      "TAP + encoder push followed by encoder press must open General Settings");
+        runtime.flushPersistence();
+        std::filesystem::remove(statePath);
+    }
+
     for (const char* const filename : kExamples) {
         const StoryParseResult parsed = parseStoryFile(examplesRoot / filename);
         ok &= require(static_cast<bool>(parsed), std::string(filename) + " must parse");
