@@ -33,8 +33,11 @@ constexpr std::array<std::uint8_t, 5U> kCounterClockwisePhases{{3U, 2U, 0U, 1U, 
 
 }  // namespace
 
-SimulatorRuntime::SimulatorRuntime(std::filesystem::path persistencePath)
-    : persistence_(std::move(persistencePath)) {
+SimulatorRuntime::SimulatorRuntime(
+    std::filesystem::path persistencePath,
+    const bool automaticFileFlush)
+    : persistence_(std::move(persistencePath)),
+      automaticFileFlush_(automaticFileFlush) {
     initializeFactoryDefaults(poweredOffState_);
     poweredOffState_.transport = TransportState::Stopped;
 }
@@ -53,34 +56,40 @@ void SimulatorRuntime::advanceMicroseconds(std::uint64_t durationUs) {
         throw std::runtime_error("Scheduler period must be non-zero");
     }
 
-    while (durationUs >= schedulerPeriodUs) {
-        simfw::advanceMicroseconds(schedulerPeriodUs);
+    while (durationUs > 0ULL) {
+        const std::uint64_t untilSchedulerTick = schedulerPeriodUs - schedulerAccumulatorUs_;
+        const std::uint64_t stepUs = std::min(durationUs, untilSchedulerTick);
+
+        simfw::advanceMicroseconds(stepUs);
         serviceExternalSync();
         serviceExternalReset();
-        simfw::fireTimer();
-        durationUs -= schedulerPeriodUs;
-        foregroundAccumulatorUs_ += schedulerPeriodUs;
-        persistenceAccumulatorUs_ += schedulerPeriodUs;
+        durationUs -= stepUs;
+        schedulerAccumulatorUs_ += stepUs;
+        foregroundAccumulatorUs_ += stepUs;
+        persistenceAccumulatorUs_ += stepUs;
 
-        if (foregroundAccumulatorUs_ >= kForegroundPeriodUs) {
+        if (schedulerAccumulatorUs_ == schedulerPeriodUs) {
+            simfw::fireTimer();
+            schedulerAccumulatorUs_ = 0ULL;
+        }
+
+        while (foregroundAccumulatorUs_ >= kForegroundPeriodUs) {
             foregroundAccumulatorUs_ -= kForegroundPeriodUs;
             serviceEncoderSequence();
             serviceDeferredButtonReleases();
             application_->runOnce();
             serviceTransportTelemetry();
         }
-        if (persistenceAccumulatorUs_ >= kPersistenceFlushPeriodUs) {
-            persistenceAccumulatorUs_ -= kPersistenceFlushPeriodUs;
-            persistence_.flushIfChanged();
+        if (automaticFileFlush_) {
+            while (persistenceAccumulatorUs_ >= kPersistenceFlushPeriodUs) {
+                persistenceAccumulatorUs_ -= kPersistenceFlushPeriodUs;
+                persistence_.flushIfChanged();
+            }
+        } else if (persistenceAccumulatorUs_ >= kPersistenceFlushPeriodUs) {
+            // VCV keeps filesystem work off the real-time audio thread. Retain a
+            // bounded accumulator without performing any host file operation.
+            persistenceAccumulatorUs_ %= kPersistenceFlushPeriodUs;
         }
-    }
-
-    if (durationUs > 0ULL) {
-        simfw::advanceMicroseconds(durationUs);
-        serviceExternalSync();
-        serviceExternalReset();
-        foregroundAccumulatorUs_ += durationUs;
-        persistenceAccumulatorUs_ += durationUs;
     }
 
     collectGateTransitions();
@@ -121,7 +130,10 @@ void SimulatorRuntime::flushPersistence() {
 }
 
 std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes>
-SimulatorRuntime::persistenceImage() const {
+SimulatorRuntime::persistenceImage() {
+    if (poweredOn_ && application_ != nullptr) {
+        application_->flushPersistenceForSimulator();
+    }
     return persistence_.exportImage();
 }
 
@@ -230,6 +242,7 @@ void SimulatorRuntime::setPower(const bool powered) {
     poweredOn_ = true;
     telemetry_ = {};
     processedWriteCount_ = simfw::writes.size();
+    schedulerAccumulatorUs_ = 0ULL;
     foregroundAccumulatorUs_ = 0ULL;
     persistenceAccumulatorUs_ = 0ULL;
     pendingEncoderDetents_ = 0;

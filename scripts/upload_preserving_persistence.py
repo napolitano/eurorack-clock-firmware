@@ -33,7 +33,15 @@ DEFAULT_USB_ID = "0483:df11"
 PERSIST_A_ADDRESS = 0x08004000
 PERSIST_B_ADDRESS = 0x08008000
 LEGACY_EEPROM_ADDRESS = 0x08020000
-PERSIST_PAYLOAD_BYTES = 4096
+LEGACY_PERSIST_PAYLOAD_BYTES = 4096
+V1_PERSIST_PAYLOAD_BYTES = 8192
+CURRENT_PERSIST_PAYLOAD_BYTES = 12288
+SUPPORTED_PERSIST_PAYLOAD_BYTES = (
+    LEGACY_PERSIST_PAYLOAD_BYTES,
+    V1_PERSIST_PAYLOAD_BYTES,
+    CURRENT_PERSIST_PAYLOAD_BYTES,
+)
+PERSIST_PHYSICAL_SLOT_BYTES = 16 * 1024
 PERSIST_HEADER_BYTES = 32
 PERSIST_SLOT_MAGIC = 0x434C4B50
 PERSIST_FORMAT_VERSION = 1
@@ -94,16 +102,18 @@ def dfu_read_command(
 
 
 def build_slot_image(payload: bytes, generation: int = 1) -> bytes:
-    """Wrap one legacy logical image in the firmware's committed A/B slot format."""
-    if len(payload) != PERSIST_PAYLOAD_BYTES:
-        raise ValueError(f"Expected {PERSIST_PAYLOAD_BYTES} persistence bytes")
+    """Wrap one supported logical image in the firmware's committed A/B slot format."""
+    if len(payload) not in SUPPORTED_PERSIST_PAYLOAD_BYTES:
+        raise ValueError(
+            f"Unsupported persistence payload size {len(payload)}; "
+            f"expected one of {SUPPORTED_PERSIST_PAYLOAD_BYTES}")
     payload_crc = zlib.crc32(payload) & 0xFFFFFFFF
     first_five_words = struct.pack(
         "<IIIII",
         PERSIST_SLOT_MAGIC,
         PERSIST_FORMAT_VERSION,
         generation & 0xFFFFFFFF,
-        PERSIST_PAYLOAD_BYTES,
+        len(payload),
         payload_crc,
     )
     header_crc = zlib.crc32(first_five_words) & 0xFFFFFFFF
@@ -119,27 +129,30 @@ def build_slot_image(payload: bytes, generation: int = 1) -> bytes:
 
 
 def slot_image_is_valid(slot: bytes) -> bool:
-    """Validate one header+payload readback using the firmware's exact slot contract."""
-    if len(slot) < PERSIST_HEADER_BYTES + PERSIST_PAYLOAD_BYTES:
+    """Validate one committed A/B slot using the payload size declared in its header."""
+    if len(slot) < PERSIST_HEADER_BYTES:
         return False
     words = struct.unpack("<IIIIIIII", slot[:PERSIST_HEADER_BYTES])
     magic, version, _generation, payload_size, payload_crc, header_crc, _reserved, commit = words
     if (
         magic != PERSIST_SLOT_MAGIC
         or version != PERSIST_FORMAT_VERSION
-        or payload_size != PERSIST_PAYLOAD_BYTES
+        or payload_size not in SUPPORTED_PERSIST_PAYLOAD_BYTES
         or commit != PERSIST_COMMIT_MARKER
     ):
         return False
     if (zlib.crc32(slot[:20]) & 0xFFFFFFFF) != header_crc:
         return False
-    payload = slot[PERSIST_HEADER_BYTES:PERSIST_HEADER_BYTES + PERSIST_PAYLOAD_BYTES]
+    required_size = PERSIST_HEADER_BYTES + payload_size
+    if len(slot) < required_size:
+        return False
+    payload = slot[PERSIST_HEADER_BYTES:required_size]
     return (zlib.crc32(payload) & 0xFFFFFFFF) == payload_crc
 
 
 def legacy_payload_is_plausible(payload: bytes) -> bool:
     """Recognize the pre-A/B logical image without pretending arbitrary Flash is state."""
-    if len(payload) != PERSIST_PAYLOAD_BYTES or all(byte == 0xFF for byte in payload):
+    if len(payload) != LEGACY_PERSIST_PAYLOAD_BYTES or all(byte == 0xFF for byte in payload):
         return False
     record_magics = (b"CUR3", b"CUR4", b"PRE3", b"PRE4")
     return payload[:4] in record_magics or any(magic in payload for magic in record_magics[2:])
@@ -203,7 +216,7 @@ def main() -> int:
         # Existing A/B state wins. Only when both new slots are invalid do we
         # read the old 4-KiB logical image and seed slot A before sector 5 is
         # reused by the new application image.
-        slot_read_size = PERSIST_HEADER_BYTES + PERSIST_PAYLOAD_BYTES
+        slot_read_size = PERSIST_PHYSICAL_SLOT_BYTES
         run_checked(dfu_read_command(
             dfu_util, slot_a_readback, PERSIST_A_ADDRESS, slot_read_size, args.usb_id))
         run_checked(dfu_read_command(
@@ -217,7 +230,7 @@ def main() -> int:
                 dfu_util,
                 legacy_readback,
                 LEGACY_EEPROM_ADDRESS,
-                PERSIST_PAYLOAD_BYTES,
+                LEGACY_PERSIST_PAYLOAD_BYTES,
                 args.usb_id,
             ))
             legacy_payload = legacy_readback.read_bytes()

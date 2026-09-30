@@ -24,4 +24,30 @@ void ClockApplication::synchronizeDevicePreferences(const bool force) {
     devicePreferencesApplied_ = true;
 }
 
+std::uint32_t ClockApplication::translateExternalTapTimestampMs(
+    const std::uint32_t nowMs,
+    const std::uint32_t nowUs,
+    const std::uint32_t edgeTimestampUs) {
+    const std::uint32_t edgeAgeUs = nowUs - edgeTimestampUs;
+    return nowMs - edgeAgeUs / 1000U;
+}
+
+#ifdef CLOCK_HOST_TEST
+std::uint32_t ClockApplication::translateExternalTapTimestampMsForTest(
+    const std::uint32_t nowMs,
+    const std::uint32_t nowUs,
+    const std::uint32_t edgeTimestampUs) {
+    return translateExternalTapTimestampMs(nowMs, nowUs, edgeTimestampUs);
+}
+#endif
+
+#ifdef CLOCK_SIMULATOR
+void ClockApplication::flushPersistenceForSimulator() {
+    persistentState_.flushPendingForSimulator();
+    (void)customGrooveStore_.service(true);
+    (void)sequencerPatternStore_.flush();
+    (void)sequencerStepStore_.flush();
+}
+#endif
+
 }  // namespace clockfw::app

@@ -71,13 +71,17 @@ void PersistentStateService::service(
 
     bool currentRecordReady = writePending_ &&
         nowMs - pendingSinceMs_ >= config::kPersistenceCommitDelayMs;
-    if (pendingPresetWrite_) {
+    bool anyPendingPreset = false;
+    for (const bool pending : pendingPresetWrites_) {
+        anyPendingPreset = anyPendingPreset || pending;
+    }
+    if (anyPendingPreset) {
         // An explicit user save is already a synchronization point. Include a
         // pending CURRENT record in the same whole-sector Flash commit rather
         // than causing a second erase/program cycle a few seconds later.
         currentRecordReady = writePending_;
     }
-    if (!currentRecordReady && !pendingPresetWrite_) {
+    if (!currentRecordReady && !anyPendingPreset) {
         return;
     }
 
@@ -92,11 +96,19 @@ void PersistentStateService::service(
         staged = storage_.stageBytes(
             kCurrentRecordOffset, currentRecord.data(), currentRecord.size());
     }
-    if (staged && pendingPresetWrite_) {
-        staged = storage_.stageBytes(
-            presetOffset(pendingPresetSlot_),
-            pendingPresetRecord_.data(),
-            pendingPresetRecord_.size());
+    if (staged) {
+        for (std::uint8_t slotIndex = 0U; slotIndex < kUserPresetSlotCount; ++slotIndex) {
+            if (!pendingPresetWrites_[slotIndex]) {
+                continue;
+            }
+            staged = storage_.stageBytes(
+                presetOffset(slotIndex),
+                pendingPresetRecords_[slotIndex].data(),
+                pendingPresetRecords_[slotIndex].size());
+            if (!staged) {
+                break;
+            }
+        }
     }
 
     if (!staged || !storage_.commitUpdate()) {
@@ -110,18 +122,30 @@ void PersistentStateService::service(
         hasStoredCurrentState_ = true;
         writePending_ = false;
     }
-    if (pendingPresetWrite_) {
-        presetValid_[pendingPresetSlot_] = pendingPresetWillExist_;
-        presetNames_[pendingPresetSlot_].fill('\0');
-        if (pendingPresetWillExist_) {
-            std::copy_n(
-                pendingPresetName_.begin(),
-                kPresetNameLength,
-                presetNames_[pendingPresetSlot_].begin());
+    for (std::uint8_t slotIndex = 0U; slotIndex < kUserPresetSlotCount; ++slotIndex) {
+        if (!pendingPresetWrites_[slotIndex]) {
+            continue;
         }
-        pendingPresetWrite_ = false;
+        presetValid_[slotIndex] = pendingPresetWillExist_[slotIndex];
+        presetNames_[slotIndex].fill('\0');
+        if (pendingPresetWillExist_[slotIndex]) {
+            std::copy_n(
+                pendingPresetNames_[slotIndex].begin(),
+                kPresetNameLength,
+                presetNames_[slotIndex].begin());
+        }
+        pendingPresetWrites_[slotIndex] = false;
     }
 }
+
+
+#ifdef CLOCK_SIMULATOR
+void PersistentStateService::flushPendingForSimulator() {
+    const std::uint32_t forcedNowMs =
+        pendingSinceMs_ + static_cast<std::uint32_t>(config::kPersistenceCommitDelayMs);
+    service(forcedNowMs, true);
+}
+#endif
 
 bool PersistentStateService::hasStoredCurrentState() const {
     return hasStoredCurrentState_;
@@ -143,15 +167,14 @@ bool PersistentStateService::savePreset(
         return false;
     }
 
-    pendingPresetRecord_ = serializePresetRecord(name, state);
-    pendingPresetSlot_ = slotIndex;
-    pendingPresetWillExist_ = true;
-    pendingPresetWrite_ = true;
+    pendingPresetRecords_[slotIndex] = serializePresetRecord(name, state);
+    pendingPresetWillExist_[slotIndex] = true;
+    pendingPresetWrites_[slotIndex] = true;
 
     char normalizedName[kPresetNameLength + 1U]{};
     normalizePresetName(name, normalizedName);
-    pendingPresetName_.fill('\0');
-    std::copy_n(normalizedName, kPresetNameLength, pendingPresetName_.begin());
+    pendingPresetNames_[slotIndex].fill('\0');
+    std::copy_n(normalizedName, kPresetNameLength, pendingPresetNames_[slotIndex].begin());
     return true;
 }
 
@@ -163,8 +186,8 @@ bool PersistentStateService::loadPreset(
     }
 
     std::array<std::uint8_t, kPresetRecordSize> record{};
-    if (pendingPresetWrite_ && pendingPresetSlot_ == slotIndex) {
-        record = pendingPresetRecord_;
+    if (pendingPresetWrites_[slotIndex]) {
+        record = pendingPresetRecords_[slotIndex];
     } else if (!storage_.readBytes(presetOffset(slotIndex), record.data(), record.size())) {
         return false;
     }
@@ -192,8 +215,8 @@ bool PersistentStateService::renamePreset(
     }
 
     std::array<std::uint8_t, kPresetRecordSize> record{};
-    if (pendingPresetWrite_ && pendingPresetSlot_ == slotIndex) {
-        record = pendingPresetRecord_;
+    if (pendingPresetWrites_[slotIndex]) {
+        record = pendingPresetRecords_[slotIndex];
     } else if (!storage_.readBytes(presetOffset(slotIndex), record.data(), record.size())) {
         return false;
     }
@@ -211,11 +234,10 @@ bool PersistentStateService::clearPreset(const std::uint8_t slotIndex) {
         return false;
     }
 
-    pendingPresetRecord_.fill(0xFFU);
-    pendingPresetName_.fill('\0');
-    pendingPresetSlot_ = slotIndex;
-    pendingPresetWillExist_ = false;
-    pendingPresetWrite_ = true;
+    pendingPresetRecords_[slotIndex].fill(0xFFU);
+    pendingPresetNames_[slotIndex].fill('\0');
+    pendingPresetWillExist_[slotIndex] = false;
+    pendingPresetWrites_[slotIndex] = true;
     return true;
 }
 
@@ -223,8 +245,8 @@ bool PersistentStateService::presetExists(const std::uint8_t slotIndex) const {
     if (slotIndex >= kUserPresetSlotCount) {
         return false;
     }
-    if (pendingPresetWrite_ && pendingPresetSlot_ == slotIndex) {
-        return pendingPresetWillExist_;
+    if (pendingPresetWrites_[slotIndex]) {
+        return pendingPresetWillExist_[slotIndex];
     }
     return presetValid_[slotIndex];
 }
@@ -241,9 +263,9 @@ void PersistentStateService::presetName(
         return;
     }
 
-    if (pendingPresetWrite_ && pendingPresetSlot_ == slotIndex) {
+    if (pendingPresetWrites_[slotIndex]) {
         const std::size_t copyLength = std::min(kPresetNameLength, destinationSize - 1U);
-        std::copy_n(pendingPresetName_.data(), copyLength, destination);
+        std::copy_n(pendingPresetNames_[slotIndex].data(), copyLength, destination);
         destination[copyLength] = '\0';
         std::size_t end = std::strlen(destination);
         while (end > 0U && destination[end - 1U] == ' ') {

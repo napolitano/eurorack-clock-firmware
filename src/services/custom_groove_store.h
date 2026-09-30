@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 
@@ -45,6 +46,9 @@ public:
     /** @brief Erases one slot back to the Flash-erased representation. */
     bool clear(std::uint8_t slotIndex);
 
+    /** @brief Commits all staged groove mutations once Flash writes are timing-safe. */
+    bool service(bool allowFlashWrite);
+
     /** @brief Returns true when a slot contains one valid current-format record. */
     bool exists(std::uint8_t slotIndex) const;
 
@@ -62,6 +66,8 @@ private:
     static void normalizeName(const char* source, char* destination);
 
     hal::PersistentStorage& storage_;
+    std::array<std::array<std::uint8_t, kRecordBytes>, kCustomGrooveSlotCount> pendingRecords_{};
+    std::array<bool, kCustomGrooveSlotCount> pendingWrites_{};
 };
 
 static_assert(

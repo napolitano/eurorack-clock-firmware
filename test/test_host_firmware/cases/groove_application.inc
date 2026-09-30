@@ -183,7 +183,10 @@ void testCustomGrooveEditorControllerWorkflow() {
     CHECK_EQ(controller.navigation().settingsPage, ui::SettingsPage::Groove);
 
     // Rename an occupied Custom Groove from the normal Groove page. The name
-    // editor reuses the existing name rather than generating a new one.
+    // editor reuses the existing name rather than generating a new one. The UI
+    // accepts the mutation into RAM immediately; durable Flash commit is serviced
+    // separately once transport timing allows it.
+    CHECK(grooveStore.service(true));
     char nameBeforeRename[services::CustomGrooveStore::kNameLength + 1U]{};
     grooveStore.name(0U, nameBeforeRename, sizeof(nameBeforeRename));
     controllerTurn(controller, 2, now); // RENAME
@@ -194,14 +197,19 @@ void testCustomGrooveEditorControllerWorkflow() {
     CHECK_EQ(controller.navigation().grooveSlotAction, ui::GrooveSlotAction::Rename);
     CHECK(controller.navigation().grooveNameBuffer[0] == nameBeforeRename[0]);
     controllerTurn(controller, 1, now);
-    hal::PersistentStorage::powerLossBeforeCommitForTest();
-    controllerLongPress(controller, now);
-    CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveNameEntry);
-    char nameAfterFailedRename[services::CustomGrooveStore::kNameLength + 1U]{};
-    grooveStore.name(0U, nameAfterFailedRename, sizeof(nameAfterFailedRename));
-    CHECK(std::strcmp(nameBeforeRename, nameAfterFailedRename) == 0);
     controllerLongPress(controller, now);
     CHECK_EQ(controller.navigation().screen, ui::Screen::GrooveSlots);
+    char pendingRenamed[services::CustomGrooveStore::kNameLength + 1U]{};
+    grooveStore.name(0U, pendingRenamed, sizeof(pendingRenamed));
+    CHECK(std::strcmp(nameBeforeRename, pendingRenamed) != 0);
+
+    hal::PersistentStorage::powerLossBeforeCommitForTest();
+    CHECK(!grooveStore.service(true));
+    services::CustomGrooveStore durableAfterFailedRename(storage);
+    char durableName[services::CustomGrooveStore::kNameLength + 1U]{};
+    durableAfterFailedRename.name(0U, durableName, sizeof(durableName));
+    CHECK(std::strcmp(nameBeforeRename, durableName) == 0);
+    CHECK(grooveStore.service(true));
     char nameAfterRename[services::CustomGrooveStore::kNameLength + 1U]{};
     grooveStore.name(0U, nameAfterRename, sizeof(nameAfterRename));
     CHECK(std::strcmp(nameBeforeRename, nameAfterRename) != 0);
@@ -430,6 +438,25 @@ void testCustomGrooveRecorderControllerWorkflow() {
     CHECK_EQ(controller.navigation().grooveDraft.offsets256[1], capturedDraft.offsets256[1]);
 }
 
+
+void testExternalTapTimestampTranslationSurvivesMicrosecondWrap() {
+    constexpr std::uint32_t edgeBeforeWrapUs = 0xFFFFF000U;
+    constexpr std::uint32_t nowAfterWrapUs = 0x00001000U;
+    constexpr std::uint32_t ageUs = nowAfterWrapUs - edgeBeforeWrapUs;
+    static_assert(ageUs == 8192U);
+
+    const std::uint32_t nowMs = 4'304'000U;
+    const std::uint32_t translated = app::ClockApplication::translateExternalTapTimestampMsForTest(
+        nowMs, nowAfterWrapUs, edgeBeforeWrapUs);
+    CHECK_EQ(translated, nowMs - ageUs / 1000U);
+
+    // A fresh post-wrap edge must map close to the current millisecond epoch,
+    // not to the ~0..4,295,000 ms epoch produced by raw edgeUs/1000 truncation.
+    const std::uint32_t recentEdgeUs = nowAfterWrapUs - 500'000U;
+    const std::uint32_t recent = app::ClockApplication::translateExternalTapTimestampMsForTest(
+        nowMs, nowAfterWrapUs, recentEdgeUs);
+    CHECK_EQ(recent, nowMs - 500U);
+}
 
 void testApplicationAndEntryPoints() {
 #if !CLOCK_DISPLAY_USE_SPI

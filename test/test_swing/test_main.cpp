@@ -296,6 +296,60 @@ void testCustomGrooveSignedExtremesRemainMonotonicWithSwing() {
     }
 }
 
+void testCustomGrooveGateLimiterPreservesCloselySpacedRisingEdges() {
+    ClockState state{};
+    initializeFactoryDefaults(state);
+    state.operatingMode = OperatingMode::Independent;
+    state.source = ClockSource::Internal;
+    state.bpm = 120U;
+    for (auto& configuredChannel : state.channels) {
+        configuredChannel.common.mode = ChannelMode::Off;
+    }
+    auto& channel = state.channels[0];
+    channel.common.mode = ChannelMode::Clock;
+    channel.common.rate = {ClockRatioMode::Multiply, 1U, 1U, 1U};
+    channel.common.swingPercent = 0U;
+    channel.common.groove = {GroovePreset::Custom, 100U, 0U, 0U};
+    channel.common.gateLengthMs = 100U;
+    channel.common.probabilityPercent = 100U;
+
+    CustomGroovePattern pattern{};
+    pattern.length = 2U;
+    pattern.offsets256[0] = -120;
+    pattern.offsets256[1] = 120;
+
+    hal::GateOutputDriver gates;
+    gates.beginDisabled();
+    gates.enableOutputStage();
+    engine::ClockEngine engine(gates);
+    engine.updateCustomGrooveSlot(0U, pattern, false);
+    engine.begin(state);
+    engine.play();
+
+    std::vector<std::uint32_t> risingTicks{};
+    for (std::uint32_t tick = 0U; tick < 50000U && risingTicks.size() < 5U; ++tick) {
+        fakefw::writes.clear();
+        engine.processSchedulerTick();
+        const bool rose = std::any_of(
+            fakefw::writes.begin(), fakefw::writes.end(), [](const fakefw::PinWrite& write) {
+                return write.pin == pinmap::kGateChannelPins[0] && write.value == HIGH;
+            });
+        if (rose) {
+            risingTicks.push_back(tick);
+        }
+    }
+
+    TEST_ASSERT_TRUE(risingTicks.size() >= 4U);
+    bool foundCompressedPair = false;
+    for (std::size_t index = 1U; index < risingTicks.size(); ++index) {
+        const std::uint32_t deltaTicks = risingTicks[index] - risingTicks[index - 1U];
+        if (deltaTicks < 2000U) { // <100 ms at 50 us/tick: a pair the old limiter merged.
+            foundCompressedPair = true;
+        }
+    }
+    TEST_ASSERT_TRUE(foundCompressedPair);
+}
+
 void testCustomGroovePreviewCanBeAppliedAndClearedWithoutStateMutation() {
     ClockState state{};
     initializeFactoryDefaults(state);
@@ -665,6 +719,7 @@ int main() {
     RUN_TEST(testCustomGrooveLookupSupportsSignedOffsetsAmountAndRotation);
     RUN_TEST(testCustomGrooveRejectsInvalidLengthAndOffset);
     RUN_TEST(testCustomGrooveSignedExtremesRemainMonotonicWithSwing);
+    RUN_TEST(testCustomGrooveGateLimiterPreservesCloselySpacedRisingEdges);
     RUN_TEST(testCustomGroovePreviewCanBeAppliedAndClearedWithoutStateMutation);
     RUN_TEST(testCustomGrooveLookupSweepsAllLengthsStepsAndAmounts);
     RUN_TEST(testCustomGrooveEngineMatrixAcrossBpmRatesGridsAndAmounts);

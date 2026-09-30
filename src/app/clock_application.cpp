@@ -183,9 +183,10 @@ void ClockApplication::runOnce() {
 
     std::uint32_t externalTapTimestampUs = 0U;
     if (externalSyncController_.consumeTapRequest(externalTapTimestampUs)) {
-        uiController_.registerExternalTapTempo(externalTapTimestampUs / 1000U);
+        const std::uint32_t nowUs = hal::SystemClock::microseconds();
+        uiController_.registerExternalTapTempo(
+            translateExternalTapTimestampMs(nowMs, nowUs, externalTapTimestampUs));
     }
-
     const hal::ControlSample controls = controlPanel_.sample(nowMs);
     const TransportState transportBeforeControls = state_.transport;
     uiController_.processControls(controls, nowMs, hal::SystemClock::microseconds());
@@ -207,6 +208,7 @@ void ClockApplication::runOnce() {
     // queued CURRENT/preset writes are flushed once transport is PAUSED/STOPPED.
     const bool allowFlashWrite = state_.transport != TransportState::Playing;
     persistentState_.service(nowMs, allowFlashWrite);
+    (void)customGrooveStore_.service(allowFlashWrite);
     (void)sequencerPatternStore_.service(nowMs, allowFlashWrite);
     (void)sequencerStepStore_.service(nowMs, allowFlashWrite);
 }

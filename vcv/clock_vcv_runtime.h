@@ -75,7 +75,7 @@ public:
     const std::array<std::uint8_t, hal::OledDisplay::kFramebufferSize>& framebuffer() const;
 
     /** @brief Exports CLOCK's complete logical persistent image for Rack patch storage. */
-    std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> persistenceImage() const;
+    std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> persistenceImage();
 
     /** @brief Restores CLOCK's complete logical persistent image and reboots from it. */
     void restorePersistenceImage(

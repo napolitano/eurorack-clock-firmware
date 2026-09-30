@@ -15,7 +15,7 @@
 namespace clockfw::vcv {
 
 ClockVcvRuntime::ClockVcvRuntime(std::filesystem::path persistencePath)
-    : runtime_(std::move(persistencePath)) {}
+    : runtime_(std::move(persistencePath), false) {}
 
 void ClockVcvRuntime::begin() {
     runtime_.begin();
@@ -157,7 +157,7 @@ ClockVcvRuntime::framebuffer() const {
 }
 
 std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes>
-ClockVcvRuntime::persistenceImage() const {
+ClockVcvRuntime::persistenceImage() {
     return runtime_.persistenceImage();
 }
 

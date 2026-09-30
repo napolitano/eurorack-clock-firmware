@@ -96,9 +96,9 @@ class PersistenceUploadTests(unittest.TestCase):
         self.assertIn("-U", command)
 
     def test_slot_wrapper_matches_firmware_validation_contract(self) -> None:
-        payload = b"CUR4" + (b"\xFF" * (UPLOAD.PERSIST_PAYLOAD_BYTES - 4))
+        payload = b"CUR4" + (b"\xFF" * (UPLOAD.LEGACY_PERSIST_PAYLOAD_BYTES - 4))
         image = UPLOAD.build_slot_image(payload, generation=7)
-        self.assertEqual(len(image), UPLOAD.PERSIST_HEADER_BYTES + UPLOAD.PERSIST_PAYLOAD_BYTES)
+        self.assertEqual(len(image), UPLOAD.PERSIST_HEADER_BYTES + UPLOAD.LEGACY_PERSIST_PAYLOAD_BYTES)
         self.assertTrue(UPLOAD.slot_image_is_valid(image))
         corrupted = bytearray(image)
         corrupted[-1] ^= 1
@@ -107,10 +107,29 @@ class PersistenceUploadTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             UPLOAD.build_slot_image(b"short")
 
+    def test_current_and_historical_slot_sizes_validate_from_header(self) -> None:
+        for payload_size in UPLOAD.SUPPORTED_PERSIST_PAYLOAD_BYTES:
+            with self.subTest(payload_size=payload_size):
+                payload = b"CUR4" + (b"\xA5" * (payload_size - 4))
+                image = UPLOAD.build_slot_image(payload, generation=11)
+                self.assertEqual(len(image), UPLOAD.PERSIST_HEADER_BYTES + payload_size)
+                self.assertTrue(UPLOAD.slot_image_is_valid(image))
+                self.assertFalse(UPLOAD.slot_image_is_valid(image[:-1]))
+
+        unsupported = b"CUR4" + (b"\x00" * (6144 - 4))
+        with self.assertRaises(ValueError):
+            UPLOAD.build_slot_image(unsupported)
+
+    def test_full_slot_read_size_covers_current_payload(self) -> None:
+        self.assertGreaterEqual(
+            UPLOAD.PERSIST_PHYSICAL_SLOT_BYTES,
+            UPLOAD.PERSIST_HEADER_BYTES + UPLOAD.CURRENT_PERSIST_PAYLOAD_BYTES,
+        )
+
     def test_legacy_detection_rejects_blank_or_application_bytes(self) -> None:
-        blank = b"\xFF" * UPLOAD.PERSIST_PAYLOAD_BYTES
-        app = b"APP!" + (b"\x00" * (UPLOAD.PERSIST_PAYLOAD_BYTES - 4))
-        current = b"CUR4" + (b"\xFF" * (UPLOAD.PERSIST_PAYLOAD_BYTES - 4))
+        blank = b"\xFF" * UPLOAD.LEGACY_PERSIST_PAYLOAD_BYTES
+        app = b"APP!" + (b"\x00" * (UPLOAD.LEGACY_PERSIST_PAYLOAD_BYTES - 4))
+        current = b"CUR4" + (b"\xFF" * (UPLOAD.LEGACY_PERSIST_PAYLOAD_BYTES - 4))
         preset = bytearray(blank)
         preset[128:132] = b"PRE3"
         self.assertFalse(UPLOAD.legacy_payload_is_plausible(blank))

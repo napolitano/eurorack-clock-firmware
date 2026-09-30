@@ -67,8 +67,12 @@ bool CustomGrooveStore::load(
         return false;
     }
     std::array<std::uint8_t, kRecordBytes> record{};
-    if (!storage_.readBytes(slotOffset(slotIndex), record.data(), record.size()) ||
-        read32(record.data()) != kMagic || record[4] != kVersion ||
+    if (pendingWrites_[slotIndex]) {
+        record = pendingRecords_[slotIndex];
+    } else if (!storage_.readBytes(slotOffset(slotIndex), record.data(), record.size())) {
+        return false;
+    }
+    if (read32(record.data()) != kMagic || record[4] != kVersion ||
         read32(record.data() + kCrcOffset) != calculateCrc32(record.data(), kCrcOffset)) {
         return false;
     }
@@ -125,16 +129,53 @@ bool CustomGrooveStore::save(
         record[kOffsetsOffset + index] = static_cast<std::uint8_t>(pattern.offsets256[index]);
     }
     write32(record.data() + kCrcOffset, calculateCrc32(record.data(), kCrcOffset));
-    return storage_.writeBytes(slotOffset(slotIndex), record.data(), record.size());
+    pendingRecords_[slotIndex] = record;
+    pendingWrites_[slotIndex] = true;
+    return true;
 }
 
 bool CustomGrooveStore::clear(const std::uint8_t slotIndex) {
     if (slotIndex >= kCustomGrooveSlotCount) {
         return false;
     }
-    std::array<std::uint8_t, kRecordBytes> erased{};
+    auto& erased = pendingRecords_[slotIndex];
     erased.fill(0xFFU);
-    return storage_.writeBytes(slotOffset(slotIndex), erased.data(), erased.size());
+    pendingWrites_[slotIndex] = true;
+    return true;
+}
+
+bool CustomGrooveStore::service(const bool allowFlashWrite) {
+    if (!allowFlashWrite) {
+        return true;
+    }
+    bool anyPending = false;
+    for (const bool pending : pendingWrites_) {
+        anyPending = anyPending || pending;
+    }
+    if (!anyPending) {
+        return true;
+    }
+    if (!storage_.beginUpdate()) {
+        return false;
+    }
+    for (std::uint8_t slotIndex = 0U; slotIndex < kCustomGrooveSlotCount; ++slotIndex) {
+        if (!pendingWrites_[slotIndex]) {
+            continue;
+        }
+        if (!storage_.stageBytes(
+                slotOffset(slotIndex),
+                pendingRecords_[slotIndex].data(),
+                pendingRecords_[slotIndex].size())) {
+            storage_.cancelUpdate();
+            return false;
+        }
+    }
+    if (!storage_.commitUpdate()) {
+        storage_.cancelUpdate();
+        return false;
+    }
+    pendingWrites_.fill(false);
+    return true;
 }
 
 bool CustomGrooveStore::exists(const std::uint8_t slotIndex) const {

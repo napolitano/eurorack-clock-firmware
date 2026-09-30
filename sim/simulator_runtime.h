@@ -83,7 +83,9 @@ struct ResetInputTelemetry {
 class SimulatorRuntime final {
 public:
     /** @brief Constructs the simulator using one durable host-state file. */
-    explicit SimulatorRuntime(std::filesystem::path persistencePath);
+    explicit SimulatorRuntime(
+        std::filesystem::path persistencePath,
+        bool automaticFileFlush = true);
 
     /** @brief Loads persisted state and powers the simulated module on. */
     void begin();
@@ -194,7 +196,7 @@ public:
     void setExternalResetInput(bool connected, bool high);
 
     /** @brief Exports the complete logical persistence image for embedding in a host patch. */
-    std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> persistenceImage() const;
+    std::array<std::uint8_t, hal::PersistentStorage::kCapacityBytes> persistenceImage();
 
     /** @brief Replaces the logical persistence image and reboots from it like real power-up. */
     void restorePersistenceImage(
@@ -243,6 +245,7 @@ private:
     std::array<std::uint8_t, hal::OledDisplay::kFramebufferSize> poweredOffFramebuffer_{};
     std::array<ChannelTelemetry, kChannelCount> telemetry_{};
     std::size_t processedWriteCount_ = 0U;
+    std::uint64_t schedulerAccumulatorUs_ = 0ULL;
     std::uint64_t foregroundAccumulatorUs_ = 0ULL;
     std::uint64_t persistenceAccumulatorUs_ = 0ULL;
     int pendingEncoderDetents_ = 0;
@@ -253,6 +256,7 @@ private:
     std::array<bool, 4U> deferredButtonRelease_{};
     std::array<bool, 4U> buttonPressed_{};
     bool poweredOn_ = false;
+    bool automaticFileFlush_ = true;
 
     bool syncCableConnected_ = false;
     bool syncGeneratorRunning_ = false;

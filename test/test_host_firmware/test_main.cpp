@@ -567,8 +567,10 @@ int main() {
     RUN_TEST(testDefaultsTemplatesAndServices);
     RUN_TEST(testPersistentLayoutV1ForwardCompatibilityContract);
     RUN_TEST(testCustomGrooveStorePreservesRegionsAndRejectsCorruption);
+    RUN_TEST(testCustomGrooveMutationsDeferPhysicalFlashCommit);
     RUN_TEST(testPersistentStorageTransactionalUpdate);
     RUN_TEST(testPersistentStorageAndStateService);
+    RUN_TEST(testMultipleDeferredPresetMutationsSurviveUntilCommit);
     RUN_TEST(testPersistentV3Migration);
     RUN_TEST(testPersistentStateValidationBoundaries);
     RUN_TEST(testMenuModelAndFormatters);
@@ -601,6 +603,7 @@ int main() {
     RUN_TEST(testUiControllerFlows);
     RUN_TEST(testHighScoreResetAppearsAfterStartAndClearsSafely);
     RUN_TEST(testEasterEggGameAndHighScore);
+    RUN_TEST(testExternalTapTimestampTranslationSurvivesMicrosecondWrap);
     RUN_TEST(testApplicationAndEntryPoints);
     std::cout << "Host firmware assertions: " << gChecks << "\n";
     return UNITY_END();

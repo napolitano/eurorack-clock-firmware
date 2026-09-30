@@ -28,10 +28,14 @@ bool PersistentStateService::factoryReset(const ClockState& factoryState) {
     persistedTransportPreference_ = factoryState.transport;
     hasStoredCurrentState_ = true;
     writePending_ = false;
-    pendingPresetWrite_ = false;
-    pendingPresetWillExist_ = false;
-    pendingPresetName_.fill('\0');
-    pendingPresetRecord_.fill(0xFFU);
+    pendingPresetWrites_.fill(false);
+    pendingPresetWillExist_.fill(false);
+    for (auto& pendingName : pendingPresetNames_) {
+        pendingName.fill('\0');
+    }
+    for (auto& pendingRecord : pendingPresetRecords_) {
+        pendingRecord.fill(0xFFU);
+    }
     for (std::size_t slot = 0U; slot < kUserPresetSlotCount; ++slot) {
         presetValid_[slot] = false;
         presetNames_[slot].fill('\0');

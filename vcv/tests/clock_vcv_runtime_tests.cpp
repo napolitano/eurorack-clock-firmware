@@ -187,6 +187,48 @@ void assertRegularOneClockGates(const double sampleRate, const char* suffix) {
     std::filesystem::remove(statePath, ignored);
 }
 
+void assertVcvPersistenceStaysOffAudioThreadAndSnapshotsLiveState(const double sampleRate) {
+    const auto statePath = std::filesystem::temp_directory_path() /
+        "ssl-clock-vcv-realtime-persistence-test.bin";
+    std::error_code ignored;
+    std::filesystem::remove(statePath, ignored);
+
+    clockfw::vcv::ClockVcvRuntime runtime(statePath);
+    runtime.begin();
+    advance(runtime, 1.100, sampleRate);
+
+    // A normal live edit schedules firmware persistence. More than the simulator's
+    // historical 500-ms mirror period must still perform no filesystem write from processSample().
+    runtime.rotateEncoder(5);
+    advance(runtime, 4.000, sampleRate);
+    assert(!std::filesystem::exists(statePath));
+
+    // Rack serialization must include the accepted live state even though hardware-style
+    // persistence would still be deferred/coalesced. Exporting the in-memory NVM snapshot
+    // must not create the simulator mirror file either.
+    const auto edited = runtime.persistenceImage();
+    assert(!std::filesystem::exists(statePath));
+
+    clockfw::vcv::ClockVcvRuntime baselineRuntime(
+        std::filesystem::temp_directory_path() / "ssl-clock-vcv-realtime-baseline.bin");
+    const auto baselinePath = std::filesystem::temp_directory_path() /
+        "ssl-clock-vcv-realtime-baseline.bin";
+    std::filesystem::remove(baselinePath, ignored);
+    baselineRuntime.begin();
+    advance(baselineRuntime, 1.100, sampleRate);
+    const auto baseline = baselineRuntime.persistenceImage();
+    assert(edited != baseline);
+    assert(!std::filesystem::exists(baselinePath));
+
+    // Restoring the exported Rack image must reproduce the exact logical NVM snapshot.
+    runtime.restorePersistenceImage(edited);
+    advance(runtime, 1.100, sampleRate);
+    assert(runtime.persistenceImage() == edited);
+
+    std::filesystem::remove(statePath, ignored);
+    std::filesystem::remove(baselinePath, ignored);
+}
+
 }  // namespace
 
 int main() {
@@ -200,6 +242,7 @@ int main() {
     assertSwingOneClockGates(44100.0, "44100");
     assertSwingOneClockGates(48000.0, "48000");
     assertSwingOneClockGates(96000.0, "96000");
+    assertVcvPersistenceStaysOffAudioThreadAndSnapshotsLiveState(kSampleRate);
     const auto statePath = std::filesystem::temp_directory_path() / "ssl-clock-vcv-runtime-test.bin";
     std::error_code ignored;
     std::filesystem::remove(statePath, ignored);

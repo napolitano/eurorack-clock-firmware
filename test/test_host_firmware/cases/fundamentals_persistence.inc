@@ -162,6 +162,7 @@ void testCustomGrooveStorePreservesRegionsAndRejectsCorruption() {
     }
     CHECK(store.save(0U, "DEEP POCKET", source));
     CHECK(store.save(kCustomGrooveSlotCount - 1U, "LAST SLOT", source));
+    CHECK(store.service(true));
     CHECK(store.exists(0U));
     CHECK(!store.exists(kCustomGrooveSlotCount));
 
@@ -197,6 +198,7 @@ void testCustomGrooveStorePreservesRegionsAndRejectsCorruption() {
     shortPattern.length = 4U;
     shortPattern.offsets256[1] = 32;
     CHECK(store.save(1U, nullptr, shortPattern));
+    CHECK(store.service(true));
     char tinyName[3]{'X','X','\0'};
     CHECK(store.load(1U, restored, tinyName, sizeof(tinyName)));
     CHECK_EQ(tinyName[2], '\0');
@@ -206,6 +208,7 @@ void testCustomGrooveStorePreservesRegionsAndRejectsCorruption() {
     CHECK_EQ(emptyName[0], '\0');
 
     CHECK(store.save(2U, "A\x01" "B", shortPattern));
+    CHECK(store.service(true));
     char normalized[services::CustomGrooveStore::kNameLength + 1U]{};
     CHECK(store.load(2U, restored, normalized, sizeof(normalized)));
     CHECK(normalized[1] == ' ');
@@ -218,22 +221,78 @@ void testCustomGrooveStorePreservesRegionsAndRejectsCorruption() {
                              raw.data(), raw.size()));
     CHECK(!store.load(2U, restored));
 
-    // Rename and delete are each one A/B image commit. A simulated power loss
-    // before COMMIT must leave the previous generation fully readable.
+    // Accepted mutations stay visible in RAM while the A/B commit is deferred.
+    // A simulated power loss before COMMIT must still leave the previous durable
+    // generation readable from a fresh store, and the pending mutation retryable.
     CHECK(store.save(3U, "OLD NAME", shortPattern));
+    CHECK(store.service(true));
+    CHECK(store.save(3U, "NEW NAME", shortPattern));
     hal::PersistentStorage::powerLossBeforeCommitForTest();
-    CHECK(!store.save(3U, "NEW NAME", shortPattern));
+    CHECK(!store.service(true));
+    char pendingName[services::CustomGrooveStore::kNameLength + 1U]{};
+    store.name(3U, pendingName, sizeof(pendingName));
+    CHECK(std::strcmp(pendingName, "NEW NAME") == 0);
+    services::CustomGrooveStore durableAfterFailedRename(storage);
     char preservedName[services::CustomGrooveStore::kNameLength + 1U]{};
-    store.name(3U, preservedName, sizeof(preservedName));
+    durableAfterFailedRename.name(3U, preservedName, sizeof(preservedName));
     CHECK(std::strcmp(preservedName, "OLD NAME") == 0);
+    CHECK(store.service(true));
+
+    CHECK(store.clear(3U));
     hal::PersistentStorage::powerLossBeforeCommitForTest();
-    CHECK(!store.clear(3U));
-    CHECK(store.exists(3U));
-    store.name(3U, preservedName, sizeof(preservedName));
-    CHECK(std::strcmp(preservedName, "OLD NAME") == 0);
+    CHECK(!store.service(true));
+    services::CustomGrooveStore durableAfterFailedClear(storage);
+    CHECK(durableAfterFailedClear.exists(3U));
+    CHECK(store.service(true));
+    CHECK(!store.exists(3U));
 
     CHECK(store.clear(1U));
     CHECK(!store.exists(1U));
+}
+
+void testCustomGrooveMutationsDeferPhysicalFlashCommit() {
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    services::CustomGrooveStore store(storage);
+
+    CustomGroovePattern first{};
+    first.length = 2U;
+    first.offsets256[0] = -32;
+    first.offsets256[1] = 32;
+    CustomGroovePattern second = first;
+    second.offsets256[0] = -64;
+    second.offsets256[1] = 64;
+
+    CHECK(store.save(0U, "FIRST", first));
+    CHECK(store.save(1U, "SECOND", second));
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 0U);
+    CHECK(store.service(false));
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 0U);
+
+    // Pending data must remain immediately readable to the UI while transport plays.
+    CustomGroovePattern pending{};
+    char name[services::CustomGrooveStore::kNameLength + 1U]{};
+    CHECK(store.load(1U, pending, name, sizeof(name)));
+    CHECK_EQ(pending.offsets256[0], -64);
+    CHECK(std::strcmp(name, "SECOND") == 0);
+
+    CHECK(store.service(true));
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 1U);
+
+    services::CustomGrooveStore reloaded(storage);
+    CHECK(reloaded.exists(0U));
+    CHECK(reloaded.exists(1U));
+    CHECK(reloaded.load(0U, pending, name, sizeof(name)));
+    CHECK(std::strcmp(name, "FIRST") == 0);
+
+    CHECK(store.clear(0U));
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 1U);
+    CHECK(store.service(false));
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 1U);
+    CHECK(store.service(true));
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 2U);
+    services::CustomGrooveStore afterClear(storage);
+    CHECK(!afterClear.exists(0U));
 }
 
 void testPersistentStorageTransactionalUpdate() {
@@ -626,6 +685,44 @@ void testPersistentStorageAndStateService() {
     CHECK_EQ(durableLoad.bpm, 149U);
 }
 
+
+void testMultipleDeferredPresetMutationsSurviveUntilCommit() {
+    hal::PersistentStorage::resetForTest();
+    hal::PersistentStorage storage;
+    services::PersistentStateService service(storage);
+    service.begin();
+
+    ClockState first = makeDefaultState();
+    first.bpm = 121U;
+    ClockState second = makeDefaultState();
+    second.bpm = 137U;
+
+    CHECK(service.savePreset(0U, "FIRST", first));
+    service.service(1000U, false);
+    CHECK(service.savePreset(1U, "SECOND", second));
+    CHECK(service.clearPreset(2U));
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 0U);
+
+    ClockState pending = makeDefaultState();
+    CHECK(service.loadPreset(0U, pending));
+    CHECK_EQ(pending.bpm, 121U);
+    CHECK(service.loadPreset(1U, pending));
+    CHECK_EQ(pending.bpm, 137U);
+
+    service.service(1001U, true);
+    CHECK_EQ(hal::PersistentStorage::writeCommitCountForTest(), 1U);
+
+    services::PersistentStateService reload(storage);
+    reload.begin();
+    CHECK(reload.presetExists(0U));
+    CHECK(reload.presetExists(1U));
+    CHECK(!reload.presetExists(2U));
+    char name[services::PersistentStateService::kPresetNameLength + 1U]{};
+    reload.presetName(0U, name, sizeof(name));
+    CHECK(std::strcmp(name, "FIRST") == 0);
+    reload.presetName(1U, name, sizeof(name));
+    CHECK(std::strcmp(name, "SECOND") == 0);
+}
 
 void testPersistentV3Migration() {
     constexpr std::size_t kV12CurrentSize = services::PersistentStateService::kCurrentRecordBytes;

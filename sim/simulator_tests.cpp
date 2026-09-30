@@ -35,6 +35,34 @@ int main() {
         return 1;
     }
 
+    // Regression: scheduler sub-quantum time must accumulate across calls.
+    // 1000 x 25 us must advance the engine exactly like one 25,000-us call.
+    const auto schedulerDelta = [](const std::filesystem::path& path, const bool fragmented) {
+        std::filesystem::remove(path);
+        SimulatorRuntime probe(path);
+        probe.begin();
+        probe.advanceMicroseconds(1050000ULL);
+        probe.setButton(SimButton::Play, true);
+        probe.advanceMicroseconds(35000ULL);
+        probe.setButton(SimButton::Play, false);
+        probe.advanceMicroseconds(35000ULL);
+        const std::uint64_t before = probe.engineSnapshot().masterPositionQ32;
+        if (fragmented) {
+            for (std::size_t index = 0U; index < 1000U; ++index) {
+                probe.advanceMicroseconds(25ULL);
+            }
+        } else {
+            probe.advanceMicroseconds(25000ULL);
+        }
+        const std::uint64_t after = probe.engineSnapshot().masterPositionQ32;
+        std::filesystem::remove(path);
+        return after - before;
+    };
+    const auto fragmentedDelta = schedulerDelta(".clock-simulator-fragmented-time.bin", true);
+    const auto contiguousDelta = schedulerDelta(".clock-simulator-contiguous-time.bin", false);
+    if (fragmentedDelta == 0ULL || fragmentedDelta != contiguousDelta) {
+        return fail("partial simulator advances must preserve scheduler time across calls");
+    }
 
     SimulatorRuntime runtime(statePath);
     runtime.begin();

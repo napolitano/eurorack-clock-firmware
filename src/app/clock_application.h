@@ -59,6 +59,14 @@ public:
     /** @brief Executes one non-real-time application iteration. */
     void runOnce();
 
+#ifdef CLOCK_HOST_TEST
+    /** @brief Exposes wrap-safe external-input timestamp translation for regression tests. */
+    static std::uint32_t translateExternalTapTimestampMsForTest(
+        std::uint32_t nowMs,
+        std::uint32_t nowUs,
+        std::uint32_t edgeTimestampUs);
+#endif
+
 #ifdef CLOCK_SIMULATOR
     /** @brief Returns read-only current application state for simulator instrumentation. */
     const ClockState& stateForSimulator() const;
@@ -95,9 +103,18 @@ public:
 
     /** @brief Returns current UI navigation state for host integration tests. */
     const ui::NavigationState& navigationForSimulator() const;
+
+    /** @brief Flushes accepted in-memory durable state into simulated NVM without host file I/O. */
+    void flushPersistenceForSimulator();
 #endif
 
 private:
+    /** @brief Maps a wrapping captured microsecond timestamp into the current millisecond epoch. */
+    static std::uint32_t translateExternalTapTimestampMs(
+        std::uint32_t nowMs,
+        std::uint32_t nowUs,
+        std::uint32_t edgeTimestampUs);
+
     /** @brief Timer ISR thunk used by the HAL periodic-timer callback boundary. */
     static void schedulerInterruptThunk();
 

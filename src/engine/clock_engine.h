@@ -284,6 +284,9 @@ private:
     /** @brief Calculates one channel interval in real microseconds for gate-length limiting. */
     std::uint64_t calculateBaseIntervalUs(std::size_t channelIndex) const;
 
+    /** @brief Returns the shortest interval after deterministic Swing/Groove shaping. */
+    std::uint64_t calculateShortestDeterministicIntervalUs(std::size_t channelIndex) const;
+
     /** @brief Returns the shortest safely scheduled interval after Swing, Groove, and Humanize. */
     std::uint64_t calculateShortestActualIntervalUs(std::size_t channelIndex) const;
 
